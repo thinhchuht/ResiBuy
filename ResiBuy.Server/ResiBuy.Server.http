@@ -1,0 +1,6 @@
+@ResiBuy.Server_HostAddress = http://localhost:5240
+
+GET {{ResiBuy.Server_HostAddress}}/weatherforecast/
+Accept: application/json
+
+###
