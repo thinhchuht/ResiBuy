@@ -1,14 +1,17 @@
-﻿namespace ResiBuy.Server.Infrastructure
+﻿using Microsoft.AspNetCore.Identity.EntityFrameworkCore;
+using Microsoft.EntityFrameworkCore;
+using ResiBuy.Server.Infrastructure.Model;
+
+namespace ResiBuy.Server.Infrastructure
 {
-    public class ResiBuyContext : DbContext
+    public class ResiBuyContext : IdentityDbContext<User>
     {
-        public ResiBuyContext(DbContextOptions options) : base(options)
+        public ResiBuyContext(DbContextOptions<ResiBuyContext> options) : base(options)
         {
         }
         public DbSet<Area>        Areas        { get; set; }
         public DbSet<Building>    Buildings    { get; set; }
         public DbSet<Room>        Rooms        { get; set; }
-        public DbSet<User>        Users        { get; set; }
         public DbSet<UserRoom>    UserRooms    { get; set; }
         public DbSet<Cart>        Carts        { get; set; }
         public DbSet<CartItem>    CartItems    { get; set; }
@@ -24,6 +27,8 @@
 
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {
+            base.OnModelCreating(modelBuilder);
+
             modelBuilder.ApplyConfiguration(new ReportConfig());
             modelBuilder.ApplyConfiguration(new UserConfig());
             modelBuilder.ApplyConfiguration(new UserRoomConfig());
