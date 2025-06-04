@@ -4,6 +4,12 @@ using System.Text;
 
 var builder = WebApplication.CreateBuilder(args);
 
+// Configure Kestrel to use HTTP
+builder.WebHost.ConfigureKestrel(options =>
+{
+    options.ListenAnyIP(5000); // Listen on port 5000 using HTTP
+});
+
 // Add services to the container.
 var services = builder.Services;
 services.AddControllers();
@@ -15,7 +21,14 @@ services.AddDbContext<ResiBuyContext>(options =>
     options.UseSqlServer(builder.Configuration.GetConnectionString("ResiBuyDb")));
 
 // Configure Identity
-services.AddIdentity<User, IdentityRole>()
+services.AddIdentity<User, IdentityRole>(options => {
+    options.User.RequireUniqueEmail = true;
+    options.Password.RequireDigit = true;
+    options.Password.RequireLowercase = true;
+    options.Password.RequireUppercase = true;
+    options.Password.RequireNonAlphanumeric = true;
+    options.Password.RequiredLength = 8;
+})
 .AddEntityFrameworkStores<ResiBuyContext>()
 .AddDefaultTokenProviders();
 
@@ -62,7 +75,6 @@ if (app.Environment.IsDevelopment())
     app.UseSwaggerUI();
 }
 
-app.UseHttpsRedirection();
 app.UseCors("AllowAll");
 app.UseAuthentication();
 app.UseAuthorization();

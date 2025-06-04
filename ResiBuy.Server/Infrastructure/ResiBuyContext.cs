@@ -24,6 +24,7 @@ namespace ResiBuy.Server.Infrastructure
         public DbSet<Store>       Stores       { get; set; }
         public DbSet<Voucher>     Vouchers     { get; set; }
         public DbSet<UserVoucher> UserVouchers { get; set; }
+        public DbSet<RefreshToken> RefreshTokens { get; set; }
 
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {
