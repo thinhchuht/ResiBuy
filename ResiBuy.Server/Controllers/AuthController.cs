@@ -49,7 +49,7 @@
         }
 
         [HttpPost("refresh-token")]
-        public async Task<IActionResult> RefreshToken([FromBody] string refreshToken)
+        public async Task<IActionResult> RefreshToken(string refreshToken)
         {
             var existRefreshToken = await context.RefreshTokens
                 .Include(x => x.User)
@@ -95,7 +95,7 @@
 
         [HttpPost("revoke-token")]
         [Authorize]
-        public async Task<IActionResult> RevokeToken([FromBody] string refreshToken)
+        public async Task<IActionResult> RevokeToken(string refreshToken)
         {
             var existRefreshToken = await context.RefreshTokens
                 .FirstOrDefaultAsync(x => x.Token == refreshToken);
@@ -120,7 +120,7 @@
             return Ok(new { message = "Logged out successfully" });
         }
 
-        private string GenerateJwtToken(User user, IList<string> roles)
+        private string GenerateJwtToken(User user, IEnumerable<string> roles)
         {
             var claims = new List<Claim>
             {

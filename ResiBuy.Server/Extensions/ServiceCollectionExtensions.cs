@@ -10,5 +10,13 @@
             });
             return services;
         }
+
+        public static IServiceCollection AddDbServices(this IServiceCollection services)
+        {
+            services.AddScoped(typeof(IBaseService<>), typeof(BaseService<>));
+            services.AddScoped<IUserService, UserService>();
+            services.AddScoped<IUserRoomService,UserRoomService>();
+            return services;
+        }
     }
 }

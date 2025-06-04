@@ -6,7 +6,7 @@
         public const string ShipperRole          = "SHIPPER";
         public const string CustomerRole         = "CUSTOMER";
         public const string SellerRole           = "SELLER";
-        public const string DefaultAdminUsername = "adm_df@sys.com";
+        public const string DefaultAdminUsername = "adm_df";
         public const string DefaultAdminFullName = "Administrator";
     }
 }

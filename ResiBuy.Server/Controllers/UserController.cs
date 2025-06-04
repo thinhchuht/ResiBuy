@@ -1,31 +1,36 @@
 ﻿namespace ResiBuy.Server.Controllers
 {
+    [Authorize]
     [Route("api/[controller]")]
     [ApiController]
-    public class UserController(UserManager<User> userManager) : ControllerBase
+    public class UserController(IMediator mediator) : ControllerBase
     {
-        [HttpPost("register")]
-        public async Task<IActionResult> Register([FromBody] RegisterDTO model)
+        [HttpPost("create")]
+        public async Task<IActionResult> CreateAsync([FromBody] CreatUserCommand command)
         {
-            var user = new User
+            try
             {
-                UserName       = model.Email,
-                Email          = model.Email,
-                FullName       = model.FullName,
-                DateOfBirth    = model.DateOfBirth,
-                IdentityNumber = model.IdentityNumber,
-                CreatedAt      = DateTime.Now,
-                UpdatedAt      = DateTime.Now,
-                Roles          = model.Roles ?? [Constants.CustomerRole],
-            };
-
-            var result = await userManager.CreateAsync(user, model.Password);
-            if (result.Succeeded)
-            {
-                return Ok(new { message = "User created successfully" });
+                var result = await mediator.Send(command);
+                return Ok(result);
             }
+            catch (Exception ex)
+            {
+                return BadRequest(ResponseModel.ExceptionResponse(ex.ToString()));
+            }
+        }
 
-            return BadRequest(result.Errors);
+        [HttpGet("{id}")]
+        public async Task<IActionResult> GetByIdAsync(string id)
+        {
+            try
+            {
+                var result = await mediator.Send(new GetUserByIdQuery(id));
+                return Ok(result);
+            }
+            catch (Exception ex)
+            {
+                return BadRequest(ResponseModel.ExceptionResponse(ex.ToString()));
+            }
         }
     }
 }

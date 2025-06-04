@@ -5,8 +5,9 @@ var services = builder.Services;
 services.AddControllers();
 services.AddEndpointsApiExplorer();
 services.AddSwaggerGen();
-services.AddSqlDb(builder.Configuration);
-
+services.AddSqlDb(builder.Configuration)
+    .AddDbServices();
+services.AddMediatR(cfg => cfg.RegisterServicesFromAssemblyContaining(typeof(Program)));
 services.AddIdentityCore<User>(options =>
 {
     //options.User.RequireUniqueEmail = true;
@@ -50,7 +51,7 @@ if (app.Environment.IsDevelopment())
 }
 
 app.UseHttpsRedirection();
-
+app.UseAuthentication();
 app.UseAuthorization();
 
 app.MapControllers();
