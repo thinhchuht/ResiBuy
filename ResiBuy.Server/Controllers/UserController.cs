@@ -18,6 +18,7 @@
             }
         }
 
+        [Authorize(Roles = "ADMIN")]
         [HttpGet]
         public async Task<IActionResult> GetllAsync()
         {

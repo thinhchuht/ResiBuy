@@ -10,7 +10,7 @@
                 var getBuildingResponse = await GetByAreaIdOrNameAsync(areaId, name);
                 if (getBuildingResponse.IsSuccess())
                     return ResponseModel.FailureResponse("Building already exists in this area");
-                var building = (getBuildingResponse.Data as List<Building>).First();
+                var building = new Building(name, areaId);
                 await context.AddAsync(building);
                 await context.SaveChangesAsync();
                 return ResponseModel.SuccessResponse(building);

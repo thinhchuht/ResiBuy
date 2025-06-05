@@ -9,7 +9,7 @@
         public Building              Building   { get; set; }
         public IEnumerable<UserRoom> UserRooms  { get; set; }
 
-        public Room(Guid buildingId, string name)
+        public Room(string name, Guid buildingId)
         {
             BuildingId = buildingId;
             IsActive   = true;

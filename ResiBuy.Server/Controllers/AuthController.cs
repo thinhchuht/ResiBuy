@@ -22,10 +22,10 @@
 
                 var refreshTokenEntity = new RefreshToken
                 {
-                    Token       = refreshToken,
-                    UserId      = user.Id,
-                    ExpiryDate  = DateTime.Now.AddDays(7),
-                    CreatedAt   = DateTime.Now,
+                    Token = refreshToken,
+                    UserId = user.Id,
+                    ExpiryDate = DateTime.Now.AddDays(7),
+                    CreatedAt = DateTime.Now,
                 };
 
                 context.RefreshTokens.Add(refreshTokenEntity);
@@ -37,10 +37,10 @@
                     refreshToken,
                     user = new
                     {
-                        id       = user.Id,
-                        email    = user.Email,
+                        id = user.Id,
+                        email = user.Email,
                         fullName = user.FullName,
-                        roles    = roles
+                        roles = roles
                     }
                 });
             }
@@ -136,7 +136,7 @@
 
             var key = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(configuration["Jwt:Key"]));
             var creds = new SigningCredentials(key, SecurityAlgorithms.HmacSha256);
-            var expires = DateTime.Now.AddDays(Convert.ToDouble(configuration["Jwt:ExpireDays"]));
+            var expires = DateTime.Now.AddSeconds(Convert.ToDouble(configuration["Jwt:ExpireMinutes"]));
 
             var token = new JwtSecurityToken(
                 configuration["Jwt:Issuer"],

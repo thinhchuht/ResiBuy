@@ -1,4 +1,4 @@
-var builder = WebApplication.CreateBuilder(args);
+﻿var builder = WebApplication.CreateBuilder(args);
 
 // Add services to the container.
 var services = builder.Services;
@@ -9,11 +9,37 @@ services.AddControllers().AddJsonOptions(options =>
 }); ;
 services.AddEndpointsApiExplorer();
 services.AddSwaggerGen();
+//services.AddSwaggerGen(
+//    c =>
+//    {
+//        c.AddSecurityDefinition("Bearer", new OpenApiSecurityScheme
+//        {
+//            In = ParameterLocation.Header,
+//            Description = "Please insert JWT with Bearer into field",
+//            Name = "Authorization",
+//            Type = SecuritySchemeType.ApiKey,
+//            Scheme = "Bearer"
+//        });
+//        c.AddSecurityRequirement(new OpenApiSecurityRequirement {
+//    {
+//        new OpenApiSecurityScheme
+//        {
+//            Reference = new OpenApiReference
+//            {
+//                Type = ReferenceType.SecurityScheme,
+//                Id = "Bearer"
+//            }
+//        },
+//        new string[] { }
+//    }
+//    });
+//    }
+//);
 services.AddSqlDb(builder.Configuration)
     .AddDbServices();
 services.AddMediatR(cfg => cfg.RegisterServicesFromAssemblyContaining(typeof(Program)));
 services.AddAutoMapper(typeof(Program));
-services.AddIdentityCore<User>(options =>
+services.AddIdentity<User, IdentityRole>(options =>
 {
     options.User.RequireUniqueEmail = true;
     options.Password.RequireDigit = false;
@@ -39,7 +65,8 @@ services.AddAuthentication(options =>
         ValidateIssuerSigningKey = true,
         ValidIssuer = builder.Configuration["Jwt:Issuer"],
         ValidAudience = builder.Configuration["Jwt:Audience"],
-        IssuerSigningKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(builder.Configuration["Jwt:Key"]))
+        IssuerSigningKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(builder.Configuration["Jwt:Key"])),
+        RoleClaimType = ClaimTypes.Role
     };
 });
 

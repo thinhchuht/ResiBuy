@@ -12,7 +12,7 @@ using ResiBuy.Server.Infrastructure;
 namespace ResiBuy.Server.Infrastructure.Migrations
 {
     [DbContext(typeof(ResiBuyContext))]
-    [Migration("20250605101858_Init")]
+    [Migration("20250605135212_Init")]
     partial class Init
     {
         /// <inheritdoc />

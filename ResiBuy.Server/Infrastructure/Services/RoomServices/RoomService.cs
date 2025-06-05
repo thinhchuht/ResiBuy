@@ -1,4 +1,5 @@
-﻿namespace ResiBuy.Server.Infrastructure.Services.RoomServices
+﻿
+namespace ResiBuy.Server.Infrastructure.Services.RoomServices
 {
     public class RoomService(ResiBuyContext context) : IRoomService
     {
@@ -10,7 +11,7 @@
                 var getRoomResponse = await GetByRoomIdOrNameAsync(buildingId, name);
                 if (getRoomResponse.IsSuccess())
                     return ResponseModel.FailureResponse("Room is already exists in this building");
-                var room = (getRoomResponse.Data as List<Room>).First();
+                var room = new Room(name, buildingId);
                 await context.AddAsync(room);
                 await context.SaveChangesAsync();
                 return ResponseModel.SuccessResponse(room);
@@ -48,6 +49,25 @@
             try
             {
                 return ResponseModel.SuccessResponse(await context.Rooms.Include(a => a.UserRooms).ThenInclude(ur => ur.User).ToListAsync());
+            }
+            catch (Exception ex)
+            {
+                return ResponseModel.ExceptionResponse(ex.ToString());
+            }
+        }
+
+        public async Task<ResponseModel> GetBatchAsync(IEnumerable<Guid> Ids)
+        {
+            try
+            {
+                var rooms = await context.Rooms
+                    .Where(r => Ids.Contains(r.Id))               
+                    .Include(r => r.UserRooms)                     
+                    .ThenInclude(ur => ur.User)                
+                    .ToListAsync();
+                if(rooms.Any())
+                return ResponseModel.SuccessResponse(rooms);
+                return ResponseModel.FailureResponse("Room doesnt exist");
             }
             catch (Exception ex)
             {
