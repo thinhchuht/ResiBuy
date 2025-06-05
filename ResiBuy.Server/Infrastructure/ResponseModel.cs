@@ -12,7 +12,7 @@
         public static ResponseModel SuccessResponse(object data = null) =>
             new ResponseModel { Code = 0, Message = "Success", Data = data };
 
-        public static ResponseModel FailureResponse(string message) =>
+        public static ResponseModel FailureResponse(string message, object data = null) =>
             new ResponseModel { Code = 1, Message = message };
 
         public static ResponseModel ExceptionResponse(string error = null) =>

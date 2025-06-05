@@ -2,12 +2,12 @@
 {
     public class Building
     {
-        public Guid              Id     { get; set; }
-        public string            Name   { get; set; }
+        public Guid              Id       { get; set; }
+        public string            Name     { get; set; }
         public bool              IsActive { get; set; }
-        public Guid              AreaId { get; set; }
-        public Area              Area   { get; set; }
-        public IEnumerable<Room> Rooms  { get; set; }
+        public Guid              AreaId   { get; set; }
+        public Area              Area     { get; set; }
+        public IEnumerable<Room> Rooms { get; set; } = new List<Room>();
         public Building()
         {
             

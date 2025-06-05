@@ -2,15 +2,20 @@ var builder = WebApplication.CreateBuilder(args);
 
 // Add services to the container.
 var services = builder.Services;
-services.AddControllers();
+services.AddControllers().AddJsonOptions(options =>
+{
+    options.JsonSerializerOptions.ReferenceHandler = System.Text.Json.Serialization.ReferenceHandler.IgnoreCycles;
+    options.JsonSerializerOptions.DefaultIgnoreCondition = JsonIgnoreCondition.WhenWritingNull;
+}); ;
 services.AddEndpointsApiExplorer();
 services.AddSwaggerGen();
 services.AddSqlDb(builder.Configuration)
     .AddDbServices();
 services.AddMediatR(cfg => cfg.RegisterServicesFromAssemblyContaining(typeof(Program)));
+services.AddAutoMapper(typeof(Program));
 services.AddIdentityCore<User>(options =>
 {
-    //options.User.RequireUniqueEmail = true;
+    options.User.RequireUniqueEmail = true;
     options.Password.RequireDigit = false;
     options.Password.RequireLowercase = false;
     options.Password.RequireUppercase = false;

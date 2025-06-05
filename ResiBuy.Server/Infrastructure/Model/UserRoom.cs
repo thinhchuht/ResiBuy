@@ -12,7 +12,7 @@
         }
         public UserRoom(string userId, Guid roomId)
         {
-                UserId = userId;
+            UserId = userId;
             RoomId = roomId;
         }
     }

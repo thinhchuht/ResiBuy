@@ -5,7 +5,7 @@
     public class AuthController(UserManager<User> userManager, SignInManager<User> signInManager, IConfiguration configuration, ResiBuyContext context) : ControllerBase
     {
         [HttpPost("login")]
-        public async Task<IActionResult> Login([FromBody] LoginDTO model)
+        public async Task<IActionResult> Login([FromBody] LoginDto model)
         {
             var user = await userManager.FindByEmailAsync(model.Email);
             if (user == null)

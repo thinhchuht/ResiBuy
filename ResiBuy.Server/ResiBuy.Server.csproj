@@ -5,7 +5,7 @@
     <ImplicitUsings>enable</ImplicitUsings>
     <SpaRoot>..\resibuy.client</SpaRoot>
     <SpaProxyLaunchCommand>npm run dev</SpaProxyLaunchCommand>
-    <SpaProxyServerUrl>https://localhost:5173</SpaProxyServerUrl>
+    <SpaProxyServerUrl>https://localhost:5001</SpaProxyServerUrl>
   </PropertyGroup>
 
   <ItemGroup>
@@ -16,6 +16,7 @@
   </ItemGroup>
 
   <ItemGroup>
+    <PackageReference Include="AutoMapper.Extensions.Microsoft.DependencyInjection" Version="12.0.1" />
     <PackageReference Include="MediatR" Version="12.5.0" />
     <PackageReference Include="Microsoft.AspNetCore.Authentication.JwtBearer" Version="8.0.16" />
     <PackageReference Include="Microsoft.AspNetCore.Identity.EntityFrameworkCore" Version="8.0.16" />
@@ -38,14 +39,10 @@
   </ItemGroup>
 
   <ItemGroup>
-    <Folder Include="Application\Commands\BuildingCommands\" />
-    <Folder Include="Application\Commands\RoomCommands\" />
+    <Folder Include="Application\Commands\CartCommands\" />
     <Folder Include="Application\Queries\AreaQueries\" />
     <Folder Include="Application\Queries\BuildingQueries\" />
     <Folder Include="Application\Queries\RoomQueries\" />
-    <Folder Include="Infrastructure\Services\AreaServices\" />
-    <Folder Include="Infrastructure\Services\BuildingServices\" />
-    <Folder Include="Infrastructure\Services\RoomServices\" />
   </ItemGroup>
 
 </Project>

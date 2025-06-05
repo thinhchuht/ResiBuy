@@ -21,8 +21,9 @@
                     query = query.Where(u => u.Email == email);
 
                 var user = await query.FirstOrDefaultAsync();
-
+                if (user != null) 
                 return ResponseModel.SuccessResponse(user);
+                return ResponseModel.FailureResponse("User not found");
             }
             catch (Exception ex)
             {
@@ -30,20 +31,21 @@
             }
         }
 
-        public async Task<ResponseModel> CreateUser(RegisterDTO registerDTO)
+        public async Task<ResponseModel> CreateUser(RegisterDto registerDto)
         {
             try
-            {
-                var existUser = context.Users.FirstOrDefault(u => u.PhoneNumber == registerDTO.PhoneNumber || u.Email == registerDTO.Email || u.IdentityNumber == registerDTO.IdentityNumber);
+            {   
+                var existUser = context.Users.FirstOrDefault(u => u.PhoneNumber == registerDto.PhoneNumber || u.UserName == registerDto.UserName || u.Email == registerDto.Email || u.IdentityNumber == registerDto.IdentityNumber);
                 if (existUser == null)
                 {
-                    var user = new User(registerDTO.IdentityNumber, registerDTO.DateOfBirth, registerDTO.FullName, registerDTO.Roles);
+                    var user = new User(registerDto.UserName, registerDto.Email, registerDto.IdentityNumber, registerDto.DateOfBirth, registerDto.FullName, registerDto.Roles);
 
-                    var result = await userManager.CreateAsync(user, registerDTO.Password);
+                    var result = await userManager.CreateAsync(user, registerDto.Password);
                     if (result.Succeeded)
                     {
                         return ResponseModel.SuccessResponse(user);
                     }
+                    return ResponseModel.FailureResponse(string.Join("; ", result.Errors.Select(e => e.Description)));
                 }
 
                 return ResponseModel.FailureResponse("User is already exist");
@@ -59,7 +61,19 @@
         {
             try
             {
-                return ResponseModel.SuccessResponse(await context.Users.FirstOrDefaultAsync(u => u.Id == id));
+                return ResponseModel.SuccessResponse(await context.Users.Include(u => u.Cart).Include(u => u.UserRooms).ThenInclude(ur => ur.Room).FirstOrDefaultAsync(u => u.Id == id));
+            }
+            catch (Exception ex)
+            {
+                return ResponseModel.FailureResponse(ex.ToString());
+            };
+        }
+
+        public async Task<ResponseModel> GetAllUsers()
+        {
+            try
+            {
+                return ResponseModel.SuccessResponse(await context.Users.Include(u => u.Cart).Include(u => u.UserRooms).ThenInclude(ur => ur.Room).ToListAsync());
             }
             catch (Exception ex)
             {

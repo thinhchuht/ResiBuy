@@ -14,8 +14,8 @@
         public Guid?                  VoucherId         { get; set; }
         public User                   User              { get; set; }
         public Store                  Store             { get; set; }
-        public Shipper?               Shipper           { get; set; }
-        public Voucher?               Voucher           { get; set; }
+        public Shipper                Shipper           { get; set; }
+        public Voucher                Voucher           { get; set; }
         public IEnumerable<Report>    Reports           { get; set; } 
         public IEnumerable<OrderItem> Items             { get; set; }
     }

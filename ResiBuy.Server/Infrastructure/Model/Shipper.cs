@@ -10,7 +10,7 @@
         public DateTime           EndWorkTime    { get; set; }
         public Guid               LastLocationId { get; set; }
         public User               User           { get; set; }
-        public Area               LastLocation   { get; set; }
+        public Area               LastLocation   { get; set; } //Area Id
         public IEnumerable<Order> Orders         { get; set; }
     }
 }

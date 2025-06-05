@@ -1,6 +1,6 @@
 ﻿namespace ResiBuy.Server.Infrastructure.Services.BaseDbServices
 {
-    public class BaseService<T>(DbContext context) : IBaseService<T> where T : class
+    public class BaseService<T>(ResiBuyContext context) : IBaseService<T> where T : class
     {
         protected readonly DbSet<T> _dbSet = context.Set<T>();
 
@@ -24,7 +24,7 @@
             }
             catch (Exception ex)
             {
-                return ResponseModel.ExceptionResponse(ex.ToString());
+                return ResponseModel.FailureResponse(ex.ToString());
             }
         }
 
@@ -40,7 +40,20 @@
             {
                 return ResponseModel.ExceptionResponse(ex.ToString());
             }
+        }
 
+        public virtual async Task<ResponseModel> CreateBatchAsync(IEnumerable<T> entities)
+        {
+            try
+            {
+                await _dbSet.AddRangeAsync(entities);
+                await context.SaveChangesAsync();
+                return ResponseModel.SuccessResponse(entities);
+            }
+            catch (Exception ex)
+            {
+                return ResponseModel.ExceptionResponse(ex.ToString());
+            }
         }
 
         public virtual async Task<ResponseModel> UpdateAsync(T entity)
