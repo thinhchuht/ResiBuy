@@ -1,31 +1,53 @@
-<Project Sdk="Microsoft.NET.Sdk.Web">
+﻿<Project Sdk="Microsoft.NET.Sdk.Web">
 
   <PropertyGroup>
     <TargetFramework>net8.0</TargetFramework>
-    <Nullable>enable</Nullable>
     <ImplicitUsings>enable</ImplicitUsings>
     <SpaRoot>..\resibuy.client</SpaRoot>
     <SpaProxyLaunchCommand>npm run dev</SpaProxyLaunchCommand>
-    <SpaProxyServerUrl>https://localhost:5173</SpaProxyServerUrl>
+    <SpaProxyServerUrl>https://localhost:5001</SpaProxyServerUrl>
   </PropertyGroup>
 
   <ItemGroup>
+    <Compile Remove="Infrastructure\Repositories\**" />
+    <Content Remove="Infrastructure\Repositories\**" />
+    <EmbeddedResource Remove="Infrastructure\Repositories\**" />
+    <None Remove="Infrastructure\Repositories\**" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <PackageReference Include="AutoMapper.Extensions.Microsoft.DependencyInjection" Version="12.0.1" />
+    <PackageReference Include="Confluent.Kafka" Version="2.10.0" />
+    <PackageReference Include="MediatR" Version="12.5.0" />
+    <PackageReference Include="Microsoft.AspNetCore.Authentication.JwtBearer" Version="8.0.16" />
+    <PackageReference Include="Microsoft.AspNetCore.Identity.EntityFrameworkCore" Version="8.0.16" />
     <PackageReference Include="Microsoft.AspNetCore.SpaProxy">
       <Version>8.*-*</Version>
     </PackageReference>
+    <PackageReference Include="Microsoft.AspNetCore.SignalR.Client" Version="8.0.16" />
     <PackageReference Include="Microsoft.EntityFrameworkCore" Version="8.0.16" />
     <PackageReference Include="Microsoft.EntityFrameworkCore.SqlServer" Version="8.0.16" />
     <PackageReference Include="Microsoft.EntityFrameworkCore.Tools" Version="8.0.16">
       <PrivateAssets>all</PrivateAssets>
       <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
     </PackageReference>
-    <PackageReference Include="Swashbuckle.AspNetCore" Version="6.6.2" />
+    <PackageReference Include="Swashbuckle.AspNetCore" Version="8.1.2" />
   </ItemGroup>
 
   <ItemGroup>
     <ProjectReference Include="..\resibuy.client\resibuy.client.esproj">
       <ReferenceOutputAssembly>false</ReferenceOutputAssembly>
     </ProjectReference>
+  </ItemGroup>
+
+  <ItemGroup>
+    <Folder Include="Application\Commands\CartCommands\" />
+    <Folder Include="Application\Queries\AreaQueries\" />
+    <Folder Include="Application\Queries\BuildingQueries\" />
+    <Folder Include="Application\Queries\RoomQueries\" />
+    <Folder Include="Services\HttpServices\" />
+    <Folder Include="Services\MailServices\" />
+    <Folder Include="Services\VNPayServices\" />
   </ItemGroup>
 
 </Project>
