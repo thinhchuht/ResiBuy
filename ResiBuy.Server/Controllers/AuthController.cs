@@ -37,10 +37,10 @@
                     refreshToken,
                     user = new
                     {
-                        id = user.Id,
-                        email = user.Email,
+                        id       = user.Id,
+                        email    = user.Email,
                         fullName = user.FullName,
-                        roles = roles
+                        roles    = roles
                     }
                 });
             }

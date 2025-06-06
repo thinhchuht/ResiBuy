@@ -1,6 +1,6 @@
-﻿namespace ResiBuy.Server.Infrastructure.Services.UserRoomServices
+﻿namespace ResiBuy.Server.Infrastructure.DbServices.UserRoomDbServices
 {
-    public class UserRoomService(ResiBuyContext context) : IUserRoomService
+    public class UserRoomDbService(ResiBuyContext context) : IUserRoomDbService
     {
         public async Task<ResponseModel> CreateUserRoom(string userId, Guid roomId)
         {

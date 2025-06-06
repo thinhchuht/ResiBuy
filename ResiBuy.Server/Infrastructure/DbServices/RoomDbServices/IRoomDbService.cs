@@ -1,6 +1,6 @@
-﻿namespace ResiBuy.Server.Infrastructure.Services.RoomServices
+﻿namespace ResiBuy.Server.Infrastructure.DbServices.RoomDbServices
 {
-    public interface IRoomService
+    public interface IRoomDbService
     {
         Task<ResponseModel> GetAllRoomsAsync();
         Task<ResponseModel> GetBatchAsync(IEnumerable<Guid> Ids);

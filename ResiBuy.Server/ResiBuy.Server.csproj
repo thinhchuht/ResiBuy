@@ -23,6 +23,7 @@
     <PackageReference Include="Microsoft.AspNetCore.SpaProxy">
       <Version>8.*-*</Version>
     </PackageReference>
+    <PackageReference Include="Microsoft.AspNetCore.SignalR.Client" Version="8.0.16" />
     <PackageReference Include="Microsoft.EntityFrameworkCore" Version="8.0.16" />
     <PackageReference Include="Microsoft.EntityFrameworkCore.SqlServer" Version="8.0.16" />
     <PackageReference Include="Microsoft.EntityFrameworkCore.Tools" Version="8.0.16">
@@ -43,6 +44,9 @@
     <Folder Include="Application\Queries\AreaQueries\" />
     <Folder Include="Application\Queries\BuildingQueries\" />
     <Folder Include="Application\Queries\RoomQueries\" />
+    <Folder Include="Services\HttpServices\" />
+    <Folder Include="Services\MailServices\" />
+    <Folder Include="Services\VNPayServices\" />
   </ItemGroup>
 
 </Project>

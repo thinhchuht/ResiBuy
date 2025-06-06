@@ -14,14 +14,14 @@
         public static IServiceCollection AddDbServices(this IServiceCollection services)
         {
             // Register base service
-            services.AddScoped(typeof(IBaseService<>), typeof(BaseService<>));
+            services.AddScoped(typeof(IBaseDbService<>), typeof(BaseDbService<>));
             
             // Register other services
-            services.AddScoped<IUserService, UserService>();
-            services.AddScoped<IUserRoomService, UserRoomService>();
-            services.AddScoped<IAreaService, AreaService>();
-            services.AddScoped<IBuildingService, BuildingService>();
-            services.AddScoped<IRoomService, RoomService>();
+            services.AddScoped<IUserDbService, UserDbService>();
+            services.AddScoped<IUserRoomDbService, UserRoomDbService>();
+            services.AddScoped<IAreaDbService, AreaDbService>();
+            services.AddScoped<IBuildingDbService, BuildingDbService>();
+            services.AddScoped<IRoomDbService, RoomDbService>();
             return services;
         }
     }

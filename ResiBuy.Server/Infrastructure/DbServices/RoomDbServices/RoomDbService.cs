@@ -1,7 +1,7 @@
 ﻿
-namespace ResiBuy.Server.Infrastructure.Services.RoomServices
+namespace ResiBuy.Server.Infrastructure.DbServices.RoomDbServices
 {
-    public class RoomService(ResiBuyContext context) : IRoomService
+    public class RoomDbService(ResiBuyContext context) : IRoomDbService
     {
         public async Task<ResponseModel> CreateAsync(Guid buildingId, string name)
         {

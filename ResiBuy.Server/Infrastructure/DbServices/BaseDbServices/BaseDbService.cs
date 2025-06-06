@@ -1,6 +1,6 @@
-﻿namespace ResiBuy.Server.Infrastructure.Services.BaseDbServices
+﻿namespace ResiBuy.Server.Infrastructure.DbServices.BaseDbServices
 {
-    public class BaseService<T>(ResiBuyContext context) : IBaseService<T> where T : class
+    public class BaseDbService<T>(ResiBuyContext context) : IBaseDbService<T> where T : class
     {
         protected readonly DbSet<T> _dbSet = context.Set<T>();
 

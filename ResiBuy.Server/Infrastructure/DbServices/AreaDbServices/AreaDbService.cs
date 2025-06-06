@@ -1,6 +1,6 @@
-﻿namespace ResiBuy.Server.Infrastructure.Services.AreaServices
+﻿namespace ResiBuy.Server.Infrastructure.DbServices.AreaDbServices
 {
-    public class AreaService(ResiBuyContext context) : IAreaService
+    public class AreaDbService(ResiBuyContext context) : IAreaDbService
     {
         public async Task<ResponseModel> GetAllAreaAsync()
         {

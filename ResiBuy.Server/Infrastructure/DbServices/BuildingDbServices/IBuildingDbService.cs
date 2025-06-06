@@ -1,6 +1,6 @@
-﻿namespace ResiBuy.Server.Infrastructure.Services.BuildingServices
+﻿namespace ResiBuy.Server.Infrastructure.DbServices.BuildingDbServices
 {
-    public interface IBuildingService
+    public interface IBuildingDbService
     {
         Task<ResponseModel> GetAllAsync();
         Task<ResponseModel> GetByIdAsync(Guid id);

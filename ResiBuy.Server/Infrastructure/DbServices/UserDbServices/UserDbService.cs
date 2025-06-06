@@ -1,6 +1,6 @@
-﻿namespace ResiBuy.Server.Infrastructure.Services.UserServices
+﻿namespace ResiBuy.Server.Infrastructure.DbServices.UserDbServices
 {
-    public class UserService(ResiBuyContext context, UserManager<User> userManager) : IUserService
+    public class UserDbService(ResiBuyContext context, UserManager<User> userManager) : IUserDbService
     {
         public async Task<ResponseModel> GetUserAsync(string userId, string identityNumber = null, string phoneNumber = null, string email = null)
         {
@@ -21,8 +21,8 @@
                     query = query.Where(u => u.Email == email);
 
                 var user = await query.FirstOrDefaultAsync();
-                if (user != null) 
-                return ResponseModel.SuccessResponse(user);
+                if (user != null)
+                    return ResponseModel.SuccessResponse(user);
                 return ResponseModel.FailureResponse("User not found");
             }
             catch (Exception ex)
@@ -34,7 +34,7 @@
         public async Task<ResponseModel> CreateUser(RegisterDto registerDto)
         {
             try
-            {   
+            {
                 var existUser = context.Users.FirstOrDefault(u => u.PhoneNumber == registerDto.PhoneNumber || u.UserName == registerDto.UserName || u.Email == registerDto.Email || u.IdentityNumber == registerDto.IdentityNumber);
                 if (existUser == null)
                 {
@@ -54,7 +54,23 @@
             {
                 return ResponseModel.ExceptionResponse(ex.ToString());
             }
+        }
 
+        public async Task<ResponseModel> CreateAdminUser(User user)
+        {
+            try
+            {
+                var result = await userManager.CreateAsync(user);
+                if (result.Succeeded)
+                {
+                    return ResponseModel.SuccessResponse(user);
+                }
+                return ResponseModel.FailureResponse(string.Join("; ", result.Errors.Select(e => e.Description)));
+            }
+            catch (Exception ex)
+            {
+                return ResponseModel.ExceptionResponse(ex.ToString());
+            }
         }
 
         public async Task<ResponseModel> GetUserById(string id)

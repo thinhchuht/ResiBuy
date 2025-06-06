@@ -1,6 +1,6 @@
-﻿namespace ResiBuy.Server.Infrastructure.Services.BuildingServices
+﻿namespace ResiBuy.Server.Infrastructure.DbServices.BuildingDbServices
 {
-    public class BuildingService(ResiBuyContext context) : IBuildingService
+    public class BuildingDbService(ResiBuyContext context) : IBuildingDbService
     {
         public async Task<ResponseModel> CreateAsync(string name, Guid areaId)
         {

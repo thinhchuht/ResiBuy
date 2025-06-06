@@ -47,6 +47,5 @@
                 return BadRequest(ResponseModel.ExceptionResponse(ex.ToString()));
             }
         }
-
     }
 }

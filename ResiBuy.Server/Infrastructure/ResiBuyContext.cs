@@ -42,6 +42,33 @@
             modelBuilder.ApplyConfiguration(new ShipperConfig());
             modelBuilder.ApplyConfiguration(new VoucherConfig());
             modelBuilder.ApplyConfiguration(new ProductConfig());
+
+            // default admin
+            var hasher = new PasswordHasher<User>();
+            var admin = new User
+            {
+                Id                   = Constants.DefaultAdmidId,
+                UserName             = Constants.DefaultAdminUsername,
+                NormalizedUserName   = Constants.DefaultAdminUsername.ToUpper(),
+                Email                = Constants.DefaultAdminEmail,
+                NormalizedEmail      = Constants.DefaultAdminFullName,
+                EmailConfirmed       = true,
+                PhoneNumber          = Constants.DefaultAdminPhone,
+                PhoneNumberConfirmed = true,
+                TwoFactorEnabled     = false,
+                LockoutEnabled       = false,
+                AccessFailedCount    = 0,
+                IdentityNumber       = Constants.DefaultAdminIdnetityNumber,
+                DateOfBirth          = new DateTime(1990, 1, 1),
+                IsLocked             = false,
+                Roles                = [Constants.AdminRole],
+                FullName             = Constants.DefaultAdminFullName,
+                CreatedAt            = DateTime.Now,
+                UpdatedAt            = DateTime.Now
+            };
+            admin.PasswordHash = hasher.HashPassword(admin, Constants.DefaultAdminPassword);
+
+            modelBuilder.Entity<User>().HasData(admin);
         }
     }
 }

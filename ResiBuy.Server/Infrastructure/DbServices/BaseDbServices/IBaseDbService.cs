@@ -1,6 +1,6 @@
-﻿namespace ResiBuy.Server.Infrastructure.Services.BaseDbServices
+﻿namespace ResiBuy.Server.Infrastructure.DbServices.BaseDbServices
 {
-    public interface IBaseService<T> where T : class
+    public interface IBaseDbService<T> where T : class
     {
         Task<ResponseModel> GetByIdAsync(Guid id);
         Task<ResponseModel> GetAllAsync();
