@@ -2,50 +2,50 @@
 {
     [ApiController]
     [Route("api/[controller]")]
-    public class AuthController(UserManager<User> userManager, SignInManager<User> signInManager, IConfiguration configuration, ResiBuyContext context) : ControllerBase
+    public class AuthController(ResiBuyContext context, IConfiguration configuration) : ControllerBase
     {
         [HttpPost("login")]
         public async Task<IActionResult> Login([FromBody] LoginDto model)
         {
-            var user = await userManager.FindByEmailAsync(model.Email);
+            var user = await context.Users.FirstOrDefaultAsync(u => u.PhoneNumber == model.PhoneNumber);
             if (user == null)
             {
-                return Unauthorized(new { message = "Invalid email or password" });
+                return BadRequest(new { message = "Invalid phone number or password" });
             }
 
-            var result = await signInManager.CheckPasswordSignInAsync(user, model.Password, false);
-            if (result.Succeeded)
+            if (!CustomPasswordHasher.VerifyPassword(model.Password, user.PasswordHash))
             {
-                var roles = user.Roles ?? [];
-                var token = GenerateJwtToken(user, roles);
-                var refreshToken = GenerateRefreshToken();
-
-                var refreshTokenEntity = new RefreshToken
-                {
-                    Token = refreshToken,
-                    UserId = user.Id,
-                    ExpiryDate = DateTime.Now.AddDays(7),
-                    CreatedAt = DateTime.Now,
-                };
-
-                context.RefreshTokens.Add(refreshTokenEntity);
-                await context.SaveChangesAsync();
-
-                return Ok(new
-                {
-                    token,
-                    refreshToken,
-                    user = new
-                    {
-                        id       = user.Id,
-                        email    = user.Email,
-                        fullName = user.FullName,
-                        roles    = roles
-                    }
-                });
+                return BadRequest(new { message = "Wrong password" });
             }
 
-            return Unauthorized(new { message = "Invalid email or password" });
+            var roles = user.Roles ?? [];
+            var token = GenerateJwtToken(user, roles);
+            var refreshToken = GenerateRefreshToken();
+
+            var refreshTokenEntity = new RefreshToken
+            {
+                Token = refreshToken,
+                UserId = user.Id,
+                ExpiryDate = DateTime.Now.AddDays(7),
+                CreatedAt = DateTime.Now,
+            };
+
+            context.RefreshTokens.Add(refreshTokenEntity);
+            await context.SaveChangesAsync();
+
+            return Ok(new
+            {
+                token,
+                refreshToken,
+                user = new
+                {
+                    id = user.Id,
+                    email = user.Email,
+                    fullName = user.FullName,
+                    roles = roles,
+                    phoneNumber = user.PhoneNumber
+                }
+            });
         }
 
         [HttpPost("refresh-token")]
@@ -93,30 +93,29 @@
             });
         }
 
-        [HttpPost("revoke-token")]
+        [HttpPost("logout")]
         [Authorize]
-        public async Task<IActionResult> RevokeToken(string refreshToken)
+        public async Task<IActionResult> Logout([FromQuery] string refreshToken)
         {
+            if (string.IsNullOrEmpty(refreshToken))
+            {
+                return BadRequest(new { message = "Refresh token is required" });
+            }
+
             var existRefreshToken = await context.RefreshTokens
                 .FirstOrDefaultAsync(x => x.Token == refreshToken);
 
             if (existRefreshToken == null)
+            {
                 return NotFound(new { message = "Refresh token not found" });
+            }
 
             existRefreshToken.IsRevoked = true;
             existRefreshToken.RevokedAt = DateTime.Now;
-            existRefreshToken.ReasonRevoked = "Revoked by user";
+            existRefreshToken.ReasonRevoked = "Revoked during logout";
 
             await context.SaveChangesAsync();
 
-            return Ok(new { message = "Token revoked successfully" });
-        }
-
-        [HttpPost("logout")]
-        [Authorize]
-        public async Task<IActionResult> Logout()
-        {
-            await signInManager.SignOutAsync();
             return Ok(new { message = "Logged out successfully" });
         }
 
@@ -126,7 +125,8 @@
             {
                 new Claim(ClaimTypes.NameIdentifier, user.Id),
                 new Claim(ClaimTypes.Email, user.Email),
-                new Claim(ClaimTypes.Name, user.FullName)
+                new Claim(ClaimTypes.Name, user.FullName),
+                new Claim(ClaimTypes.MobilePhone, user.PhoneNumber)
             };
 
             foreach (var role in roles)
