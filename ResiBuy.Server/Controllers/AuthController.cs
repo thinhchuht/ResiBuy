@@ -10,7 +10,7 @@
             var user = await context.Users.FirstOrDefaultAsync(u => u.PhoneNumber == model.PhoneNumber);
             if (user == null)
             {
-                return BadRequest(new { message = "Invalid phone number or password" });
+                return BadRequest(new { message = "Invalid phone number" });
             }
 
             if (!CustomPasswordHasher.VerifyPassword(model.Password, user.PasswordHash))
@@ -95,7 +95,7 @@
 
         [HttpPost("logout")]
         [Authorize]
-        public async Task<IActionResult> Logout([FromQuery] string refreshToken)
+        public async Task<IActionResult> Logout([FromBody] string refreshToken)
         {
             if (string.IsNullOrEmpty(refreshToken))
             {

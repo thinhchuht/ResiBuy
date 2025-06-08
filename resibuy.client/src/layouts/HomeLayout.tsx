@@ -48,7 +48,7 @@ interface HomeLayoutProps {
   children?: React.ReactNode;
 }
 const HomeLayout: React.FC<HomeLayoutProps> = ({ children }) => {
-  const { user } = useAuth();
+  const { user, logout } = useAuth();
   const [open, setOpen] = useState(true);
   const [anchorEl, setAnchorEl] = useState<null | HTMLElement>(null);
   const navigate = useNavigate();
@@ -67,6 +67,7 @@ const HomeLayout: React.FC<HomeLayoutProps> = ({ children }) => {
 
   const handleLogout = () => {
     handleProfileMenuClose();
+    logout();
     navigate("/login");
   };
 
