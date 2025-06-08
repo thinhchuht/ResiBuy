@@ -1,19 +1,49 @@
-﻿namespace ResiBuy.Server.Infrastructure.DbServices.AreaDbServices
+﻿using ResiBuy.Server.Exceptions;
+
+namespace ResiBuy.Server.Infrastructure.DbServices.AreaDbServices
 {
-    public class AreaDbService(ResiBuyContext context) : IAreaDbService
+    public class AreaDbService : BaseDbService<Area>, IAreaDbService
     {
-        public async Task<IEnumerable<AreaDto>> GetAllAreaAsync()
+        private readonly ResiBuyContext _context;
+
+        public AreaDbService(ResiBuyContext context) : base(context)
+        {
+            _context = context;
+        }
+
+        public async Task<IEnumerable<Area>> GetAllAreaAsync()
         {
             try
             {
-                IEnumerable<Area> areas = await context.Areas.Include(a => a.Buildings).ThenInclude(b => b.Rooms).Include(a => a.Shippers).ToListAsync();
-                IEnumerable<AreaDto> areaDtos = areas.Select(a => new AreaDto(a));
-                refturn areaDtos;
-
+                IEnumerable<Area> areas = await _context.Areas
+                    .Include(a => a.Buildings)
+                    .Include(a => a.Shippers)
+                    .ToListAsync();
+                return areas;
             }
             catch (Exception ex)
             {
-                return ResponseModel.ExceptionResponse(ex.ToString());
+                throw new CustomException(ExceptionErrorCode.RepositoryError,ex.Message);
+            }
+        }
+
+        public async Task<Area> GetByIdAsync(Guid id)
+        {
+            try
+            {
+                var area = await _context.Areas
+                                    .Include(a => a.Buildings)
+                                    .Include(a => a.Shippers)
+                                    .FirstOrDefaultAsync(a => a.Id == id);
+                if (area == null)
+                {
+                    return null;
+                }
+                return area;
+            }
+            catch (Exception ex)
+            {
+                throw new CustomException(ExceptionErrorCode.RepositoryError, ex.Message);
             }
         }
     }

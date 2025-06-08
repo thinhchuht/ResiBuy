@@ -2,6 +2,7 @@
 {
     public interface IAreaDbService
     {
-        Task<ResponseModel> GetAllAreaAsync();
+        Task<IEnumerable<Area>> GetAllAreaAsync();
+        Task<Area> GetByIdAsync(Guid id);
     }
 }
