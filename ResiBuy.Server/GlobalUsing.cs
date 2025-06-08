@@ -3,7 +3,6 @@ global using MediatR;
 global using Microsoft.AspNetCore.Authentication.JwtBearer;
 global using Microsoft.AspNetCore.Authorization;
 global using Microsoft.AspNetCore.Identity;
-global using Microsoft.AspNetCore.Identity.EntityFrameworkCore;
 global using Microsoft.AspNetCore.Mvc;
 global using Microsoft.AspNetCore.SignalR;
 global using Microsoft.EntityFrameworkCore;
@@ -41,7 +40,9 @@ global using System.Security.Cryptography;
 global using System.Text;
 global using System.Text.Json;
 global using System.Text.Json.Serialization;
+global using static BCrypt.Net.BCrypt;
 global using static ResiBuy.Server.Application.Queries.QueryResults;
+global using static ResiBuy.Server.Common.BrciptHelper;
 
 
 

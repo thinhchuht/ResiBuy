@@ -38,11 +38,7 @@ const refreshToken = async () => {
     if (!refreshToken) {
       throw new Error("No refresh token available");
     }
-
-    const response = await axios.post(
-      `${import.meta.env.VITE_BASE_API_URL}/auth/refresh-token`,
-      { refreshToken }
-    );
+    const response = await axios.post(`${import.meta.env.VITE_BASE_API_URL}/auth/refresh-token`, { refreshToken });
 
     const { token } = response.data;
     localStorage.setItem("token", token);
@@ -67,7 +63,7 @@ axiosClient.interceptors.request.use(
   },
   (error) => {
     return Promise.reject(error);
-  },
+  }
 );
 
 // Interceptor cho response
@@ -93,10 +89,8 @@ axiosClient.interceptors.response.use(
             return Promise.reject(err);
           });
       }
-
       originalRequest._retry = true;
       isRefreshing = true;
-
       try {
         const newToken = await refreshToken();
         isRefreshing = false;
@@ -108,9 +102,8 @@ axiosClient.interceptors.response.use(
         return Promise.reject(refreshError);
       }
     }
-
     return Promise.reject(error);
-  },
+  }
 );
 
 export default axiosClient;

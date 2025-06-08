@@ -12,7 +12,7 @@ using ResiBuy.Server.Infrastructure;
 namespace ResiBuy.Server.Infrastructure.Migrations
 {
     [DbContext(typeof(ResiBuyContext))]
-    [Migration("20250605135212_Init")]
+    [Migration("20250608080645_Init")]
     partial class Init
     {
         /// <inheritdoc />
@@ -411,12 +411,6 @@ namespace ResiBuy.Server.Infrastructure.Migrations
                     b.Property<string>("Id")
                         .HasColumnType("nvarchar(450)");
 
-                    b.Property<int>("AccessFailedCount")
-                        .HasColumnType("int");
-
-                    b.Property<string>("ConcurrencyStamp")
-                        .HasColumnType("nvarchar(max)");
-
                     b.Property<DateTime>("CreatedAt")
                         .HasColumnType("datetime2");
 
@@ -438,18 +432,6 @@ namespace ResiBuy.Server.Infrastructure.Migrations
                     b.Property<bool>("IsLocked")
                         .HasColumnType("bit");
 
-                    b.Property<bool>("LockoutEnabled")
-                        .HasColumnType("bit");
-
-                    b.Property<DateTimeOffset?>("LockoutEnd")
-                        .HasColumnType("datetimeoffset");
-
-                    b.Property<string>("NormalizedEmail")
-                        .HasColumnType("nvarchar(max)");
-
-                    b.Property<string>("NormalizedUserName")
-                        .HasColumnType("nvarchar(max)");
-
                     b.Property<string>("PasswordHash")
                         .HasColumnType("nvarchar(max)");
 
@@ -462,21 +444,30 @@ namespace ResiBuy.Server.Infrastructure.Migrations
                     b.Property<string>("Roles")
                         .HasColumnType("nvarchar(max)");
 
-                    b.Property<string>("SecurityStamp")
-                        .HasColumnType("nvarchar(max)");
-
-                    b.Property<bool>("TwoFactorEnabled")
-                        .HasColumnType("bit");
-
                     b.Property<DateTime>("UpdatedAt")
                         .HasColumnType("datetime2");
-
-                    b.Property<string>("UserName")
-                        .HasColumnType("nvarchar(max)");
 
                     b.HasKey("Id");
 
                     b.ToTable("Users");
+
+                    b.HasData(
+                        new
+                        {
+                            Id = "adm_df",
+                            CreatedAt = new DateTime(2025, 6, 8, 15, 6, 45, 467, DateTimeKind.Local).AddTicks(6723),
+                            DateOfBirth = new DateTime(1990, 1, 1, 0, 0, 0, 0, DateTimeKind.Unspecified),
+                            Email = "admin@123",
+                            EmailConfirmed = true,
+                            FullName = "Administrator",
+                            IdentityNumber = "admin",
+                            IsLocked = false,
+                            PasswordHash = "$2a$11$83klmdXXq1dCOmxjlASR/.pFm2oumCXsaSqvZvaZ7UzsinfwDFiXO",
+                            PhoneNumber = "admin",
+                            PhoneNumberConfirmed = true,
+                            Roles = "[\"ADMIN\"]",
+                            UpdatedAt = new DateTime(2025, 6, 8, 15, 6, 45, 467, DateTimeKind.Local).AddTicks(6735)
+                        });
                 });
 
             modelBuilder.Entity("ResiBuy.Server.Infrastructure.Model.UserRoom", b =>

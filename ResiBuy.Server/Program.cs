@@ -6,7 +6,6 @@ services.AddSqlDb(builder.Configuration)
     .AddServices()
     .AddDbServices()
     .AddKafka(builder.Configuration)
-    .AddIdentityBase()
     .AddAuthenJwtBase(builder.Configuration);
 services.AddSignalR();
 services.AddMediatR(cfg => cfg.RegisterServicesFromAssemblyContaining(typeof(Program)));
