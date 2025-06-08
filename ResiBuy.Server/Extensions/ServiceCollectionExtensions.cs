@@ -35,22 +35,6 @@
             return services;
         }
 
-        public static IServiceCollection AddIdentityBase(this IServiceCollection services)
-        {
-            services.AddIdentity<User, IdentityRole>(options =>
-             {
-                 options.User.RequireUniqueEmail = true;
-                 options.Password.RequireDigit = false;
-                 options.Password.RequireLowercase = false;
-                 options.Password.RequireUppercase = false;
-                 options.Password.RequireNonAlphanumeric = false;
-                 options.User.AllowedUserNameCharacters = null;
-             })
-                .AddEntityFrameworkStores<ResiBuyContext>()
-                .AddDefaultTokenProviders();
-            return services;
-        }
-
         public static IServiceCollection AddAuthenJwtBase(this IServiceCollection services, IConfiguration configuration)
         {
             services.AddAuthentication(options =>
