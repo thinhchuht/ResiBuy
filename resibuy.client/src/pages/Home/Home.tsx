@@ -1,10 +1,8 @@
-import React from "react";
 import { Box, Typography, Button, Stack } from "@mui/material";
 import { useToastify } from "../../hooks/useToastify";
 
 const Home = () => {
   const toast = useToastify();
-
   return (
     <Box>
       <Typography variant="h4" gutterBottom>
