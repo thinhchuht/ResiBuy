@@ -1,4 +1,5 @@
 ﻿using ResiBuy.Server.Exceptions;
+using ResiBuy.Server.Infrastructure.DbServices.CartDbService;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -57,7 +58,11 @@ services.AddSwaggerGen(
     });
     }
 );
-
+services.AddScoped<IUserDbService, UserDbService>();
+services.AddScoped<IRoomDbService, RoomDbService>();
+services.AddScoped<IBuildingDbService, BuildingDbService>();
+services.AddScoped<IAreaDbService, AreaDbService>();
+services.AddScoped<ICartDbService, CartDbService>();
 var app = builder.Build();
 // Đặt middleware này TRƯỚC tất cả các middleware khác
 app.UseMiddleware<ExceptionMiddleware>();

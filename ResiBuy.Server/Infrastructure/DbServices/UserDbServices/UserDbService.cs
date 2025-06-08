@@ -5,9 +5,9 @@ namespace ResiBuy.Server.Infrastructure.DbServices.UserDbServices
     public class UserDbService : BaseDbService<User>, IUserDbService
     {
         private readonly ResiBuyContext context;
-        private readonly RoomDbService roomDbService;
+        private readonly IRoomDbService roomDbService;
 
-        public UserDbService(ResiBuyContext context, RoomDbService roomDbService) : base(context)
+        public UserDbService(ResiBuyContext context, IRoomDbService roomDbService) : base(context)
         {
             this.context = context;
             this.roomDbService = roomDbService;
