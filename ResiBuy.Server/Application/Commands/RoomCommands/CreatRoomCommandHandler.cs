@@ -9,9 +9,9 @@
             {
                 if (command.BuildingId == Guid.Empty) return ResponseModel.FailureResponse("Building is Required");
                 var getBuildingResponse = await BuildingDbService.GetByIdAsync(command.BuildingId);
-                if(!getBuildingResponse.IsSuccess()) return ResponseModel.FailureResponse("Building does not exist");
+                if(getBuildingResponse == null) return ResponseModel.FailureResponse("Building does not exist");
                 var createRoom = await RoomDbService.CreateAsync(command.BuildingId, command.Name);
-                return createRoom;
+                return ResponseModel.SuccessResponse(createRoom);
             }
             catch (Exception ex)
             {

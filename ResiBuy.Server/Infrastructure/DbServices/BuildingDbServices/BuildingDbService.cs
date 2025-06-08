@@ -6,10 +6,11 @@ namespace ResiBuy.Server.Infrastructure.DbServices.BuildingDbServices
     public class BuildingDbService : BaseDbService<Building>, IBuildingDbService
     {
         private readonly ResiBuyContext context;
-
-        public BuildingDbService(ResiBuyContext context) : base(context)
+        private readonly AreaDbService areaDbService;
+        public BuildingDbService(ResiBuyContext context, AreaDbService areaDbService) : base(context)
         {
             this.context = context;
+            this.areaDbService = areaDbService;
         }
 
         public async Task<Building> CreateAsync(string name, Guid areaId)
@@ -20,6 +21,11 @@ namespace ResiBuy.Server.Infrastructure.DbServices.BuildingDbServices
                 if (building != null)
                 {
                     throw new CustomException(ExceptionErrorCode.NotFound);
+                }
+                var area = await areaDbService.GetByIdAsync(areaId);
+                if (area == null)
+                {
+                    throw new CustomException(ExceptionErrorCode.NotFound, "Area not found");
                 }
                 context.Buildings.Add(building);
                 await context.SaveChangesAsync();

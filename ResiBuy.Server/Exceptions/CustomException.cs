@@ -22,6 +22,7 @@
             ExceptionErrorCode.DeleteFailed => "Delete operation failed.",
             ExceptionErrorCode.RepositoryError => "Repository error occurred.",
             ExceptionErrorCode.DuplicateValue => "Duplicate value found.",
+            ExceptionErrorCode.InvalidInput => "Invalid input provided.",
             _ => "Unknown error occurred."
         };
 
@@ -35,6 +36,7 @@
             ExceptionErrorCode.DeleteFailed => StatusCodes.Status400BadRequest,
             ExceptionErrorCode.RepositoryError => StatusCodes.Status500InternalServerError,
             ExceptionErrorCode.DuplicateValue => StatusCodes.Status409Conflict,
+            ExceptionErrorCode.InvalidInput => StatusCodes.Status400BadRequest,
             _ => StatusCodes.Status500InternalServerError
         };
     }

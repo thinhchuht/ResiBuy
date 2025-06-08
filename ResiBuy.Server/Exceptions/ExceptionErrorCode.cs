@@ -11,5 +11,6 @@
         DeleteFailed = 405,
         RepositoryError = 501,
         DuplicateValue = 409,
+        InvalidInput = 406,
     }
 }

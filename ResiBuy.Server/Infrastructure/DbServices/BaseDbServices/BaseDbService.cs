@@ -16,7 +16,7 @@ namespace ResiBuy.Server.Infrastructure.DbServices.BaseDbServices
             }
             catch (Exception ex)
             {
-                throw new CustomException(ExceptionErrorCode.CreateFailed);
+                throw new CustomException(ExceptionErrorCode.CreateFailed,ex.Message);
             }
         }
 
@@ -30,7 +30,7 @@ namespace ResiBuy.Server.Infrastructure.DbServices.BaseDbServices
             }
             catch (Exception ex)
             {
-                throw new CustomException(ExceptionErrorCode.CreateFailed);
+                throw new CustomException(ExceptionErrorCode.CreateFailed,ex.Message);
             }
         }
 
@@ -44,7 +44,7 @@ namespace ResiBuy.Server.Infrastructure.DbServices.BaseDbServices
             }
             catch (Exception ex)
             {
-                throw new CustomException(ExceptionErrorCode.UpdateFailed);
+                throw new CustomException(ExceptionErrorCode.UpdateFailed,ex.Message);
             }
         }
 
