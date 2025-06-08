@@ -1,8 +1,17 @@
-﻿namespace ResiBuy.Server.Infrastructure.DbServices.BuildingDbServices
+﻿using ResiBuy.Server.Infrastructure.Model.DTOs;
+
+namespace ResiBuy.Server.Infrastructure.DbServices.BuildingDbServices
 {
-    public class BuildingDbService(ResiBuyContext context) : IBuildingDbService
+    public class BuildingDbService : BaseDbService<Building>, IBuildingDbService
     {
-        public async Task<ResponseModel> CreateAsync(string name, Guid areaId)
+        private readonly ResiBuyContext context;
+
+        public BuildingDbService(ResiBuyContext context) : base(context)
+        {
+            this.context = context;
+        }
+
+        public async Task<BuildingDto> CreateAsync(string name, Guid areaId)
         {
             try
             {
@@ -19,10 +28,9 @@
             {
                 return ResponseModel.ExceptionResponse(ex.ToString());
             }
-
         }
 
-        public async Task<ResponseModel> GetAllAsync()
+        public async Task<IEnumerable<BuildingDto>> GetAllAsync()
         {
             try
             {
