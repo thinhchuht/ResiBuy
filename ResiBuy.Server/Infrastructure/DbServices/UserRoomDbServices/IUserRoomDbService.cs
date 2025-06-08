@@ -1,8 +1,8 @@
 ﻿namespace ResiBuy.Server.Infrastructure.DbServices.UserRoomDbServices
 {
-    public interface IUserRoomDbService
+    public interface IUserRoomDbService: IBaseDbService<UserRoom>
     {
-        Task<ResponseModel> CreateUserRoom(string userId, Guid roomId);
-        Task<ResponseModel> CreateUserRoomsBatch(IEnumerable<string> userIds, IEnumerable<Guid> roomIds);
+        Task<UserRoom> CreateUserRoom(string userId, Guid roomId);
+        Task<IEnumerable<UserRoom>> CreateUserRoomsBatch(IEnumerable<string> userIds, IEnumerable<Guid> roomIds);
     }
 }

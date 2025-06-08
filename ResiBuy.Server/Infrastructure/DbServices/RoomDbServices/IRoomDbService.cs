@@ -1,10 +1,12 @@
-﻿namespace ResiBuy.Server.Infrastructure.DbServices.RoomDbServices
+﻿using ResiBuy.Server.Infrastructure.DbServices.BaseDbServices;
+
+namespace ResiBuy.Server.Infrastructure.DbServices.RoomDbServices
 {
-    public interface IRoomDbService
+    public interface IRoomDbService: IBaseDbService<Room>
     {
-        Task<ResponseModel> GetAllRoomsAsync();
-        Task<ResponseModel> GetBatchAsync(IEnumerable<Guid> Ids);
-        Task<ResponseModel> CreateAsync(Guid buildingId, string name);
-        Task<ResponseModel> GetByRoomIdOrNameAsync(Guid buildingId, string name);
+        Task<IEnumerable<Room>> GetAllRoomsAsync();
+        Task<IEnumerable<Room>> GetBatchAsync(IEnumerable<Guid> Ids);
+        Task<Room> CreateAsync(Guid buildingId, string name);
+        Task<Room> GetByRoomNameAndBuildingIdAsync(Guid buildingId, string name);
     }
 }

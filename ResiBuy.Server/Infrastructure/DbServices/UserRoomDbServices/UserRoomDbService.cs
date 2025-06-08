@@ -1,55 +1,74 @@
-﻿namespace ResiBuy.Server.Infrastructure.DbServices.UserRoomDbServices
+﻿using ResiBuy.Server.Exceptions;
+
+namespace ResiBuy.Server.Infrastructure.DbServices.UserRoomDbServices
 {
-    public class UserRoomDbService(ResiBuyContext context) : IUserRoomDbService
+    public class UserRoomDbService : BaseDbService<UserRoom>, IUserRoomDbService
     {
-        public async Task<ResponseModel> CreateUserRoom(string userId, Guid roomId)
+        private readonly ResiBuyContext _context;
+
+        public UserRoomDbService(ResiBuyContext context) : base(context)
+        {
+            _context = context;
+        }
+
+        public async Task<UserRoom> CreateUserRoom(string userId, Guid roomId)
         {
             try
             {
-                var userRoom = await context.UserRooms.FirstOrDefaultAsync(ur => ur.UserId.Equals(userId) && ur.RoomId.Equals(roomId));
-                if (userRoom == null) ResponseModel.FailureResponse("Cannot create another user in this room");
-                var newUserRoom = new UserRoom(userId, roomId);
-                await context.UserRooms.AddAsync(newUserRoom);
-                await context.SaveChangesAsync();
-                return ResponseModel.SuccessResponse(newUserRoom);
+                var userRoom = await _context.UserRooms.FirstOrDefaultAsync(ur => ur.UserId.Equals(userId) && ur.RoomId.Equals(roomId));
+                if (userRoom != null)
+                    throw new CustomException(ExceptionErrorCode.DuplicateValue);
+
+                var newUserRoom = new UserRoom { UserId = userId, RoomId = roomId };
+                await _context.UserRooms.AddAsync(newUserRoom);
+                await _context.SaveChangesAsync();
+                return newUserRoom;
             }
             catch (Exception ex)
             {
-                ResponseModel.ExceptionResponse(ex.ToString());
+                throw new CustomException(ExceptionErrorCode.RepositoryError,ex.Message);
             }
-            return ResponseModel.FailureResponse("Cannot create another user in this room");
         }
 
-        public async Task<ResponseModel> CreateUserRoomsBatch(IEnumerable<string> userIds, IEnumerable<Guid> roomIds)
+        public async Task<IEnumerable<UserRoom>> CreateUserRoomsBatch(IEnumerable<string> userIds, IEnumerable<Guid> roomIds)
         {
             try
             {
                 if (!userIds.Any() || !roomIds.Any())
-                    return ResponseModel.FailureResponse("No thing to create");
+                    throw new CustomException(ExceptionErrorCode.InvalidInput);
 
-                var existingUserRooms = await context.UserRooms
+                var existingUserRooms = await _context.UserRooms
                     .Where(ur => userIds.Contains(ur.UserId) && roomIds.Contains(ur.RoomId))
                     .Select(ur => new { ur.UserId, ur.RoomId })
                     .ToListAsync();
 
+                var existingSet = new HashSet<string>(
+                    existingUserRooms.Select(e => $"{e.UserId}-{e.RoomId}")
+                );
+
                 var newUserRooms = userIds
                     .SelectMany(userId => roomIds.Select(roomId => new { userId, roomId }))
-                    .Where(pair => !existingUserRooms.Any(e => e.UserId == pair.userId && e.RoomId == pair.roomId))
-                    .Select(pair => new UserRoom(pair.userId, pair.roomId))
+                    .Where(pair => !existingSet.Contains($"{pair.userId}-{pair.roomId}"))
+                    .Select(pair => new UserRoom { UserId = pair.userId, RoomId = pair.roomId })
                     .ToList();
 
                 if (!newUserRooms.Any())
-                    return ResponseModel.FailureResponse("All user-room pairs already exist");
+                    throw new CustomException(ExceptionErrorCode.DuplicateValue);
 
-                await context.UserRooms.AddRangeAsync(newUserRooms);
-                await context.SaveChangesAsync();
+                await _context.UserRooms.AddRangeAsync(newUserRooms);
+                await _context.SaveChangesAsync();
 
-                return ResponseModel.SuccessResponse(newUserRooms);
+                return newUserRooms;
+            }
+            catch (CustomException)
+            {
+                throw;
             }
             catch (Exception ex)
             {
-                return ResponseModel.ExceptionResponse(ex.Message);
+                throw new CustomException(ExceptionErrorCode.RepositoryError, ex.Message);
             }
         }
+
     }
 }

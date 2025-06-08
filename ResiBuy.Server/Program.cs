@@ -1,4 +1,6 @@
-﻿var builder = WebApplication.CreateBuilder(args);
+﻿using ResiBuy.Server.Exceptions;
+
+var builder = WebApplication.CreateBuilder(args);
 
 var services = builder.Services;
 
@@ -57,6 +59,8 @@ services.AddSwaggerGen(
 );
 
 var app = builder.Build();
+// Đặt middleware này TRƯỚC tất cả các middleware khác
+app.UseMiddleware<ExceptionMiddleware>();
 
 app.UseDefaultFiles();
 app.UseStaticFiles();

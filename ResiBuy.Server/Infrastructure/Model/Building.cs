@@ -1,4 +1,6 @@
-﻿namespace ResiBuy.Server.Infrastructure.Model
+﻿using ResiBuy.Server.Infrastructure.Model.DTOs;
+
+namespace ResiBuy.Server.Infrastructure.Model
 {
     public class Building
     {
@@ -19,6 +21,7 @@
             AreaId = areaId;
             IsActive = true;
         }
+
 
         public Building UpdateStatus()
         {
