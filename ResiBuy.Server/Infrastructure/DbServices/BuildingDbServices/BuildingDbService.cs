@@ -1,71 +1,69 @@
-﻿namespace ResiBuy.Server.Infrastructure.DbServices.BuildingDbServices
+﻿using ResiBuy.Server.Exceptions;
+using ResiBuy.Server.Infrastructure.Model.DTOs;
+
+namespace ResiBuy.Server.Infrastructure.DbServices.BuildingDbServices
 {
-    public class BuildingDbService(ResiBuyContext context) : IBuildingDbService
+    public class BuildingDbService : BaseDbService<Building>, IBuildingDbService
     {
-        public async Task<ResponseModel> CreateAsync(string name, Guid areaId)
+        private readonly ResiBuyContext context;
+        private readonly AreaDbService areaDbService;
+        public BuildingDbService(ResiBuyContext context, AreaDbService areaDbService) : base(context)
+        {
+            this.context = context;
+            this.areaDbService = areaDbService;
+        }
+
+        public async Task<Building> CreateAsync(string name, Guid areaId)
         {
             try
             {
-                if (string.IsNullOrEmpty(name)) return ResponseModel.FailureResponse("Name is Required");
-                var getBuildingResponse = await GetByAreaIdOrNameAsync(areaId, name);
-                if (getBuildingResponse.IsSuccess())
-                    return ResponseModel.FailureResponse("Building already exists in this area");
-                var building = new Building(name, areaId);
-                await context.AddAsync(building);
+                var building = await GetBuildingByNameAndAreaIdAssync(name, areaId);
+                if (building != null)
+                {
+                    throw new CustomException(ExceptionErrorCode.NotFound);
+                }
+                var area = await areaDbService.GetByIdAsync(areaId);
+                if (area == null)
+                {
+                    throw new CustomException(ExceptionErrorCode.NotFound, "Area not found");
+                }
+                context.Buildings.Add(building);
                 await context.SaveChangesAsync();
-                return ResponseModel.SuccessResponse(building);
+                return building;
             }
             catch (Exception ex)
             {
-                return ResponseModel.ExceptionResponse(ex.ToString());
-            }
-
-        }
-
-        public async Task<ResponseModel> GetAllAsync()
-        {
-            try
-            {
-                return ResponseModel.SuccessResponse(await context.Buildings.Include(a => a.Rooms).ToListAsync());
-            }
-            catch (Exception ex)
-            {
-                return ResponseModel.ExceptionResponse(ex.ToString());
+                throw new CustomException(ExceptionErrorCode.RepositoryError,ex.Message);
             }
         }
 
-        public async Task<ResponseModel> GetByAreaIdOrNameAsync(Guid areaId, string name)
+        public async Task<IEnumerable<Building>> GetAllAsync()
         {
             try
             {
-                var query = context.Buildings.AsQueryable();
-
-                if (!areaId.Equals(Guid.Empty))
-                    query = query.Where(u => u.AreaId == areaId);
-
-                if (!string.IsNullOrEmpty(name))
-                    query = query.Where(u => u.Name == name);
-
-                var buildings = await query.ToListAsync();
-                if (!buildings.Any())
-                    return ResponseModel.FailureResponse("Building not found");
-                return ResponseModel.SuccessResponse(buildings);
+                return await context.Buildings.Include(a => a.Rooms).ToListAsync();
             }
             catch (Exception ex)
             {
-                return ResponseModel.ExceptionResponse(ex.ToString());
+                throw new CustomException(ExceptionErrorCode.RepositoryError, ex.Message);
             }
         }
 
-        public async Task<ResponseModel> GetByIdAsync(Guid id)
+        public async Task<Building> GetBuildingByNameAndAreaIdAssync(string name, Guid areaId)
+        {
+            var building = await context.Buildings.FirstOrDefaultAsync(b => b.Name == name && b.AreaId == areaId);
+            if (building == null) return null;
+            return building;
+        }
+        public async Task<Building> GetByIdAsync(Guid id)
         {
             try
             {
-                return ResponseModel.SuccessResponse(await context.Buildings.Include(a => a.Rooms).FirstOrDefaultAsync());
+                return await context.Buildings.Include(a => a.Rooms).FirstOrDefaultAsync();
             }
             catch (Exception ex)
             {
-                return ResponseModel.ExceptionResponse(ex.ToString());
+                throw new CustomException(ExceptionErrorCode.RepositoryError,ex.Message);
             }
         }
     }

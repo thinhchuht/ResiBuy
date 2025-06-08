@@ -5,7 +5,8 @@
     {
         public async Task<ResponseModel> Handle(GetAllRoomsQuery query, CancellationToken cancellationToken)
         {
-            return await RoomDbService.GetAllRoomsAsync();
+            var rooms = await RoomDbService.GetAllRoomsAsync();
+            return ResponseModel.SuccessResponse(rooms);
         }
     }
 }

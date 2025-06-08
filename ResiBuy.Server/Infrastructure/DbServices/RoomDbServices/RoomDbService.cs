@@ -1,77 +1,87 @@
 ﻿
+using System.Collections.Generic;
+using ResiBuy.Server.Exceptions;
+
 namespace ResiBuy.Server.Infrastructure.DbServices.RoomDbServices
 {
-    public class RoomDbService(ResiBuyContext context) : IRoomDbService
+    public class RoomDbService : BaseDbService<Room>, IRoomDbService
     {
-        public async Task<ResponseModel> CreateAsync(Guid buildingId, string name)
+        private readonly ResiBuyContext _context;
+
+        public RoomDbService(ResiBuyContext context) : base(context)
+        {
+            _context = context;
+        }
+
+        public async Task<Room> CreateAsync(Guid buildingId, string name)
         {
             try
             {
-                if (string.IsNullOrEmpty(name)) return ResponseModel.FailureResponse("Name is Required");
-                var getRoomResponse = await GetByRoomIdOrNameAsync(buildingId, name);
-                if (getRoomResponse.IsSuccess())
-                    return ResponseModel.FailureResponse("Room is already exists in this building");
-                var room = new Room(name, buildingId);
-                await context.AddAsync(room);
-                await context.SaveChangesAsync();
-                return ResponseModel.SuccessResponse(room);
+                if (string.IsNullOrEmpty(name)) throw new CustomException(ExceptionErrorCode.ValidationFailed, "Name is not null");
+                var getRoom = await GetByRoomNameAndBuildingIdAsync(buildingId, name);
+                if (getRoom != null)
+                    throw new CustomException(ExceptionErrorCode.DuplicateValue);
+                var room = new Room(name, buildingId); // Updated to match the constructor signature  
+                await CreateAsync(room);
+                return room;
             }
             catch (Exception ex)
             {
-                return ResponseModel.ExceptionResponse(ex.ToString());
+                throw new CustomException(ExceptionErrorCode.RepositoryError, ex.Message);
             }
         }
 
-        public async Task<ResponseModel> GetByRoomIdOrNameAsync(Guid buildingId, string name)
+        public async Task<Room> GetByRoomNameAndBuildingIdAsync(Guid buildingId, string name)
         {
             try
             {
-                var query = context.Rooms.AsQueryable();
-
-                if (!buildingId.Equals(Guid.Empty))
-                    query = query.Where(u => u.BuildingId == buildingId);
-
-                if (!string.IsNullOrEmpty(name))
-                    query = query.Where(u => u.Name == name);
-                var rooms = await query.ToListAsync();
-                if (!rooms.Any())
-                    return ResponseModel.FailureResponse("Room not found");
-                return ResponseModel.SuccessResponse(rooms);
+                return await _context.Rooms.FirstOrDefaultAsync(r => r.BuildingId == buildingId && r.Name == name);
             }
             catch (Exception ex)
             {
-                return ResponseModel.ExceptionResponse(ex.ToString());
+                throw new CustomException(ExceptionErrorCode.RepositoryError,ex.Message);
             }
         }
 
-        public async Task<ResponseModel> GetAllRoomsAsync()
+        public async Task<IEnumerable<Room>> GetAllRoomsAsync()
         {
             try
             {
-                return ResponseModel.SuccessResponse(await context.Rooms.Include(a => a.UserRooms).ThenInclude(ur => ur.User).ToListAsync());
+                return await _context.Rooms.Include(r => r.UserRooms).ThenInclude(ur => ur.User).ToListAsync();
             }
             catch (Exception ex)
             {
-                return ResponseModel.ExceptionResponse(ex.ToString());
+                throw new CustomException(ExceptionErrorCode.RepositoryError, ex.Message);
             }
         }
 
-        public async Task<ResponseModel> GetBatchAsync(IEnumerable<Guid> Ids)
+        public async Task<IEnumerable<Room>> GetBatchAsync(IEnumerable<Guid> ids)
         {
             try
             {
-                var rooms = await context.Rooms
-                    .Where(r => Ids.Contains(r.Id))               
-                    .Include(r => r.UserRooms)                     
-                    .ThenInclude(ur => ur.User)                
-                    .ToListAsync();
-                if(rooms.Any())
-                return ResponseModel.SuccessResponse(rooms);
-                return ResponseModel.FailureResponse("Room doesnt exist");
+                // Initialize a list to store the rooms
+                var rooms = new List<Room>();
+
+                foreach (var id in ids)
+                {
+                    if (id == Guid.Empty)
+                    {
+                        throw new CustomException(ExceptionErrorCode.ValidationFailed, "Id is not null");
+                    }
+
+                    // Fetch the room by ID and add it to the list
+                    var room = await GetByIdBaseAsync(id);
+                    if (room != null)
+                    {
+                        rooms.Add(room);
+                    }
+                }
+
+                return rooms;
             }
             catch (Exception ex)
             {
-                return ResponseModel.ExceptionResponse(ex.ToString());
+                throw new CustomException(ExceptionErrorCode.RepositoryError, ex.Message);
             }
         }
     }
