@@ -1,0 +1,10 @@
+.circular-gallery {
+  width: 80vw;
+  height: 300px;
+  overflow: hidden;
+  cursor: grab;
+}
+
+.circular-gallery:active {
+  cursor: grabbing;
+}
