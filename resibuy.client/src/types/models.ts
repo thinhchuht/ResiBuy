@@ -39,6 +39,7 @@ export interface Product {
   name: string;
   imageUrl: string;
   quantity: number;
+  sold: number;
   describe: string;
   price: number;
   weight: number;

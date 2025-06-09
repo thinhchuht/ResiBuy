@@ -5,8 +5,10 @@ export const fakeProducts: Product[] = [
   {
     id: "1",
     name: "iPhone 13 Pro",
-    imageUrl: "https://example.com/iphone13pro.jpg",
+    imageUrl:
+      "https://picsum.photos/seed/1/800/600?grayscale",
     quantity: 50,
+    sold: 120,
     describe: "Latest iPhone with pro camera system",
     price: 999.99,
     weight: 0.204,
@@ -22,8 +24,10 @@ export const fakeProducts: Product[] = [
   {
     id: "2",
     name: "Samsung Galaxy S21",
-    imageUrl: "https://example.com/galaxys21.jpg",
+    imageUrl:
+      "https://picsum.photos/seed/1/800/600?grayscale",
     quantity: 30,
+    sold: 85,
     describe: "Powerful Android smartphone",
     price: 799.99,
     weight: 0.169,
@@ -39,8 +43,10 @@ export const fakeProducts: Product[] = [
   {
     id: "3",
     name: "MacBook Pro M1",
-    imageUrl: "https://example.com/macbookpro.jpg",
+    imageUrl:
+      "https://picsum.photos/seed/1/800/600?grayscale",
     quantity: 20,
+    sold: 45,
     describe: "Powerful laptop for professionals",
     price: 1299.99,
     weight: 1.4,
@@ -58,8 +64,10 @@ export const fakeProducts: Product[] = [
   {
     id: "4",
     name: "Nike Air Max",
-    imageUrl: "https://example.com/nikeairmax.jpg",
+    imageUrl:
+      "https://picsum.photos/seed/1/800/600?grayscale",
     quantity: 100,
+    sold: 250,
     describe: "Comfortable running shoes",
     price: 129.99,
     weight: 0.8,
@@ -75,8 +83,10 @@ export const fakeProducts: Product[] = [
   {
     id: "5",
     name: "Levi's 501 Jeans",
-    imageUrl: "https://example.com/levis501.jpg",
+    imageUrl:
+      "https://picsum.photos/seed/1/800/600?grayscale",
     quantity: 75,
+    sold: 180,
     describe: "Classic straight leg jeans",
     price: 59.99,
     weight: 0.5,
@@ -92,8 +102,10 @@ export const fakeProducts: Product[] = [
   {
     id: "6",
     name: "Adidas T-Shirt",
-    imageUrl: "https://example.com/adidastshirt.jpg",
+    imageUrl:
+      "https://picsum.photos/seed/1/800/600?grayscale",
     quantity: 150,
+    sold: 320,
     describe: "Comfortable cotton t-shirt",
     price: 29.99,
     weight: 0.2,
@@ -111,8 +123,10 @@ export const fakeProducts: Product[] = [
   {
     id: "7",
     name: "Smart Coffee Maker",
-    imageUrl: "https://example.com/coffeemaker.jpg",
+    imageUrl:
+      "https://picsum.photos/seed/1/800/600?grayscale",
     quantity: 30,
+    sold: 65,
     describe: "WiFi-enabled coffee maker",
     price: 79.99,
     weight: 2.5,
@@ -128,8 +142,10 @@ export const fakeProducts: Product[] = [
   {
     id: "8",
     name: "KitchenAid Stand Mixer",
-    imageUrl: "https://example.com/kitchenaid.jpg",
+    imageUrl:
+      "https://picsum.photos/seed/1/800/600?grayscale",
     quantity: 15,
+    sold: 35,
     describe: "Professional stand mixer",
     price: 299.99,
     weight: 5.5,
@@ -145,8 +161,10 @@ export const fakeProducts: Product[] = [
   {
     id: "9",
     name: "Dyson Vacuum Cleaner",
-    imageUrl: "https://example.com/dyson.jpg",
+    imageUrl:
+      "https://picsum.photos/seed/1/800/600?grayscale",
     quantity: 25,
+    sold: 55,
     describe: "Cordless vacuum cleaner",
     price: 399.99,
     weight: 2.3,
@@ -164,8 +182,10 @@ export const fakeProducts: Product[] = [
   {
     id: "10",
     name: "The Great Gatsby",
-    imageUrl: "https://example.com/greatgatsby.jpg",
+    imageUrl:
+      "https://picsum.photos/seed/1/800/600?grayscale",
     quantity: 200,
+    sold: 450,
     describe: "Classic novel by F. Scott Fitzgerald",
     price: 9.99,
     weight: 0.3,
@@ -181,8 +201,10 @@ export const fakeProducts: Product[] = [
   {
     id: "11",
     name: "To Kill a Mockingbird",
-    imageUrl: "https://example.com/mockingbird.jpg",
+    imageUrl:
+      "https://picsum.photos/seed/1/800/600?grayscale",
     quantity: 150,
+    sold: 380,
     describe: "Harper Lee's masterpiece",
     price: 12.99,
     weight: 0.4,
@@ -200,8 +222,10 @@ export const fakeProducts: Product[] = [
   {
     id: "12",
     name: "Yoga Mat",
-    imageUrl: "https://example.com/yogamat.jpg",
+    imageUrl:
+      "https://picsum.photos/seed/1/800/600?grayscale",
     quantity: 80,
+    sold: 160,
     describe: "Non-slip yoga mat",
     price: 24.99,
     weight: 1.2,
@@ -217,8 +241,10 @@ export const fakeProducts: Product[] = [
   {
     id: "13",
     name: "Dumbbell Set",
-    imageUrl: "https://example.com/dumbbells.jpg",
+    imageUrl:
+      "https://picsum.photos/seed/1/800/600?grayscale",
     quantity: 40,
+    sold: 90,
     describe: "Set of 5-20lb dumbbells",
     price: 149.99,
     weight: 15.0,
