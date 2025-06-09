@@ -1,13 +1,36 @@
 import { Box, Typography, Button, Stack } from "@mui/material";
 import { useToastify } from "../../hooks/useToastify";
+import Carousel from "../../animations/Carousel";
+import CircularGallery from "../../animations/CirculaGallery";
+import { useState, useRef } from "react";
+import { fakeStores } from "../../fakeData/fakeStoreData";
 
 const Home = () => {
   const toast = useToastify();
+  const [stores] = useState(fakeStores);
+  const galleryRefs = useRef<{ [key: string]: HTMLDivElement | null }>({});
+
   return (
     <Box>
       <Typography variant="h4" gutterBottom>
         Home
       </Typography>
+      <Carousel />
+      {stores.map((store) => (
+        <Box key={store.id} sx={{marginBottom:'50px'}}>
+          <Typography variant="h5"> {store.name}</Typography>
+          <CircularGallery 
+            bend={2} 
+            textColor="black" 
+            borderRadius={0.05} 
+            items={store.products}
+            ref={(el: HTMLDivElement | null) => {
+              galleryRefs.current[store.id] = el;
+            }}
+          />
+        </Box>
+      ))}
+
       <Stack direction="row" spacing={2} mt={3}>
         <Button variant="contained" color="success" onClick={() => toast.success("Welcome to our platform!")}>
           Show Success

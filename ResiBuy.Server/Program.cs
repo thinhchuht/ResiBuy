@@ -57,11 +57,7 @@ services.AddSwaggerGen(
     });
     }
 );
-services.AddScoped<IUserDbService, UserDbService>();
-services.AddScoped<IRoomDbService, RoomDbService>();
-services.AddScoped<IBuildingDbService, BuildingDbService>();
-services.AddScoped<IAreaDbService, AreaDbService>();
-services.AddScoped<ICartDbService, CartDbService>();
+
 var app = builder.Build();
 // Đặt middleware này TRƯỚC tất cả các middleware khác
 app.UseMiddleware<ExceptionMiddleware>();
