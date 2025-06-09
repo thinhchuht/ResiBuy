@@ -5,7 +5,7 @@ import * as Yup from "yup";
 import { Box, Button, Container, TextField, Typography, Paper, InputAdornment, IconButton, Alert, CircularProgress } from "@mui/material";
 import { Visibility, VisibilityOff } from "@mui/icons-material";
 import { useToastify } from "../../hooks/useToastify";
-import authApi from "../../api/auth.api";
+import { useAuth } from "../../contexts/AuthContext";
 
 interface LoginError {
   message?: string;
@@ -15,6 +15,7 @@ const Login: React.FC = () => {
   const [showPassword, setShowPassword] = useState(false);
   const [error, setError] = useState("");
   const [isLoading, setIsLoading] = useState(false);
+  const { login } = useAuth();
   const navigate = useNavigate();
   const toast = useToastify();
 
@@ -34,7 +35,7 @@ const Login: React.FC = () => {
       setIsLoading(true);
       setError("");
       try {
-        const result = await authApi.login(values.phoneNumber, values.password);
+        const result = await login(values.phoneNumber, values.password);
         if (result.success) {
           toast.success("Login successful!");
           navigate("/home");

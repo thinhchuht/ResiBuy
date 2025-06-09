@@ -1,5 +1,6 @@
 import React, { createContext, useContext, useState, useEffect } from "react";
 import axios from "axios";
+import authApi from "../api/auth.api";
 
 interface User {
   id: string;
@@ -12,35 +13,26 @@ interface AuthContextType {
   user: User | null;
   token: string | null;
   refreshToken: string | null;
-  login: (email: string, password: string) => Promise<void>;
-  register: (userData: RegisterData) => Promise<void>;
+  login: (phoneNumber: string, password: string) => Promise<{ success: boolean; error?: { message: string } }>;
   logout: () => Promise<void>;
   isAuthenticated: boolean;
 }
 
-interface RegisterData {
-  email: string;
-  password: string;
-  fullName: string;
-  dateOfBirth: string;
-  identityNumber: string;
-}
-
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
-export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
-  children,
-}) => {
+export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const [user, setUser] = useState<User | null>(() => {
-    const savedUser = localStorage.getItem("user");
-    return savedUser ? JSON.parse(savedUser) : null;
+    try {
+      const savedUser = localStorage.getItem("user");
+      return savedUser ? JSON.parse(savedUser) : null;
+    } catch (error) {
+      console.error("Error parsing user from localStorage:", error);
+      localStorage.removeItem("user"); // Clean up invalid data
+      return null;
+    }
   });
-  const [token, setToken] = useState<string | null>(
-    localStorage.getItem("token")
-  );
-  const [refreshToken, setRefreshToken] = useState<string | null>(
-    localStorage.getItem("refreshToken")
-  );
+  const [token, setToken] = useState<string | null>(localStorage.getItem("token"));
+  const [refreshToken, setRefreshToken] = useState<string | null>(localStorage.getItem("refreshToken"));
   // Set up axios default headers
   useEffect(() => {
     if (token) {
@@ -50,47 +42,48 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
     }
   }, [token]);
 
-  const login = async (email: string, password: string) => {
+  const login = async (phoneNumber: string, password: string) => {
     try {
-      const response = await axios.post(
-        "http://localhost:5000/api/auth/login",
-        {
-          email,
-          password,
-        }
-      );
-
-      const { token, user, refreshToken } = response.data;
-      localStorage.setItem("token", token);
-      localStorage.setItem("refreshToken", refreshToken);
-      localStorage.setItem("user", JSON.stringify(user));
-      setToken(token);
-      setRefreshToken(refreshToken);
-      setUser(user);
+      const response = await authApi.login(phoneNumber, password);
+      console.log(response);
+      if (response.success) {
+        console.log("fdasfasdfas");
+        const { token, user, refreshToken } = response.data;
+        localStorage.setItem("token", token);
+        localStorage.setItem("refreshToken", refreshToken);
+        localStorage.setItem("user", JSON.stringify(user));
+        setToken(token);
+        setRefreshToken(refreshToken);
+        setUser(user);
+      }
+      return response;
     } catch (error) {
       console.error("Login error:", error);
-      throw new Error("Login failed");
-    }
-  };
-
-  const register = async (userData: RegisterData) => {
-    try {
-      await axios.post("http://localhost:5000/api/auth/register", userData);
-    } catch (error) {
-      console.error("Registration error:", error);
-      throw new Error("Registration failed");
+      return {
+        success: false,
+        error: {
+          message: "Error has occurred, contact website owner",
+        },
+      };
     }
   };
 
   const logout = async () => {
     try {
-      await axios.post("http://localhost:5000/api/auth/logout");
-      localStorage.removeItem("token");
-      localStorage.removeItem("refreshToken");
-      localStorage.removeItem("user");
-      setToken(null);
-      setRefreshToken(null);
-      setUser(null);
+      const refreshToken = localStorage.getItem("refreshToken");
+      console.log("logout", refreshToken);
+
+      if (refreshToken) {
+        const response = await authApi.logout(refreshToken);
+        if (response.success) {
+          localStorage.removeItem("token");
+          localStorage.removeItem("refreshToken");
+          localStorage.removeItem("user");
+          setToken(null);
+          setRefreshToken(null);
+          setUser(null);
+        }
+      }
     } catch (error) {
       console.error("Logout failed:", error);
     }
@@ -103,11 +96,9 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
         token,
         refreshToken,
         login,
-        register,
         logout,
         isAuthenticated: !!token,
-      }}
-    >
+      }}>
       {children}
     </AuthContext.Provider>
   );
