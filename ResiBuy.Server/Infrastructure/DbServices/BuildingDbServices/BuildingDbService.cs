@@ -1,13 +1,10 @@
-﻿using ResiBuy.Server.Exceptions;
-using ResiBuy.Server.Infrastructure.Model.DTOs;
-
-namespace ResiBuy.Server.Infrastructure.DbServices.BuildingDbServices
+﻿namespace ResiBuy.Server.Infrastructure.DbServices.BuildingDbServices
 {
     public class BuildingDbService : BaseDbService<Building>, IBuildingDbService
     {
         private readonly ResiBuyContext context;
-        private readonly AreaDbService areaDbService;
-        public BuildingDbService(ResiBuyContext context, AreaDbService areaDbService) : base(context)
+        private readonly IAreaDbService areaDbService;
+        public BuildingDbService(ResiBuyContext context, IAreaDbService areaDbService) : base(context)
         {
             this.context = context;
             this.areaDbService = areaDbService;

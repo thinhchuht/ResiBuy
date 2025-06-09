@@ -1,6 +1,4 @@
-﻿using ResiBuy.Server.Exceptions;
-
-namespace ResiBuy.Server.Infrastructure.DbServices.UserRoomDbServices
+﻿namespace ResiBuy.Server.Infrastructure.DbServices.UserRoomDbServices
 {
     public class UserRoomDbService : BaseDbService<UserRoom>, IUserRoomDbService
     {
