@@ -29,7 +29,6 @@ global using ResiBuy.Server.Infrastructure.DbServices.BuildingDbServices;
 global using ResiBuy.Server.Infrastructure.DbServices.RoomDbServices;
 global using ResiBuy.Server.Infrastructure.DbServices.UserDbServices;
 global using ResiBuy.Server.Infrastructure.DbServices.UserRoomDbServices;
-global using ResiBuy.Server.Infrastructure.DbServices.CartDbService;
 global using ResiBuy.Server.Infrastructure.Model;
 global using ResiBuy.Server.Infrastructure.Model.Dtos;
 global using ResiBuy.Server.Services.HubServices;
@@ -44,7 +43,6 @@ global using System.Text.Json.Serialization;
 global using static BCrypt.Net.BCrypt;
 global using static ResiBuy.Server.Application.Queries.QueryResults;
 global using static ResiBuy.Server.Common.BrciptHelper;
-using ResiBuy.Server.Infrastructure.DbServices.CartDbService;
 
 
 

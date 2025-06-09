@@ -10,9 +10,9 @@ public class NotificationHub(IUserDbService userDbService) : Hub
             await Groups.AddToGroupAsync(Context.ConnectionId, userId);
             
             var userResponse = await userDbService.GetUserById(userId);
-            if (userResponse != null)
+            if (userResponse.IsSuccess())
             {
-                var user = userResponse;
+                var user = userResponse.Data as User;
                 if (user.Roles.Contains(Constants.AdminRole))
                 {
                     await Groups.AddToGroupAsync(Context.ConnectionId, Constants.AdminHubGroup);
@@ -44,9 +44,9 @@ public class NotificationHub(IUserDbService userDbService) : Hub
             await Groups.RemoveFromGroupAsync(Context.ConnectionId, userId);
             
             var userResponse = await userDbService.GetUserById(userId);
-            if (userResponse != null)
+            if (userResponse.IsSuccess())
             {
-                var user = userResponse;
+                var user = userResponse.Data as User;
                 if (user.Roles.Contains(Constants.AdminRole))
                 {
                     await Groups.RemoveFromGroupAsync(Context.ConnectionId, Constants.AdminHubGroup);
