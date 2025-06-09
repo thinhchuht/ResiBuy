@@ -19,6 +19,7 @@
             services.AddScoped<IAreaDbService, AreaDbService>();
             services.AddScoped<IBuildingDbService, BuildingDbService>();
             services.AddScoped<IRoomDbService, RoomDbService>();
+            services.AddScoped<ICartDbService, CartDbService>();
             return services;
         }
 
