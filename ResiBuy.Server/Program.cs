@@ -1,5 +1,4 @@
 ﻿using ResiBuy.Server.Exceptions;
-using ResiBuy.Server.Infrastructure.DbServices.CartDbService;
 
 var builder = WebApplication.CreateBuilder(args);
 
