@@ -1,6 +1,4 @@
-﻿using ResiBuy.Server.Exceptions;
-
-namespace ResiBuy.Server.Infrastructure.DbServices.AreaDbServices
+﻿namespace ResiBuy.Server.Infrastructure.DbServices.AreaDbServices
 {
     public class AreaDbService : BaseDbService<Area>, IAreaDbService
     {

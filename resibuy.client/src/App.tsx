@@ -3,7 +3,7 @@ import { BrowserRouter as Router, Routes, Route, Navigate } from "react-router-d
 import { AuthProvider } from "./contexts/AuthContext";
 import { HubProvider } from "./contexts/HubContext";
 import Login from "./components/auth/Login";
-import Register from "./components/auth/Register";
+// import Register from "./components/auth/Register";
 import ProtectedRoute from "./components/auth/ProtectedRoute";
 import TestHub from "./components/test/TestHub";
 import Home from "./pages/Home/Home";
@@ -16,7 +16,7 @@ const App: React.FC = () => {
         <Router>
           <Routes>
             <Route path="/login" element={<Login />} />
-            <Route path="/register" element={<Register />} />
+            {/* <Route path="/register" element={<Register />} /> */}
             <Route
               path="/home"
               element={

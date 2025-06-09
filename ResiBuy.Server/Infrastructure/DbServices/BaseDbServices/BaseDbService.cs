@@ -1,6 +1,4 @@
-﻿using ResiBuy.Server.Exceptions;
-
-namespace ResiBuy.Server.Infrastructure.DbServices.BaseDbServices
+﻿namespace ResiBuy.Server.Infrastructure.DbServices.BaseDbServices
 {
     public class BaseDbService<T>(ResiBuyContext context) : IBaseDbService<T> where T : class
     {
