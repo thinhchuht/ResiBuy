@@ -1,8 +1,4 @@
-﻿
-using System.Collections.Generic;
-using ResiBuy.Server.Exceptions;
-
-namespace ResiBuy.Server.Infrastructure.DbServices.RoomDbServices
+﻿namespace ResiBuy.Server.Infrastructure.DbServices.RoomDbServices
 {
     public class RoomDbService : BaseDbService<Room>, IRoomDbService
     {

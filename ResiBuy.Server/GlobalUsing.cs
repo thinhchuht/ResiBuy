@@ -2,7 +2,6 @@
 global using MediatR;
 global using Microsoft.AspNetCore.Authentication.JwtBearer;
 global using Microsoft.AspNetCore.Authorization;
-global using Microsoft.AspNetCore.Identity;
 global using Microsoft.AspNetCore.Mvc;
 global using Microsoft.AspNetCore.SignalR;
 global using Microsoft.EntityFrameworkCore;
@@ -20,16 +19,17 @@ global using ResiBuy.Server.Application.Queries.RoomQueries;
 global using ResiBuy.Server.Application.Queries.UserQueries;
 global using ResiBuy.Server.Common;
 global using ResiBuy.Server.Configuration;
+global using ResiBuy.Server.Exceptions;
 global using ResiBuy.Server.Extensions;
 global using ResiBuy.Server.Hubs;
 global using ResiBuy.Server.Infrastructure;
 global using ResiBuy.Server.Infrastructure.DbServices.AreaDbServices;
 global using ResiBuy.Server.Infrastructure.DbServices.BaseDbServices;
 global using ResiBuy.Server.Infrastructure.DbServices.BuildingDbServices;
+global using ResiBuy.Server.Infrastructure.DbServices.CartDbService;
 global using ResiBuy.Server.Infrastructure.DbServices.RoomDbServices;
 global using ResiBuy.Server.Infrastructure.DbServices.UserDbServices;
 global using ResiBuy.Server.Infrastructure.DbServices.UserRoomDbServices;
-global using ResiBuy.Server.Infrastructure.DbServices.CartDbService;
 global using ResiBuy.Server.Infrastructure.Model;
 global using ResiBuy.Server.Infrastructure.Model.Dtos;
 global using ResiBuy.Server.Services.HubServices;
@@ -41,10 +41,9 @@ global using System.Security.Cryptography;
 global using System.Text;
 global using System.Text.Json;
 global using System.Text.Json.Serialization;
-global using static BCrypt.Net.BCrypt;
 global using static ResiBuy.Server.Application.Queries.QueryResults;
 global using static ResiBuy.Server.Common.BrciptHelper;
-using ResiBuy.Server.Infrastructure.DbServices.CartDbService;
+
 
 
 

@@ -1,7 +1,4 @@
-﻿using ResiBuy.Server.Exceptions;
-using ResiBuy.Server.Infrastructure.Model.DTOs;
-
-namespace ResiBuy.Server.Infrastructure.DbServices.BuildingDbServices
+﻿namespace ResiBuy.Server.Infrastructure.DbServices.BuildingDbServices
 {
     public class BuildingDbService : BaseDbService<Building>, IBuildingDbService
     {
