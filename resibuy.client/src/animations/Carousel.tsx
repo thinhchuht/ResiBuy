@@ -1,13 +1,10 @@
 import { useEffect, useState, useRef } from "react";
-import {
-  motion,
-  useMotionValue,
-  useTransform,
-  MotionValue,
-} from "framer-motion";
+import { motion, useMotionValue, useTransform, MotionValue } from "framer-motion";
 import type { PanInfo } from "framer-motion";
 import { Box, Typography, styled, useTheme } from "@mui/material";
 import { useNavigate } from "react-router-dom";
+import ArrowBackIosNewIcon from "@mui/icons-material/ArrowBackIosNew";
+import ArrowForwardIosIcon from "@mui/icons-material/ArrowForwardIos";
 import "./Carousel.css";
 import type { EventItem } from "../types/models";
 
@@ -60,28 +57,13 @@ const StyledIndicator = styled(motion.div)(({ theme }) => ({
   },
 }));
 
-const useCarouselTransform = (
-  x: MotionValue<number>,
-  index: number,
-  trackItemOffset: number
-) => {
-  const range = [
-    -(index + 1) * trackItemOffset,
-    -index * trackItemOffset,
-    -(index - 1) * trackItemOffset,
-  ];
+const useCarouselTransform = (x: MotionValue<number>, index: number, trackItemOffset: number) => {
+  const range = [-(index + 1) * trackItemOffset, -index * trackItemOffset, -(index - 1) * trackItemOffset];
   const outputRange = [90, 0, -90];
   return useTransform(x, range, outputRange, { clamp: false });
 };
 
-export default function Carousel({
-  items,
-  autoplay = true,
-  autoplayDelay = 3000,
-  pauseOnHover = true,
-  loop = true,
-  round = false,
-}: CarouselProps): React.ReactElement {
+export default function Carousel({ items, autoplay = true, autoplayDelay = 3000, pauseOnHover = true, loop = true, round = false }: CarouselProps): React.ReactElement {
   const containerPadding = 16;
   const [itemWidth, setItemWidth] = useState<number>(0);
   const trackItemOffset = itemWidth + GAP;
@@ -103,14 +85,7 @@ export default function Carousel({
   const transform4 = useCarouselTransform(x, 4, trackItemOffset);
   const transform5 = useCarouselTransform(x, 5, trackItemOffset);
 
-  const transforms = [
-    transform0,
-    transform1,
-    transform2,
-    transform3,
-    transform4,
-    transform5,
-  ];
+  const transforms = [transform0, transform1, transform2, transform3, transform4, transform5];
 
   useEffect(() => {
     function updateWidth() {
@@ -119,8 +94,8 @@ export default function Carousel({
       }
     }
     updateWidth();
-    window.addEventListener('resize', updateWidth);
-    return () => window.removeEventListener('resize', updateWidth);
+    window.addEventListener("resize", updateWidth);
+    return () => window.removeEventListener("resize", updateWidth);
   }, []);
 
   useEffect(() => {
@@ -152,15 +127,7 @@ export default function Carousel({
       }, autoplayDelay);
       return () => clearInterval(timer);
     }
-  }, [
-    autoplay,
-    autoplayDelay,
-    isHovered,
-    loop,
-    items.length,
-    carouselItems.length,
-    pauseOnHover,
-  ]);
+  }, [autoplay, autoplayDelay, isHovered, loop, items.length, carouselItems.length, pauseOnHover]);
 
   const effectiveTransition = isResetting ? { duration: 0 } : SPRING_OPTIONS;
 
@@ -173,10 +140,7 @@ export default function Carousel({
     }
   };
 
-  const handleDragEnd = (
-    _: MouseEvent | TouchEvent | PointerEvent,
-    info: PanInfo
-  ): void => {
+  const handleDragEnd = (_: MouseEvent | TouchEvent | PointerEvent, info: PanInfo): void => {
     const offset = info.offset.x;
     const velocity = info.velocity.x;
     if (offset < -DRAG_BUFFER || velocity < -VELOCITY_THRESHOLD) {
@@ -224,75 +188,88 @@ export default function Carousel({
         ...(round && { height: "700px", maxHeight: "700px" }),
       }}
       onMouseEnter={() => setIsHovered(true)}
-      onMouseLeave={() => setIsHovered(false)}
-    >
+      onMouseLeave={() => setIsHovered(false)}>
       {isHovered && (
         <>
-          {/* Prev Button */}
           <Box
             component="button"
             sx={{
               position: "absolute",
               top: "50%",
-              left: 8,
+              left: 16,
               zIndex: 2,
               transform: "translateY(-50%)",
-              background: "rgba(255,255,255,0.7)",
-              border: "none",
+              background: "rgba(0, 0, 0, 0.6)",
+              border: "2px solid rgba(255, 255, 255, 0.8)",
               borderRadius: "50%",
-              width: 36,
-              height: 36,
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'center',
-              cursor: currentIndex === 0 && !loop ? 'not-allowed' : 'pointer',
-              opacity: currentIndex === 0 && !loop ? 0.5 : 1,
-              outline: 'none',
-              '&:focus': {
-                outline: 'none',
-                boxShadow: 'none',
+              width: 60,
+              height: 60,
+              display: "flex",
+              alignItems: "center",
+              justifyContent: "center",
+              cursor: currentIndex === 0 && !loop ? "not-allowed" : "pointer",
+              opacity: currentIndex === 0 && !loop ? 0.3 : 0.9,
+              outline: "none",
+              transition: "all 0.3s ease",
+              color: "#fff",
+              boxShadow: "0 2px 8px rgba(0,0,0,0.3)",
+              "&:hover": {
+                background: "rgba(0, 0, 0, 0.8)",
+                opacity: currentIndex === 0 && !loop ? 0.3 : 1,
+                transform: "translateY(-50%) scale(1.1)",
+                border: "2px solid #fff",
+              },
+              "&:focus": {
+                outline: "none",
+                boxShadow: "0 2px 12px rgba(0,0,0,0.4)",
               },
             }}
             onClick={() => {
-              if (currentIndex > 0 || loop) setCurrentIndex((prev) => (prev > 0 ? prev - 1 : (loop ? carouselItems.length - 1 : prev)));
+              if (currentIndex > 0 || loop) setCurrentIndex((prev) => (prev > 0 ? prev - 1 : loop ? carouselItems.length - 1 : prev));
             }}
             disabled={currentIndex === 0 && !loop}
-            aria-label="Previous"
-          >
-            &#8592;
+            aria-label="Previous">
+            <ArrowBackIosNewIcon sx={{ fontSize: 24 }} />
           </Box>
-          {/* Next Button */}
           <Box
             component="button"
             sx={{
               position: "absolute",
               top: "50%",
-              right: 8,
+              right: 16,
               zIndex: 2,
               transform: "translateY(-50%)",
-              background: "rgba(255,255,255,0.7)",
-              border: "none",
+              background: "rgba(0, 0, 0, 0.6)",
+              border: "2px solid rgba(255, 255, 255, 0.8)",
               borderRadius: "50%",
-              width: 36,
-              height: 36,
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'center',
-              cursor: (currentIndex === carouselItems.length - 1) && !loop ? 'not-allowed' : 'pointer',
-              opacity: (currentIndex === carouselItems.length - 1) && !loop ? 0.5 : 1,
-              outline: 'none',
-              '&:focus': {
-                outline: 'none',
-                boxShadow: 'none',
+              width: 60,
+              height: 60,
+              display: "flex",
+              alignItems: "center",
+              justifyContent: "center",
+              cursor: currentIndex === carouselItems.length - 1 && !loop ? "not-allowed" : "pointer",
+              opacity: currentIndex === carouselItems.length - 1 && !loop ? 0.3 : 0.9,
+              outline: "none",
+              transition: "all 0.3s ease",
+              color: "#fff",
+              boxShadow: "0 2px 8px rgba(0,0,0,0.3)",
+              "&:hover": {
+                background: "rgba(0, 0, 0, 0.8)",
+                opacity: currentIndex === carouselItems.length - 1 && !loop ? 0.3 : 1,
+                transform: "translateY(-50%) scale(1.1)",
+                border: "2px solid #fff",
+              },
+              "&:focus": {
+                outline: "none",
+                boxShadow: "0 2px 12px rgba(0,0,0,0.4)",
               },
             }}
             onClick={() => {
-              if (currentIndex < carouselItems.length - 1 || loop) setCurrentIndex((prev) => (prev < carouselItems.length - 1 ? prev + 1 : (loop ? 0 : prev)));
+              if (currentIndex < carouselItems.length - 1 || loop) setCurrentIndex((prev) => (prev < carouselItems.length - 1 ? prev + 1 : loop ? 0 : prev));
             }}
-            disabled={(currentIndex === carouselItems.length - 1) && !loop}
-            aria-label="Next"
-          >
-            &#8594;
+            disabled={currentIndex === carouselItems.length - 1 && !loop}
+            aria-label="Next">
+            <ArrowForwardIosIcon sx={{ fontSize: 24 }} />
           </Box>
         </>
       )}
@@ -306,8 +283,7 @@ export default function Carousel({
         onDragEnd={handleDragEnd}
         animate={{ x: -(currentIndex * trackItemOffset) + containerPadding }}
         transition={effectiveTransition}
-        onAnimationComplete={handleAnimationComplete}
-      >
+        onAnimationComplete={handleAnimationComplete}>
         {carouselItems.map((item: EventItem, index: number) => (
           <StyledCarouselItem
             key={item.id}
@@ -320,12 +296,8 @@ export default function Carousel({
               cursor: "pointer",
             }}
             onClick={() => handleItemClick(item.storeId)}
-            transition={effectiveTransition}
-          >
-            <img
-              src={item.image}
-              alt={item.title || `Carousel item ${item.id}`}
-            />
+            transition={effectiveTransition}>
+            <img src={item.image} alt={item.title || `Carousel item ${item.id}`} />
             {(item.title || item.description) && (
               <Box
                 sx={{
@@ -336,16 +308,13 @@ export default function Carousel({
                   padding: theme.spacing(2),
                   background: "linear-gradient(transparent, rgba(0,0,0,0.7))",
                   color: theme.palette.common.white,
-                }}
-              >
+                }}>
                 {item.title && (
                   <Typography variant="h6" gutterBottom>
                     {item.title}
                   </Typography>
                 )}
-                {item.description && (
-                  <Typography variant="body2">{item.description}</Typography>
-                )}
+                {item.description && <Typography variant="body2">{item.description}</Typography>}
               </Box>
             )}
           </StyledCarouselItem>
@@ -359,14 +328,11 @@ export default function Carousel({
           transform: "translateX(-50%)",
           display: "flex",
           gap: theme.spacing(1),
-        }}
-      >
+        }}>
         {items.map((item: EventItem, index: number) => (
           <StyledIndicator
             key={item.id}
-            className={
-              currentIndex % items.length === index ? "active" : "inactive"
-            }
+            className={currentIndex % items.length === index ? "active" : "inactive"}
             animate={{
               scale: currentIndex % items.length === index ? 1.2 : 1,
             }}

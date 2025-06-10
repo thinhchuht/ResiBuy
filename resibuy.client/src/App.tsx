@@ -8,6 +8,7 @@ import ProtectedRoute from "./components/auth/ProtectedRoute";
 import TestHub from "./components/test/TestHub";
 import Home from "./pages/Home/Home";
 import HomeLayout from "./layouts/HomeLayout/HomeLayout";
+import Products from "./pages/Product/Products";
 
 const App: React.FC = () => {
   return (
@@ -16,12 +17,19 @@ const App: React.FC = () => {
         <Router>
           <Routes>
             <Route path="/login" element={<Login />} />
-            {/* <Route path="/register" element={<Register />} /> */}
             <Route
               path="/"
               element={
                 <HomeLayout>
                   <Home />
+                </HomeLayout>
+              }
+            />
+            <Route
+              path="/products"
+              element={
+                <HomeLayout>
+                  <Products />
                 </HomeLayout>
               }
             />
@@ -65,7 +73,6 @@ const App: React.FC = () => {
                 </ProtectedRoute>
               }
             />
-
             <Route path="/unauthorized" element={<div>Unauthorized Access</div>} />
             <Route path="*" element={<Navigate to="/" replace />} />
           </Routes>

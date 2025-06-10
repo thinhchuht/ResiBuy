@@ -34,7 +34,7 @@ const Login: React.FC = () => {
       try {
         const result = await login(values.phoneNumber, values.password);
         if (result.success) {
-          toast.success("Login successful!");
+          toast.success("Chúc bạn mua sắm vui vẻ1");
           navigate("/home");
         } else {
           const loginError = result.error as LoginError;

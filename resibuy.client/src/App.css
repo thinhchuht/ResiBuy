@@ -3,8 +3,7 @@
 @tailwind utilities;
 
 * {
-  font-family: adobe-clean, "Source Sans Pro", -apple-system, BlinkMacSystemFont,
-    "Segoe UI", Roboto, Ubuntu, "Trebuchet MS", "Lucida Grande", sans-serif !important
+  font-family: adobe-clean, "Source Sans Pro", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Ubuntu, "Trebuchet MS", "Lucida Grande", sans-serif !important;
 }
 
 #root {
@@ -18,4 +17,14 @@ th,
 td {
   padding-left: 1rem;
   padding-right: 1rem;
+}
+
+button {
+  &:focus {
+    outline: none;
+    box-shadow: none;
+  }
+}
+a {
+  text-decoration: none !important;
 }
