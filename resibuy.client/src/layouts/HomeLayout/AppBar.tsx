@@ -2,8 +2,8 @@ import React, { useState } from "react";
 import { AppBar as MuiAppBar, Toolbar, IconButton, Typography, Box, Avatar, Menu, MenuItem, Divider, Tooltip } from "@mui/material";
 import { Login, Logout, Menu as MenuIcon, Person, Settings } from "@mui/icons-material";
 import { useNavigate } from "react-router-dom";
-import { useAuth } from "../../../contexts/AuthContext";
-import SearchBase from "../../../components/SearchBase";
+import { useAuth } from "../../contexts/AuthContext";
+import SearchBase from "../../components/SearchBase";
 
 interface AppBarProps {
   open: boolean;

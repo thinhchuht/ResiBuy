@@ -7,7 +7,7 @@ import "./App.css";
 import ProtectedRoute from "./components/auth/ProtectedRoute";
 import TestHub from "./components/test/TestHub";
 import Home from "./pages/Home/Home";
-import HomeLayout from "./layouts/HomeLayout";
+import HomeLayout from "./layouts/HomeLayout/HomeLayout";
 
 const App: React.FC = () => {
   return (

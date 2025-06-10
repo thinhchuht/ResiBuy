@@ -6,8 +6,8 @@ import { Box, Button, TextField, Typography, Paper, InputAdornment, IconButton, 
 import { Visibility, VisibilityOff, Phone, Lock } from "@mui/icons-material";
 import { useToastify } from "../../hooks/useToastify";
 import { useAuth } from "../../contexts/AuthContext";
-import logo from "../../assets/Logo.png";
-import background from "../../assets/login-background.jpg";
+import logo from "../../assets/images/Logo.png";
+import background from "../../assets/images/login-background.jpg";
 interface LoginError {
   message?: string;
 }
@@ -74,7 +74,7 @@ const Login: React.FC = () => {
           width: 350,
           p: 4,
           borderRadius: 3,
-          backgroundColor: "rgba(255, 255, 255, 0.9)",
+          backgroundColor: "rgba(255, 255, 255, 255)",
           boxShadow: "0 8px 30px rgba(0,0,0,0.2)",
           display: "flex",
           flexDirection: "column",
@@ -83,7 +83,6 @@ const Login: React.FC = () => {
         <Box sx={{ display: "flex", justifyContent: "center", alignItems: "center", gap: 2 }}>
           <img src={logo} alt="ResiBuy" style={{ width: "100px", height: "100px" }} />
           <Box>
-            {" "}
             <Typography color="text.secondary" mb={2} sx={{ fontWeight: 600 }}>
               Trải nghiệm mua sắm tại nhà
             </Typography>

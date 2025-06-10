@@ -2,8 +2,8 @@ import React from "react";
 import { Drawer as MuiDrawer, Toolbar, Box, List, ListItem, ListItemButton, ListItemIcon, ListItemText, Typography, Divider } from "@mui/material";
 import { Dashboard, ShoppingCart, LocalShipping, Person, Settings } from "@mui/icons-material";
 import { useNavigate } from "react-router-dom";
-import { useAuth } from "../../../contexts/AuthContext";
-import Logo from "../../../assets/Logo.png";
+import { useAuth } from "../../contexts/AuthContext";
+import Logo from "../../assets/images/Logo.png";
 
 interface DrawerProps {
   open: boolean;
@@ -15,11 +15,11 @@ const Drawer: React.FC<DrawerProps> = ({ open, drawerWidth }) => {
   const navigate = useNavigate();
 
   const menuItems = [
-    { text: "Dashboard", icon: <Dashboard />, path: "/home" },
-    { text: "Orders", icon: <ShoppingCart />, path: user ? "/orders" : "/login" },
+    { text: "Trang chủ", icon: <Dashboard />, path: "/" },
+    { text: "Giỏ hàng", icon: <ShoppingCart />, path: user ? "/orders" : "/login" },
     { text: "Shipping", icon: <LocalShipping />, path: user ? "/shipping" : "/login" },
-    { text: "Profile", icon: <Person />, path: user ? "/profile" : "/login" },
-    { text: "Settings", icon: <Settings />, path: "/settings" },
+    { text: "Quản lí tài khoản", icon: <Person />, path: user ? "/profile" : "/login" },
+    { text: "Cài đặt", icon: <Settings />, path: "/settings" },
   ];
 
   return (

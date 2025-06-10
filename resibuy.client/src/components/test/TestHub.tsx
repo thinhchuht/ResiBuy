@@ -1,8 +1,12 @@
-import React, { useState } from 'react';
-import { useAuth } from '../../contexts/AuthContext';
-import { useHub } from '../../contexts/HubContext';
-import { useEventHub, HubEventType } from '../../hooks/useEventHub';
-import type { UserCreatedData, OrderData, PaymentData } from '../../hooks/useEventHub';
+import React, { useState } from "react";
+import { useAuth } from "../../contexts/AuthContext";
+import { useHub } from "../../contexts/HubContext";
+import { useEventHub, HubEventType } from "../../hooks/useEventHub";
+import type {
+  UserCreatedData,
+  OrderData,
+  PaymentData,
+} from "../../hooks/useEventHub";
 
 type EventData = UserCreatedData | OrderData | PaymentData;
 
@@ -20,35 +24,45 @@ const TestHub: React.FC = () => {
   // Đăng ký lắng nghe tất cả các events
   useEventHub({
     [HubEventType.UserCreated]: (data) => {
-      console.log('UserCreated event received:', data);
-      setEvents(prev => [{
-        data,
-        type: HubEventType.UserCreated,
-        timestamp: new Date().toISOString()
-      }, ...prev]);
+      console.log("UserCreated event received:", data);
+      setEvents((prev) => [
+        {
+          data,
+          type: HubEventType.UserCreated,
+          timestamp: new Date().toISOString(),
+        },
+        ...prev,
+      ]);
     },
     [HubEventType.OrderStatusChanged]: (data) => {
-      console.log('OrderStatusChanged event received:', data);
-      setEvents(prev => [{
-        data,
-        type: HubEventType.OrderStatusChanged,
-        timestamp: new Date().toISOString()
-      }, ...prev]);
+      console.log("OrderStatusChanged event received:", data);
+      setEvents((prev) => [
+        {
+          data,
+          type: HubEventType.OrderStatusChanged,
+          timestamp: new Date().toISOString(),
+        },
+        ...prev,
+      ]);
     },
     [HubEventType.PaymentReceived]: (data) => {
-      console.log('PaymentReceived event received:', data);
-      setEvents(prev => [{
-        data,
-        type: HubEventType.PaymentReceived,
-        timestamp: new Date().toISOString()
-      }, ...prev]);
-    }
+      console.log("PaymentReceived event received:", data);
+      setEvents((prev) => [
+        {
+          data,
+          type: HubEventType.PaymentReceived,
+          timestamp: new Date().toISOString(),
+        },
+        ...prev,
+      ]);
+    },
   });
 
   return (
     <div className="p-4">
       <h1 className="text-2xl font-bold mb-4">Test Hub Events</h1>
-      
+      <h1 className="text-3xl font-bold underline">Hello world!</h1>
+      <div className="border-4 border-indigo-500 ...">hi</div>
       {/* Connection Status */}
       <div className="mb-4 p-4 bg-gray-100 rounded">
         <h2 className="text-lg font-semibold mb-2">Connection Status:</h2>
@@ -84,4 +98,4 @@ const TestHub: React.FC = () => {
   );
 };
 
-export default TestHub; 
+export default TestHub;

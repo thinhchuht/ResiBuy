@@ -1,4 +1,8 @@
-﻿#root {
+﻿@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+#root {
   width: 100%;
   margin: 0;
   padding: 0;
