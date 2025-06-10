@@ -2,18 +2,14 @@ import { useEffect, useState, useRef } from "react";
 import { motion, useMotionValue, useTransform, MotionValue } from "framer-motion";
 import type { PanInfo } from "framer-motion";
 import { Box, Typography, styled } from "@mui/material";
-import { Circle as CircleIcon, Code as CodeIcon, Description as DescriptionIcon, Layers as LayersIcon, Dashboard as DashboardIcon } from "@mui/icons-material";
+import { useNavigate } from "react-router-dom";
 import "./Carousel.css";
+import type { EventItem } from "../types/models";
 
-export interface CarouselItem {
-  title: string;
-  description: string;
-  id: number;
-  icon: React.ReactElement;
-}
+
 
 export interface CarouselProps {
-  items?: CarouselItem[];
+  items: EventItem[];
   baseWidth?: number;
   autoplay?: boolean;
   autoplayDelay?: number;
@@ -22,38 +18,7 @@ export interface CarouselProps {
   round?: boolean;
 }
 
-const DEFAULT_ITEMS: CarouselItem[] = [
-  {
-    title: "Text Animations",
-    description: "Cool text animations for your projects.",
-    id: 1,
-    icon: <DescriptionIcon />,
-  },
-  {
-    title: "Animations",
-    description: "Smooth animations for your projects.",
-    id: 2,
-    icon: <CircleIcon />,
-  },
-  {
-    title: "Components",
-    description: "Reusable components for your projects.",
-    id: 3,
-    icon: <LayersIcon />,
-  },
-  {
-    title: "Backgrounds",
-    description: "Beautiful backgrounds and patterns for your projects.",
-    id: 4,
-    icon: <DashboardIcon />,
-  },
-  {
-    title: "Common UI",
-    description: "Common UI components are coming soon!",
-    id: 5,
-    icon: <CodeIcon />,
-  },
-];
+
 
 const DRAG_BUFFER = 0;
 const VELOCITY_THRESHOLD = 500;
@@ -63,6 +28,7 @@ const SPRING_OPTIONS = { type: "spring", stiffness: 300, damping: 30 };
 const StyledCarouselContainer = styled(Box)({
   position: "relative",
   overflow: "hidden",
+  margin: "0 auto",
   "&.round": {
     borderRadius: "50%",
   },
@@ -77,29 +43,18 @@ const StyledCarouselTrack = styled(motion.div)({
 const StyledCarouselItem = styled(motion.div)(({ theme }) => ({
   flexShrink: 0,
   backgroundColor: theme.palette.background.paper,
-  padding: theme.spacing(2),
   borderRadius: theme.shape.borderRadius,
   boxShadow: theme.shadows[2],
+  overflow: "hidden",
   "&.round": {
     borderRadius: "50%",
   },
-}));
-
-const StyledCarouselHeader = styled(Box)(({ theme }) => ({
-  display: "flex",
-  justifyContent: "center",
-  alignItems: "center",
-  marginBottom: theme.spacing(2),
-  "& .icon-container": {
-    display: "flex",
-    justifyContent: "center",
-    alignItems: "center",
-    width: 48,
-    height: 48,
-    borderRadius: "50%",
-    backgroundColor: theme.palette.primary.main,
-    color: theme.palette.primary.contrastText,
-  },
+  "& img": {
+    width: "100%",
+    height: "100%",
+    objectFit: "stretch",
+    backgroundColor: theme.palette.grey[100]
+  }
 }));
 
 const StyledIndicatorsContainer = styled(Box)(({ theme }) => ({
@@ -122,6 +77,16 @@ const StyledIndicator = styled(motion.div)(({ theme }) => ({
   },
 }));
 
+const StyledCarouselContent = styled(Box)(({ theme }) => ({
+  position: "absolute",
+  bottom: 0,
+  left: 0,
+  right: 0,
+  padding: theme.spacing(2),
+  background: "linear-gradient(transparent, rgba(0,0,0,0.7))",
+  color: theme.palette.common.white,
+}));
+
 const useCarouselTransform = (x: MotionValue<number>, index: number, trackItemOffset: number) => {
   const range = [-(index + 1) * trackItemOffset, -index * trackItemOffset, -(index - 1) * trackItemOffset];
   const outputRange = [90, 0, -90];
@@ -129,9 +94,9 @@ const useCarouselTransform = (x: MotionValue<number>, index: number, trackItemOf
 };
 
 export default function Carousel({
-  items = DEFAULT_ITEMS,
-  baseWidth = 300,
-  autoplay = false,
+  items,
+  baseWidth = window.innerWidth * 0.8,
+  autoplay = true,
   autoplayDelay = 3000,
   pauseOnHover = false,
   loop = false,
@@ -148,6 +113,7 @@ export default function Carousel({
   const [isResetting, setIsResetting] = useState<boolean>(false);
 
   const containerRef = useRef<HTMLDivElement>(null);
+  const navigate = useNavigate();
 
   // Create transforms for each item
   const transform0 = useCarouselTransform(x, 0, trackItemOffset);
@@ -228,53 +194,66 @@ export default function Carousel({
         },
       };
 
+  const handleItemClick = (storeId: string) => {
+    navigate(`/shop/${storeId}`);
+  };
+
   return (
     <StyledCarouselContainer
       ref={containerRef}
       className={round ? "round" : ""}
       sx={{
-        width: baseWidth,
-        ...(round && { height: baseWidth }),
+        marginBottom : "20px",
+        width: "80vw",
+        maxHeight: "300px",
+        ...(round && { height: "80vw", maxHeight: "300px" }),
       }}>
       <StyledCarouselTrack
         drag="x"
         {...dragProps}
         style={{
-          width: itemWidth,
+          width: "100%",
           x,
         }}
         onDragEnd={handleDragEnd}
-        animate={{ x: -(currentIndex * trackItemOffset) }}
+        animate={{ x: -(currentIndex * trackItemOffset) + containerPadding }}
         transition={effectiveTransition}
         onAnimationComplete={handleAnimationComplete}>
-        {carouselItems.map((item, index) => (
+        {carouselItems.map((item: EventItem, index: number) => (
           <StyledCarouselItem
-            key={index}
+            key={item.id}
             className={round ? "round" : ""}
             style={{
               width: itemWidth,
-              height: round ? itemWidth : "auto",
+              height: round ? itemWidth : "300px",
+              maxHeight: "300px",
               rotateY: transforms[index],
+              cursor: "pointer",
             }}
+            onClick={() => handleItemClick(item.storeId)}
             transition={effectiveTransition}>
-            <StyledCarouselHeader>
-              <Box className="icon-container">{item.icon}</Box>
-            </StyledCarouselHeader>
-            <Box>
-              <Typography variant="h6" gutterBottom>
-                {item.title}
-              </Typography>
-              <Typography variant="body2" color="text.secondary">
-                {item.description}
-              </Typography>
-            </Box>
+            <img src={item.image} alt={item.title || `Carousel item ${item.id}`} />
+            {(item.title || item.description) && (
+              <StyledCarouselContent>
+                {item.title && (
+                  <Typography variant="h6" gutterBottom>
+                    {item.title}
+                  </Typography>
+                )}
+                {item.description && (
+                  <Typography variant="body2">
+                    {item.description}
+                  </Typography>
+                )}
+              </StyledCarouselContent>
+            )}
           </StyledCarouselItem>
         ))}
       </StyledCarouselTrack>
       <StyledIndicatorsContainer>
-        {items.map((_, index) => (
+        {items.map((item: EventItem, index: number) => (
           <StyledIndicator
-            key={index}
+            key={item.id}
             className={currentIndex % items.length === index ? "active" : "inactive"}
             animate={{
               scale: currentIndex % items.length === index ? 1.2 : 1,
