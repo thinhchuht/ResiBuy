@@ -1,106 +1,92 @@
-import React from "react";
-import { Box, Container, Typography, Grid, Link, IconButton, Divider, useTheme } from "@mui/material";
+import { Box, Container, Typography, Link, IconButton, Divider } from "@mui/material";
 import { Facebook, Twitter, Instagram, LinkedIn, Email, Phone, LocationOn } from "@mui/icons-material";
+import Logo from "../../assets/Images/Logo.png"; 
 
-interface FooterProps {
-  open: boolean;
-  drawerWidth: number;
-}
-
-const Footer: React.FC<FooterProps> = ({ open, drawerWidth }) => {
-  const theme = useTheme();
+const Footer = () => {
 
   return (
     <Box
       component="footer"
       sx={{
-        bgcolor: theme.palette.primary.main,
+        bgcolor: "#282c34", 
         color: "white",
-        py: 6,
+        py: 2, 
         mt: "auto",
         position: "relative",
         bottom: 0,
-        width: `calc(100% - ${open ? drawerWidth : 0}px)`,
-        ml: `${open ? drawerWidth : 0}px`,
-        transition: (theme) =>
-          theme.transitions.create(["margin", "width"], {
-            easing: theme.transitions.easing.sharp,
-            duration: theme.transitions.duration.leavingScreen,
-          }),
-      }}>
+        width: "100%", 
+      }}
+    >
       <Container maxWidth="lg">
-        <Grid>
-          {/* Company Info */}
-          <Grid>
-            <Typography variant="h6" gutterBottom>
-              ResiBuy
-            </Typography>
-            <Typography variant="body2" sx={{ mb: 2 }}>
-              Your trusted partner in residential property management and real estate solutions.
+        <Box sx={{ display: "flex", flexWrap: "wrap", justifyContent: "space-between", gap: 4 }}>
+          <Box sx={{ flexBasis: { xs: "100%", md: "30%" } }}>
+            <Box sx={{ display: "flex", alignItems: "center", mb: 2 }}>
+              <img src={Logo} alt="ResiBuy Logo" style={{ height: "40px", marginRight: "10px" }} />
+              <Typography variant="h5" gutterBottom sx={{ fontWeight: "bold" }}>
+                ResiBuy
+              </Typography>
+            </Box>
+            <Typography variant="body2" sx={{ mb: 3, color: "#bbb" }}>
+              Người cộng sự đắc lực của bạn trong việc mua sắm ngay tại chung cư của bạn.
             </Typography>
             <Box sx={{ mt: 2 }}>
-              <IconButton color="inherit" aria-label="Facebook">
+              <IconButton color="inherit" aria-label="Facebook" sx={{ mr: 1, "&:hover": { color: "#4267B2" } }}>
                 <Facebook />
               </IconButton>
-              <IconButton color="inherit" aria-label="Twitter">
+              <IconButton color="inherit" aria-label="Twitter" sx={{ mr: 1, "&:hover": { color: "#1DA1F2" } }}>
                 <Twitter />
               </IconButton>
-              <IconButton color="inherit" aria-label="Instagram">
+              <IconButton color="inherit" aria-label="Instagram" sx={{ mr: 1, "&:hover": { color: "#E1306C" } }}>
                 <Instagram />
               </IconButton>
-              <IconButton color="inherit" aria-label="LinkedIn">
+              <IconButton color="inherit" aria-label="LinkedIn" sx={{ "&:hover": { color: "#0A66C2" } }}>
                 <LinkedIn />
               </IconButton>
             </Box>
-          </Grid>
-        </Grid>
-        {/* Quick Links */}
-        <Grid>
-          <Typography variant="h6" gutterBottom>
-            Quick Links
-          </Typography>
-          <Link href="/about" color="inherit" display="block" sx={{ mb: 1 }}>
-            About Us
-          </Link>
-          <Link href="/services" color="inherit" display="block" sx={{ mb: 1 }}>
-            Services
-          </Link>
-          <Link href="/properties" color="inherit" display="block" sx={{ mb: 1 }}>
-            Properties
-          </Link>
-          <Link href="/contact" color="inherit" display="block" sx={{ mb: 1 }}>
-            Contact
-          </Link>
-        </Grid>
-
-        {/* Contact Info */}
-        <Grid>
-          <Typography variant="h6" gutterBottom>
-            Contact Us
-          </Typography>
-          <Box sx={{ display: "flex", alignItems: "center", mb: 1 }}>
-            <LocationOn sx={{ mr: 1 }} />
-            <Typography variant="body2">123 Real Estate Street, City, Country</Typography>
           </Box>
-          <Box sx={{ display: "flex", alignItems: "center", mb: 1 }}>
-            <Phone sx={{ mr: 1 }} />
-            <Typography variant="body2">+1 234 567 890</Typography>
-          </Box>
-          <Box sx={{ display: "flex", alignItems: "center", mb: 1 }}>
-            <Email sx={{ mr: 1 }} />
-            <Typography variant="body2">info@resibuy.com</Typography>
-          </Box>
-        </Grid>
 
-        <Divider sx={{ my: 3, bgcolor: "rgba(255, 255, 255, 0.2)" }} />
+          <Box sx={{ flexBasis: { xs: "100%", md: "20%" } }}>
+            <Typography variant="h6" gutterBottom sx={{ fontWeight: "bold", mb: 2 }}>
+              Liên kết nhanh
+            </Typography>
+            <Link href="/about" color="inherit" display="block" sx={{ mb: 1, "&:hover": { color: "#007bff" } }}>
+              Về chúng tôi
+            </Link>
+            <Link href="/services" color="inherit" display="block" sx={{ mb: 1, "&:hover": { color: "#007bff" } }}>
+              Dịch vụ
+            </Link>
+            <Link href="/contact" color="inherit" display="block" sx={{ mb: 1, "&:hover": { color: "#007bff" } }}>
+              Liên hệ
+            </Link>
+          </Box>
 
-        {/* Copyright */}
-        <Typography variant="body2" align="center">
-          © {new Date().getFullYear()} ResiBuy. All rights reserved.
+          <Box sx={{ flexBasis: { xs: "100%", md: "30%" } }}>
+            <Typography variant="h6" gutterBottom sx={{ fontWeight: "bold", mb: 2 }}>
+              Thông tin liên hệ
+            </Typography>
+            <Box sx={{ display: "flex", alignItems: "center", mb: 1 }}>
+              <LocationOn sx={{ mr: 1, color: "#007bff" }} />
+              <Typography variant="body2">Số 01 Hoàng Hoa Thám, Ba Đình, Hà Nội </Typography>
+            </Box>
+            <Box sx={{ display: "flex", alignItems: "center", mb: 1 }}>
+              <Phone sx={{ mr: 1, color: "#007bff" }} />
+              <Typography variant="body2">+1 234 567 890</Typography>
+            </Box>
+            <Box sx={{ display: "flex", alignItems: "center", mb: 1 }}>
+              <Email sx={{ mr: 1, color: "#007bff" }} />
+              <Typography variant="body2">resibuy@gmail.com</Typography>
+            </Box>
+          </Box>
+        </Box>
+
+        <Divider sx={{ my: 4, bgcolor: "rgba(255, 255, 255, 0.1)" }} />
+
+        <Typography variant="body2" align="center" sx={{ color: "#bbb" }}>
+          © {new Date().getFullYear()} ResiBuy. Tất cả quyền được bảo lưu.
         </Typography>
       </Container>
     </Box>
   );
 };
 
-export default Footer;
+export default Footer; 
