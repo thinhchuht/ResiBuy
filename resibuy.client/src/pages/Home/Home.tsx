@@ -13,7 +13,7 @@ const Home = () => {
   return (
     <Box sx={{backgroundColor : "#fef6f5"}}>
       <Typography variant="h4" gutterBottom>
-        Home
+        Trang chủ
       </Typography>
 
       <Carousel items={DEFAULT_ITEMS} />

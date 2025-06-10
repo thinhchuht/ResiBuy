@@ -1,9 +1,9 @@
 import React, { useState } from "react";
 import { Outlet } from "react-router-dom";
-import { Box, CssBaseline, Toolbar } from "@mui/material";
-import AppBar from "./components/AppBar";
-import Drawer from "./components/Drawer";
-import { Main, drawerWidth } from "./components/StyledComponents";
+import {  Box, CssBaseline, Toolbar } from "@mui/material";
+import { drawerWidth, Main } from "./StyledComponents";
+import AppBar from "./AppBar";
+import Drawer from "./Drawer";
 interface HomeLayoutProps {
   children?: React.ReactNode;
 }
