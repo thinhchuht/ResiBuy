@@ -1,29 +1,24 @@
-import React, { useState } from "react";
+import React from "react";
 import { Outlet } from "react-router-dom";
 import {  Box, CssBaseline, Toolbar } from "@mui/material";
-import { drawerWidth, Main } from "./StyledComponents";
+import { Main } from "./StyledComponents";
 import AppBar from "./AppBar";
-import Drawer from "./Drawer";
+import Footer from "./Footer";
+
 interface HomeLayoutProps {
   children?: React.ReactNode;
 }
 
 const HomeLayout: React.FC<HomeLayoutProps> = ({ children }) => {
-  const [open, setOpen] = useState(true);
-
-  const handleDrawerToggle = () => {
-    setOpen(!open);
-  };
-
   return (
-    <Box sx={{ display: "flex" }}>
+    <Box sx={{ display: "flex", flexDirection: "column", minHeight: "100vh", backgroundColor: "#F5F5F5" }}>
       <CssBaseline />
-      <AppBar open={open} drawerWidth={drawerWidth} onDrawerToggle={handleDrawerToggle} />
-      <Drawer open={open} drawerWidth={drawerWidth} />
-      <Main open={open}>
+      <AppBar />
+      <Main sx={{ flexGrow: 1 }}>
         <Toolbar />
         {children || <Outlet />}
       </Main>
+      <Footer />
     </Box>
   );
 };

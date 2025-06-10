@@ -116,12 +116,18 @@ export interface Shipper {
 
 export interface Voucher {
   id: string;
-  code: string;
   discountAmount: number;
+  type: string;
+  quantity: number;
+  minOrderPrice: number;
+  maxDiscountPrice: number;
   startDate: string;
   endDate: string;
   isActive: boolean;
+  storeId: string;
+  store?: Store;
   userVouchers: UserVoucher[];
+  orders?: Order[];
 }
 
 export interface UserVoucher {

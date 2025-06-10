@@ -1,12 +1,15 @@
 import { useEffect, useState, useRef } from "react";
-import { motion, useMotionValue, useTransform, MotionValue } from "framer-motion";
+import {
+  motion,
+  useMotionValue,
+  useTransform,
+  MotionValue,
+} from "framer-motion";
 import type { PanInfo } from "framer-motion";
-import { Box, Typography, styled } from "@mui/material";
+import { Box, Typography, styled, useTheme } from "@mui/material";
 import { useNavigate } from "react-router-dom";
 import "./Carousel.css";
 import type { EventItem } from "../types/models";
-
-
 
 export interface CarouselProps {
   items: EventItem[];
@@ -18,21 +21,10 @@ export interface CarouselProps {
   round?: boolean;
 }
 
-
-
 const DRAG_BUFFER = 0;
 const VELOCITY_THRESHOLD = 500;
 const GAP = 16;
 const SPRING_OPTIONS = { type: "spring", stiffness: 300, damping: 30 };
-
-const StyledCarouselContainer = styled(Box)({
-  position: "relative",
-  overflow: "hidden",
-  margin: "0 auto",
-  "&.round": {
-    borderRadius: "50%",
-  },
-});
 
 const StyledCarouselTrack = styled(motion.div)({
   display: "flex",
@@ -53,17 +45,8 @@ const StyledCarouselItem = styled(motion.div)(({ theme }) => ({
     width: "100%",
     height: "100%",
     objectFit: "stretch",
-    backgroundColor: theme.palette.grey[100]
-  }
-}));
-
-const StyledIndicatorsContainer = styled(Box)(({ theme }) => ({
-  position: "absolute",
-  bottom: theme.spacing(2),
-  left: "50%",
-  transform: "translateX(-50%)",
-  display: "flex",
-  gap: theme.spacing(1),
+    backgroundColor: theme.palette.grey[100],
+  },
 }));
 
 const StyledIndicator = styled(motion.div)(({ theme }) => ({
@@ -77,35 +60,32 @@ const StyledIndicator = styled(motion.div)(({ theme }) => ({
   },
 }));
 
-const StyledCarouselContent = styled(Box)(({ theme }) => ({
-  position: "absolute",
-  bottom: 0,
-  left: 0,
-  right: 0,
-  padding: theme.spacing(2),
-  background: "linear-gradient(transparent, rgba(0,0,0,0.7))",
-  color: theme.palette.common.white,
-}));
-
-const useCarouselTransform = (x: MotionValue<number>, index: number, trackItemOffset: number) => {
-  const range = [-(index + 1) * trackItemOffset, -index * trackItemOffset, -(index - 1) * trackItemOffset];
+const useCarouselTransform = (
+  x: MotionValue<number>,
+  index: number,
+  trackItemOffset: number
+) => {
+  const range = [
+    -(index + 1) * trackItemOffset,
+    -index * trackItemOffset,
+    -(index - 1) * trackItemOffset,
+  ];
   const outputRange = [90, 0, -90];
   return useTransform(x, range, outputRange, { clamp: false });
 };
 
 export default function Carousel({
   items,
-  baseWidth = window.innerWidth * 0.8,
   autoplay = true,
   autoplayDelay = 3000,
-  pauseOnHover = false,
-  loop = false,
+  pauseOnHover = true,
+  loop = true,
   round = false,
 }: CarouselProps): React.ReactElement {
   const containerPadding = 16;
-  const itemWidth = baseWidth - containerPadding * 2;
+  const [itemWidth, setItemWidth] = useState<number>(0);
   const trackItemOffset = itemWidth + GAP;
-
+  const theme = useTheme();
   const carouselItems = loop ? [...items, items[0]] : items;
   const [currentIndex, setCurrentIndex] = useState<number>(0);
   const x = useMotionValue(0);
@@ -123,7 +103,25 @@ export default function Carousel({
   const transform4 = useCarouselTransform(x, 4, trackItemOffset);
   const transform5 = useCarouselTransform(x, 5, trackItemOffset);
 
-  const transforms = [transform0, transform1, transform2, transform3, transform4, transform5];
+  const transforms = [
+    transform0,
+    transform1,
+    transform2,
+    transform3,
+    transform4,
+    transform5,
+  ];
+
+  useEffect(() => {
+    function updateWidth() {
+      if (containerRef.current) {
+        setItemWidth(containerRef.current.offsetWidth - containerPadding * 2);
+      }
+    }
+    updateWidth();
+    window.addEventListener('resize', updateWidth);
+    return () => window.removeEventListener('resize', updateWidth);
+  }, []);
 
   useEffect(() => {
     if (pauseOnHover && containerRef.current) {
@@ -154,7 +152,15 @@ export default function Carousel({
       }, autoplayDelay);
       return () => clearInterval(timer);
     }
-  }, [autoplay, autoplayDelay, isHovered, loop, items.length, carouselItems.length, pauseOnHover]);
+  }, [
+    autoplay,
+    autoplayDelay,
+    isHovered,
+    loop,
+    items.length,
+    carouselItems.length,
+    pauseOnHover,
+  ]);
 
   const effectiveTransition = isResetting ? { duration: 0 } : SPRING_OPTIONS;
 
@@ -167,7 +173,10 @@ export default function Carousel({
     }
   };
 
-  const handleDragEnd = (_: MouseEvent | TouchEvent | PointerEvent, info: PanInfo): void => {
+  const handleDragEnd = (
+    _: MouseEvent | TouchEvent | PointerEvent,
+    info: PanInfo
+  ): void => {
     const offset = info.offset.x;
     const velocity = info.velocity.x;
     if (offset < -DRAG_BUFFER || velocity < -VELOCITY_THRESHOLD) {
@@ -199,15 +208,94 @@ export default function Carousel({
   };
 
   return (
-    <StyledCarouselContainer
+    <Box
       ref={containerRef}
       className={round ? "round" : ""}
       sx={{
-        marginBottom : "20px",
-        width: "80vw",
-        maxHeight: "300px",
-        ...(round && { height: "80vw", maxHeight: "300px" }),
-      }}>
+        maxWidth: "100%",
+        position: "relative",
+        overflow: "hidden",
+        margin: "0 auto",
+        "&.round": {
+          borderRadius: "50%",
+        },
+        marginBottom: "20px",
+        maxHeight: "700px",
+        ...(round && { height: "700px", maxHeight: "700px" }),
+      }}
+      onMouseEnter={() => setIsHovered(true)}
+      onMouseLeave={() => setIsHovered(false)}
+    >
+      {isHovered && (
+        <>
+          {/* Prev Button */}
+          <Box
+            component="button"
+            sx={{
+              position: "absolute",
+              top: "50%",
+              left: 8,
+              zIndex: 2,
+              transform: "translateY(-50%)",
+              background: "rgba(255,255,255,0.7)",
+              border: "none",
+              borderRadius: "50%",
+              width: 36,
+              height: 36,
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              cursor: currentIndex === 0 && !loop ? 'not-allowed' : 'pointer',
+              opacity: currentIndex === 0 && !loop ? 0.5 : 1,
+              outline: 'none',
+              '&:focus': {
+                outline: 'none',
+                boxShadow: 'none',
+              },
+            }}
+            onClick={() => {
+              if (currentIndex > 0 || loop) setCurrentIndex((prev) => (prev > 0 ? prev - 1 : (loop ? carouselItems.length - 1 : prev)));
+            }}
+            disabled={currentIndex === 0 && !loop}
+            aria-label="Previous"
+          >
+            &#8592;
+          </Box>
+          {/* Next Button */}
+          <Box
+            component="button"
+            sx={{
+              position: "absolute",
+              top: "50%",
+              right: 8,
+              zIndex: 2,
+              transform: "translateY(-50%)",
+              background: "rgba(255,255,255,0.7)",
+              border: "none",
+              borderRadius: "50%",
+              width: 36,
+              height: 36,
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              cursor: (currentIndex === carouselItems.length - 1) && !loop ? 'not-allowed' : 'pointer',
+              opacity: (currentIndex === carouselItems.length - 1) && !loop ? 0.5 : 1,
+              outline: 'none',
+              '&:focus': {
+                outline: 'none',
+                boxShadow: 'none',
+              },
+            }}
+            onClick={() => {
+              if (currentIndex < carouselItems.length - 1 || loop) setCurrentIndex((prev) => (prev < carouselItems.length - 1 ? prev + 1 : (loop ? 0 : prev)));
+            }}
+            disabled={(currentIndex === carouselItems.length - 1) && !loop}
+            aria-label="Next"
+          >
+            &#8594;
+          </Box>
+        </>
+      )}
       <StyledCarouselTrack
         drag="x"
         {...dragProps}
@@ -218,43 +306,67 @@ export default function Carousel({
         onDragEnd={handleDragEnd}
         animate={{ x: -(currentIndex * trackItemOffset) + containerPadding }}
         transition={effectiveTransition}
-        onAnimationComplete={handleAnimationComplete}>
+        onAnimationComplete={handleAnimationComplete}
+      >
         {carouselItems.map((item: EventItem, index: number) => (
           <StyledCarouselItem
             key={item.id}
             className={round ? "round" : ""}
             style={{
               width: itemWidth,
-              height: round ? itemWidth : "300px",
-              maxHeight: "300px",
+              height: round ? itemWidth : "800px",
+              maxHeight: "800px",
               rotateY: transforms[index],
               cursor: "pointer",
             }}
             onClick={() => handleItemClick(item.storeId)}
-            transition={effectiveTransition}>
-            <img src={item.image} alt={item.title || `Carousel item ${item.id}`} />
+            transition={effectiveTransition}
+          >
+            <img
+              src={item.image}
+              alt={item.title || `Carousel item ${item.id}`}
+            />
             {(item.title || item.description) && (
-              <StyledCarouselContent>
+              <Box
+                sx={{
+                  position: "absolute",
+                  bottom: 0,
+                  left: 0,
+                  right: 0,
+                  padding: theme.spacing(2),
+                  background: "linear-gradient(transparent, rgba(0,0,0,0.7))",
+                  color: theme.palette.common.white,
+                }}
+              >
                 {item.title && (
                   <Typography variant="h6" gutterBottom>
                     {item.title}
                   </Typography>
                 )}
                 {item.description && (
-                  <Typography variant="body2">
-                    {item.description}
-                  </Typography>
+                  <Typography variant="body2">{item.description}</Typography>
                 )}
-              </StyledCarouselContent>
+              </Box>
             )}
           </StyledCarouselItem>
         ))}
       </StyledCarouselTrack>
-      <StyledIndicatorsContainer>
+      <Box
+        sx={{
+          position: "absolute",
+          bottom: theme.spacing(2),
+          left: "50%",
+          transform: "translateX(-50%)",
+          display: "flex",
+          gap: theme.spacing(1),
+        }}
+      >
         {items.map((item: EventItem, index: number) => (
           <StyledIndicator
             key={item.id}
-            className={currentIndex % items.length === index ? "active" : "inactive"}
+            className={
+              currentIndex % items.length === index ? "active" : "inactive"
+            }
             animate={{
               scale: currentIndex % items.length === index ? 1.2 : 1,
             }}
@@ -262,7 +374,7 @@ export default function Carousel({
             transition={{ duration: 0.15 }}
           />
         ))}
-      </StyledIndicatorsContainer>
-    </StyledCarouselContainer>
+      </Box>
+    </Box>
   );
 }

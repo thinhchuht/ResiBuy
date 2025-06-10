@@ -1,6 +1,6 @@
-import { useRef, useEffect, forwardRef } from "react";
+import { useRef, useEffect, forwardRef, useImperativeHandle } from "react";
 import { Renderer, Camera, Transform, Plane, Mesh, Program, Texture } from "ogl";
-import type { Product } from "../types/models";
+import type { Category } from "../types/models";
 import { useNavigate } from "react-router-dom";
 
 import "./CircularGallery.css";
@@ -39,7 +39,7 @@ function createTextTexture(gl: GL, text: string, font: string = "bold 30px monos
   if (!context) throw new Error("Could not get 2d context");
 
   context.font = font;
-  const metrics = context.measureText(text);
+  const metrics = context.measureText(text.toUpperCase());
   const textWidth = Math.ceil(metrics.width);
   const fontSize = getFontSize(font);
   const textHeight = Math.ceil(fontSize * 1.2);
@@ -52,7 +52,7 @@ function createTextTexture(gl: GL, text: string, font: string = "bold 30px monos
   context.textBaseline = "middle";
   context.textAlign = "center";
   context.clearRect(0, 0, canvas.width, canvas.height);
-  context.fillText(text, canvas.width / 2, canvas.height / 2);
+  context.fillText(text.toUpperCase(), canvas.width / 2, canvas.height / 2);
 
   const texture = new Texture(gl, { generateMipmaps: false });
   texture.image = canvas;
@@ -64,8 +64,6 @@ interface TitleProps {
   plane: Mesh;
   renderer: Renderer;
   text: string;
-  price: number;
-  sold: number;
   textColor?: string;
   font?: string;
 }
@@ -75,29 +73,23 @@ class Title {
   plane: Mesh;
   renderer: Renderer;
   text: string;
-  price: number;
-  sold: number;
   textColor: string;
   font: string;
   mesh!: Mesh;
-  priceMesh!: Mesh;
-  soldMesh!: Mesh;
 
-  constructor({ gl, plane, renderer, text, price, sold, textColor = "#545050", font = "30px sans-serif" }: TitleProps) {
+  constructor({ gl, plane, renderer, text, textColor = "#545050", font = "30px sans-serif" }: TitleProps) {
     autoBind(this as Record<string, unknown>);
     this.gl = gl;
     this.plane = plane;
     this.renderer = renderer;
     this.text = text;
-    this.price = price;
-    this.sold = sold;
     this.textColor = textColor;
     this.font = font;
     this.createMesh();
   }
 
   createMesh() {
-    // Create title mesh
+    // Create title mesh only (no price/sold)
     const { texture, width, height } = createTextTexture(this.gl, this.text, this.font, this.textColor);
     const geometry = new Plane(this.gl);
     const program = new Program(this.gl, {
@@ -132,90 +124,6 @@ class Title {
     this.mesh.scale.set(textWidthScaled, textHeightScaled, 1);
     this.mesh.position.y = -this.plane.scale.y * 0.5 - textHeightScaled * 0.5 - 0.05;
     this.mesh.setParent(this.plane);
-
-    // Create price mesh with red color and bold font
-    const priceText = `$${this.price.toLocaleString()}`;
-    const { texture: priceTexture, width: priceWidth, height: priceHeight } = createTextTexture(
-      this.gl,
-      priceText,
-      this.font,
-      "#FF0000"
-    );
-    const priceProgram = new Program(this.gl, {
-      vertex: `
-        attribute vec3 position;
-        attribute vec2 uv;
-        uniform mat4 modelViewMatrix;
-        uniform mat4 projectionMatrix;
-        varying vec2 vUv;
-        void main() {
-          vUv = uv;
-          gl_Position = projectionMatrix * modelViewMatrix * vec4(position, 1.0);
-        }
-      `,
-      fragment: `
-        precision highp float;
-        uniform sampler2D tMap;
-        varying vec2 vUv;
-        void main() {
-          vec4 color = texture2D(tMap, vUv);
-          if (color.a < 0.1) discard;
-          gl_FragColor = color;
-        }
-      `,
-      uniforms: { tMap: { value: priceTexture } },
-      transparent: true,
-    });
-    this.priceMesh = new Mesh(this.gl, { geometry, program: priceProgram });
-    const priceAspect = priceWidth / priceHeight;
-    const priceHeightScaled = textHeightScaled * 0.8;
-    const priceWidthScaled = priceHeightScaled * priceAspect;
-    this.priceMesh.scale.set(priceWidthScaled, priceHeightScaled, 1);
-    this.priceMesh.position.y = this.mesh.position.y - textHeightScaled - 0.02;
-    this.priceMesh.position.x = -this.plane.scale.x * 0.25; // Move price to the left
-    this.priceMesh.setParent(this.plane);
-
-    // Create sold mesh with gray color
-    const soldText = `Sold: ${this.sold.toLocaleString()}`;
-    const { texture: soldTexture, width: soldWidth, height: soldHeight } = createTextTexture(
-      this.gl,
-      soldText,
-      this.font,
-      "#808080" // Gray color
-    );
-    const soldProgram = new Program(this.gl, {
-      vertex: `
-        attribute vec3 position;
-        attribute vec2 uv;
-        uniform mat4 modelViewMatrix;
-        uniform mat4 projectionMatrix;
-        varying vec2 vUv;
-        void main() {
-          vUv = uv;
-          gl_Position = projectionMatrix * modelViewMatrix * vec4(position, 1.0);
-        }
-      `,
-      fragment: `
-        precision highp float;
-        uniform sampler2D tMap;
-        varying vec2 vUv;
-        void main() {
-          vec4 color = texture2D(tMap, vUv);
-          if (color.a < 0.1) discard;
-          gl_FragColor = color;
-        }
-      `,
-      uniforms: { tMap: { value: soldTexture } },
-      transparent: true,
-    });
-    this.soldMesh = new Mesh(this.gl, { geometry, program: soldProgram });
-    const soldAspect = soldWidth / soldHeight;
-    const soldHeightScaled = textHeightScaled * 0.8;
-    const soldWidthScaled = soldHeightScaled * soldAspect;
-    this.soldMesh.scale.set(soldWidthScaled, soldHeightScaled, 1);
-    this.soldMesh.position.y = this.mesh.position.y - textHeightScaled - 0.02;
-    this.soldMesh.position.x = this.plane.scale.x * 0.25; // Move sold to the right
-    this.soldMesh.setParent(this.plane);
   }
 }
 
@@ -239,14 +147,12 @@ interface MediaProps {
   scene: Transform;
   screen: ScreenSize;
   text: string;
-  price: number;
-  sold: number;
   viewport: Viewport;
   bend: number;
   textColor: string;
   borderRadius?: number;
   font?: string;
-  productId: string;
+  categoryId: string;
 }
 
 class Media {
@@ -260,8 +166,6 @@ class Media {
   scene: Transform;
   screen: ScreenSize;
   text: string;
-  price: number;
-  sold: number;
   viewport: Viewport;
   bend: number;
   textColor: string;
@@ -278,11 +182,11 @@ class Media {
   speed: number = 0;
   isBefore: boolean = false;
   isAfter: boolean = false;
-  productId: string;
+  categoryId: string;
   isHovered: boolean = false;
   hoverProgress: number = 0;
 
-  constructor({ geometry, gl, image, index, length, renderer, scene, screen, text, price, sold, viewport, bend, textColor, borderRadius = 0, font, productId }: MediaProps) {
+  constructor({ geometry, gl, image, index, length, renderer, scene, screen, text, viewport, bend, textColor, borderRadius = 0, font, categoryId }: MediaProps) {
     this.geometry = geometry;
     this.gl = gl;
     this.image = image;
@@ -292,14 +196,12 @@ class Media {
     this.scene = scene;
     this.screen = screen;
     this.text = text;
-    this.price = price;
-    this.sold = sold;
     this.viewport = viewport;
     this.bend = bend;
     this.textColor = textColor;
     this.borderRadius = borderRadius;
     this.font = font;
-    this.productId = productId;
+    this.categoryId = categoryId;
     this.createShader();
     this.createMesh();
     this.createTitle();
@@ -400,8 +302,6 @@ class Media {
       plane: this.plane,
       renderer: this.renderer,
       text: this.text,
-      price: this.price,
-      sold: this.sold,
       textColor: this.textColor,
       font: this.font,
     });
@@ -500,7 +400,7 @@ class Media {
 }
 
 interface AppConfig {
-  items?: Product[];
+  items?: Category[];
   bend?: number;
   textColor?: string;
   borderRadius?: number;
@@ -523,7 +423,7 @@ class App {
   scene!: Transform;
   planeGeometry!: Plane;
   medias: Media[] = [];
-  mediasImages: Product[] = [];
+  mediasImages: Category[] = [];
   screen!: { width: number; height: number };
   viewport!: { width: number; height: number };
   raf: number = 0;
@@ -542,7 +442,7 @@ class App {
   private touchEndTime: number = 0;
   private moved: boolean = false;
 
-  constructor(container: HTMLElement, { items, bend = 1, textColor = "#ffffff", borderRadius = 0, font = "bold 36px Figtree" }: AppConfig) {
+  constructor(container: HTMLElement, { items, bend = 1, textColor = "#ff0000", borderRadius = 0, font = "bold 36px adobe-clean, \"Source Sans Pro\", -apple-system, BlinkMacSystemFont, \"Segoe UI\", Roboto, Ubuntu, \"Trebuchet MS\", \"Lucida Grande\", sans-serif" }: AppConfig) {
     document.documentElement.classList.remove("no-js");
     this.container = container;
     this.scroll = { ease: 0.05, current: 0, target: 0, last: 0 };
@@ -592,34 +492,32 @@ class App {
     });
   }
 
-  createMedias(items: Product[] | undefined, bend: number = 1, textColor: string, borderRadius: number, font: string) {
+  createMedias(items: Category[] | undefined, bend: number = 1, textColor: string, borderRadius: number, font: string) {
     if (!items || items.length === 0) {
       console.warn("No items provided to CircularGallery");
       return;
     }
-
     this.mediasImages = items;
     // Duplicate items to create a seamless loop
     const duplicatedItems = [...items, ...items, ...items];
-    this.medias = duplicatedItems.map((data, index) => {
+    this.medias = duplicatedItems.map((category, index) => {
+      const image = category.products[0]?.imageUrl || "https://via.placeholder.com/800x600?text=No+Image";
       return new Media({
         geometry: this.planeGeometry,
         gl: this.gl,
-        image: data.imageUrl,
+        image,
         index,
         length: duplicatedItems.length,
         renderer: this.renderer,
         scene: this.scene,
         screen: this.screen,
-        text: data.name,
-        price: data.price,
-        sold: data.sold,
+        text: category.name,
         viewport: this.viewport,
         bend,
         textColor,
         borderRadius,
         font,
-        productId: data.id
+        categoryId: category.id
       });
     });
   }
@@ -656,20 +554,16 @@ class App {
     if (!this.container.contains(e.target as Node)) return;
     this.isDown = false;
     this.touchEndTime = Date.now();
-    
     // Determine if it was a click (not a drag and not a long press)
     if (!this.moved && (this.touchEndTime - this.touchStartTime <= 200)) {
       const clientX = "changedTouches" in e ? e.changedTouches[0].clientX : e.clientX;
       const clientY = "changedTouches" in e ? e.changedTouches[0].clientY : e.clientY;
-
       const rect = this.container.getBoundingClientRect();
       const x = ((clientX - rect.left) / rect.width) * 2 - 1;
       const y = -((clientY - rect.top) / rect.height) * 2 + 1;
-
       // Convert to WebGL coordinates
       const webglX = x * this.viewport.width / 2;
       const webglY = y * this.viewport.height / 2;
-
       // Check each media
       for (const media of this.medias) {
         const bounds = media.getBounds();
@@ -679,13 +573,13 @@ class App {
           webglY >= bounds.y &&
           webglY <= bounds.y + bounds.height
         ) {
-          const event = new CustomEvent('productClick', { detail: { productId: media.productId } });
+          // Dispatch categoryClick event instead of productClick
+          const event = new CustomEvent('categoryClick', { detail: { categoryId: media.categoryId } });
           this.container.dispatchEvent(event);
           break;
         }
       }
     }
-    
     this.onCheck();
   }
 
@@ -794,62 +688,59 @@ class App {
 }
 
 interface CircularGalleryProps {
-  items?: Product[];
+  items?: Category[];
   bend?: number;
   textColor?: string;
   borderRadius?: number;
   font?: string;
 }
 
-const CircularGallery = forwardRef<HTMLDivElement, CircularGalleryProps>(
-  ({ items, bend = 3, textColor = "#ffffff", borderRadius = 0.05, font = "bold 36px Figtree" }, ref) => {
+const CircularGallery = forwardRef<HTMLDivElement | { [key: string]: HTMLDivElement | null }, CircularGalleryProps>(
+  ({ items, bend = 3, textColor = "#ff0000", borderRadius = 0.05, font = "bold 36px adobe-clean, \"Source Sans Pro\", -apple-system, BlinkMacSystemFont, \"Segoe UI\", Roboto, Ubuntu, \"Trebuchet MS\", \"Lucida Grande\", sans-serif" }, ref) => {
     const containerRef = useRef<HTMLDivElement>(null);
     const appInstanceRef = useRef<App | null>(null);
     const navigate = useNavigate();
-    
+    const itemRefs = useRef<{ [key: string]: HTMLDivElement | null }>({});
+
+    useImperativeHandle(ref, () => itemRefs.current);
+
     useEffect(() => {
-      if (!containerRef.current) return;
-      
-      // Clean up previous instance if exists
+      const container = containerRef.current;
+      if (!container) return;
+
       if (appInstanceRef.current) {
         appInstanceRef.current.destroy();
       }
-
-      // Create new instance
-      appInstanceRef.current = new App(containerRef.current, {
+      appInstanceRef.current = new App(container, {
         items,
         bend,
         textColor,
         borderRadius,
         font,
       });
-
-      // Add click handler for product navigation
-      const handleProductClick = (e: CustomEvent<{ productId: string }>) => {
-        navigate(`/product/${e.detail.productId}`);
+      const handleCategoryClick = (e: CustomEvent<{ categoryId: string }>) => {
+        navigate(`/product?category=${e.detail.categoryId}`);
       };
-
-      containerRef.current.addEventListener('productClick', handleProductClick as EventListener);
-
+      container.addEventListener('categoryClick', handleCategoryClick as EventListener);
       return () => {
         if (appInstanceRef.current) {
           appInstanceRef.current.destroy();
           appInstanceRef.current = null;
         }
-        containerRef.current?.removeEventListener('productClick', handleProductClick as EventListener);
+        container.removeEventListener('categoryClick', handleCategoryClick as EventListener);
       };
     }, [items, bend, textColor, borderRadius, font, navigate]);
 
     return (
-      <div className="circular-gallery-container" ref={(el) => {
-        containerRef.current = el;
-        if (typeof ref === 'function') {
-          ref(el);
-        } else if (ref) {
-          ref.current = el;
-        }
-      }}>
+      <div className="circular-gallery-container" ref={containerRef}>
         <div className="circular-gallery" />
+        {items && items.map((item) => (
+          <div
+            key={item.id}
+            ref={el => { itemRefs.current[item.id] = el; }}
+            style={{ display: 'none' }}
+          />
+        ))}
       </div>
     );
   }

@@ -1,17 +1,22 @@
 import React, { useState } from "react";
-import { AppBar as MuiAppBar, Toolbar, IconButton, Typography, Box, Avatar, Menu, MenuItem, Divider, Tooltip } from "@mui/material";
-import { Login, Logout, Menu as MenuIcon, Person, Settings } from "@mui/icons-material";
-import { useNavigate } from "react-router-dom";
+import {
+  AppBar as MuiAppBar,
+  Toolbar,
+  IconButton,
+  Typography,
+  Box,
+  Avatar,
+  Menu,
+  MenuItem,
+  Divider,
+  Tooltip,
+} from "@mui/material";
+import { Login, Logout, Person, Settings } from "@mui/icons-material";
+import { Link, useNavigate } from "react-router-dom";
 import { useAuth } from "../../contexts/AuthContext";
 import SearchBase from "../../components/SearchBase";
-
-interface AppBarProps {
-  open: boolean;
-  drawerWidth: number;
-  onDrawerToggle: () => void;
-}
-
-const AppBar: React.FC<AppBarProps> = ({ open, drawerWidth, onDrawerToggle }) => {
+import logo from "../../assets/Images/Logo.png";
+const AppBar: React.FC = () => {
   const { logout } = useAuth();
   const { user } = useAuth();
   const [anchorEl, setAnchorEl] = useState<null | HTMLElement>(null);
@@ -49,8 +54,8 @@ const AppBar: React.FC<AppBarProps> = ({ open, drawerWidth, onDrawerToggle }) =>
         backdropFilter: "blur(8px)",
         color: "#333",
         boxShadow: "0 2px 8px rgba(0,0,0,0.1)",
-        width: `calc(100% - ${open ? drawerWidth : 0}px)`,
-        ml: `${open ? drawerWidth : 0}px`,
+        width: `100%`,
+        ml: 0,
         transition: (theme) =>
           theme.transitions.create(["margin", "width"], {
             easing: theme.transitions.easing.sharp,
@@ -59,16 +64,25 @@ const AppBar: React.FC<AppBarProps> = ({ open, drawerWidth, onDrawerToggle }) =>
         borderBottom: "1px solid black",
         borderBottomLeftRadius: 50,
         borderBottomRightRadius: 50,
-      }}>
+      }}
+    >
       <Toolbar>
-        <IconButton color="inherit" aria-label="open drawer" edge="start" onClick={onDrawerToggle} sx={{ mr: 2 }}>
-          <MenuIcon />
-        </IconButton>
-        <Typography variant="h6" noWrap component="div" sx={{ fontWeight: 600 }}>
-          ResiBuy
-        </Typography>
+        <Link to={"/"}>
+          <img
+            src={logo}
+            alt="ResiBuy"
+            style={{ width: "65px", height: "60px" }}
+          />
+        </Link>
+
         <Box sx={{ flexGrow: 1 }} />
-        <SearchBase value={searchValue} onChange={handleSearchChange} onSearch={handleSearch} sx={{ width: "300px", marginRight: 3 }} inputSx={{ width: "100%" }} />
+        <SearchBase
+          value={searchValue}
+          onChange={handleSearchChange}
+          onSearch={handleSearch}
+          sx={{ width: "300px", marginRight: 3 }}
+          inputSx={{ width: "100%" }}
+        />
         {user ? (
           <Avatar
             sx={{
@@ -79,7 +93,8 @@ const AppBar: React.FC<AppBarProps> = ({ open, drawerWidth, onDrawerToggle }) =>
               color: "#fff",
               fontWeight: 600,
             }}
-            onClick={handleProfileMenuOpen}>
+            onClick={handleProfileMenuOpen}
+          >
             <Person />
           </Avatar>
         ) : (
@@ -95,7 +110,8 @@ const AppBar: React.FC<AppBarProps> = ({ open, drawerWidth, onDrawerToggle }) =>
           }}
           anchorEl={anchorEl}
           open={Boolean(anchorEl)}
-          onClose={handleProfileMenuClose}>
+          onClose={handleProfileMenuClose}
+        >
           <MenuItem onClick={() => navigate("/profile")} sx={{ gap: 1 }}>
             <Person fontSize="small" />
             <Typography variant="body2">Hồ sơ</Typography>
@@ -111,7 +127,8 @@ const AppBar: React.FC<AppBarProps> = ({ open, drawerWidth, onDrawerToggle }) =>
               gap: 1,
               color: "error.main",
               "&:hover": { backgroundColor: "rgba(255, 0, 0, 0.08)" },
-            }}>
+            }}
+          >
             <Logout />
             <Typography variant="body2">Đăng xuất</Typography>
           </MenuItem>
