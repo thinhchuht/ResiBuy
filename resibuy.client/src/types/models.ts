@@ -181,3 +181,11 @@ export interface Report {
   createdAt: string;
   userId: string;
 }
+
+export interface EventItem {
+  id: string | number;
+  image: string;
+  title?: string;
+  description?: string;
+  storeId: string;
+}
