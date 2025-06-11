@@ -1,16 +1,4 @@
-import {
-  Box,
-  Typography,
-  IconButton,
-  Checkbox,
-  Table,
-  TableBody,
-  TableCell,
-  TableContainer,
-  TableHead,
-  TableRow,
-  TablePagination,
-} from "@mui/material";
+import { Box, Typography, IconButton, Checkbox, Table, TableBody, TableCell, TableContainer, TableHead, TableRow, TablePagination } from "@mui/material";
 import { Add, Remove, Delete } from "@mui/icons-material";
 import { useNavigate } from "react-router-dom";
 import type { CartItem as CartItemType } from "../../types/models";
@@ -62,32 +50,29 @@ const CartItemSection = ({
         <TableHead>
           <TableRow>
             <TableCell padding="checkbox" width={40}>
-              <Checkbox
-                checked={allSelected}
-                onChange={onSelectAll}
-              />
+              <Checkbox checked={allSelected} onChange={onSelectAll} />
             </TableCell>
             <TableCell align="center" width={40}>
               <Typography variant="subtitle1" fontWeight="bold">
                 STT
               </Typography>
             </TableCell>
-            <TableCell sx={tableCellStyle}>
+            <TableCell sx={{ ...tableCellStyle, minWidth: "300px" }}>
               <Typography variant="subtitle1" fontWeight="bold">
                 SẢN PHẨM
               </Typography>
             </TableCell>
-            <TableCell sx={tableCellStyle}>
+            <TableCell align="right" sx={{ ...tableCellStyle, minWidth: "150px" }}>
               <Typography variant="subtitle1" fontWeight="bold">
                 SỐ LƯỢNG
               </Typography>
             </TableCell>
-            <TableCell sx={tableCellStyle}>
+            <TableCell align="right" sx={{ ...tableCellStyle, minWidth: "100px" }}>
               <Typography variant="subtitle1" fontWeight="bold">
                 CÂN NẶNG
               </Typography>
             </TableCell>
-            <TableCell align="right" sx={tableCellStyle}>
+            <TableCell align="right" sx={{ ...tableCellStyle, minWidth: "180px" }}>
               <Typography variant="subtitle1" fontWeight="bold">
                 TỔNG CỘNG
               </Typography>
@@ -100,15 +85,12 @@ const CartItemSection = ({
             return (
               <TableRow key={item.id}>
                 <TableCell padding="checkbox">
-                  <Checkbox
-                    checked={selectedItems.includes(item.id)}
-                    onChange={() => onSelect(item.id)}
-                  />
+                  <Checkbox checked={selectedItems.includes(item.id)} onChange={() => onSelect(item.id)} />
                 </TableCell>
                 <TableCell align="center">
                   <Typography variant="body2">{index + 1}</Typography>
                 </TableCell>
-                <TableCell sx={tableCellStyle}>
+                <TableCell sx={{ ...tableCellStyle, minWidth: "300px" }}>
                   <Box sx={{ display: "flex", alignItems: "center", gap: 2 }}>
                     <img
                       src={product.imageUrl}
@@ -129,7 +111,7 @@ const CartItemSection = ({
                         sx={{
                           cursor: "pointer",
                           "&:hover": {
-                            color: "primary.main",
+                            color: "red",
                           },
                           overflow: "hidden",
                           textOverflow: "ellipsis",
@@ -137,49 +119,35 @@ const CartItemSection = ({
                           WebkitLineClamp: 2,
                           WebkitBoxOrient: "vertical",
                         }}
-                        onClick={() => navigate(`/products?id=${product.id}`)}
-                      >
+                        onClick={() => navigate(`/products?id=${product.id}`)}>
                         {product.name}
                       </Typography>
                       <Typography variant="body2" color="text.secondary">
-                        Giá: ${product.price.toFixed(2)}
+                        Giá: {product.price.toFixed(2)}đ
                       </Typography>
                     </Box>
                   </Box>
                 </TableCell>
-                <TableCell sx={tableCellStyle}>
-                  <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
-                    <IconButton
-                      size="small"
-                      onClick={() => onQuantityChange(item.id, item.quantity - 1)}
-                      disabled={item.quantity <= 1}
-                    >
+                <TableCell align="right" sx={{ ...tableCellStyle, minWidth: "150px" }}>
+                  <Box sx={{ display: "flex", alignItems: "center", gap: 1, justifyContent: "flex-end" }}>
+                    <IconButton size="small" onClick={() => onQuantityChange(item.id, item.quantity - 1)} disabled={item.quantity <= 1}>
                       <Remove fontSize="small" />
                     </IconButton>
                     <Typography variant="body1">{item.quantity}</Typography>
-                    <IconButton
-                      size="small"
-                      onClick={() => onQuantityChange(item.id, item.quantity + 1)}
-                    >
+                    <IconButton size="small" onClick={() => onQuantityChange(item.id, item.quantity + 1)}>
                       <Add fontSize="small" />
                     </IconButton>
-                    <IconButton
-                      size="small"
-                      color="error"
-                      onClick={() => onRemove(item.id)}
-                    >
+                    <IconButton size="small" color="error" onClick={() => onRemove(item.id)}>
                       <Delete fontSize="small" />
                     </IconButton>
                   </Box>
                 </TableCell>
-                <TableCell sx={tableCellStyle}>
-                  <Typography variant="body1">
-                    {(product.weight * item.quantity).toFixed(2)} kg
-                  </Typography>
+                <TableCell align="center" sx={{ ...tableCellStyle, minWidth: "10px" }}>
+                  <Typography variant="body1">{(product.weight * item.quantity).toFixed(2)} kg</Typography>
                 </TableCell>
-                <TableCell align="right" sx={tableCellStyle}>
-                  <Typography variant="h6" color="primary.main">
-                    ${calculateItemTotal(item)}
+                <TableCell align="right" sx={{ ...tableCellStyle, minWidth: "150px" }}>
+                  <Typography variant="h6" color="red">
+                    {calculateItemTotal(item)}đ
                   </Typography>
                 </TableCell>
               </TableRow>
@@ -200,4 +168,4 @@ const CartItemSection = ({
   );
 };
 
-export default CartItemSection; 
+export default CartItemSection;
