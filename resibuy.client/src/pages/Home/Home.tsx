@@ -1,21 +1,21 @@
 import { Box } from "@mui/material";
 import Carousel from "../../animations/Carousel";
-import { DEFAULT_ITEMS } from "../../fakeData/fakeEventData";
-import Category from "./Category";
-import FeaturedProduct from "./FeaturedProduct";
-import Aricle from "./Article";
-import Voucher from "./Voucher";
+import { fakeEventData } from "../../fakeData/fakeEventData";
+import AricleSection from "./ArticleSection";
+import VoucherSection from "./VoucherSection";
+import CategorySection from "./CategorySection";
+import FeaturedProductSection from "./FeaturedProductSection";
 
 const Home = () => {
   return (
     <Box>
       <Box sx={{ width: "100%", padding: 4, marginBottom: "10px" }}>
-        <Carousel items={DEFAULT_ITEMS} />
+        <Carousel items={fakeEventData} />
       </Box>
-      <Voucher />
-      <Category />
-      <FeaturedProduct />
-      <Aricle />
+      <VoucherSection />
+      <CategorySection />
+      <FeaturedProductSection />
+      <AricleSection />
     </Box>
   );
 };

@@ -4,7 +4,7 @@ import { fakeCategories } from "../../fakeData/fakeCategoryData";
 import CircularGallery from "../../animations/CircularGallery";
 import CategoryIcon from "../../assets/icons/Category";
 
-const Category = () => {
+const CategorySection = () => {
   const [categories] = useState(fakeCategories);
 
   return (
@@ -45,4 +45,4 @@ const Category = () => {
   );
 };
 
-export default Category;
+export default CategorySection;

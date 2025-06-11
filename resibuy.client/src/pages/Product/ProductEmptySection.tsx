@@ -1,6 +1,6 @@
 import { Box, Typography } from "@mui/material";
 
-const ProductEmpty = () => (
+const ProductEmptySection = () => (
   <Box
     sx={{
       textAlign: "center",
@@ -14,4 +14,4 @@ const ProductEmpty = () => (
   </Box>
 );
 
-export default ProductEmpty;
+export default ProductEmptySection;

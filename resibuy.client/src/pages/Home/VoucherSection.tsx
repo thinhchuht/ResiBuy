@@ -10,7 +10,7 @@ import { useToastify } from "../../hooks/useToastify";
 
 const ITEMS_PER_PAGE = 3;
 
-const Voucher = () => {
+const VoucherSection = () => {
   const { user } = useAuth();
   const toast = useToastify();
   const navigate = useNavigate();
@@ -157,4 +157,4 @@ const Voucher = () => {
   );
 };
 
-export default Voucher;
+export default VoucherSection;

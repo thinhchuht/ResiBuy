@@ -13,10 +13,12 @@ interface ProductCardProps {
 }
 
 const ProductCard = ({ product, productActions }: ProductCardProps) => {
+  const discountedPrice = product.price * (1 - product.discount / 100);
+
   return (
     <Card
       sx={{
-        borderRadius: 4,
+        borderRadius: 8,
         border: "1px solid rgb(202, 176, 172)",
         boxShadow: "0 2px 12px 0 rgba(0,0,0,0.03)",
         transition: "all 0.3s ease",
@@ -163,7 +165,7 @@ const ProductCard = ({ product, productActions }: ProductCardProps) => {
         Lượt mua: {product.sold}
       </Box>
       <Box sx={{ display: "flex", alignItems: "center", gap: 0.8, justifyContent: "center", mb: 0.2 }}>
-        <Typography sx={{ color: "#FF6B6B", fontWeight: 600, fontSize: "1.05rem" }}>{product.price.toLocaleString(undefined, { maximumFractionDigits: 2 })}đ</Typography>
+        <Typography sx={{ color: "#FF6B6B", fontWeight: 600, fontSize: "1.05rem" }}>{discountedPrice.toFixed(2)}đ</Typography>
         {product.discount > 0 && (
           <Typography
             variant="body2"
@@ -173,7 +175,7 @@ const ProductCard = ({ product, productActions }: ProductCardProps) => {
               fontWeight: 400,
               fontSize: 13,
             }}>
-            ${(product.price / (1 - product.discount / 100)).toLocaleString(undefined, { maximumFractionDigits: 2 })}
+            ${product.price.toFixed(2)}
           </Typography>
         )}
       </Box>

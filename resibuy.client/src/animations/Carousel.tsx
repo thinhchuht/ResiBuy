@@ -286,7 +286,7 @@ export default function Carousel({ items, autoplay = true, autoplayDelay = 3000,
         onAnimationComplete={handleAnimationComplete}>
         {carouselItems.map((item: EventItem, index: number) => (
           <StyledCarouselItem
-            key={item.id}
+            key={`${item.id}-${index}`}
             className={round ? "round" : ""}
             style={{
               width: itemWidth,

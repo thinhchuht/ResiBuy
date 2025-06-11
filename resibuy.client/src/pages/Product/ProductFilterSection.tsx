@@ -9,7 +9,7 @@ interface ProductFilterProps {
   fakeCategories: Category[];
 }
 
-const ProductFilter = ({ selectedCategory, setSelectedCategory, priceRange, setPriceRange, fakeCategories }: ProductFilterProps) => (
+const ProductFilterSection = ({ selectedCategory, setSelectedCategory, priceRange, setPriceRange, fakeCategories }: ProductFilterProps) => (
   <Paper
     elevation={0}
     sx={{
@@ -17,7 +17,7 @@ const ProductFilter = ({ selectedCategory, setSelectedCategory, priceRange, setP
       borderRadius: 4,
       border: "1px solid #eee",
       position: "sticky",
-      top: 80,
+      top: 150,
     }}>
     <Typography variant="h6" sx={{ mb: 3, fontWeight: 600, color: "#2c3e50" }}>
       Bộ lọc sản phẩm
@@ -90,4 +90,4 @@ const ProductFilter = ({ selectedCategory, setSelectedCategory, priceRange, setP
   </Paper>
 );
 
-export default ProductFilter;
+export default ProductFilterSection;

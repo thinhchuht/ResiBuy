@@ -1,4 +1,10 @@
-import { Box, Typography, Link as MuiLink, Divider } from "@mui/material";
+import {
+  Box,
+  Typography,
+  Link as MuiLink,
+  Divider,
+  Button,
+} from "@mui/material";
 import { useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { fakeProducts } from "../../fakeData/fakeProductData";
@@ -9,7 +15,7 @@ import ArrowRightIcon from "../../assets/icons/ArrowRightIcon";
 import { useAuth } from "../../contexts/AuthContext";
 import ProductCard from "../../components/ProductCard";
 
-const FeaturedProduct = () => {
+const FeaturedProductSection = () => {
   const { user } = useAuth();
   const navigate = useNavigate();
   const [products] = useState(fakeProducts.slice(0, 12));
@@ -23,7 +29,7 @@ const FeaturedProduct = () => {
     }
   };
   const handleQuickView = (product: Product) => {
-    alert(`Xem nhanh: ${product.name}`);
+    navigate(`/products?id=${product.id}`);
   };
 
   const productActions = [
@@ -58,16 +64,24 @@ const FeaturedProduct = () => {
         justifyContent: "center",
         borderRadius: 4,
         boxShadow: "0 4px 20px 0 rgba(0,0,0,0.05)",
-      }}>
-      <Box sx={{ display: "flex", justifyContent: "space-between", alignItems: "center", margin: "30px 15px" }}>
+      }}
+    >
+      <Box
+        sx={{
+          display: "flex",
+          justifyContent: "space-between",
+          alignItems: "center",
+          margin: "30px 15px",
+        }}
+      >
         <Typography
           variant="h5"
           sx={{
             fontWeight: 600,
-            marginBottom: "40px",
             color: "#2c3e50",
             letterSpacing: "0.5px",
-          }}>
+          }}
+        >
           SẢN PHẨM BÁN CHẠY
         </Typography>
         <MuiLink
@@ -88,25 +102,52 @@ const FeaturedProduct = () => {
               textDecoration: "underline",
               transform: "translateY(-2px) scale(1.05)",
             },
-          }}>
-          Xem thêm <ArrowRightIcon width={24} height={24} />
+          }}
+        >
+          <Button
+            variant="outlined"
+            sx={{
+              borderRadius: 8,
+              textTransform: "none",
+              fontSize: "1.1rem",
+              borderColor: "#FF6B6B",
+              color: "#FF6B6B",
+              "&:hover": {
+                borderColor: "#FF5C5C",
+                backgroundColor: "#FF6B6B1A",
+              },
+            }}
+          >
+            Xem thêm <ArrowRightIcon stroke="#FF6B6B"/>
+          </Button>
         </MuiLink>
       </Box>
-      <Divider sx={{ backgroundColor: "#e04225", width: "80%", margin: "10px auto" }} />
+      <Divider
+        sx={{ backgroundColor: "#e04225", width: "80%", margin: "10px auto" }}
+      />
       <Box
         sx={{
           display: "grid",
-          gridTemplateColumns: { xs: "1fr", sm: "1fr 1fr", md: "1fr 1fr 1fr 1fr" },
+          gridTemplateColumns: {
+            xs: "1fr",
+            sm: "1fr 1fr",
+            md: "1fr 1fr 1fr 1fr",
+          },
           gap: 5,
           marginBottom: 5,
           marginTop: 5,
-        }}>
+        }}
+      >
         {products.map((product) => (
-          <ProductCard key={product.id} product={product} productActions={productActions} />
+          <ProductCard
+            key={product.id}
+            product={product}
+            productActions={productActions}
+          />
         ))}
       </Box>
     </Box>
   );
 };
 
-export default FeaturedProduct;
+export default FeaturedProductSection;
