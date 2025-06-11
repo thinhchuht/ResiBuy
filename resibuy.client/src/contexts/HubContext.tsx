@@ -1,31 +1,9 @@
 import React, { createContext, useContext, useEffect, useState } from 'react';
 import { HubConnection, HubConnectionBuilder, HttpTransportType } from '@microsoft/signalr';
 import { useAuth } from './AuthContext';
+import type { OrderData, PaymentData, UserCreatedData } from '../types/hubData';
 
-// Define event data types
-export interface UserCreatedData {
-  userId: string;
-  data: {
-    email: string;
-    username: string;
-    // Add other user data fields
-  };
-  timestamp: string;
-}
 
-export interface OrderData {
-  orderId: string;
-  status: string;
-  total: number;
-  // Add other order data fields
-}
-
-export interface PaymentData {
-  paymentId: string;
-  amount: number;
-  status: string;
-  // Add other payment data fields
-}
 
 // Define event names
 export const HubEvents = {
@@ -37,9 +15,9 @@ export const HubEvents = {
 
 type EventData = {
   [HubEvents.USER_CREATED]: UserCreatedData;
-  [HubEvents.NEW_ORDER]: { data: OrderData; timestamp: string };
-  [HubEvents.ORDER_STATUS_CHANGED]: { data: OrderData; timestamp: string };
-  [HubEvents.PAYMENT_RECEIVED]: { data: PaymentData; timestamp: string };
+  [HubEvents.NEW_ORDER]: { data: OrderData };
+  [HubEvents.ORDER_STATUS_CHANGED]: { data: OrderData };
+  [HubEvents.PAYMENT_RECEIVED]: { data: PaymentData };
 };
 
 interface HubContextType {
@@ -124,6 +102,7 @@ export const HubProvider: React.FC<{ children: React.ReactNode }> = ({ children 
   );
 };
 
+// eslint-disable-next-line react-refresh/only-export-components
 export const useHub = () => {
   const context = useContext(HubContext);
   if (context === undefined) {

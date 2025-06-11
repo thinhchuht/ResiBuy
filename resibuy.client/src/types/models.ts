@@ -84,7 +84,7 @@ export interface CartItem {
   cartId: string;
   productId: string;
   quantity: number;
-  product : Product[]
+  product : Product
 }
 
 export interface Order {

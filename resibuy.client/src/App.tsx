@@ -16,6 +16,7 @@ import HomeLayout from "./layouts/HomeLayout/HomeLayout";
 import Products from "./pages/Product/Products";
 import ScrollToTop from "./components/ScrollToTop";
 import Cart from "./pages/Cart/Cart";
+import Checkout from "./pages/Checkout/Checkout";
 
 const App: React.FC = () => {
   return (
@@ -47,6 +48,16 @@ const App: React.FC = () => {
                 <ProtectedRoute>
                   <HomeLayout>
                     <Cart />
+                  </HomeLayout>
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/checkout"
+              element={
+                <ProtectedRoute>
+                  <HomeLayout>
+                    <Checkout />
                   </HomeLayout>
                 </ProtectedRoute>
               }
