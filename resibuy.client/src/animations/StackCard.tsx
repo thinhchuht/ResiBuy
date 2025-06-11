@@ -1,6 +1,6 @@
 import { motion, useMotionValue, useTransform } from "framer-motion";
 import { useState } from "react";
-import "./Stack.css";
+import "./StackCard.css";
 
 interface CardRotateProps {
   children: React.ReactNode;

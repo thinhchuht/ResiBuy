@@ -1,6 +1,6 @@
 import { Box, Typography, Button } from "@mui/material";
 import PlayCircleOutlineIcon from "@mui/icons-material/PlayCircleOutline";
-const Aricle = () => {
+const AricleSection = () => {
   return (
     <Box
       sx={{
@@ -85,4 +85,4 @@ const Aricle = () => {
   );
 };
 
-export default Aricle;
+export default AricleSection;

@@ -719,7 +719,7 @@ const CircularGallery = forwardRef<HTMLDivElement | { [key: string]: HTMLDivElem
         font,
       });
       const handleCategoryClick = (e: CustomEvent<{ categoryId: string }>) => {
-        navigate(`/product?category=${e.detail.categoryId}`);
+        navigate(`/products?categoryId=${e.detail.categoryId}`);
       };
       container.addEventListener('categoryClick', handleCategoryClick as EventListener);
       return () => {
