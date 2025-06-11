@@ -1,24 +1,34 @@
 import { Container, Box } from "@mui/material";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { fakeProducts } from "../../fakeData/fakeProductData";
 import { fakeCategories } from "../../fakeData/fakeCategoryData";
 import { ShoppingCart, Visibility, Store } from "@mui/icons-material";
 import { useAuth } from "../../contexts/AuthContext";
 import { useToastify } from "../../hooks/useToastify";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, useSearchParams } from "react-router-dom";
 import type { Product } from "../../types/models";
-import ProductFilter from "./ProductFilter";
-import SortBar from "./SortBar";
-import ProductGrid from "./ProductGrid";
-import ProductEmpty from "./ProductEmpty";
+import Carousel from "../../animations/Carousel";
+import { fakeEventData } from "../../fakeData/fakeEventData";
+import ProductDetail from "./ProductDetail/ProductDetail";
+import ProductEmptySection from "./ProductEmptySection";
+import SortBarSection from "./SortBarSection";
+import ProductGridSection from "./ProductGridSection";
+import ProductFilterSection from "./ProductFilterSection";
 
 const Products = () => {
   const { user } = useAuth();
   const navigate = useNavigate();
   const toast = useToastify();
-  const [selectedCategory, setSelectedCategory] = useState("all");
+  const [searchParams] = useSearchParams();
+  const productId = searchParams.get('id');
+  const categoryId = searchParams.get('categoryId');
+  const [selectedCategory, setSelectedCategory] = useState(categoryId || "all");
   const [sortBy, setSortBy] = useState("newest");
   const [priceRange, setPriceRange] = useState([0, 50000000]);
+
+  useEffect(() => {
+    setSelectedCategory(categoryId || "all");
+  }, [categoryId]);
 
   const handleAddToCart = (product: Product) => {
     if (user) {
@@ -30,8 +40,9 @@ const Products = () => {
   };
 
   const handleQuickView = (product: Product) => {
-    alert(`Xem nhanh: ${product.name}`);
+    navigate(`/products?id=${product.id}`);
   };
+
 
   const productActions = [
     {
@@ -53,9 +64,14 @@ const Products = () => {
 
   let filteredProducts = [...fakeProducts];
   if (selectedCategory !== "all") {
-    filteredProducts = filteredProducts.filter((product) => product.categoryId === selectedCategory);
+    filteredProducts = filteredProducts.filter(
+      (product) => product.categoryId === selectedCategory
+    );
   }
-  filteredProducts = filteredProducts.filter((product) => product.price >= priceRange[0] && product.price <= priceRange[1]);
+  filteredProducts = filteredProducts.filter(
+    (product) =>
+      product.price >= priceRange[0] && product.price <= priceRange[1]
+  );
   switch (sortBy) {
     case "price_asc":
       filteredProducts.sort((a, b) => a.price - b.price);
@@ -67,27 +83,49 @@ const Products = () => {
       filteredProducts.sort((a, b) => b.sold - a.sold);
       break;
     default:
-      filteredProducts.sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
+      filteredProducts.sort(
+        (a, b) =>
+          new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()
+      );
+  }
+
+  if (productId) {
+    return <ProductDetail />;
   }
 
   return (
-    <Container maxWidth="xl" sx={{ py: 4 }}>
-      <Box sx={{ display: "flex", gap: 3 }}>
-        <Box sx={{ width: { xs: "100%", md: "25%" } }}>
-          <ProductFilter
-            selectedCategory={selectedCategory}
-            setSelectedCategory={setSelectedCategory}
-            priceRange={priceRange}
-            setPriceRange={setPriceRange}
-            fakeCategories={fakeCategories}
-          />
+    <Box>
+      <Carousel items={fakeEventData} />
+      <Container maxWidth="xl" sx={{ py: 4 }}>
+        <Box sx={{ display: "flex", gap: 3 }}>
+          <Box sx={{ width: { xs: "100%", md: "25%" } }}>
+            <ProductFilterSection
+              selectedCategory={selectedCategory}
+              setSelectedCategory={setSelectedCategory}
+              priceRange={priceRange}
+              setPriceRange={setPriceRange}
+              fakeCategories={fakeCategories}
+            />
+          </Box>
+          <Box sx={{ flex: 1 }}>
+            <SortBarSection
+              selectedCategory={selectedCategory}
+              sortBy={sortBy}
+              setSortBy={setSortBy}
+              fakeCategories={fakeCategories}
+            />
+            {filteredProducts.length > 0 ? (
+              <ProductGridSection
+                filteredProducts={filteredProducts}
+                productActions={productActions}
+              />
+            ) : (
+              <ProductEmptySection />
+            )}
+          </Box>
         </Box>
-        <Box sx={{ flex: 1 }}>
-          <SortBar selectedCategory={selectedCategory} sortBy={sortBy} setSortBy={setSortBy} fakeCategories={fakeCategories} />
-          {filteredProducts.length > 0 ? <ProductGrid filteredProducts={filteredProducts} productActions={productActions} /> : <ProductEmpty />}
-        </Box>
-      </Box>
-    </Container>
+      </Container>
+    </Box>
   );
 };
 

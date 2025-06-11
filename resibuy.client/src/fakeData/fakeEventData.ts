@@ -1,7 +1,7 @@
 import type { EventItem } from "../types/models";
 import { fakeStores } from "./fakeStoreData";
 
-export const DEFAULT_ITEMS: EventItem[] = [
+export const fakeEventData: EventItem[] = [
     {
       id: 1,
       image: "https://images.unsplash.com/photo-1498049794561-7780e7231661?q=80&w=2070&auto=format&fit=crop",

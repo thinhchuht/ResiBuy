@@ -9,12 +9,14 @@ import TestHub from "./components/test/TestHub";
 import Home from "./pages/Home/Home";
 import HomeLayout from "./layouts/HomeLayout/HomeLayout";
 import Products from "./pages/Product/Products";
+import ScrollToTop from "./components/ScrollToTop";
 
 const App: React.FC = () => {
   return (
     <AuthProvider>
       <HubProvider>
         <Router>
+          <ScrollToTop />
           <Routes>
             <Route path="/login" element={<Login />} />
             <Route

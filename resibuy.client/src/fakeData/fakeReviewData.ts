@@ -1,0 +1,47 @@
+
+export const fakeReviewData = [
+    {
+      reviewerName: "Black",
+      rating: 4,
+      title: "Macbook space gray",
+      body: "Macbook space gray",
+      date: "22/04/2025",
+      avatarLetter: "B",
+      avatarBgColor: 'black', 
+    },
+    {
+      reviewerName: "Red",
+      rating: 4,
+      title: "Macbook space gray",
+      body: "Macbook space gray",
+      date: "22/04/2025",
+      avatarLetter: "R",
+      avatarBgColor: 'red', 
+    },
+    {
+      reviewerName: "Red",
+      rating: 4,
+      title: "Macbook space gray",
+      body: "Macbook space gray",
+      date: "22/04/2025",
+      avatarLetter: "R",
+      avatarBgColor: 'red', 
+    },    {
+      reviewerName: "Red",
+      rating: 2,
+      title: "Macbook space gray",
+      body: "Macbook space gray",
+      date: "22/04/2025",
+      avatarLetter: "R",
+      avatarBgColor: 'red', 
+    },
+    {
+      reviewerName: "Red",
+      rating: 1,
+      title: "Macbook space gray",
+      body: "Macbook space gray",
+      date: "22/04/2025",
+      avatarLetter: "R",
+      avatarBgColor: 'red', 
+    },
+  ];

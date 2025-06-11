@@ -162,6 +162,8 @@ const AppBar: React.FC = () => {
               }}
               onClose={handleHomeMenuClose}
               disableRestoreFocus
+              disableEnforceFocus
+              disableAutoFocus
               sx={{
                 pointerEvents: "none",
                 "& .MuiPopover-paper": {
@@ -290,6 +292,8 @@ const AppBar: React.FC = () => {
                   }}
                   onClose={handleOrdersMenuClose}
                   disableRestoreFocus
+                  disableEnforceFocus
+                  disableAutoFocus
                   sx={{
                     pointerEvents: "none",
                     "& .MuiPopover-paper": {
@@ -406,6 +410,8 @@ const AppBar: React.FC = () => {
           anchorEl={anchorEl}
           open={Boolean(anchorEl)}
           onClose={handleProfileMenuClose}
+          disableEnforceFocus
+          disableAutoFocus
           PaperProps={{
             sx: {
               mt: 1,
@@ -595,10 +601,18 @@ const AppBar: React.FC = () => {
           </MenuItem>
         </Menu>
 
-        <Menu
-          anchorEl={notificationAnchorEl}
+        <Popover
           open={Boolean(notificationAnchorEl)}
+          anchorEl={notificationAnchorEl}
           onClose={handleNotificationClose}
+          anchorOrigin={{
+            vertical: 'bottom',
+            horizontal: 'right',
+          }}
+          transformOrigin={{
+            vertical: 'top',
+            horizontal: 'right',
+          }}
           PaperProps={{
             sx: {
               mt: 1,
@@ -643,7 +657,7 @@ const AppBar: React.FC = () => {
               </Typography>
             </Box>
           )}
-        </Menu>
+        </Popover>
       </Toolbar>
     </MuiAppBar>
   );

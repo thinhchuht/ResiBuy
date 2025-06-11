@@ -15,7 +15,7 @@ const sortOptions = [
   { value: "popular", label: "Phổ biến nhất" },
 ];
 
-const SortBar = ({ selectedCategory, sortBy, setSortBy, fakeCategories }: SortBarProps) => (
+const SortBarSection = ({ selectedCategory, sortBy, setSortBy, fakeCategories }: SortBarProps) => (
   <Box
     sx={{
       display: "flex",
@@ -49,4 +49,4 @@ const SortBar = ({ selectedCategory, sortBy, setSortBy, fakeCategories }: SortBa
   </Box>
 );
 
-export default SortBar;
+export default SortBarSection;
