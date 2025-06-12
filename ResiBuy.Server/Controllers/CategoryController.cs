@@ -43,7 +43,7 @@ namespace ResiBuy.Server.Controllers
         {
             try
             {
-                var result = await mediator.Send(new GetAllCategoriesQuery());
+                var result = await mediator.Send(new GetPagedProductsByCategoryIdAsync(categoryId, pageNumber, pageSize));
                 return Ok(result);
             }
             catch (Exception ex)

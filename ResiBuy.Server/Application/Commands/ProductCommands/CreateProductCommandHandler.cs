@@ -12,7 +12,6 @@ namespace ResiBuy.Server.Application.Commands.ProductCommands
             {
                 var product = new Product
                 {
-                    Id = command.ProductDto.Id,
                     Name = command.ProductDto.Name,
                     ImageUrl = command.ProductDto.ImageUrl,
                     Quantity = command.ProductDto.Quantity,
