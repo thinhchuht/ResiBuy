@@ -1,4 +1,6 @@
-﻿var builder = WebApplication.CreateBuilder(args);
+﻿using ResiBuy.Server.Services.VNPayServices;
+
+var builder = WebApplication.CreateBuilder(args);
 
 var services = builder.Services;
 
@@ -56,8 +58,6 @@ services.AddSwaggerGen(
     });
     }
 );
-
-services.Configure<VNPayConfig>(builder.Configuration.GetSection("VNPay"));
 services.AddScoped<IVNPayService, VNPayService>();
 
 var app = builder.Build();

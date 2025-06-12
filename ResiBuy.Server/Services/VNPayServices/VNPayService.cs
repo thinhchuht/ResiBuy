@@ -1,40 +1,37 @@
-﻿using System.Security.Cryptography;
-using System.Text;
-using Microsoft.Extensions.Options;
+﻿using System.Globalization;
+using System.Net;
 
 namespace ResiBuy.Server.Services.VNPayServices
 {
-    public class VNPayService : IVNPayService
+    public class VNPayService(IConfiguration configuration) : IVNPayService
     {
-        private readonly VNPayConfig _config;
-
-        public VNPayService(IOptions<VNPayConfig> config)
-        {
-            _config = config.Value;
-        }
-
         public string CreatePaymentUrl(decimal amount, string orderId, string orderInfo)
         {
-            var vnpay = new SortedList<string, string>();
-            vnpay.Add("vnp_Version", _config.Version);
-            vnpay.Add("vnp_Command", _config.Command);
-            vnpay.Add("vnp_TmnCode", _config.TmnCode);
-            vnpay.Add("vnp_Amount", (amount * 100).ToString()); // Amount in VND
+            var vnpay = new SortedList<string, string>(new VnPayCompare());
+            vnpay.Add("vnp_Amount", ((long)(amount * 100)).ToString());
+            vnpay.Add("vnp_Command", "pay");
             vnpay.Add("vnp_CreateDate", DateTime.Now.ToString("yyyyMMddHHmmss"));
-            vnpay.Add("vnp_CurrCode", _config.CurrCode);
-            vnpay.Add("vnp_IpAddr", "127.0.0.1"); // Replace with actual IP in production
-            vnpay.Add("vnp_Locale", _config.Locale);
+            vnpay.Add("vnp_CurrCode", "VND");
+            vnpay.Add("vnp_IpAddr", "::1");
+            vnpay.Add("vnp_Locale", "vn");
             vnpay.Add("vnp_OrderInfo", orderInfo);
-            vnpay.Add("vnp_OrderType", "other"); // Default value
-            vnpay.Add("vnp_ReturnUrl", _config.ReturnUrl);
+            vnpay.Add("vnp_OrderType", "other");
+            vnpay.Add("vnp_ReturnUrl", configuration.GetValue<string>("VnPay:ReturnUrl"));
+            vnpay.Add("vnp_TmnCode", configuration.GetValue<string>("VnPay:TmnCode"));
             vnpay.Add("vnp_TxnRef", orderId);
-
-            var signData = string.Join("&", vnpay.Select(kvp => $"{kvp.Key}={kvp.Value}"));
-            var hash = HmacSHA512(_config.HashSecret, signData);
-            vnpay.Add("vnp_SecureHash", hash);
-
+            vnpay.Add("vnp_Version", "2.1.0");
+            var signData = new StringBuilder();
+            foreach (var kv in vnpay)
+            {
+                if (!string.IsNullOrEmpty(kv.Value))
+                    signData.Append(WebUtility.UrlEncode(kv.Key) + "=" + WebUtility.UrlEncode(kv.Value) + "&");
+            }
+            signData.Length -= 1;
+            var hash = HmacSHA512(configuration.GetValue<string>("VnPay:HashSecret"), signData.ToString());
             var queryString = string.Join("&", vnpay.Select(kvp => $"{kvp.Key}={Uri.EscapeDataString(kvp.Value)}"));
-            return $"{_config.BaseUrl}?{queryString}";
+            queryString += "&vnp_SecureHash=" + hash;
+            var url = $"{configuration.GetValue<string>("VnPay:BaseUrl")}?{queryString}";
+            return url;
         }
 
         public bool ValidatePayment(string responseData)
@@ -54,7 +51,7 @@ namespace ResiBuy.Server.Services.VNPayServices
             vnpay.Remove("vnp_SecureHash");
 
             var signData = string.Join("&", vnpay.Select(kvp => $"{kvp.Key}={kvp.Value}"));
-            var hash = HmacSHA512(_config.HashSecret, signData);
+            var hash = HmacSHA512(configuration.GetValue<string>("VnPay:HashSecret"), signData);
 
             return secureHash == hash;
         }
@@ -73,6 +70,13 @@ namespace ResiBuy.Server.Services.VNPayServices
                 }
             }
             return hash.ToString();
+        }
+        public class VnPayCompare : IComparer<string>
+        {
+            public int Compare(string x, string y)
+            {
+                return CompareInfo.GetCompareInfo("en-US").Compare(x, y, CompareOptions.Ordinal);
+            }
         }
     }
 }
