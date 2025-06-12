@@ -74,7 +74,7 @@ const Footer = () => {
             </Box>
             <Box sx={{ display: "flex", alignItems: "center", mb: 1 }}>
               <Email sx={{ mr: 1, color: "#007bff" }} />
-              <Typography variant="body2">resibuy@gmail.com</Typography>
+              <Typography variant="body2">resibuydev@gmail.com</Typography>
             </Box>
           </Box>
         </Box>

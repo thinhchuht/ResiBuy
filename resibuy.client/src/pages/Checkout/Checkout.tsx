@@ -1,7 +1,7 @@
 import React, { useState } from "react";
 import { Box, Typography, Container, Paper, Divider } from "@mui/material";
 import ShoppingCartIcon from "@mui/icons-material/ShoppingCart";
-import { useLocation } from "react-router-dom";
+import { useLocation, useNavigate } from "react-router-dom";
 import type { CartItem, Voucher } from "../../types/models";
 import VoucherSelectionModal from "../../components/VoucherSelectionModal";
 import { useAuth } from "../../contexts/AuthContext";
@@ -34,6 +34,7 @@ interface DeliveryInfo {
 const Checkout: React.FC = () => {
   const location = useLocation();
   const { user } = useAuth();
+  const navigate = useNavigate()
   const { selectedItems } = (location.state as {
     selectedItems: CartItem[];
   }) || { selectedItems: [] };
@@ -197,6 +198,7 @@ const Checkout: React.FC = () => {
       orders: allOrders,
       grandTotal,
     });
+    navigate('/checkout-sucess', { state: { isOrderSucess: true } });
   };
 
   return (
