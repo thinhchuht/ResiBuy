@@ -1,4 +1,4 @@
-﻿using Resend;
+﻿using ResiBuy.Server.Services.MailServices;
 
 namespace ResiBuy.Server.Extensions
 {
@@ -22,6 +22,7 @@ namespace ResiBuy.Server.Extensions
             services.AddScoped<IBuildingDbService, BuildingDbService>();
             services.AddScoped<IRoomDbService, RoomDbService>();
             services.AddScoped<ICartDbService, CartDbService>();
+            services.AddScoped<IMailService, MailService>();
             return services;
         }
 
@@ -59,19 +60,6 @@ namespace ResiBuy.Server.Extensions
                     RoleClaimType = ClaimTypes.Role
                 };
             });
-            return services;
-        }
-
-
-        public static IServiceCollection AddResend(this IServiceCollection services, IConfiguration configuration)
-        {
-            services.AddOptions();
-            services.AddHttpClient<ResendClient>();
-            services.Configure<ResendClientOptions>(o =>
-            {
-                o.ApiToken = Environment.GetEnvironmentVariable(configuration.GetValue<string>("ResendApiToken"));
-            });
-            services.AddTransient<IResend, ResendClient>();
             return services;
         }
     }

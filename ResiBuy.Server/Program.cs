@@ -4,7 +4,6 @@ var services = builder.Services;
 
 services.AddSqlDb(builder.Configuration)
     .AddServices()
-    .AddResend(builder.Configuration)
     .AddDbServices()
     .AddKafka(builder.Configuration)
     .AddAuthenJwtBase(builder.Configuration);
@@ -58,6 +57,9 @@ services.AddSwaggerGen(
     }
 );
 
+services.Configure<VNPayConfig>(builder.Configuration.GetSection("VNPay"));
+services.AddScoped<IVNPayService, VNPayService>();
+
 var app = builder.Build();
 // Đặt middleware này TRƯỚC tất cả các middleware khác
 app.UseMiddleware<ExceptionMiddleware>();
@@ -72,7 +74,6 @@ if (app.Environment.IsDevelopment())
     app.UseSwaggerUI();
 }
 
-app.UseHttpsRedirection();
 app.UseCors("AllowFrontend");
 
 app.UseAuthentication();
