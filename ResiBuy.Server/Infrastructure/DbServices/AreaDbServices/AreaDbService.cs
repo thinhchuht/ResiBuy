@@ -21,7 +21,7 @@
             }
             catch (Exception ex)
             {
-                throw new CustomException(ExceptionErrorCode.RepositoryError,ex.Message);
+                throw new CustomException(ExceptionErrorCode.RepositoryError, ex.Message);
             }
         }
 
@@ -30,9 +30,9 @@
             try
             {
                 var area = await _context.Areas
-                                    .Include(a => a.Buildings)
-                                    .Include(a => a.Shippers)
-                                    .FirstOrDefaultAsync(a => a.Id == id);
+                    .Include(a => a.Buildings)
+                    .Include(a => a.Shippers)
+                    .FirstOrDefaultAsync(a => a.Id == id);
                 if (area == null)
                 {
                     return null;

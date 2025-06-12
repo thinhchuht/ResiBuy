@@ -1,5 +1,10 @@
 import React from "react";
-import { BrowserRouter as Router, Routes, Route, Navigate } from "react-router-dom";
+import {
+  BrowserRouter as Router,
+  Routes,
+  Route,
+  Navigate,
+} from "react-router-dom";
 import { useAuth } from "../contexts/AuthContext";
 import Login from "../components/auth/Login";
 import ProtectedRoute from "../components/auth/ProtectedRoute";
@@ -11,6 +16,7 @@ import ScrollToTop from "../components/ScrollToTop";
 import Cart from "../pages/Cart/Cart";
 import Checkout from "../pages/Checkout/Checkout";
 import Unauthorized from "../components/Unauthorized";
+import CheckoutSuccess from "../pages/CheckoutSuccess/CheckoutSuccess";
 
 const AppRoutes: React.FC = () => {
   const { user } = useAuth();
@@ -33,6 +39,14 @@ const AppRoutes: React.FC = () => {
           element={
             <HomeLayout>
               <Products />
+            </HomeLayout>
+          }
+        />
+        <Route
+          path="/checkout-success"
+          element={
+            <HomeLayout>
+              <CheckoutSuccess />
             </HomeLayout>
           }
         />

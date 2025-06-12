@@ -7,7 +7,12 @@
         [HttpPost("login")]
         public async Task<IActionResult> Login([FromBody] LoginDto model)
         {
-            var user = await context.Users.FirstOrDefaultAsync(u => u.PhoneNumber == model.PhoneNumber);
+            var user = await context.Users
+                .Include(u => u.UserRooms)
+                    .ThenInclude(ur => ur.Room)
+                        .ThenInclude(r => r.Building)
+                            .ThenInclude(b => b.Area)
+                .FirstOrDefaultAsync(u => u.PhoneNumber == model.PhoneNumber);
             if (user == null)
             {
                 return BadRequest(new { message = "Invalid phone number" });
@@ -43,7 +48,14 @@
                     email = user.Email,
                     fullName = user.FullName,
                     roles = roles,
-                    phoneNumber = user.PhoneNumber
+                    phoneNumber = user.PhoneNumber,
+                    rooms = user.UserRooms.Select(ur => new
+                    {
+                        roomId = ur.RoomId,
+                        roomName = ur.Room.Name,
+                        buildingName = ur.Room.Building.Name,
+                        areaName = ur.Room.Building.Area.Name
+                    })
                 }
             });
         }

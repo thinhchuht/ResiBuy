@@ -83,7 +83,7 @@ const CartSummarySection = ({ selectedItems, onCheckout }: CartSummaryProps) => 
                       {index + 1}. {product.name} x {item.quantity}
                     </Typography>
                     <Typography variant="body2">
-                      ${calculateItemTotal(item)}
+                      {calculateItemTotal(item)}đ
                     </Typography>
                   </Box>
                 );
