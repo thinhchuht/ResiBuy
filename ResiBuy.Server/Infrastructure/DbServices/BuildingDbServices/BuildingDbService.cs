@@ -14,23 +14,24 @@
         {
             try
             {
-                var building = await GetBuildingByNameAndAreaIdAssync(name, areaId);
-                if (building != null)
+                var existBuilding = await GetBuildingByNameAndAreaIdAssync(name, areaId);
+                if (existBuilding != null)
                 {
-                    throw new CustomException(ExceptionErrorCode.NotFound);
+                    throw new CustomException(ExceptionErrorCode.CreateFailed, "Đã tồn tại toàn nhà này");
                 }
-                var area = await areaDbService.GetByIdAsync(areaId);
-                if (area == null)
+                var area = await areaDbService.GetByIdAsync(areaId) ?? throw new CustomException(ExceptionErrorCode.NotFound, "Area not found");
+                var building = new Building
                 {
-                    throw new CustomException(ExceptionErrorCode.NotFound, "Area not found");
-                }
-                context.Buildings.Add(building);
+                    Name   = name,
+                    AreaId = areaId,
+                };
+                await context.Buildings.AddAsync(building);
                 await context.SaveChangesAsync();
                 return building;
             }
             catch (Exception ex)
             {
-                throw new CustomException(ExceptionErrorCode.RepositoryError,ex.Message);
+                throw new CustomException(ExceptionErrorCode.RepositoryError, ex.Message);
             }
         }
 
@@ -60,7 +61,7 @@
             }
             catch (Exception ex)
             {
-                throw new CustomException(ExceptionErrorCode.RepositoryError,ex.Message);
+                throw new CustomException(ExceptionErrorCode.RepositoryError, ex.Message);
             }
         }
     }

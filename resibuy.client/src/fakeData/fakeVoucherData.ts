@@ -12,7 +12,7 @@ export const fakeVouchers: Voucher[] = [
     startDate: "2024-01-01T00:00:00Z",
     endDate: "2024-12-31T23:59:59Z",
     isActive: true,
-    storeId: "a1b2c3d4-e5f6-7890-1234-567890abcdef",
+    storeId: "1",
     userVouchers: fakeUserVouchers.filter((uv) => uv.voucherId === "1"),
   },
   {
@@ -25,7 +25,7 @@ export const fakeVouchers: Voucher[] = [
     startDate: "2024-06-01T00:00:00Z",
     endDate: "2024-08-31T23:59:59Z",
     isActive: true,
-    storeId: "b2c3d4e5-f6a7-8901-2345-67890abcdef0",
+    storeId: "1",
     userVouchers: fakeUserVouchers.filter((uv) => uv.voucherId === "2"),
   },
   {
@@ -38,7 +38,7 @@ export const fakeVouchers: Voucher[] = [
     startDate: "2024-03-01T00:00:00Z",
     endDate: "2024-03-07T23:59:59Z",
     isActive: true,
-    storeId: "c3d4e5f6-a7b8-9012-3456-7890abcdef01",
+    storeId: "1",
     userVouchers: [],
   },
   {
@@ -51,7 +51,7 @@ export const fakeVouchers: Voucher[] = [
     startDate: "2023-01-01T00:00:00Z",
     endDate: "2023-12-31T23:59:59Z",
     isActive: false,
-    storeId: "d4e5f6a7-b8c9-0123-4567-890abcdef012",
+    storeId: "1",
     userVouchers: [],
   },
   {
@@ -64,7 +64,7 @@ export const fakeVouchers: Voucher[] = [
     startDate: "2024-04-01T00:00:00Z",
     endDate: "2024-04-30T23:59:59Z",
     isActive: true,
-    storeId: "e5f6a7b8-c9d0-1234-5678-90abcdef0123",
+    storeId: "1",
     userVouchers: [],
   },
   {
@@ -77,7 +77,7 @@ export const fakeVouchers: Voucher[] = [
     startDate: "2024-05-01T00:00:00Z",
     endDate: "2024-05-15T23:59:59Z",
     isActive: true,
-    storeId: "f6a7b8c9-d0e1-2345-6789-0abcdef01234",
+    storeId: "1",
     userVouchers: [],
   },
   {
@@ -90,7 +90,7 @@ export const fakeVouchers: Voucher[] = [
     startDate: "2024-07-01T00:00:00Z",
     endDate: "2024-07-07T23:59:59Z",
     isActive: true,
-    storeId: "a7b8c9d0-e1f2-3456-7890-abcdef012345",
+    storeId: "1",
     userVouchers: [],
   },
   {
@@ -103,7 +103,7 @@ export const fakeVouchers: Voucher[] = [
     startDate: "2024-09-01T00:00:00Z",
     endDate: "2024-09-30T23:59:59Z",
     isActive: true,
-    storeId: "b8c9d0e1-f2a3-4567-8901-bcdef0123456",
+    storeId: "1",
     userVouchers: [],
   },
   {
@@ -116,7 +116,7 @@ export const fakeVouchers: Voucher[] = [
     startDate: "2024-10-01T00:00:00Z",
     endDate: "2024-10-31T23:59:59Z",
     isActive: true,
-    storeId: "c9d0e1f2-a3b4-5678-9012-cdef01234567",
+    storeId: "1",
     userVouchers: [],
   },
   {
@@ -129,7 +129,7 @@ export const fakeVouchers: Voucher[] = [
     startDate: "2024-12-01T00:00:00Z",
     endDate: "2024-12-31T23:59:59Z",
     isActive: true,
-    storeId: "d0e1f2a3-b4c5-6789-0123-def012345678",
+    storeId: "1",
     userVouchers: [],
   },
   {
@@ -142,7 +142,7 @@ export const fakeVouchers: Voucher[] = [
     startDate: "2024-02-01T00:00:00Z",
     endDate: "2024-02-29T23:59:59Z",
     isActive: true,
-    storeId: "e1f2a3b4-c5d6-7890-1234-ef0123456789",
+    storeId: "1",
     userVouchers: [],
   },
   {
@@ -155,7 +155,7 @@ export const fakeVouchers: Voucher[] = [
     startDate: "2024-11-01T00:00:00Z",
     endDate: "2024-11-30T23:59:59Z",
     isActive: true,
-    storeId: "f2a3b4c5-d6e7-8901-2345-f01234567890",
+    storeId: "1",
     userVouchers: [],
-  }
+  },
 ];

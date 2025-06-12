@@ -7,16 +7,9 @@ import ArrowBackIosNewIcon from "@mui/icons-material/ArrowBackIosNew";
 import ArrowForwardIosIcon from "@mui/icons-material/ArrowForwardIos";
 import "./Carousel.css";
 import type { EventItem } from "../types/models";
+import type { CarouselProps } from "../types/props";
 
-export interface CarouselProps {
-  items: EventItem[];
-  baseWidth?: number;
-  autoplay?: boolean;
-  autoplayDelay?: number;
-  pauseOnHover?: boolean;
-  loop?: boolean;
-  round?: boolean;
-}
+
 
 const DRAG_BUFFER = 0;
 const VELOCITY_THRESHOLD = 500;
