@@ -1,14 +1,14 @@
-﻿using ResiBuy.Server.Exceptions;
-
-var builder = WebApplication.CreateBuilder(args);
+﻿var builder = WebApplication.CreateBuilder(args);
 
 var services = builder.Services;
 
 services.AddSqlDb(builder.Configuration)
     .AddServices()
+    .AddResend(builder.Configuration)
     .AddDbServices()
     .AddKafka(builder.Configuration)
     .AddAuthenJwtBase(builder.Configuration);
+
 services.AddSignalR();
 services.AddMediatR(cfg => cfg.RegisterServicesFromAssemblyContaining(typeof(Program)));
 

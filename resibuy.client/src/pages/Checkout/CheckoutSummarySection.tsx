@@ -64,7 +64,7 @@ const validationSchema = Yup.object().shape({
   deliveryType: Yup.string().required(),
   selectedRoom: Yup.string().when("deliveryType", {
     is: (val: string) => val === "my-room",
-    then: (schema) => schema.required("Vui lòng chọn phòng"),
+    then: (schema) =>  schema.required("Vui lòng chọn phòng"),
   }),
   selectedArea: Yup.string().when("deliveryType", {
     is: (val: string) => val === "other",

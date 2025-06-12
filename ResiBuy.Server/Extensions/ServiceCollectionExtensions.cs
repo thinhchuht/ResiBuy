@@ -1,4 +1,6 @@
-﻿namespace ResiBuy.Server.Extensions
+﻿using Resend;
+
+namespace ResiBuy.Server.Extensions
 {
     public static class ServiceCollectionExtensions
     {
@@ -57,6 +59,19 @@
                     RoleClaimType = ClaimTypes.Role
                 };
             });
+            return services;
+        }
+
+
+        public static IServiceCollection AddResend(this IServiceCollection services, IConfiguration configuration)
+        {
+            services.AddOptions();
+            services.AddHttpClient<ResendClient>();
+            services.Configure<ResendClientOptions>(o =>
+            {
+                o.ApiToken = Environment.GetEnvironmentVariable(configuration.GetValue<string>("ResendApiToken"));
+            });
+            services.AddTransient<IResend, ResendClient>();
             return services;
         }
     }

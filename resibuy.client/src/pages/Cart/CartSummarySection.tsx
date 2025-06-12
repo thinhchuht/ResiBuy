@@ -82,7 +82,7 @@ const CartSummarySection = ({ selectedItems, onCheckout }: CartSummaryProps) => 
                     <Typography variant="body2">
                       {index + 1}. {product.name} x {item.quantity}
                     </Typography>
-                    <Typography variant="body2">
+                    <Typography variant="body2" fontWeight={500} color="red">
                       {calculateItemTotal(item)}đ
                     </Typography>
                   </Box>
@@ -104,8 +104,8 @@ const CartSummarySection = ({ selectedItems, onCheckout }: CartSummaryProps) => 
               <Typography variant="h6" fontWeight="bold">
                 Tạm tính
               </Typography>
-              <Typography variant="h5" color="primary.main">
-                ${calculateSubtotal()} USD
+              <Typography variant="h5" color="red" fontWeight={600}>
+                {calculateSubtotal()}đ
               </Typography>
             </Box>
 

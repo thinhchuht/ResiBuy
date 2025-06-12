@@ -198,7 +198,8 @@ const Checkout: React.FC = () => {
       orders: allOrders,
       grandTotal,
     });
-    navigate('/checkout-sucess', { state: { isOrderSucess: true } });
+    window.history.replaceState({}, '')
+    navigate('/checkout-success', { state: { isOrderSuccess: true }});
   };
 
   return (

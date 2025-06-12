@@ -17,12 +17,22 @@ import NotFound from "../../components/NotFound";
 const CheckoutSuccess: React.FC = () => {
   const navigate = useNavigate();
   const location = useLocation();
-  const { isOrderSucess } = (location.state as {
-    isOrderSucess: boolean;
-  }) || { isOrderSucess: false };
-  if (isOrderSucess) {
+  const { isOrderSuccess } = (location.state as { isOrderSuccess: boolean }) || { isOrderSuccess: false };
+
+  if (!isOrderSuccess) {
     return <NotFound />;
   }
+
+  const handleViewOrders = () => {
+    window.history.replaceState({}, '')
+    navigate('/orders');
+  };
+
+  const handleContinueShopping = () => {
+    window.history.replaceState({}, '')
+    navigate('/');
+  };
+
   return (
     <Container maxWidth="md" sx={{ py: 8 }}>
       <motion.div
@@ -150,7 +160,7 @@ const CheckoutSuccess: React.FC = () => {
                 variant="contained"
                 color="primary"
                 size="large"
-                onClick={() => navigate("/orders")}
+                onClick={handleViewOrders}
                 sx={{
                   borderRadius: 2,
                   px: 4,
@@ -170,7 +180,7 @@ const CheckoutSuccess: React.FC = () => {
                 variant="outlined"
                 color="primary"
                 size="large"
-                onClick={() => navigate("/")}
+                onClick={handleContinueShopping}
                 sx={{
                   borderRadius: 2,
                   px: 4,
