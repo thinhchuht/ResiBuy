@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useRef } from 'react';
 import { useHub } from '../contexts/HubContext';
+import type { OrderData, PaymentData, UserCreatedData } from '../types/hubData';
 
 // Define event types
 export enum HubEventType {
@@ -8,29 +9,7 @@ export enum HubEventType {
   PaymentReceived = 'PaymentReceived',
 }
 
-// Define event data types
-export interface UserCreatedData {
-  User: {
-    Id: string;
-    FullName: string;
-    Email: string;
-  };
-  CreatedAt: string;
-}
 
-export interface OrderData {
-  OrderId: string;
-  Status: string;
-  Total: number;
-  // Add other order fields
-}
-
-export interface PaymentData {
-  PaymentId: string;
-  Amount: number;
-  Status: string;
-  // Add other payment fields
-}
 
 export type HubEventData = UserCreatedData | OrderData | PaymentData;
 export type HubEventHandler = (data: HubEventData) => void;
@@ -197,6 +176,7 @@ export const useEventHub = (eventTypeOrHandlers: HubEventType | HubEventHandlers
     return () => {
       manager.removeHandlers(handlersRef.current!);
     };
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [connection, isHandlers]);
 
   useEffect(() => {

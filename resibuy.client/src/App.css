@@ -28,3 +28,24 @@ button {
 a {
   text-decoration: none !important;
 }
+
+/* Custom Scrollbar Styles */
+/* For Chrome, Edge, Safari */
+::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+::-webkit-scrollbar-thumb {
+  background: #b0b0b0;
+  border-radius: 8px;
+  transition: background 0.2s;
+}
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+/* For Firefox */
+* {
+  scrollbar-width: thin;
+  scrollbar-color: #b0b0b0 transparent;
+}
