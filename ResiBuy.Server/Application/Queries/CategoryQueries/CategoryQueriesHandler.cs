@@ -11,8 +11,8 @@ namespace ResiBuy.Server.Application.Queries.CategoryQueries
     {
         public async Task<ResponseModel> Handle(GetAllCategoriesQuery query, CancellationToken cancellationToken)
         {
-            var buildings = await CategoryDbService.GetAllCategoryAsync();
-            return ResponseModel.SuccessResponse(buildings);
+            var categories = await CategoryDbService.GetAllCategoryAsync();
+            return ResponseModel.SuccessResponse(categories);
         }
 
         public async Task<ResponseModel> Handle(GetCategoieByIdQuery query, CancellationToken cancellationToken)
@@ -32,11 +32,11 @@ namespace ResiBuy.Server.Application.Queries.CategoryQueries
             if (query.categoryId == Guid.Empty)
                 return ResponseModel.FailureResponse("CategoryId is required");
 
-            var category = await CategoryDbService.GetPagedProductsByCategoryIdAsync(query.categoryId, query.pageNumber, query.pageSize);
-            if (category == null)
+            var pagedResult = await CategoryDbService.GetPagedProductsByCategoryIdAsync(query.categoryId, query.pageNumber, query.pageSize);
+            if (pagedResult == null)
                 return ResponseModel.FailureResponse("Category not found");
 
-            return ResponseModel.SuccessResponse(category);
+            return ResponseModel.SuccessResponse(pagedResult);
         }
     }
 
