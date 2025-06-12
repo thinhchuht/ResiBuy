@@ -15,7 +15,6 @@
                 {
                     var user = User.CreateDefaultAdmin(command.Name, area.Name);
                     var createAdminResponse = await userDbService.CreateAdminUser(user);
-                    if(createAdminResponse != null) return ResponseModel.SuccessResponse(createAdminResponse);
                 }
                 return ResponseModel.SuccessResponse(createBuildingResponse);
             }
