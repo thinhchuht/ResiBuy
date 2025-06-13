@@ -1,4 +1,4 @@
-﻿using ResiBuy.Server.Exceptions;
+﻿using ResiBuy.Server.Services.VNPayServices;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -9,6 +9,7 @@ services.AddSqlDb(builder.Configuration)
     .AddDbServices()
     .AddKafka(builder.Configuration)
     .AddAuthenJwtBase(builder.Configuration);
+
 services.AddSignalR();
 services.AddMediatR(cfg => cfg.RegisterServicesFromAssemblyContaining(typeof(Program)));
 
@@ -57,6 +58,7 @@ services.AddSwaggerGen(
     });
     }
 );
+services.AddScoped<IVNPayService, VNPayService>();
 
 var app = builder.Build();
 // Đặt middleware này TRƯỚC tất cả các middleware khác
@@ -72,7 +74,6 @@ if (app.Environment.IsDevelopment())
     app.UseSwaggerUI();
 }
 
-app.UseHttpsRedirection();
 app.UseCors("AllowFrontend");
 
 app.UseAuthentication();
