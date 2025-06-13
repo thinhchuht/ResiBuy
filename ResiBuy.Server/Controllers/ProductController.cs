@@ -1,5 +1,4 @@
 ﻿using ResiBuy.Server.Application.Commands.ProductCommands;
-using ResiBuy.Server.Application.Queries.CategoryQueries;
 using ResiBuy.Server.Application.Queries.ProductQueries;
 
 namespace ResiBuy.Server.Controllers
