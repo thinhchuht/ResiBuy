@@ -16,13 +16,15 @@ import CheckoutVoucherSection from "./CheckoutVoucherSection";
 import NoteSection from "./NoteSection";
 import CheckoutSummarySection from "./CheckoutSummarySection";
 import NotFound from "../../components/NotFound";
+import vnPayApi from "../../api/vnpay.api";
+import { useToastify } from "../../hooks/useToastify";
 
 interface GroupedItems {
   storeId: string;
   items: CartItem[];
 }
 
-interface DeliveryInfo {
+interface info {
   deliveryType: "my-room" | "other";
   selectedRoom: string;
   selectedArea: string;
@@ -34,7 +36,8 @@ interface DeliveryInfo {
 const Checkout: React.FC = () => {
   const location = useLocation();
   const { user } = useAuth();
-  const navigate = useNavigate()
+  const navigate = useNavigate();
+  const toast = useToastify();
   const { selectedItems } = (location.state as {
     selectedItems: CartItem[];
   }) || { selectedItems: [] };
@@ -44,14 +47,7 @@ const Checkout: React.FC = () => {
     Record<string, Voucher>
   >({});
   const [notes, setNotes] = useState<Record<string, string>>({});
-  const [deliveryInfo, setDeliveryInfo] = useState<DeliveryInfo>({
-    deliveryType: "my-room",
-    selectedRoom: "",
-    selectedArea: "",
-    selectedBuilding: "",
-    selectedOtherRoom: "",
-    paymentMethod: "bank-transfer",
-  });
+  const [isLoading, setIsLoading] = useState(false);
 
   const handleNoteSubmit = (storeId: string, note: string) => {
     setNotes((prev) => ({
@@ -174,31 +170,52 @@ const Checkout: React.FC = () => {
     0
   );
 
-  const handleCheckout = () => {
-    const allOrders = orders.map((order, idx) => ({
-      VoucherId: selectedVouchers[groupedItems[idx].storeId]?.id ?? null,
-      TotalPrice: order.totalAfterDiscount,
-      Items: groupedItems[idx].items.map((item) => ({
-        Quantity: item.quantity,
-        Price: item.product.price,
-        ProductId: item.product.id,
-      })),
+  const handleCheckout = async (info: info) => {
+    try {
+      setIsLoading(true);
+      const allOrders = orders.map((order, idx) => ({
+        VoucherId: selectedVouchers[groupedItems[idx].storeId]?.id ?? null,
+        TotalPrice: order.totalAfterDiscount,
+        Items: groupedItems[idx].items.map((item) => ({
+          Quantity: item.quantity,
+          Price: item.product.price,
+          ProductId: item.product.id,
+        })),
+        RoomId:
+          info.deliveryType === "my-room"
+            ? info.selectedRoom
+            : info.selectedOtherRoom,
+        AreaId: info.selectedArea,
+        BuildingId: info.selectedBuilding,
+        PaymentMethod: info.paymentMethod,
+        Note: notes[groupedItems[idx].storeId],
+      }));
 
-      RoomId:
-        deliveryInfo.deliveryType === "my-room"
-          ? deliveryInfo.selectedRoom
-          : deliveryInfo.selectedOtherRoom,
-      AreaId: deliveryInfo.selectedArea,
-      BuildingId: deliveryInfo.selectedBuilding,
-      PaymentMethod: deliveryInfo.paymentMethod,
-      Note: notes[groupedItems[idx].storeId],
-    }));
+      if (info.paymentMethod === "bank-transfer") {
+        const response = await vnPayApi.getPaymentUrl(
+          grandTotal,
+          `ORDER_${Date.now()}`,
+          `Thanh toan don hang ResiBuy - ${allOrders.length} don`
+        );
 
-    console.log("Order Information:", {
-      orders: allOrders,
-      grandTotal,
-    });
-    navigate('/checkout-sucess', { state: { isOrderSucess: true } });
+        if (response.success) {
+          window.history.replaceState({}, "");
+          window.location.href = response.data.paymentUrl;
+        } else {
+          toast.error("Lỗi khi tạo thanh toán, thử lại sau.");
+          console.error("Payment creation failed:", response.error);
+        }
+      } else if (info.paymentMethod === "cash") {
+        window.history.replaceState({}, "");
+        navigate("/checkout-success", { 
+          state: { isOrderSuccess: true }
+        });
+      }
+    } catch (error) {
+      console.error("Checkout error:", error);
+    } finally {
+      setIsLoading(false);
+    }
   };
 
   return (
@@ -270,11 +287,11 @@ const Checkout: React.FC = () => {
             orders={orders}
             grandTotal={grandTotal}
             onCheckout={handleCheckout}
-            onDeliveryInfoChange={setDeliveryInfo}
             userRooms={user?.rooms}
             areas={fakeAreas}
             buildings={fakeBuildings}
             rooms={fakeRooms}
+            isLoading={isLoading}
           />
         </Box>
       </Box>

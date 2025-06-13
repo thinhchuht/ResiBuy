@@ -17,6 +17,7 @@ import Cart from "../pages/Cart/Cart";
 import Checkout from "../pages/Checkout/Checkout";
 import Unauthorized from "../components/Unauthorized";
 import CheckoutSuccess from "../pages/CheckoutSuccess/CheckoutSuccess";
+import CheckoutFailed from "../pages/CheckoutFailed/CheckoutFailed";
 
 const AppRoutes: React.FC = () => {
   const { user } = useAuth();
@@ -47,6 +48,14 @@ const AppRoutes: React.FC = () => {
           element={
             <HomeLayout>
               <CheckoutSuccess />
+            </HomeLayout>
+          }
+        />
+        <Route
+          path="/checkout-failed"
+          element={
+            <HomeLayout>
+              <CheckoutFailed />
             </HomeLayout>
           }
         />
