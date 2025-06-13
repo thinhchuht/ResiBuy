@@ -15,7 +15,5 @@
         public DateTime               UpdatedAt    { get; set; }
         public Guid                   StoreId      { get; set; }
         public Guid                   CategoryId   { get; set; }
-        public IEnumerable<CartItem>  CartItems    { get; set; }
-        public IEnumerable<OrderItem> OrderItems   { get; set; }
     }
 }
