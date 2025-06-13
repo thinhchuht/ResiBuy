@@ -1,4 +1,4 @@
-import React from "react";
+import React, { useEffect, useState } from "react";
 import {
   Box,
   Container,
@@ -6,6 +6,7 @@ import {
   Paper,
   Button,
   Stack,
+  CircularProgress,
 } from "@mui/material";
 import CheckCircleOutlineIcon from "@mui/icons-material/CheckCircleOutline";
 import LocalShippingIcon from "@mui/icons-material/LocalShipping";
@@ -13,23 +14,81 @@ import ShoppingBagIcon from "@mui/icons-material/ShoppingBag";
 import { useLocation, useNavigate } from "react-router-dom";
 import { motion } from "framer-motion";
 import NotFound from "../../components/NotFound";
+import vnPayApi from "../../api/vnpay.api";
 
 const CheckoutSuccess: React.FC = () => {
   const navigate = useNavigate();
   const location = useLocation();
-  const { isOrderSuccess } = (location.state as { isOrderSuccess: boolean }) || { isOrderSuccess: false };
+  const { isOrderSuccess } = (location.state as {
+    isOrderSuccess: boolean;
+  }) || { isOrderSuccess: false };
+  const searchParams = new URLSearchParams(location.search);
+  const token = searchParams.get('token');
+  const [isVerifying, setIsVerifying] = useState(true);
+  const [isValid, setIsValid] = useState(false);
 
-  if (!isOrderSuccess) {
+  useEffect(() => {
+    const verifyToken = async () => {
+      // If no token and no isOrderSuccess, show NotFound
+      if (!token && !isOrderSuccess) {
+        setIsValid(false);
+        setIsVerifying(false);
+        return;
+      }
+
+      if (!token) {
+        if (isOrderSuccess) {
+          setIsValid(true);
+        }
+        setIsVerifying(false);
+        return;
+      }
+
+      try {
+        const response = await vnPayApi.verifyPaymentToken(token);
+        setIsValid(response.success && response.data.isValid);
+      } catch (error) {
+        console.error('Error verifying token:', error);
+        setIsValid(false);
+      } finally {
+        setIsVerifying(false);
+      }
+    };
+
+    verifyToken();
+  }, [token, isOrderSuccess]);
+
+  const invalidateToken = async () => {
+    if (token) {
+      try {
+        await vnPayApi.invalidatePaymentToken(token);
+      } catch (error) {
+        console.error('Error invalidating token:', error);
+      }
+    }
+  };
+
+  if (isVerifying) {
+    return (
+      <Container maxWidth="md" sx={{ py: 8, display: 'flex', justifyContent: 'center', alignItems: 'center' }}>
+        <CircularProgress />
+      </Container>
+    );
+  }
+
+  if (!isValid) {
     return <NotFound />;
   }
 
-  const handleViewOrders = () => {
-    window.history.replaceState({}, '')
+  const handleViewOrders = async () => {
+    await invalidateToken();
+    window.history.replaceState({}, "");
     navigate('/orders');
   };
 
-  const handleContinueShopping = () => {
-    window.history.replaceState({}, '')
+  const handleContinueShopping = async () => {
+    await invalidateToken();
+    window.history.replaceState({}, "");
     navigate('/');
   };
 

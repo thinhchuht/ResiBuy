@@ -18,6 +18,7 @@ import { Formik, Form, Field } from "formik";
 import type { FieldProps } from "formik";
 import * as Yup from "yup";
 import type { Room, Building, Area } from "../../types/models";
+import { useToastify } from "../../hooks/useToastify";
 
 interface OrderSummary {
   totalBeforeDiscount: number;
@@ -31,7 +32,14 @@ interface CheckoutSummarySectionProps {
   orders: OrderSummary[];
   grandTotal: number;
   PaperProps?: MuiPaperProps;
-  onCheckout?: () => void;
+  onCheckout?: (info: {
+    deliveryType: "my-room" | "other";
+    selectedRoom: string;
+    selectedArea: string;
+    selectedBuilding: string;
+    selectedOtherRoom: string;
+    paymentMethod: string;
+  }) => void;
   userRooms?: {
     roomId: string;
     roomName: string;
@@ -49,6 +57,7 @@ interface CheckoutSummarySectionProps {
     selectedOtherRoom: string;
     paymentMethod: string;
   }) => void;
+  isLoading?: boolean;
 }
 
 interface FormValues {
@@ -108,7 +117,10 @@ const CheckoutSummarySection = ({
   buildings = [],
   rooms = [],
   onDeliveryInfoChange,
+  isLoading = false,
 }: CheckoutSummarySectionProps) => {
+  const { error: showError } = useToastify();
+
   return (
     <Paper
       elevation={0}
@@ -140,8 +152,13 @@ const CheckoutSummarySection = ({
         initialValues={initialValues}
         validationSchema={validationSchema}
         onSubmit={(values) => {
-          onDeliveryInfoChange?.(values);
-          onCheckout?.();
+          const formValues = {
+            ...values,
+            paymentMethod: values.paymentMethod || "bank-transfer"
+          };
+          console.log('CheckoutSummarySection onSubmit formValues:', formValues);
+          onDeliveryInfoChange?.(formValues);
+          onCheckout?.(formValues);
         }}
       >
         {({
@@ -159,8 +176,49 @@ const CheckoutSummarySection = ({
             (r) => r.buildingId === values.selectedBuilding
           );
 
+          const handleFieldBlur = (fieldName: string) => {
+            handleBlur(fieldName);
+            const fieldError = errors[fieldName as keyof typeof errors];
+            const fieldTouched = touched[fieldName as keyof typeof touched];
+            
+            if (fieldError && fieldTouched) {
+              showError(fieldError as string);
+            }
+          };
+
+          const handleSubmit = (e: React.FormEvent) => {
+            e.preventDefault();
+            
+            if (values.deliveryType === "my-room" && !values.selectedRoom) {
+              showError("Vui lòng chọn phòng");
+              return;
+            }
+            
+            if (values.deliveryType === "other") {
+              if (!values.selectedArea) {
+                showError("Vui lòng chọn khu vực");
+                return;
+              }
+              if (!values.selectedBuilding) {
+                showError("Vui lòng chọn tòa nhà");
+                return;
+              }
+              if (!values.selectedOtherRoom) {
+                showError("Vui lòng chọn phòng");
+                return;
+              }
+            }
+
+            const formValues = {
+              ...values,
+              paymentMethod: values.paymentMethod || "bank-transfer"
+            };
+            onDeliveryInfoChange?.(formValues);
+            onCheckout?.(formValues);
+          };
+
           return (
-            <Form>
+            <Form onSubmit={handleSubmit}>
               <Box sx={{ mb: 3 }}>
                 <Typography variant="subtitle1" sx={{ fontWeight: 600, mb: 2 }}>
                   Địa chỉ nhận hàng
@@ -206,7 +264,7 @@ const CheckoutSummarySection = ({
                       value={values.selectedRoom}
                       label="Chọn phòng"
                       onChange={handleChange}
-                      onBlur={handleBlur}
+                      onBlur={() => handleFieldBlur("selectedRoom")}
                     >
                       {userRooms.map((room) => (
                         <MenuItem key={room.roomId} value={room.roomId}>
@@ -243,7 +301,7 @@ const CheckoutSummarySection = ({
                           setFieldValue("selectedBuilding", "");
                           setFieldValue("selectedOtherRoom", "");
                         }}
-                        onBlur={handleBlur}
+                        onBlur={() => handleFieldBlur("selectedArea")}
                       >
                         {areas.map((area) => (
                           <MenuItem key={area.id} value={area.id}>
@@ -272,7 +330,7 @@ const CheckoutSummarySection = ({
                           handleChange(e);
                           setFieldValue("selectedOtherRoom", "");
                         }}
-                        onBlur={handleBlur}
+                        onBlur={() => handleFieldBlur("selectedBuilding")}
                         disabled={!values.selectedArea}
                       >
                         {filteredBuildings.map((building) => (
@@ -301,7 +359,7 @@ const CheckoutSummarySection = ({
                         value={values.selectedOtherRoom}
                         label="Phòng"
                         onChange={handleChange}
-                        onBlur={handleBlur}
+                        onBlur={() => handleFieldBlur("selectedOtherRoom")}
                         disabled={!values.selectedBuilding}
                       >
                         {filteredRooms.map((room) => (
@@ -505,6 +563,7 @@ const CheckoutSummarySection = ({
                 variant="contained"
                 color="primary"
                 fullWidth
+                disabled={isLoading}
                 sx={{
                   py: 1.5,
                   fontSize: "1.1rem",
@@ -515,7 +574,7 @@ const CheckoutSummarySection = ({
                   },
                 }}
               >
-                Tiếp tục Thanh toán
+                {isLoading ? "Đang xử lý..." : "Tiếp tục Thanh toán"}
               </Button>
             </Form>
           );
