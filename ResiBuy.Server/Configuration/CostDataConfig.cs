@@ -5,9 +5,9 @@ namespace ResiBuy.Server.Configuration
     {
         public void Configure(EntityTypeBuilder<CostData> builder)
         {
-            builder.HasOne(ad1 => ad1.Product) // Specify the navigation property explicitly  
-                   .WithMany(p => p.AdditionalData1)
-                   .HasForeignKey(ad1 => ad1.ProductId)
+            builder.HasOne(cd => cd.Product) // Specify the navigation property explicitly  
+                   .WithMany(p => p.CostData)
+                   .HasForeignKey(cd => cd.ProductId)
                    .OnDelete(DeleteBehavior.Cascade); // Xóa Product sẽ xóa AdditionalData1  
         }
     }

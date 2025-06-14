@@ -22,19 +22,14 @@ interface AuthContextType {
   user: User | null;
   token: string | null;
   refreshToken: string | null;
-  login: (
-    phoneNumber: string,
-    password: string
-  ) => Promise<{ success: boolean; error?: { message: string } }>;
+  login: (phoneNumber: string, password: string) => Promise<{ success: boolean; error?: { message: string } }>;
   logout: () => Promise<void>;
   isAuthenticated: boolean;
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
-export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
-  children,
-}) => {
+export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const [user, setUser] = useState<User | null>(() => {
     try {
       const savedUser = localStorage.getItem("user");
@@ -45,12 +40,8 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
       return null;
     }
   });
-  const [token, setToken] = useState<string | null>(
-    localStorage.getItem("token")
-  );
-  const [refreshToken, setRefreshToken] = useState<string | null>(
-    localStorage.getItem("refreshToken")
-  );
+  const [token, setToken] = useState<string | null>(localStorage.getItem("token"));
+  const [refreshToken, setRefreshToken] = useState<string | null>(localStorage.getItem("refreshToken"));
   // Set up axios default headers
   useEffect(() => {
     if (token) {
@@ -116,8 +107,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
         login,
         logout,
         isAuthenticated: !!token,
-      }}
-    >
+      }}>
       {children}
     </AuthContext.Provider>
   );
