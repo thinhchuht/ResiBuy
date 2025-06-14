@@ -7,6 +7,13 @@ export enum OrderStatus {
   Cancelled = 4,
 }
 
+export enum PaymentStatus {
+  Pending = 0,
+  Paid = 1,
+  Failed = 2,
+  Refunded = 3,
+}
+
 export enum PaymentMethod {
   Cash = 0,
   CreditCard = 1,
@@ -88,23 +95,33 @@ export interface CartItem {
 
 export interface Order {
   id: string;
-  userId: string;
-  shipperId: string;
+  totalPrice: number;
   status: OrderStatus;
-  totalAmount: number;
-  paymentMethod: PaymentMethod;
-  shippingAddress: string;
-  createdAt: string;
-  updatedAt: string;
-  orderItems: OrderItem[];
+  paymentStatus: PaymentStatus;
+  createAt: string;
+  updateAt: string;
+  shipAddressId: string;
+  shipAddress: Room;
+  userId: string;
+  storeId: string;
+  shipperId?: string;
+  voucherId?: string;
+  user?: User;
+  store?: Store;
+  shipper?: Shipper;
+  voucher?: Voucher;
+  reports?: Report[];
+  items: OrderItem[];
 }
 
 export interface OrderItem {
   id: string;
-  orderId: string;
-  productId: string;
   quantity: number;
   price: number;
+  orderId: string;
+  productId: string;
+  order?: Order;
+  product?: Product;
 }
 
 export interface Shipper {
