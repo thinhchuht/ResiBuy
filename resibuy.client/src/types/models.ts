@@ -37,18 +37,17 @@ export interface User {
 export interface Product {
   id: string;
   name: string;
-  imageUrl: string;
-  quantity: number;
-  sold: number;
   describe: string;
-  price: number;
   weight: number;
   isOutOfStock: boolean;
   discount: number;
+  sold: number;
   createdAt: string;
   updatedAt: string;
   storeId: string;
   categoryId: string;
+  productImages: ProductImage[];
+  costData: CostData[];
   cartItems: CartItem[];
   orderItems: OrderItem[];
 }
@@ -195,4 +194,28 @@ export interface EventItem {
   title?: string;
   description?: string;
   storeId: string;
+}
+
+export interface ProductImage {
+  id: string;
+  imgUrl: string;
+  thumbUrl: string;
+  name: string;
+  productId: string;
+}
+
+export interface UncostData {
+  id: string;
+  key: string;
+  value: string;
+  costDataId: string;
+}
+
+export interface CostData {
+  id: string;
+  key: string;
+  value: string;
+  price: number;
+  productId: string;
+  uncostData?: UncostData[];
 }

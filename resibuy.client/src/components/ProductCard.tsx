@@ -2,6 +2,7 @@ import { Box, Typography, Card } from "@mui/material";
 import { Link } from "react-router-dom";
 import { Star } from "@mui/icons-material";
 import type { Product } from "../types/models";
+import { formatPrice } from "../utils/priceUtils";
 
 interface ProductCardProps {
   product: Product;
@@ -13,7 +14,11 @@ interface ProductCardProps {
 }
 
 const ProductCard = ({ product, productActions }: ProductCardProps) => {
-  const discountedPrice = product.price * (1 - product.discount / 100);
+  // Get minimum price from costData
+  const basePrice = Math.min(...product.costData.map((cost) => cost.price));
+  const discountedPrice = basePrice * (1 - product.discount / 100);
+  // Get first image's thumbUrl
+  const thumbUrl = product.productImages[0]?.thumbUrl;
 
   return (
     <Card
@@ -34,7 +39,7 @@ const ProductCard = ({ product, productActions }: ProductCardProps) => {
           boxShadow: "0 12px 28px 0 rgba(36, 33, 33, 0.08)",
         },
         background: "#fff",
-        minHeight: 320,
+        minHeight: 500,
       }}>
       {product.discount > 0 && (
         <Box
@@ -76,7 +81,7 @@ const ProductCard = ({ product, productActions }: ProductCardProps) => {
             },
           }}>
           <img
-            src={product.imageUrl}
+            src={thumbUrl}
             alt={product.name}
             style={{
               width: "90%",
@@ -165,7 +170,7 @@ const ProductCard = ({ product, productActions }: ProductCardProps) => {
         Lượt mua: {product.sold}
       </Box>
       <Box sx={{ display: "flex", alignItems: "center", gap: 0.8, justifyContent: "center", mb: 0.2 }}>
-        <Typography sx={{ color: "#FF6B6B", fontWeight: 600, fontSize: "1.05rem" }}>{discountedPrice.toFixed(2)}đ</Typography>
+        <Typography sx={{ color: "#FF6B6B", fontWeight: 600, fontSize: "1.05rem" }}>{formatPrice(discountedPrice)}</Typography>
         {product.discount > 0 && (
           <Typography
             variant="body2"
@@ -175,7 +180,7 @@ const ProductCard = ({ product, productActions }: ProductCardProps) => {
               fontWeight: 400,
               fontSize: 13,
             }}>
-            ${product.price.toFixed(2)}
+            {formatPrice(basePrice)}
           </Typography>
         )}
       </Box>

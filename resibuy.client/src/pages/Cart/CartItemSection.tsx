@@ -2,6 +2,7 @@ import { Box, Typography, IconButton, Checkbox, Table, TableBody, TableCell, Tab
 import { Add, Remove, Delete } from "@mui/icons-material";
 import { useNavigate } from "react-router-dom";
 import type { CartItem as CartItemType } from "../../types/models";
+import { formatPrice, getMinPrice } from "../../utils/priceUtils";
 
 interface CartItemSectionProps {
   items: CartItemType[];
@@ -34,8 +35,10 @@ const CartItemSection = ({
 }: CartItemSectionProps) => {
   const navigate = useNavigate();
 
+  const getCartItemPrice = (item: CartItemType) => getMinPrice(item.product);
+
   const calculateItemTotal = (item: CartItemType): string => {
-    return (item.product.price * item.quantity).toFixed(2);
+    return formatPrice(getCartItemPrice(item) * item.quantity);
   };
 
   const tableCellStyle = {
@@ -93,8 +96,8 @@ const CartItemSection = ({
                 <TableCell sx={{ ...tableCellStyle, minWidth: "300px" }}>
                   <Box sx={{ display: "flex", alignItems: "center", gap: 2 }}>
                     <img
-                      src={product.imageUrl}
-                      alt={product.name}
+                      src={product.productImages[0]?.thumbUrl}
+                      alt={product.productImages[0].name}
                       style={{
                         width: "80px",
                         height: "80px",
@@ -123,7 +126,7 @@ const CartItemSection = ({
                         {product.name}
                       </Typography>
                       <Typography variant="body2" color="text.secondary">
-                        Giá: {product.price.toFixed(2)}đ
+                        Giá: {formatPrice(getCartItemPrice(item))}
                       </Typography>
                     </Box>
                   </Box>
@@ -147,7 +150,7 @@ const CartItemSection = ({
                 </TableCell>
                 <TableCell align="right" sx={{ ...tableCellStyle, minWidth: "150px" }}>
                   <Typography variant="h6" color="red">
-                    {calculateItemTotal(item)}đ
+                    {calculateItemTotal(item)}
                   </Typography>
                 </TableCell>
               </TableRow>
