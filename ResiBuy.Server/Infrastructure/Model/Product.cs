@@ -14,9 +14,9 @@
         public Guid                   CategoryId   { get; set; }
         public Store                  Store        { get; set; }
         public Category               Category     { get; set; }
-        public IEnumerable<ProductImg> ProductImgs { get; set; } = new List<ProductImg>();
+        public IEnumerable<ProductImage> ProductImgs { get; set; } = new List<ProductImage>();
         public IEnumerable<CartItem>  CartItems    { get; set; }
         public IEnumerable<OrderItem> OrderItems   { get; set; }
-        public IEnumerable<CostData> AdditionalData1 { get; set; } = new List<CostData>();
+        public IEnumerable<CostData> CostData { get; set; } = new List<CostData>();
     }
 }

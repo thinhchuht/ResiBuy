@@ -1,5 +1,6 @@
 ﻿using ResiBuy.Server.Infrastructure.DbServices.CategoryDbServices;
 using ResiBuy.Server.Infrastructure.DbServices.ProductDbServices;
+using ResiBuy.Server.Services.CloudinaryServices;
 using ResiBuy.Server.Services.MailServices;
 namespace ResiBuy.Server.Extensions
 {
@@ -39,7 +40,7 @@ namespace ResiBuy.Server.Extensions
 
         public static IServiceCollection AddKafka(this IServiceCollection services, IConfiguration configuration)
         {
-            services.Configure<KafkaSettings>(configuration.GetSection("Kafka"));
+            services.Configure<KafkaSetting>(configuration.GetSection("Kafka"));
             return services;
         }
 
@@ -64,6 +65,13 @@ namespace ResiBuy.Server.Extensions
                     RoleClaimType = ClaimTypes.Role
                 };
             });
+            return services;
+        }
+
+        public static IServiceCollection AddCloudinary(this IServiceCollection services, IConfiguration configuration)
+        {
+            services.AddSingleton(configuration.GetSection("Cloudinary").Get<CloudinarySetting>());
+            services.AddScoped<ICloudinaryService, CloudinaryService>();
             return services;
         }
     }
