@@ -18,6 +18,9 @@ import Checkout from "../pages/Checkout/Checkout";
 import Unauthorized from "../components/Unauthorized";
 import CheckoutSuccess from "../pages/CheckoutSuccess/CheckoutSuccess";
 import CheckoutFailed from "../pages/CheckoutFailed/CheckoutFailed";
+import AdminLayout from "../layouts/AdminLayout";
+import Dashboard from "../pages/Admin/dashboard/Dashboard";
+import StoresPage from "../pages/Admin/Store/page";
 
 const AppRoutes: React.FC = () => {
   const { user } = useAuth();
@@ -87,14 +90,29 @@ const AppRoutes: React.FC = () => {
             </ProtectedRoute>
           }
         />
-        <Route
+        {/* <Route
           path="/admin/*"
           element={
             <ProtectedRoute allowedRoles={["ADMIN"]}>
               <div>Admin Dashboard</div>
             </ProtectedRoute>
           }
-        />
+        /> */
+          <Route
+              path="/admin"
+              element={
+               
+                  <AdminLayout />
+              
+              }
+            >
+              <Route path="dashboard" element={<Dashboard />} />
+              {/* Add other admin subroutes here, e.g.:
+              <Route path="products" element={<Products />} />
+              */}
+          
+            <Route path="Store" element={<StoresPage />} />
+            </Route>}
         <Route
           path="/seller/*"
           element={
