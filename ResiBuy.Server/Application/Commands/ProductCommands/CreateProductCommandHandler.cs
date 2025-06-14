@@ -13,10 +13,7 @@ namespace ResiBuy.Server.Application.Commands.ProductCommands
                 var product = new Product
                 {
                     Name = command.ProductDto.Name,
-                    ImageUrl = command.ProductDto.ImageUrl,
-                    Quantity = command.ProductDto.Quantity,
                     Describe = command.ProductDto.Describe,
-                    Price = command.ProductDto.Price,
                     Weight = command.ProductDto.Weight,
                     IsOutOfStock = command.ProductDto.IsOutOfStock,
                     Discount = command.ProductDto.Discount,
