@@ -1,24 +1,12 @@
-import React from "react";
-import {
-  Box,
-  Typography,
-  Button,
-  Chip,
-  Rating,
-  Divider,
-  IconButton,
-  useTheme,
-  Slider,
-  Accordion,
-  AccordionSummary,
-  AccordionDetails,
-} from "@mui/material";
+import React, { useState } from "react";
+import { Box, Typography, Button, Chip, Rating, Divider, IconButton, useTheme, Accordion, AccordionSummary, AccordionDetails, Slider } from "@mui/material";
 import ShoppingCartIcon from "@mui/icons-material/ShoppingCart";
 import ExpandMoreIcon from "@mui/icons-material/ExpandMore";
 import type { Product } from "../../../types/models";
 import { useAuth } from "../../../contexts/AuthContext";
 import { useToastify } from "../../../hooks/useToastify";
 import { useNavigate } from "react-router-dom";
+import { formatPrice } from "../../../utils/priceUtils";
 
 interface ProductInfoSectionProps {
   product: Product;
@@ -27,16 +15,42 @@ interface ProductInfoSectionProps {
   handleDecrementQuantity: () => void;
 }
 
-const ProductInfoSection: React.FC<ProductInfoSectionProps> = ({
-  product,
-  quantity,
-  handleIncrementQuantity,
-  handleDecrementQuantity,
-}) => {
+const ProductInfoSection: React.FC<ProductInfoSectionProps> = ({ product, quantity, handleIncrementQuantity, handleDecrementQuantity }) => {
   const theme = useTheme();
   const { user } = useAuth();
   const toast = useToastify();
   const navigate = useNavigate();
+
+  // Group costData by key
+  const costGroups = product.costData.reduce((acc: Record<string, typeof product.costData>, cost) => {
+    if (!acc[cost.key]) acc[cost.key] = [];
+    acc[cost.key].push(cost);
+    return acc;
+  }, {} as Record<string, typeof product.costData>);
+
+  // State for selected options
+  const [selectedOptions, setSelectedOptions] = useState(() => {
+    const initial: Record<string, string> = {};
+    Object.keys(costGroups).forEach((key) => {
+      initial[key] = costGroups[key][0]?.id || "";
+    });
+    return initial;
+  });
+
+  // Find selected costData
+  const selectedCost =
+    Object.values(costGroups)
+      .flat()
+      .find((cost) => Object.values(selectedOptions).includes(cost.id)) || product.costData[0];
+
+  // Handle option change
+  const handleOptionChange = (key: string, id: string) => {
+    setSelectedOptions((prev) => ({ ...prev, [key]: id }));
+  };
+
+  // Price logic
+  const basePrice = selectedCost.price;
+  const discountedPrice = basePrice * (1 - product.discount / 100);
 
   const handleAddToCart = (product: Product) => {
     if (user) {
@@ -54,13 +68,11 @@ const ProductInfoSection: React.FC<ProductInfoSectionProps> = ({
       toast.error("Vui lòng đăng nhập để thêm sản phẩm vào giỏ hàng");
       navigate("/login");
     }
-  }
-
-  const discountedPrice = product.price * (1 - product.discount / 100);
+  };
 
   return (
     <Box sx={{ width: { xs: "100%", md: "50%" } }}>
-      <Box sx={{ height: "100%", display: "flex", flexDirection: "column" }}>
+      <Box sx={{ height: "100%", display: "flex", flexDirection: "column", marginTop: 6 }}>
         <Typography variant="h4" gutterBottom fontWeight="bold">
           {product.name}
         </Typography>
@@ -76,49 +88,77 @@ const ProductInfoSection: React.FC<ProductInfoSectionProps> = ({
           {product.discount > 0 ? (
             <Box display="flex" alignItems="center" gap={2}>
               <Typography variant="h4" color="primary" fontWeight="bold">
-                ${discountedPrice.toFixed(2)}
+                {formatPrice(discountedPrice)}
               </Typography>
-              <Typography
-                variant="h5"
-                color="text.secondary"
-                sx={{ textDecoration: "line-through" }}
-              >
-                ${product.price.toFixed(2)}
+              <Typography variant="h5" color="text.secondary" sx={{ textDecoration: "line-through" }}>
+                {formatPrice(basePrice)}
               </Typography>
-              <Chip
-                label={`Giảm ${product.discount}%`}
-                color="error"
-                size="small"
-              />
+              <Chip label={`Giảm ${product.discount}%`} color="error" size="small" />
             </Box>
           ) : (
             <Typography variant="h4" color="primary" fontWeight="bold">
-              ${product.price.toFixed(2)}
+              {formatPrice(basePrice)}
             </Typography>
           )}
         </Box>
 
-        <Box mb={3}>
+        {/* Stock progress bar below price */}
+        <Box mb={2}>
           <Typography variant="body2" color="text.secondary">
-            Chỉ còn {product.quantity} sản phẩm trong kho!
+            {product.isOutOfStock ? "Hết hàng" : "Số lượng có hạn"}
           </Typography>
-          <Slider
-            value={product.quantity}
-            max={product.quantity + product.sold}
-            min={0}
-            sx={{ width: "80%" }}
-            disabled
-            aria-label="Stock progress"
-          />
+          <Slider value={product.isOutOfStock ? 0 : 40} max={100} min={0} sx={{ width: "80%" }} disabled aria-label="Stock progress" />
+        </Box>
+
+        <Box mb={2}>
+          {Object.entries(costGroups).map(([key, options]) => (
+            <Box key={key} mb={1.2} display="flex" alignItems="center" gap={2}>
+              <Typography sx={{ minWidth: 48, fontWeight: 500, color: "#888", fontSize: 14 }}>{key}</Typography>
+              <Box display="flex" gap={1} flexWrap="wrap">
+                {options.map((opt) => (
+                  <Button
+                    key={opt.id}
+                    variant={selectedOptions[key] === opt.id ? "contained" : "outlined"}
+                    onClick={() => handleOptionChange(key, opt.id)}
+                    sx={{
+                      minWidth: 36,
+                      height: 36,
+                      p: 0.2,
+                      borderRadius: 2,
+                      borderWidth: 2,
+                      boxShadow: selectedOptions[key] === opt.id ? "0 1px 4px 0 rgba(0,209,255,0.10)" : "none",
+                      borderColor: selectedOptions[key] === opt.id ? "#00D1FF" : "#e0e0e0",
+                      color: selectedOptions[key] === opt.id ? "#fff" : "#333",
+                      background: selectedOptions[key] === opt.id ? "#00D1FF" : "#fff",
+                      fontWeight: 500,
+                      fontSize: 13,
+                      display: "flex",
+                      flexDirection: "column",
+                      alignItems: "center",
+                      transition: "all 0.2s",
+                      "&:hover": {
+                        background: selectedOptions[key] === opt.id ? "#00D1FF" : "#f8f8f8",
+                        color: "#00D1FF",
+                        borderColor: "#00D1FF",
+                      },
+                    }}>
+                    {key.toLowerCase().includes("màu") && product.productImages[options.indexOf(opt)] ? (
+                      <img
+                        src={product.productImages[options.indexOf(opt)]?.thumbUrl}
+                        alt={opt.value}
+                        style={{ width: 22, height: 22, marginBottom: 2, borderRadius: 3, boxShadow: "0 1px 2px #eee" }}
+                      />
+                    ) : null}
+                    <span>{opt.value}</span>
+                  </Button>
+                ))}
+              </Box>
+            </Box>
+          ))}
         </Box>
 
         <Box display="flex" alignItems="center" gap={2} mb={4}>
-          <Box
-            display="flex"
-            alignItems="center"
-            gap={2}
-            sx={{ minWidth: "200px" }}
-          >
+          <Box display="flex" alignItems="center" gap={2} sx={{ minWidth: "200px" }}>
             <Typography variant="body1" fontWeight="medium">
               Số lượng:
             </Typography>
@@ -128,8 +168,7 @@ const ProductInfoSection: React.FC<ProductInfoSectionProps> = ({
               sx={{
                 border: `1px solid ${theme.palette.divider}`,
                 borderRadius: 2,
-              }}
-            >
+              }}>
               <IconButton onClick={handleDecrementQuantity} size="small">
                 -
               </IconButton>
@@ -158,8 +197,7 @@ const ProductInfoSection: React.FC<ProductInfoSectionProps> = ({
               },
               flex: 1,
             }}
-            onClick={() => handleAddToCart(product)}
-          >
+            onClick={() => handleAddToCart(product)}>
             Thêm vào giỏ hàng
           </Button>
         </Box>
@@ -180,8 +218,7 @@ const ProductInfoSection: React.FC<ProductInfoSectionProps> = ({
             },
             width: "100%",
           }}
-          onClick={() => handleBuy(product)}
-        >
+          onClick={() => handleBuy(product)}>
           Mua ngay
         </Button>
 
@@ -197,13 +234,8 @@ const ProductInfoSection: React.FC<ProductInfoSectionProps> = ({
               "&:before": {
                 display: "none",
               },
-            }}
-          >
-            <AccordionSummary
-              expandIcon={<ExpandMoreIcon />}
-              aria-controls="product-description-content"
-              id="product-description-header"
-            >
+            }}>
+            <AccordionSummary expandIcon={<ExpandMoreIcon />} aria-controls="product-description-content" id="product-description-header">
               <Typography variant="h5" fontWeight="bold">
                 Mô tả sản phẩm
               </Typography>
@@ -228,23 +260,16 @@ const ProductInfoSection: React.FC<ProductInfoSectionProps> = ({
               "&:before": {
                 display: "none",
               },
-            }}
-          >
-            <AccordionSummary
-              expandIcon={<ExpandMoreIcon />}
-              aria-controls="privacy-policy-content"
-              id="privacy-policy-header"
-            >
+            }}>
+            <AccordionSummary expandIcon={<ExpandMoreIcon />} aria-controls="privacy-policy-content" id="privacy-policy-header">
               <Typography variant="h5" fontWeight="bold">
                 Chính sách bảo mật
               </Typography>
             </AccordionSummary>
             <AccordionDetails>
               <Typography variant="body1" color="text.secondary">
-                Lorem ipsum dolor sit amet, consectetur adipiscing elit. Sed do
-                eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut
-                enim ad minim veniam, quis nostrud exercitation ullamco laboris
-                nisi ut aliquip ex ea commodo consequat.
+                Lorem ipsum dolor sit amet, consectetur adipiscing elit. Sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud
+                exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat.
               </Typography>
             </AccordionDetails>
           </Accordion>
