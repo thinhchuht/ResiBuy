@@ -1,21 +1,39 @@
 ﻿using CloudinaryDotNet;
 using CloudinaryDotNet.Actions;
+using System.Net.Mime;
+using Microsoft.Extensions.Configuration;
+using ResiBuy.Server.Exceptions;
 
 namespace ResiBuy.Server.Services.CloudinaryServices;
 
 public class CloudinaryService : ICloudinaryService
 {
     private readonly Cloudinary _cloudinary;
+    private readonly int _maxFileSizeInBytes;
+    private readonly string[] _allowedImageTypes;
 
-    public CloudinaryService(CloudinarySetting config)
+    public CloudinaryService(CloudinarySetting config, IConfiguration configuration)
     {
         _cloudinary = config.GetCloudinary();
+
+        var uploadSettings = configuration.GetSection("Cloudinary:UploadSettings");
+        _maxFileSizeInBytes = uploadSettings.GetValue<int>("MaxFileSizeInMB") * 1024 * 1024;
+        _allowedImageTypes = uploadSettings.GetSection("AllowedImageTypes").Get<string[]>();
     }
 
     public async Task<CloudinaryResult> UploadFileAsync(IFormFile file, string existingPublicId = null)
     {
         if (file == null || file.Length == 0)
-            throw new ArgumentException("File is empty");
+            throw new CustomException(ExceptionErrorCode.ValidationFailed, "File is empty");
+
+        if (file.Length > _maxFileSizeInBytes)
+            throw new CustomException(ExceptionErrorCode.ValidationFailed,
+                $"File size exceeds the maximum limit of {_maxFileSizeInBytes / (1024 * 1024)}MB");
+
+        if (!_allowedImageTypes.Contains(file.ContentType.ToLower()))
+            throw new CustomException(ExceptionErrorCode.ValidationFailed,
+                $"Only image files ({string.Join(", ", _allowedImageTypes.Select(t => t.Split('/')[1].ToUpper()))}) are allowed");
+
         using var stream = file.OpenReadStream();
 
         const string folder = "resibuy";

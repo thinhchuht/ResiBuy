@@ -1,5 +1,6 @@
 import { Box, Typography, Button, Divider, Paper } from "@mui/material";
 import type { CartItem } from "../../types/models";
+import { formatPrice, getMinPrice } from "../../utils/priceUtils";
 
 interface CartSummaryProps {
   selectedItems: CartItem[];
@@ -7,16 +8,17 @@ interface CartSummaryProps {
 }
 
 const CartSummarySection = ({ selectedItems, onCheckout }: CartSummaryProps) => {
+  // Helper to get min price from costData
+  const getCartItemPrice = (item: CartItem) => getMinPrice(item.product);
   const calculateSubtotal = (): string => {
     let subtotal = 0;
     selectedItems.forEach((item) => {
-      subtotal += item.product.price * item.quantity;
+      subtotal += getCartItemPrice(item) * item.quantity;
     });
-    return subtotal.toFixed(2);
+    return formatPrice(subtotal);
   };
-
   const calculateItemTotal = (item: CartItem): string => {
-    return (item.product.price * item.quantity).toFixed(2);
+    return formatPrice(getCartItemPrice(item) * item.quantity);
   };
 
   return (
@@ -37,17 +39,15 @@ const CartSummarySection = ({ selectedItems, onCheckout }: CartSummaryProps) => 
         transition: "all 0.3s ease-in-out",
         overflow: "hidden",
         bgcolor: "#ffffff",
-      }}
-    >
-      <Typography 
-        variant="h6" 
-        sx={{ 
-          mb: 3, 
-          fontWeight: 600, 
+      }}>
+      <Typography
+        variant="h6"
+        sx={{
+          mb: 3,
+          fontWeight: 600,
           color: "#2c3e50",
           transition: "all 0.3s ease-in-out",
-        }}
-      >
+        }}>
         Tóm tắt đơn hàng
       </Typography>
 
@@ -55,13 +55,13 @@ const CartSummarySection = ({ selectedItems, onCheckout }: CartSummaryProps) => 
         sx={{
           transition: "all 0.3s ease-in-out",
           overflow: "hidden",
-        }}
-      >
+        }}>
         {selectedItems.length > 0 && (
           <>
             <Box sx={{ mb: 3 }}>
               {selectedItems.map((item, index) => {
                 const product = item.product;
+                console.log("product", product);
                 return (
                   <Box
                     key={item.id}
@@ -77,13 +77,12 @@ const CartSummarySection = ({ selectedItems, onCheckout }: CartSummaryProps) => 
                       "&:hover": {
                         bgcolor: "rgba(0, 0, 0, 0.04)",
                       },
-                    }}
-                  >
+                    }}>
                     <Typography variant="body2">
                       {index + 1}. {product.name} x {item.quantity}
                     </Typography>
                     <Typography variant="body2" fontWeight={500} color="red">
-                      {calculateItemTotal(item)}đ
+                      {calculateItemTotal(item)}
                     </Typography>
                   </Box>
                 );
@@ -99,13 +98,12 @@ const CartSummarySection = ({ selectedItems, onCheckout }: CartSummaryProps) => 
                 alignItems: "center",
                 mb: 2,
                 transition: "all 0.3s ease-in-out",
-              }}
-            >
+              }}>
               <Typography variant="h6" fontWeight="bold">
                 Tạm tính
               </Typography>
               <Typography variant="h5" color="red" fontWeight={600}>
-                {calculateSubtotal()}đ
+                {calculateSubtotal()}
               </Typography>
             </Box>
 
@@ -113,13 +111,12 @@ const CartSummarySection = ({ selectedItems, onCheckout }: CartSummaryProps) => 
               variant="contained"
               fullWidth
               size="large"
-              sx={{ 
-                bgcolor: "#FF6B6B", 
+              sx={{
+                bgcolor: "#FF6B6B",
                 "&:hover": { bgcolor: "#ff5252" },
                 transition: "all 0.3s ease-in-out",
               }}
-              onClick={onCheckout}
-            >
+              onClick={onCheckout}>
               THANH TOÁN
             </Button>
           </>
@@ -134,8 +131,7 @@ const CartSummarySection = ({ selectedItems, onCheckout }: CartSummaryProps) => 
           sx={{
             transition: "all 0.3s ease-in-out",
             opacity: 1,
-          }}
-        >
+          }}>
           Vui lòng chọn sản phẩm để tiếp tục thanh toán
         </Typography>
       )}
@@ -143,4 +139,4 @@ const CartSummarySection = ({ selectedItems, onCheckout }: CartSummaryProps) => 
   );
 };
 
-export default CartSummarySection; 
+export default CartSummarySection;
