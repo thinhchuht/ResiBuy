@@ -49,6 +49,10 @@ const TestHub: React.FC = () => {
   const [cloudinaryResult, setCloudinaryResult] = useState<CloudinaryResult | null>(null);
   const [isCloudinaryUploading, setIsCloudinaryUploading] = useState(false);
   const [isUpdating, setIsUpdating] = useState(false);
+  const [cloudinaryBatchFiles, setCloudinaryBatchFiles] = useState<File[]>([]);
+  const [cloudinaryBatchResults, setCloudinaryBatchResults] = useState<CloudinaryResult[] | null>(null);
+  const [isBatchUploading, setIsBatchUploading] = useState(false);
+  const [isDeleting, setIsDeleting] = useState(false);
 
   // Đăng ký lắng nghe tất cả các events
   useEventHub({
@@ -160,6 +164,83 @@ const TestHub: React.FC = () => {
       console.error("Error updating Cloudinary image:", error);
     } finally {
       setIsUpdating(false);
+    }
+  };
+
+  const handleBatchFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    if (e.target.files) {
+      const files = Array.from(e.target.files);
+      setCloudinaryBatchFiles(files);
+    }
+  };
+
+  const handleUpdateImage = async (id: string, file: File) => {
+    if (!id || !file) return;
+    setIsUpdating(true);
+    try {
+      const formData = new FormData();
+      formData.append("file", file);
+      formData.append("id", id);
+
+      const response = await axios.post<CloudinaryResult>(`http://localhost:5000/api/cloudinary/upload`, formData, {
+        headers: { "Content-Type": "multipart/form-data" },
+      });
+
+      // Update the image in the results with new URLs and cache-busting for thumbnail
+      setCloudinaryBatchResults(
+        (prev) =>
+          prev?.map((img) => {
+            if (img.id === id) {
+              return {
+                ...response.data,
+                id: id, // Giữ nguyên ID cũ
+                name: file.name, // Cập nhật tên file mới
+                thumbnailUrl: response.data.thumbnailUrl + "?v=" + Date.now(), // cache bust
+              };
+            }
+            return img;
+          }) || null
+      );
+    } catch (error) {
+      console.error("Error updating image:", error);
+    } finally {
+      setIsUpdating(false);
+    }
+  };
+
+  const handleDeleteImage = async (id: string) => {
+    if (!id) return;
+    setIsDeleting(true);
+    try {
+      await axios.delete(`http://localhost:5000/api/cloudinary/${id}`);
+      setCloudinaryBatchResults((prev) => prev?.filter((img) => img.id !== id) || null);
+    } catch (error) {
+      console.error("Error deleting image:", error);
+    } finally {
+      setIsDeleting(false);
+    }
+  };
+
+  const handleBatchUpload = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (cloudinaryBatchFiles.length === 0) return;
+    setIsBatchUploading(true);
+    setCloudinaryBatchResults(null);
+    try {
+      const formData = new FormData();
+      cloudinaryBatchFiles.forEach((file) => {
+        formData.append("files", file);
+      });
+
+      const response = await axios.post<CloudinaryResult[]>("http://localhost:5000/api/cloudinary/upload-batch", formData, {
+        headers: { "Content-Type": "multipart/form-data" },
+      });
+      setCloudinaryBatchResults(response.data);
+    } catch (error) {
+      console.error("Batch upload error:", error);
+      setCloudinaryBatchResults(null);
+    } finally {
+      setIsBatchUploading(false);
     }
   };
 
@@ -298,6 +379,100 @@ const TestHub: React.FC = () => {
                   </Box>
                 </CardContent>
               </Card>
+            </Box>
+          )}
+        </Stack>
+      </Paper>
+
+      {/* Cloudinary Batch Upload Section */}
+      <Paper sx={{ p: 2, mb: 3 }}>
+        <Typography variant="h6" gutterBottom>
+          Test Cloudinary Batch Upload
+        </Typography>
+        <Stack spacing={2} component="form" onSubmit={handleBatchUpload}>
+          <Button component="label" variant="contained" startIcon={<span>☁️</span>}>
+            Select Files for Batch Upload
+            <VisuallyHiddenInput type="file" accept="image/*" multiple onChange={handleBatchFileChange} />
+          </Button>
+
+          {cloudinaryBatchFiles.length > 0 && (
+            <Box>
+              <Typography variant="subtitle1">New Files</Typography>
+              <Stack spacing={1}>
+                {cloudinaryBatchFiles.map((file) => (
+                  <Paper key={file.name} sx={{ p: 1, mb: 1 }}>
+                    <Stack direction="row" spacing={2} alignItems="center">
+                      <Typography variant="body2" sx={{ minWidth: 120 }}>
+                        {file.name}
+                      </Typography>
+                    </Stack>
+                  </Paper>
+                ))}
+              </Stack>
+            </Box>
+          )}
+
+          <Button
+            type="submit"
+            variant="contained"
+            color="primary"
+            disabled={cloudinaryBatchFiles.length === 0 || isBatchUploading}
+            startIcon={isBatchUploading ? <CircularProgress size={20} /> : null}>
+            {isBatchUploading ? "Uploading..." : "Upload"}
+          </Button>
+
+          {cloudinaryBatchResults && (
+            <Box sx={{ mt: 2 }}>
+              <Typography variant="subtitle1">Upload Results</Typography>
+              <Stack spacing={2}>
+                {cloudinaryBatchResults.map((result) => (
+                  <Card key={result.id}>
+                    <CardContent>
+                      <Stack direction="row" spacing={2} alignItems="center" justifyContent="space-between">
+                        <Box>
+                          <Typography variant="body2" color="text.secondary" gutterBottom>
+                            Original Filename: {result.name}
+                          </Typography>
+                          <Typography variant="body2" color="text.secondary" gutterBottom>
+                            Public ID: {result.id}
+                          </Typography>
+                        </Box>
+                        <Stack direction="row" spacing={1}>
+                          <Button component="label" variant="outlined" color="primary" size="small" disabled={isUpdating || isDeleting}>
+                            Update
+                            <VisuallyHiddenInput
+                              type="file"
+                              accept="image/*"
+                              onChange={(e) => {
+                                if (e.target.files?.[0]) {
+                                  handleUpdateImage(result.id, e.target.files[0]);
+                                }
+                              }}
+                            />
+                          </Button>
+                          <Button variant="outlined" color="error" size="small" onClick={() => handleDeleteImage(result.id)} disabled={isDeleting || isUpdating}>
+                            {isDeleting ? "Deleting..." : "Delete"}
+                          </Button>
+                        </Stack>
+                      </Stack>
+                      <Box sx={{ display: "flex", gap: 2, flexDirection: { xs: "column", sm: "row" } }}>
+                        <Box>
+                          <Typography variant="subtitle2" gutterBottom>
+                            Thumbnail
+                          </Typography>
+                          <CardMedia component="img" image={result.thumbnailUrl} alt="Thumbnail" sx={{ maxHeight: 100, objectFit: "contain" }} />
+                        </Box>
+                        <Box>
+                          <Typography variant="subtitle2" gutterBottom>
+                            Full Size
+                          </Typography>
+                          <CardMedia component="img" image={result.url} alt="Full size" sx={{ maxHeight: 100, objectFit: "contain" }} />
+                        </Box>
+                      </Box>
+                    </CardContent>
+                  </Card>
+                ))}
+              </Stack>
             </Box>
           )}
         </Stack>

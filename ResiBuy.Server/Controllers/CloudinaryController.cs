@@ -1,4 +1,4 @@
-using ResiBuy.Server.Services.CloudinaryServices;
+﻿using ResiBuy.Server.Services.CloudinaryServices;
 
 namespace ResiBuy.Server.Controllers;
 
@@ -27,7 +27,24 @@ public class CloudinaryController : ControllerBase
         }
     }
 
-    [HttpDelete("{id}")]
+    [HttpPost("upload-batch")]
+    public async Task<IActionResult> UploadBatchAsync([FromForm] List<IFormFile> files)
+    {
+        if (files == null || files.Count == 0)
+            return BadRequest("No files uploaded");
+
+        try
+        {
+            var results = await _cloudinaryService.UploadBatchAsync(files);
+            return Ok(results);
+        }
+        catch (Exception ex)
+        {
+            return StatusCode(500, $"Upload failed: {ex.Message}");
+        }
+    }
+
+    [HttpDelete("{*id}")]
     public async Task<IActionResult> DeleteFile(string id)
     {
         try
@@ -46,4 +63,6 @@ public class CloudinaryController : ControllerBase
         public string Id { get; set; } = null;
         public IFormFile File { get; set; }
     }
+
+
 }
