@@ -19,11 +19,10 @@ public class CloudinaryService : ICloudinaryService
         using var stream = file.OpenReadStream();
 
         const string folder = "resibuy";
-        var cleanFileName = Path.GetFileNameWithoutExtension(file.FileName);
         var uploadParams = new ImageUploadParams
         {
             File = new FileDescription(file.FileName, stream),
-            Folder = string.IsNullOrEmpty(existingPublicId) ? folder :null,
+            Folder = string.IsNullOrEmpty(existingPublicId) ? folder : null,
             UseFilename = true,
             UniqueFilename = true,
             Overwrite = !string.IsNullOrEmpty(existingPublicId),
@@ -48,6 +47,16 @@ public class CloudinaryService : ICloudinaryService
             thumbnailUrl,
             file.FileName
         );
+    }
+
+    public async Task<List<CloudinaryResult>> UploadBatchAsync(List<IFormFile> files)
+    {
+        if (files == null || !files.Any())
+            throw new ArgumentException("Files list is empty");
+
+        var uploadTasks = files.Select(file => UploadFileAsync(file));
+        var results = await Task.WhenAll(uploadTasks);
+        return results.ToList();
     }
 
     public async Task<ResponseModel> DeleteFileAsync(string publicId)
