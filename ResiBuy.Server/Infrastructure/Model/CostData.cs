@@ -8,6 +8,6 @@
         public decimal Price { get; set; }
         public Guid ProductId { get; set; }
         public Product Product { get; set; } = null!;
-        public IEnumerable<AdditionalData>? AdditionalData2 { get; set; }
+        public IEnumerable<UncostData>? UncostData { get; set; }
     }
 }

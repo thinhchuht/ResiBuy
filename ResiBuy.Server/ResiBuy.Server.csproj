@@ -18,6 +18,7 @@
   <ItemGroup>
     <PackageReference Include="AutoMapper.Extensions.Microsoft.DependencyInjection" Version="12.0.1" />
     <PackageReference Include="BCrypt.Net-Next" Version="4.0.3" />
+    <PackageReference Include="CloudinaryDotNet" Version="1.27.5" />
     <PackageReference Include="Confluent.Kafka" Version="2.10.0" />
     <PackageReference Include="MailKit" Version="4.12.1" />
     <PackageReference Include="MediatR" Version="12.5.0" />
@@ -33,7 +34,6 @@
       <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
     </PackageReference>
     <PackageReference Include="MimeKit" Version="4.12.0" />
-    <PackageReference Include="Resend" Version="0.1.4" />
     <PackageReference Include="Swashbuckle.AspNetCore" Version="8.1.2" />
   </ItemGroup>
 
@@ -50,5 +50,4 @@
     <Folder Include="Application\Queries\RoomQueries\" />
     <Folder Include="Services\HttpServices\" />
   </ItemGroup>
-
 </Project>
