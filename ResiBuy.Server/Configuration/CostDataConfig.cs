@@ -1,9 +1,9 @@
 ﻿
 namespace ResiBuy.Server.Configuration
 {
-    public class AdditionalData1Config : IEntityTypeConfiguration<AdditionalData1>
+    public class CostDataConfig : IEntityTypeConfiguration<CostData>
     {
-        public void Configure(EntityTypeBuilder<AdditionalData1> builder)
+        public void Configure(EntityTypeBuilder<CostData> builder)
         {
             builder.HasOne(ad1 => ad1.Product) // Specify the navigation property explicitly  
                    .WithMany(p => p.AdditionalData1)

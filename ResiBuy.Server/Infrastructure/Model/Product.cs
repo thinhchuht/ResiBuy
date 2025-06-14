@@ -17,6 +17,6 @@
         public IEnumerable<ProductImg> ProductImgs { get; set; } = new List<ProductImg>();
         public IEnumerable<CartItem>  CartItems    { get; set; }
         public IEnumerable<OrderItem> OrderItems   { get; set; }
-        public IEnumerable<AdditionalData1> AdditionalData1 { get; set; } = new List<AdditionalData1>();
+        public IEnumerable<CostData> AdditionalData1 { get; set; } = new List<CostData>();
     }
 }
