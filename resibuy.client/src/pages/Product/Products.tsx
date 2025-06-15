@@ -23,6 +23,7 @@ const Products = () => {
   const [searchParams] = useSearchParams();
   const productId = searchParams.get("id");
   const categoryId = searchParams.get("categoryId");
+  const storeId = searchParams.get("storeId");
   const [selectedCategory, setSelectedCategory] = useState(categoryId || "all");
   const [sortBy, setSortBy] = useState("newest");
   const [priceRange, setPriceRange] = useState([0, 50000000]);
@@ -63,10 +64,12 @@ const Products = () => {
   ];
 
   let filteredProducts = [...fakeProducts];
+  if (storeId) {
+    filteredProducts = filteredProducts.filter((product) => product.storeId === storeId);
+  }
   if (selectedCategory !== "all") {
     filteredProducts = filteredProducts.filter((product) => product.categoryId === selectedCategory);
   }
-  // Helper to get min price from costData
   filteredProducts = filteredProducts.filter((product) => {
     const minPrice = getMinPrice(product);
     return minPrice >= priceRange[0] && minPrice <= priceRange[1];
@@ -101,6 +104,7 @@ const Products = () => {
               priceRange={priceRange}
               setPriceRange={setPriceRange}
               fakeCategories={fakeCategories}
+              storeId={storeId || undefined}
             />
           </Box>
           <Box sx={{ flex: 1 }}>
