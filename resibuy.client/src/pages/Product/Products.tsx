@@ -14,14 +14,16 @@ import ProductEmptySection from "./ProductEmptySection";
 import SortBarSection from "./SortBarSection";
 import ProductGridSection from "./ProductGridSection";
 import ProductFilterSection from "./ProductFilterSection";
+import { getMinPrice } from "../../utils/priceUtils";
 
 const Products = () => {
   const { user } = useAuth();
   const navigate = useNavigate();
   const toast = useToastify();
   const [searchParams] = useSearchParams();
-  const productId = searchParams.get('id');
-  const categoryId = searchParams.get('categoryId');
+  const productId = searchParams.get("id");
+  const categoryId = searchParams.get("categoryId");
+  const storeId = searchParams.get("storeId");
   const [selectedCategory, setSelectedCategory] = useState(categoryId || "all");
   const [sortBy, setSortBy] = useState("newest");
   const [priceRange, setPriceRange] = useState([0, 50000000]);
@@ -43,7 +45,6 @@ const Products = () => {
     navigate(`/products?id=${product.id}`);
   };
 
-
   const productActions = [
     {
       icon: <ShoppingCart sx={{ color: "#FF6B6B", fontSize: 22 }} />,
@@ -63,30 +64,28 @@ const Products = () => {
   ];
 
   let filteredProducts = [...fakeProducts];
-  if (selectedCategory !== "all") {
-    filteredProducts = filteredProducts.filter(
-      (product) => product.categoryId === selectedCategory
-    );
+  if (storeId) {
+    filteredProducts = filteredProducts.filter((product) => product.storeId === storeId);
   }
-  filteredProducts = filteredProducts.filter(
-    (product) =>
-      product.price >= priceRange[0] && product.price <= priceRange[1]
-  );
+  if (selectedCategory !== "all") {
+    filteredProducts = filteredProducts.filter((product) => product.categoryId === selectedCategory);
+  }
+  filteredProducts = filteredProducts.filter((product) => {
+    const minPrice = getMinPrice(product);
+    return minPrice >= priceRange[0] && minPrice <= priceRange[1];
+  });
   switch (sortBy) {
     case "price_asc":
-      filteredProducts.sort((a, b) => a.price - b.price);
+      filteredProducts.sort((a, b) => getMinPrice(a) - getMinPrice(b));
       break;
     case "price_desc":
-      filteredProducts.sort((a, b) => b.price - a.price);
+      filteredProducts.sort((a, b) => getMinPrice(b) - getMinPrice(a));
       break;
     case "popular":
       filteredProducts.sort((a, b) => b.sold - a.sold);
       break;
     default:
-      filteredProducts.sort(
-        (a, b) =>
-          new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()
-      );
+      filteredProducts.sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
   }
 
   if (productId) {
@@ -105,23 +104,12 @@ const Products = () => {
               priceRange={priceRange}
               setPriceRange={setPriceRange}
               fakeCategories={fakeCategories}
+              storeId={storeId || undefined}
             />
           </Box>
           <Box sx={{ flex: 1 }}>
-            <SortBarSection
-              selectedCategory={selectedCategory}
-              sortBy={sortBy}
-              setSortBy={setSortBy}
-              fakeCategories={fakeCategories}
-            />
-            {filteredProducts.length > 0 ? (
-              <ProductGridSection
-                filteredProducts={filteredProducts}
-                productActions={productActions}
-              />
-            ) : (
-              <ProductEmptySection />
-            )}
+            <SortBarSection selectedCategory={selectedCategory} sortBy={sortBy} setSortBy={setSortBy} fakeCategories={fakeCategories} />
+            {filteredProducts.length > 0 ? <ProductGridSection filteredProducts={filteredProducts} productActions={productActions} /> : <ProductEmptySection />}
           </Box>
         </Box>
       </Container>

@@ -4,10 +4,7 @@
     {
         public Guid                   Id           { get; set; }
         public string                 Name         { get; set; }
-        public string                 ImageUrl     { get; set; }
-        public int                    Quantity     { get; set; }
         public string                 Describe     { get; set; }
-        public decimal                Price        { get; set; }
         public float                  Weight       { get; set; }
         public bool                   IsOutOfStock { get; set; }
         public int                    Discount     { get; set; }
@@ -17,7 +14,9 @@
         public Guid                   CategoryId   { get; set; }
         public Store                  Store        { get; set; }
         public Category               Category     { get; set; }
+        public IEnumerable<ProductImage> ProductImgs { get; set; } = new List<ProductImage>();
         public IEnumerable<CartItem>  CartItems    { get; set; }
         public IEnumerable<OrderItem> OrderItems   { get; set; }
+        public IEnumerable<CostData> CostData { get; set; } = new List<CostData>();
     }
 }

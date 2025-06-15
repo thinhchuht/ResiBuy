@@ -7,9 +7,10 @@ interface ProductFilterProps {
   priceRange: number[];
   setPriceRange: (range: number[]) => void;
   fakeCategories: Category[];
+  storeId?: string;
 }
 
-const ProductFilterSection = ({ selectedCategory, setSelectedCategory, priceRange, setPriceRange, fakeCategories }: ProductFilterProps) => (
+const ProductFilterSection = ({ selectedCategory, setSelectedCategory, priceRange, setPriceRange, fakeCategories, storeId }: ProductFilterProps) => (
   <Paper
     elevation={0}
     sx={{
@@ -19,9 +20,14 @@ const ProductFilterSection = ({ selectedCategory, setSelectedCategory, priceRang
       position: "sticky",
       top: 150,
     }}>
-    <Typography variant="h6" sx={{ mb: 3, fontWeight: 600, color: "#2c3e50" }}>
+    <Typography variant="h6" sx={{ mb: 1, fontWeight: 600, color: "#2c3e50" }}>
       Bộ lọc sản phẩm
     </Typography>
+    {storeId && (
+      <Typography variant="body2" sx={{ color: "red", fontWeight: 500, mb: 3 }}>
+        Sản phẩm áp dụng được voucher
+      </Typography>
+    )}
     <Box sx={{ mb: 4 }}>
       <Typography variant="subtitle2" sx={{ mb: 1, color: "#666" }}>
         Danh mục

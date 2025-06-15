@@ -1,5 +1,6 @@
 import { Box, Typography } from "@mui/material";
 import type { CartItem } from "../../types/models";
+import { getMinPrice } from "../../utils/priceUtils";
 
 interface ProductTableSectionProps {
   items: CartItem[];
@@ -34,7 +35,7 @@ const ProductTableSection = ({ items, formatPrice }: ProductTableSectionProps) =
             boxShadow: "0 1px 4px rgba(0,0,0,0.03)",
           }}>
           <Box sx={{ width: 80, mr: 2 }}>
-            <img src={item.product.imageUrl} alt={item.product.name} style={{ width: "60px", height: "60px", borderRadius: "4px", objectFit: "cover" }} />
+            <img src={item.product.productImages[0]?.thumbUrl} alt={item.product.name} style={{ width: "60px", height: "60px", borderRadius: "4px", objectFit: "cover" }} />
           </Box>
           <Box sx={{ flex: 2 }}>
             <Typography variant="body1" sx={{ fontWeight: "bold" }}>
@@ -51,7 +52,7 @@ const ProductTableSection = ({ items, formatPrice }: ProductTableSectionProps) =
           </Box>
           <Box sx={{ flex: 1, textAlign: "center" }}>
             <Typography variant="body1" sx={{ fontWeight: 500 }}>
-              {formatPrice(item.product.price)}
+              {formatPrice(getMinPrice(item.product))}
             </Typography>
           </Box>
           <Box sx={{ flex: 1, textAlign: "center" }}>
@@ -61,7 +62,7 @@ const ProductTableSection = ({ items, formatPrice }: ProductTableSectionProps) =
           </Box>
           <Box sx={{ flex: 1, textAlign: "right" }}>
             <Typography variant="body1" sx={{ fontWeight: "bold", color: "red" }}>
-              {formatPrice(item.product.price * item.quantity)}
+              {formatPrice(getMinPrice(item.product) * item.quantity)}
             </Typography>
           </Box>
         </Box>

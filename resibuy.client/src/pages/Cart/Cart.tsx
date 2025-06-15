@@ -15,30 +15,21 @@ const Cart = () => {
   const navigate = useNavigate();
 
   const handleQuantityChange = (itemId: string, newQuantity: number) => {
-    setCartItems((prevItems) =>
-      prevItems.map((item) =>
-        item.id === itemId ? { ...item, quantity: newQuantity } : item
-      )
-    );
+    setCartItems((prevItems) => prevItems.map((item) => (item.id === itemId ? { ...item, quantity: newQuantity } : item)));
   };
 
   const handleRemoveItem = (itemId: string) => {
-    setCartItems((prevItems) =>
-      prevItems.filter((item) => item.id !== itemId)
-    );
+    setCartItems((prevItems) => prevItems.filter((item) => item.id !== itemId));
     setSelectedCartItems((prev) => prev.filter((id) => id !== itemId));
   };
 
   const handleSelectItem = (itemId: string) => {
-    setSelectedCartItems((prev) =>
-      prev.includes(itemId)
-        ? prev.filter((id) => id !== itemId)
-        : [...prev, itemId]
-    );
+    setSelectedCartItems((prev) => (prev.includes(itemId) ? prev.filter((id) => id !== itemId) : [...prev, itemId]));
   };
 
   const handleSelectAllItems = (event: React.ChangeEvent<HTMLInputElement>) => {
     if (event.target.checked) {
+      console.log("allItemIds", cartItems);
       const allItemIds = cartItems.map((item) => item.id);
       setSelectedCartItems(allItemIds);
     } else {
@@ -47,7 +38,7 @@ const Cart = () => {
   };
 
   const handleCheckout = () => {
-    navigate('/checkout', { state: { selectedItems: selectedCartItems } });
+    navigate("/checkout", { state: { selectedItems: selectedCartItems } });
   };
 
   const handleChangePage = (event: unknown, newPage: number) => {
@@ -59,16 +50,11 @@ const Cart = () => {
     setPage(0);
   };
 
-  const selectedCartItems = cartItems.filter((item) =>
-    selectedItems.includes(item.id)
-  );
+  const selectedCartItems = cartItems.filter((item) => selectedItems.includes(item.id));
 
   const allSelected = selectedItems.length === cartItems.length && cartItems.length > 0;
 
-  const paginatedCartItems = cartItems.slice(
-    page * rowsPerPage,
-    page * rowsPerPage + rowsPerPage
-  );
+  const paginatedCartItems = cartItems.slice(page * rowsPerPage, page * rowsPerPage + rowsPerPage);
 
   return (
     <Container maxWidth="xl" sx={{ py: 4 }}>
@@ -87,8 +73,7 @@ const Cart = () => {
               p: 3,
               borderRadius: 4,
               border: "1px solid #eee",
-            }}
-          >
+            }}>
             <CartItemSection
               items={paginatedCartItems}
               selectedItems={selectedItems}
@@ -106,10 +91,7 @@ const Cart = () => {
           </Paper>
         </Box>
 
-        <CartSummarySection
-          selectedItems={selectedCartItems}
-          onCheckout={handleCheckout}
-        />
+        <CartSummarySection selectedItems={selectedCartItems} onCheckout={handleCheckout} />
       </Box>
     </Container>
   );

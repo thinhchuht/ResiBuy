@@ -120,6 +120,31 @@ namespace ResiBuy.Server.Infrastructure.Migrations
                     b.ToTable("Categories", (string)null);
                 });
 
+            modelBuilder.Entity("ResiBuy.Server.Infrastructure.Model.CostData", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<string>("Key")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<decimal>("Price")
+                        .HasColumnType("decimal(18,2)");
+
+                    b.Property<Guid>("ProductId")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<string>("Value")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("ProductId");
+
+                    b.ToTable("CostData");
+                });
+
             modelBuilder.Entity("ResiBuy.Server.Infrastructure.Model.Order", b =>
                 {
                     b.Property<Guid>("Id")
@@ -211,20 +236,11 @@ namespace ResiBuy.Server.Infrastructure.Migrations
                     b.Property<int>("Discount")
                         .HasColumnType("int");
 
-                    b.Property<string>("ImageUrl")
-                        .HasColumnType("nvarchar(max)");
-
                     b.Property<bool>("IsOutOfStock")
                         .HasColumnType("bit");
 
                     b.Property<string>("Name")
                         .HasColumnType("nvarchar(max)");
-
-                    b.Property<decimal>("Price")
-                        .HasColumnType("decimal(18,2)");
-
-                    b.Property<int>("Quantity")
-                        .HasColumnType("int");
 
                     b.Property<Guid>("StoreId")
                         .HasColumnType("uniqueidentifier");
@@ -242,6 +258,30 @@ namespace ResiBuy.Server.Infrastructure.Migrations
                     b.HasIndex("StoreId");
 
                     b.ToTable("Products", (string)null);
+                });
+
+            modelBuilder.Entity("ResiBuy.Server.Infrastructure.Model.ProductImage", b =>
+                {
+                    b.Property<string>("Id")
+                        .HasColumnType("nvarchar(450)");
+
+                    b.Property<string>("ImgUrl")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<string>("Name")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<Guid>("ProductId")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<string>("ThumbUrl")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("ProductId");
+
+                    b.ToTable("ProductImgs");
                 });
 
             modelBuilder.Entity("ResiBuy.Server.Infrastructure.Model.RefreshToken", b =>
@@ -403,6 +443,28 @@ namespace ResiBuy.Server.Infrastructure.Migrations
                     b.ToTable("Stores", (string)null);
                 });
 
+            modelBuilder.Entity("ResiBuy.Server.Infrastructure.Model.UncostData", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<Guid>("CostDataId")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<string>("Key")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<string>("Value")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("CostDataId");
+
+                    b.ToTable("UncostData");
+                });
+
             modelBuilder.Entity("ResiBuy.Server.Infrastructure.Model.User", b =>
                 {
                     b.Property<string>("Id")
@@ -452,18 +514,18 @@ namespace ResiBuy.Server.Infrastructure.Migrations
                         new
                         {
                             Id = "adm_df",
-                            CreatedAt = new DateTime(2025, 6, 8, 15, 6, 45, 467, DateTimeKind.Local).AddTicks(6723),
+                            CreatedAt = new DateTime(2025, 6, 14, 20, 43, 20, 163, DateTimeKind.Local).AddTicks(8180),
                             DateOfBirth = new DateTime(1990, 1, 1, 0, 0, 0, 0, DateTimeKind.Unspecified),
                             Email = "admin@123",
                             EmailConfirmed = true,
                             FullName = "Administrator",
                             IdentityNumber = "admin",
                             IsLocked = false,
-                            PasswordHash = "$2a$11$83klmdXXq1dCOmxjlASR/.pFm2oumCXsaSqvZvaZ7UzsinfwDFiXO",
+                            PasswordHash = "$2a$11$JE2ws0YkLNdm5MyCugBVCOwdHoDJPIBhORwBG2Tnp/LGBP2NCZave",
                             PhoneNumber = "admin",
                             PhoneNumberConfirmed = true,
                             Roles = "[\"ADMIN\"]",
-                            UpdatedAt = new DateTime(2025, 6, 8, 15, 6, 45, 467, DateTimeKind.Local).AddTicks(6735)
+                            UpdatedAt = new DateTime(2025, 6, 14, 20, 43, 20, 163, DateTimeKind.Local).AddTicks(8192)
                         });
                 });
 
@@ -577,6 +639,17 @@ namespace ResiBuy.Server.Infrastructure.Migrations
                     b.Navigation("Product");
                 });
 
+            modelBuilder.Entity("ResiBuy.Server.Infrastructure.Model.CostData", b =>
+                {
+                    b.HasOne("ResiBuy.Server.Infrastructure.Model.Product", "Product")
+                        .WithMany("CostData")
+                        .HasForeignKey("ProductId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("Product");
+                });
+
             modelBuilder.Entity("ResiBuy.Server.Infrastructure.Model.Order", b =>
                 {
                     b.HasOne("ResiBuy.Server.Infrastructure.Model.Shipper", "Shipper")
@@ -645,6 +718,17 @@ namespace ResiBuy.Server.Infrastructure.Migrations
                     b.Navigation("Category");
 
                     b.Navigation("Store");
+                });
+
+            modelBuilder.Entity("ResiBuy.Server.Infrastructure.Model.ProductImage", b =>
+                {
+                    b.HasOne("ResiBuy.Server.Infrastructure.Model.Product", "Product")
+                        .WithMany("ProductImgs")
+                        .HasForeignKey("ProductId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("Product");
                 });
 
             modelBuilder.Entity("ResiBuy.Server.Infrastructure.Model.RefreshToken", b =>
@@ -721,6 +805,17 @@ namespace ResiBuy.Server.Infrastructure.Migrations
                     b.Navigation("Room");
                 });
 
+            modelBuilder.Entity("ResiBuy.Server.Infrastructure.Model.UncostData", b =>
+                {
+                    b.HasOne("ResiBuy.Server.Infrastructure.Model.CostData", "CostData")
+                        .WithMany("UncostData")
+                        .HasForeignKey("CostDataId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("CostData");
+                });
+
             modelBuilder.Entity("ResiBuy.Server.Infrastructure.Model.UserRoom", b =>
                 {
                     b.HasOne("ResiBuy.Server.Infrastructure.Model.Room", "Room")
@@ -792,6 +887,11 @@ namespace ResiBuy.Server.Infrastructure.Migrations
                     b.Navigation("Products");
                 });
 
+            modelBuilder.Entity("ResiBuy.Server.Infrastructure.Model.CostData", b =>
+                {
+                    b.Navigation("UncostData");
+                });
+
             modelBuilder.Entity("ResiBuy.Server.Infrastructure.Model.Order", b =>
                 {
                     b.Navigation("Items");
@@ -803,7 +903,11 @@ namespace ResiBuy.Server.Infrastructure.Migrations
                 {
                     b.Navigation("CartItems");
 
+                    b.Navigation("CostData");
+
                     b.Navigation("OrderItems");
+
+                    b.Navigation("ProductImgs");
                 });
 
             modelBuilder.Entity("ResiBuy.Server.Infrastructure.Model.Room", b =>

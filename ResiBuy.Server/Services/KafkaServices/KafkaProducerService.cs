@@ -9,11 +9,11 @@ public class KafkaProducerService : IKafkaProducerService, IDisposable
         DefaultIgnoreCondition = JsonIgnoreCondition.WhenWritingNull
     };
 
-    public KafkaProducerService(IOptions<KafkaSettings> kafkaSettings)
+    public KafkaProducerService(IOptions<KafkaSetting> kafkaSetting)
     {
         var config = new ProducerConfig
         {
-            BootstrapServers = kafkaSettings.Value.BootstrapServers
+            BootstrapServers = kafkaSetting.Value.BootstrapServers
         };
 
         _producer = new ProducerBuilder<string, string>(config).Build();

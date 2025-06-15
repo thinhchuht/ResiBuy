@@ -7,6 +7,13 @@ export enum OrderStatus {
   Cancelled = 4,
 }
 
+export enum PaymentStatus {
+  Pending = 0,
+  Paid = 1,
+  Failed = 2,
+  Refunded = 3,
+}
+
 export enum PaymentMethod {
   Cash = 0,
   CreditCard = 1,
@@ -27,28 +34,29 @@ export interface User {
   phoneNumber: string;
   dateOfBirth: string;
   identityNumber: string;
-  roles: UserRole[];
+  roles: string[];
   refreshTokens: RefreshToken[];
   orders: Order[];
   userVouchers: UserVoucher[];
   userRooms: UserRoom[];
+  createdAt: string;
+  updatedAt: string;
 }
 
 export interface Product {
   id: string;
   name: string;
-  imageUrl: string;
-  quantity: number;
-  sold: number;
   describe: string;
-  price: number;
   weight: number;
   isOutOfStock: boolean;
   discount: number;
+  sold: number;
   createdAt: string;
   updatedAt: string;
   storeId: string;
   categoryId: string;
+  productImages: ProductImage[];
+  costData: CostData[];
   cartItems: CartItem[];
   orderItems: OrderItem[];
 }
@@ -89,23 +97,33 @@ export interface CartItem {
 
 export interface Order {
   id: string;
-  userId: string;
-  shipperId: string;
+  totalPrice: number;
   status: OrderStatus;
-  totalAmount: number;
-  paymentMethod: PaymentMethod;
-  shippingAddress: string;
-  createdAt: string;
-  updatedAt: string;
-  orderItems: OrderItem[];
+  paymentStatus: PaymentStatus;
+  createAt: string;
+  updateAt: string;
+  shipAddressId: string;
+  shipAddress: Room;
+  userId: string;
+  storeId: string;
+  shipperId?: string;
+  voucherId?: string;
+  user?: User;
+  store?: Store;
+  shipper?: Shipper;
+  voucher?: Voucher;
+  reports?: Report[];
+  items: OrderItem[];
 }
 
 export interface OrderItem {
   id: string;
-  orderId: string;
-  productId: string;
   quantity: number;
   price: number;
+  orderId: string;
+  productId: string;
+  order?: Order;
+  product?: Product;
 }
 
 export interface Shipper {
@@ -195,4 +213,28 @@ export interface EventItem {
   title?: string;
   description?: string;
   storeId: string;
+}
+
+export interface ProductImage {
+  id: string;
+  imgUrl: string;
+  thumbUrl: string;
+  name: string;
+  productId: string;
+}
+
+export interface UncostData {
+  id: string;
+  key: string;
+  value: string;
+  costDataId: string;
+}
+
+export interface CostData {
+  id: string;
+  key: string;
+  value: string;
+  price: number;
+  productId: string;
+  uncostData?: UncostData[];
 }
