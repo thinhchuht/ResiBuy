@@ -1,78 +1,34 @@
-﻿﻿using ResiBuy.Server.Infrastructure.DbServices.CategoryDbServices;
-using ResiBuy.Server.Infrastructure.DbServices.ProductDbServices;
-using ResiBuy.Server.Services.CloudinaryServices;
-using ResiBuy.Server.Services.MailServices;
-namespace ResiBuy.Server.Extensions
+﻿using ResiBuy.Server.Infrastructure.DbServices.ProductDbServices;
+using ResiBuy.Server.Infrastructure.Model.DTOs;
+
+namespace ResiBuy.Server.Application.Commands.ProductCommands
 {
-    public static class ServiceCollectionExtensions
+    public record CreateProductCommand(ProductDto ProductDto) : IRequest<ResponseModel>;
+    public class CreateProductCommandHandler(IProductDbService ProductDbService) : IRequestHandler<CreateProductCommand, ResponseModel>
     {
-        public static IServiceCollection AddSqlDb(this IServiceCollection services, IConfiguration configuration)
+        public async Task<ResponseModel> Handle(CreateProductCommand command, CancellationToken cancellationToken)
         {
-            services.AddDbContext<ResiBuyContext>(options =>
+            try
             {
-                options.UseSqlServer(configuration.GetConnectionString("ResiBuyDb"));
-            });
-            return services;
-        }
-
-        public static IServiceCollection AddDbServices(this IServiceCollection services)
-        {
-            services.AddScoped(typeof(IBaseDbService<>), typeof(BaseDbService<>));
-            services.AddScoped<IUserDbService, UserDbService>();
-            services.AddScoped<IUserRoomDbService, UserRoomDbService>();
-            services.AddScoped<IAreaDbService, AreaDbService>();
-            services.AddScoped<IBuildingDbService, BuildingDbService>();
-            services.AddScoped<IRoomDbService, RoomDbService>();
-            services.AddScoped<ICartDbService, CartDbService>();
-
-            services.AddScoped<ICategoryDbService, CategoryDbService>();
-            services.AddScoped<IProductDbService, ProductDbService>();
-            services.AddScoped<IMailService, MailService>();
-            return services;
-        }
-
-        public static IServiceCollection AddServices(this IServiceCollection services)
-        {
-            services.AddScoped<INotificationService, NotificationService>();
-            services.AddSingleton<IKafkaProducerService, KafkaProducerService>();
-            return services;
-        }
-
-        public static IServiceCollection AddKafka(this IServiceCollection services, IConfiguration configuration)
-        {
-            services.Configure<KafkaSetting>(configuration.GetSection("Kafka"));
-            return services;
-        }
-
-        public static IServiceCollection AddAuthenJwtBase(this IServiceCollection services, IConfiguration configuration)
-        {
-            services.AddAuthentication(options =>
-            {
-                options.DefaultAuthenticateScheme = JwtBearerDefaults.AuthenticationScheme;
-                options.DefaultChallengeScheme = JwtBearerDefaults.AuthenticationScheme;
-            })
-            .AddJwtBearer(options =>
-            {
-                options.TokenValidationParameters = new TokenValidationParameters
+                var product = new Product
                 {
-                    ValidateIssuer = true,
-                    ValidateAudience = true,
-                    ValidateLifetime = true,
-                    ValidateIssuerSigningKey = true,
-                    ValidIssuer = configuration["Jwt:Issuer"],
-                    ValidAudience = configuration["Jwt:Audience"],
-                    IssuerSigningKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(configuration["Jwt:Key"])),
-                    RoleClaimType = ClaimTypes.Role
+                    Name = command.ProductDto.Name,
+                    Describe = command.ProductDto.Describe,
+                    Weight = command.ProductDto.Weight,
+                    IsOutOfStock = command.ProductDto.IsOutOfStock,
+                    Discount = command.ProductDto.Discount,
+                    CreatedAt = DateTime.UtcNow,
+                    UpdatedAt = DateTime.UtcNow,
+                    StoreId = command.ProductDto.StoreId,
+                    CategoryId = command.ProductDto.CategoryId
                 };
-            });
-            return services;
-        }
-
-        public static IServiceCollection AddCloudinary(this IServiceCollection services, IConfiguration configuration)
-        {
-            services.AddSingleton(configuration.GetSection("Cloudinary").Get<CloudinarySetting>());
-            services.AddScoped<ICloudinaryService, CloudinaryService>();
-            return services;
+                var createCategory = await ProductDbService.CreateAsync(product);
+                return ResponseModel.SuccessResponse(createCategory);
+            }
+            catch (Exception ex)
+            {
+                return ResponseModel.ExceptionResponse(ex.ToString());
+            }
         }
     }
 }
