@@ -1,22 +1,7 @@
 import React, { createContext, useContext, useState, useEffect } from "react";
 import axios from "axios";
 import authApi from "../api/auth.api";
-
-interface User {
-  id: string;
-  email: string;
-  fullName: string;
-  rooms: [
-    {
-      roomId: string;
-      roomName: string;
-      buildingName: string;
-      areaName: string;
-    }
-  ];
-  phoneNumber: string;
-  roles: string[];
-}
+import type { User } from "../types/models";
 
 interface AuthContextType {
   user: User | null;
@@ -80,8 +65,6 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const logout = async () => {
     try {
       const refreshToken = localStorage.getItem("refreshToken");
-      console.log("logout", refreshToken);
-
       if (refreshToken) {
         const response = await authApi.logout(refreshToken);
         if (response.success) {
@@ -94,7 +77,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         }
       }
     } catch (error) {
-      console.error("Logout failed:", error);
+      console.error("Logout failed with error:", error);
     }
   };
 

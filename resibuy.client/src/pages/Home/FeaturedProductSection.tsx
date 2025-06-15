@@ -1,10 +1,4 @@
-import {
-  Box,
-  Typography,
-  Link as MuiLink,
-  Divider,
-  Button,
-} from "@mui/material";
+import { Box, Typography, Link as MuiLink, Divider, Button } from "@mui/material";
 import { useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { fakeProducts } from "../../fakeData/fakeProductData";
@@ -45,7 +39,7 @@ const FeaturedProductSection = () => {
     },
     {
       icon: <Store sx={{ color: "#FF6B6B", fontSize: 22 }} />,
-      onClick: (product: Product) => navigate(`/store/${product.storeId}`),
+      onClick: (product: Product) => navigate(`/products?storeId=${product.storeId}`),
       label: "Ghé thăm cửa hàng",
     },
   ];
@@ -64,24 +58,21 @@ const FeaturedProductSection = () => {
         justifyContent: "center",
         borderRadius: 4,
         boxShadow: "0 4px 20px 0 rgba(0,0,0,0.05)",
-      }}
-    >
+      }}>
       <Box
         sx={{
           display: "flex",
           justifyContent: "space-between",
           alignItems: "center",
           margin: "30px 15px",
-        }}
-      >
+        }}>
         <Typography
           variant="h5"
           sx={{
             fontWeight: 600,
             color: "#2c3e50",
             letterSpacing: "0.5px",
-          }}
-        >
+          }}>
           SẢN PHẨM BÁN CHẠY
         </Typography>
         <MuiLink
@@ -102,8 +93,7 @@ const FeaturedProductSection = () => {
               textDecoration: "underline",
               transform: "translateY(-2px) scale(1.05)",
             },
-          }}
-        >
+          }}>
           <Button
             variant="outlined"
             sx={{
@@ -116,15 +106,12 @@ const FeaturedProductSection = () => {
                 borderColor: "#FF5C5C",
                 backgroundColor: "#FF6B6B1A",
               },
-            }}
-          >
-            Xem thêm <ArrowRightIcon stroke="#FF6B6B"/>
+            }}>
+            Xem thêm <ArrowRightIcon stroke="#FF6B6B" />
           </Button>
         </MuiLink>
       </Box>
-      <Divider
-        sx={{ backgroundColor: "#e04225", width: "80%", margin: "10px auto" }}
-      />
+      <Divider sx={{ backgroundColor: "#e04225", width: "80%", margin: "10px auto" }} />
       <Box
         sx={{
           display: "grid",
@@ -136,14 +123,9 @@ const FeaturedProductSection = () => {
           gap: 5,
           marginBottom: 5,
           marginTop: 5,
-        }}
-      >
+        }}>
         {products.map((product) => (
-          <ProductCard
-            key={product.id}
-            product={product}
-            productActions={productActions}
-          />
+          <ProductCard key={product.id} product={product} productActions={productActions} />
         ))}
       </Box>
     </Box>
