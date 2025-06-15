@@ -12,6 +12,11 @@
             HttpStatus = GetHttpStatus(code);
         }
 
+        public override string ToString()
+        {
+            return Message;
+        }
+
         private static string GetDefaultMessage(ExceptionErrorCode code) => code switch
         {
             ExceptionErrorCode.NotFound => "Resource not found.",
@@ -40,5 +45,4 @@
             _ => StatusCodes.Status500InternalServerError
         };
     }
-
 }

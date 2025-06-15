@@ -51,6 +51,20 @@
             }
         }
 
+        public async Task<Room> GetRoomDetail(Guid id)
+        {
+            try
+            {
+
+                var room = await _context.Rooms.Include(r => r.Building).ThenInclude(b => b.Area).FirstOrDefaultAsync();
+                return room;
+            }
+            catch (Exception ex)
+            {
+                throw new CustomException(ExceptionErrorCode.RepositoryError, ex.Message);
+            }
+        }
+
         public async Task<IEnumerable<Room>> GetBatchAsync(IEnumerable<Guid> ids)
         {
             try
@@ -66,7 +80,7 @@
                     }
 
                     // Fetch the room by ID and add it to the list
-                    var room = await GetByIdBaseAsync(id);
+                    var room = await GetRoomDetail(id);
                     if (room != null)
                     {
                         rooms.Add(room);

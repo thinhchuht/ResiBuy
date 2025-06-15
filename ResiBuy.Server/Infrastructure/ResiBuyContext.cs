@@ -24,7 +24,7 @@
         public DbSet<RefreshToken> RefreshTokens { get; set; }
         public DbSet<CostData> CostData { get; set; }
         public DbSet<UncostData> UncostData { get; set; }
-        public DbSet<ProductImage> ProductImgs { get; set; }
+        public DbSet<Image> Images { get; set; }
 
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {

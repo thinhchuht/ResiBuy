@@ -1,4 +1,5 @@
 ﻿using ResiBuy.Server.Infrastructure.DbServices.CategoryDbServices;
+using ResiBuy.Server.Infrastructure.DbServices.ImageServices;
 using ResiBuy.Server.Infrastructure.DbServices.ProductDbServices;
 using ResiBuy.Server.Services.CloudinaryServices;
 using ResiBuy.Server.Services.MailServices;
@@ -24,10 +25,10 @@ namespace ResiBuy.Server.Extensions
             services.AddScoped<IBuildingDbService, BuildingDbService>();
             services.AddScoped<IRoomDbService, RoomDbService>();
             services.AddScoped<ICartDbService, CartDbService>();
-
+            services.AddScoped<IImageDbService, ImageDbService>();
             services.AddScoped<ICategoryDbService, CategoryDbService>();
             services.AddScoped<IProductDbService, ProductDbService>();
-            services.AddScoped<IMailService, MailService>();
+            services.AddScoped<IMailBaseService, MailBaseService>();
             return services;
         }
 
