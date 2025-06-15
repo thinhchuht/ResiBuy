@@ -4,7 +4,7 @@ using MimeKit;
 
 namespace ResiBuy.Server.Services.MailServices
 {
-    public class MailService : IMailService
+    public class MailBaseService : IMailBaseService
     {
         private readonly IConfiguration _configuration;
         private readonly string _smtpServer;
@@ -14,7 +14,7 @@ namespace ResiBuy.Server.Services.MailServices
         private readonly string _fromEmail;
         private readonly string _fromName;
 
-        public MailService(IConfiguration configuration)
+        public MailBaseService(IConfiguration configuration)
         {
             _configuration = configuration;
             _smtpServer = _configuration["MailSettings:SmtpServer"];

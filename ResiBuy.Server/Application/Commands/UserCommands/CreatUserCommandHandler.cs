@@ -1,6 +1,4 @@
-﻿using ResiBuy.Server.Infrastructure.DbServices.CartDbService;
-
-namespace ResiBuy.Server.Application.Commands.UserCommands
+﻿namespace ResiBuy.Server.Application.Commands.UserCommands
 {
     public record CreatUserCommand(RegisterDto RegisterDto) : IRequest<ResponseModel>;
     public class CreatUserCommandHandler(
@@ -13,31 +11,33 @@ namespace ResiBuy.Server.Application.Commands.UserCommands
         public async Task<ResponseModel> Handle(CreatUserCommand command, CancellationToken cancellationToken)
         {
             if (!command.RegisterDto.RoomIds.Any())
-                return ResponseModel.FailureResponse("You cant create User without a room");
-            var createUserResponse = await userDbService.CreateUser(command.RegisterDto);
-            
-            if (createUserResponse != null)
+                return ResponseModel.FailureResponse("Không thể tạo người dùng mà không có phòng");
+            var user = await userDbService.CreateUser(command.RegisterDto);
+
+            if (user != null)
             {
                 var rooms = await roomDbService.GetBatchAsync(command.RegisterDto.RoomIds);
-                var createRoomResponse = await userRoomDbService.CreateUserRoomsBatch([createUserResponse.Id], command.RegisterDto.RoomIds);
+                var userRoom = await userRoomDbService.CreateUserRoomsBatch([user.Id], command.RegisterDto.RoomIds);
 
-                if (createRoomResponse != null)
+                if (userRoom != null)
                 {
-                    var cart = new Cart(createUserResponse.Id);
-                    var createCartResponse = await baseCartDbService.CreateAsync(cart);
+                    var newCart = new Cart(user.Id);
+                    var cart = await baseCartDbService.CreateAsync(newCart);
 
-                    if (createCartResponse != null)
+                    if (cart != null)
                     {
                         var userResult = new UserQueryResult(
-                            createUserResponse.Id,
-                            createUserResponse.DateOfBirth,
-                            createUserResponse.IsLocked,
-                            createUserResponse.Roles,
-                            createUserResponse.FullName,
-                            createUserResponse.CreatedAt,
-                            createUserResponse.UpdatedAt,
+                            user.Id,
+                            user.Email,
+                            user.DateOfBirth,
+                            user.IsLocked,
+                            user.Roles,
+                            user.FullName,
+                            user.CreatedAt,
+                            user.UpdatedAt,
                             cart.Id,
-                            rooms.Select(r => new { r.Id, r.Name, r.BuildingId }),
+                            null,
+                            rooms.Select(r => new RoomQueryResult(r.Id, r.Name, r.Building.Name, r.Building.Area.Name)),
                             [],
                             []
                         );
@@ -46,7 +46,7 @@ namespace ResiBuy.Server.Application.Commands.UserCommands
                     }
                 }
             }
-            return ResponseModel.SuccessResponse(createUserResponse);
+            return ResponseModel.SuccessResponse(user);
         }
     }
 }

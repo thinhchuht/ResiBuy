@@ -1,4 +1,6 @@
-﻿namespace ResiBuy.Server.Infrastructure.DbServices.UserDbServices
+﻿using ResiBuy.Server.Infrastructure.Filter;
+
+namespace ResiBuy.Server.Infrastructure.DbServices.UserDbServices
 {
     public class UserDbService : BaseDbService<User>, IUserDbService
     {
@@ -61,12 +63,59 @@
 
         public async Task<User> GetUserById(string id)
         {
-            return await context.Users.Include(u => u.Cart).Include(u => u.UserRooms).ThenInclude(ur => ur.Room).FirstOrDefaultAsync(u => u.Id == id);
+            return await context.Users.Include(u => u.Avatar).Include(u => u.Cart).Include(u => u.UserRooms).ThenInclude(ur => ur.Room).ThenInclude(r => r.Building).ThenInclude(b => b.Area).FirstOrDefaultAsync(u => u.Id == id);
         }
 
-        public async Task<IEnumerable<User>> GetAllUsers()
+        public async Task<PagedResult<UserQueryResult>> GetAllUsers(int pageNumber = 1, int pageSize = 10)
         {
-            return await context.Users.Include(u => u.Cart).Include(u => u.UserRooms).ThenInclude(ur => ur.Room).ToListAsync();
+            var query = context.Users
+                .Include(u => u.Avatar)
+                .Include(u => u.Cart)
+                .Include(u => u.UserRooms)
+                .ThenInclude(ur => ur.Room)
+                .ThenInclude(r => r.Building)
+                .ThenInclude(b => b.Area)
+                .Include(u => u.UserVouchers)
+                .Include(u => u.Reports)
+                .AsQueryable();
+
+            var totalCount = await query.CountAsync();
+            var users = await query
+                .Skip((pageNumber - 1) * pageSize)
+                .Take(pageSize)
+                .ToListAsync();
+
+            var items = users.Select(user => new UserQueryResult(
+                user.Id,
+                user.Email,
+                user.DateOfBirth,
+                user.IsLocked,
+                user.Roles,
+                user.FullName,
+                user.CreatedAt,
+                user.UpdatedAt,
+                user.Cart?.Id ?? null,
+                user.Avatar != null ? new AvatarQueryResult(
+                    user.Avatar.Id,
+                    user.Avatar.Name,
+                    user.Avatar.ImgUrl,
+                    user.Avatar.ThumbUrl) : null,
+                user.UserRooms.Select(ur => new RoomQueryResult(
+                    ur.RoomId,
+                    ur.Room?.Name,
+                    ur.Room?.Building.Name,
+                    ur.Room?.Building.Area.Name)),
+                user.UserVouchers.Select(uv => uv.VoucherId),
+                user.Reports.ToList()
+            )).ToList();
+
+            return new PagedResult<UserQueryResult>
+            {
+                Items = items,
+                TotalCount = totalCount,
+                PageNumber = pageNumber,
+                PageSize = pageSize
+            };
         }
     }
 }
