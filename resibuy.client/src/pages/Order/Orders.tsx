@@ -1,9 +1,9 @@
-import { Box, Container, Typography, Paper, Tabs, Tab, Pagination, Chip } from "@mui/material";
+import { Box, Container, Typography, Paper, Tabs, Tab, Pagination } from "@mui/material";
 import { useState } from "react";
 import { styled } from "@mui/material/styles";
-import OrderCard from "./components/OrderCard";
+import OrderCard from "./OrderCard";
 import { fakeOrders } from "../../fakeData/fakeOrderData";
-import { OrderStatus, PaymentStatus } from "../../types/models";
+import { OrderStatus } from "../../types/models";
 
 const StyledTabs = styled(Tabs)({
   borderBottom: "1px solid #e8e8e8",
@@ -40,50 +40,20 @@ const Orders = () => {
 
   const getFilteredOrders = () => {
     switch (currentTab) {
-      case 0: // Tất cả
+      case 0:
         return fakeOrders;
-      case 1: // Chờ xác nhận
+      case 1:
         return fakeOrders.filter((order) => order.status === OrderStatus.Pending);
-      case 2: // Đang xử lý
+      case 2:
         return fakeOrders.filter((order) => order.status === OrderStatus.Processing);
-      case 3: // Đang giao
+      case 3:
         return fakeOrders.filter((order) => order.status === OrderStatus.Shipped);
-      case 4: // Đã giao
+      case 4:
         return fakeOrders.filter((order) => order.status === OrderStatus.Delivered);
-      case 5: // Đã hủy
+      case 5:
         return fakeOrders.filter((order) => order.status === OrderStatus.Cancelled);
       default:
         return fakeOrders;
-    }
-  };
-
-  const getPaymentStatusColor = (status: PaymentStatus) => {
-    switch (status) {
-      case PaymentStatus.Paid:
-        return "#4CAF50";
-      case PaymentStatus.Pending:
-        return "#FFA500";
-      case PaymentStatus.Failed:
-        return "#F44336";
-      case PaymentStatus.Refunded:
-        return "#2196F3";
-      default:
-        return "#666";
-    }
-  };
-
-  const getPaymentStatusText = (status: PaymentStatus) => {
-    switch (status) {
-      case PaymentStatus.Paid:
-        return "Đã thanh toán";
-      case PaymentStatus.Pending:
-        return "Chờ thanh toán";
-      case PaymentStatus.Failed:
-        return "Thanh toán thất bại";
-      case PaymentStatus.Refunded:
-        return "Đã hoàn tiền";
-      default:
-        return "Không xác định";
     }
   };
 
@@ -124,20 +94,7 @@ const Orders = () => {
           {currentOrders.length > 0 ? (
             <>
               {currentOrders.map((order) => (
-                <Box key={order.id} sx={{ mb: 2 }}>
-                  <Box sx={{ display: "flex", justifyContent: "flex-end", mb: 1 }}>
-                    <Chip
-                      label={getPaymentStatusText(order.paymentStatus)}
-                      sx={{
-                        backgroundColor: `${getPaymentStatusColor(order.paymentStatus)}15`,
-                        color: getPaymentStatusColor(order.paymentStatus),
-                        fontWeight: 600,
-                        height: 32,
-                      }}
-                    />
-                  </Box>
-                  <OrderCard order={order} />
-                </Box>
+                <OrderCard key={order.id} order={order} />
               ))}
               <Box
                 sx={{

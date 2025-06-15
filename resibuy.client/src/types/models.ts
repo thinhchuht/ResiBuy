@@ -34,11 +34,13 @@ export interface User {
   phoneNumber: string;
   dateOfBirth: string;
   identityNumber: string;
-  roles: UserRole[];
+  roles: string[];
   refreshTokens: RefreshToken[];
   orders: Order[];
   userVouchers: UserVoucher[];
   userRooms: UserRoom[];
+  createdAt: string;
+  updatedAt: string;
 }
 
 export interface Product {

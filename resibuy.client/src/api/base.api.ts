@@ -46,6 +46,7 @@ const refreshToken = async () => {
   } catch (error) {
     // Nếu refresh token cũng hết hạn, logout user
     localStorage.removeItem("token");
+    localStorage.removeItem("user");
     localStorage.removeItem("refreshToken");
     window.location.href = "/login";
     throw error;

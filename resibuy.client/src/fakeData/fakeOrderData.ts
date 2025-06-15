@@ -3,11 +3,12 @@ import { fakeRooms } from "./fakeRoomData";
 import { fakeProducts } from "./fakeProductData";
 
 export const fakeOrderItems: OrderItem[] = [
+  // Order 1 - Multiple items
   {
     id: "1",
     orderId: "1",
     productId: "1",
-    quantity: 1,
+    quantity: 2,
     price: 999.99,
     product: {
       ...fakeProducts[0],
@@ -17,6 +18,19 @@ export const fakeOrderItems: OrderItem[] = [
   },
   {
     id: "2",
+    orderId: "1",
+    productId: "2",
+    quantity: 1,
+    price: 79.99,
+    product: {
+      ...fakeProducts[1],
+      cartItems: [],
+      orderItems: [],
+    },
+  },
+  // Order 2 - Single item
+  {
+    id: "3",
     orderId: "2",
     productId: "3",
     quantity: 1,
@@ -27,8 +41,9 @@ export const fakeOrderItems: OrderItem[] = [
       orderItems: [],
     },
   },
+  // Order 3 - Multiple items
   {
-    id: "3",
+    id: "4",
     orderId: "3",
     productId: "4",
     quantity: 1,
@@ -40,8 +55,8 @@ export const fakeOrderItems: OrderItem[] = [
     },
   },
   {
-    id: "4",
-    orderId: "4",
+    id: "5",
+    orderId: "3",
     productId: "5",
     quantity: 1,
     price: 899000,
@@ -51,9 +66,10 @@ export const fakeOrderItems: OrderItem[] = [
       orderItems: [],
     },
   },
+  // Order 4 - Multiple items
   {
-    id: "5",
-    orderId: "5",
+    id: "6",
+    orderId: "4",
     productId: "6",
     quantity: 1,
     price: 2499000,
@@ -63,12 +79,61 @@ export const fakeOrderItems: OrderItem[] = [
       orderItems: [],
     },
   },
+  {
+    id: "7",
+    orderId: "4",
+    productId: "1",
+    quantity: 3,
+    price: 999.99,
+    product: {
+      ...fakeProducts[0],
+      cartItems: [],
+      orderItems: [],
+    },
+  },
+  // Order 5 - Multiple items
+  {
+    id: "8",
+    orderId: "5",
+    productId: "2",
+    quantity: 2,
+    price: 79.99,
+    product: {
+      ...fakeProducts[1],
+      cartItems: [],
+      orderItems: [],
+    },
+  },
+  {
+    id: "9",
+    orderId: "5",
+    productId: "3",
+    quantity: 1,
+    price: 79.99,
+    product: {
+      ...fakeProducts[2],
+      cartItems: [],
+      orderItems: [],
+    },
+  },
+  {
+    id: "10",
+    orderId: "5",
+    productId: "4",
+    quantity: 2,
+    price: 129.98,
+    product: {
+      ...fakeProducts[3],
+      cartItems: [],
+      orderItems: [],
+    },
+  },
 ];
 
 export const fakeOrders: Order[] = [
   {
     id: "1",
-    totalPrice: 1129.97,
+    totalPrice: 2079.97, // (999.99 * 2) + 79.99
     status: OrderStatus.Pending,
     paymentStatus: PaymentStatus.Pending,
     createAt: "2024-03-15T10:30:00",
@@ -107,7 +172,7 @@ export const fakeOrders: Order[] = [
   },
   {
     id: "3",
-    totalPrice: 1299000,
+    totalPrice: 899129.98, // 129.98 + 899000
     status: OrderStatus.Delivered,
     paymentStatus: PaymentStatus.Paid,
     createAt: "2024-03-13T09:15:00",
@@ -125,7 +190,7 @@ export const fakeOrders: Order[] = [
   },
   {
     id: "4",
-    totalPrice: 899000,
+    totalPrice: 5498997, // 2499000 + (999.99 * 3)
     status: OrderStatus.Cancelled,
     paymentStatus: PaymentStatus.Failed,
     createAt: "2024-03-12T14:20:00",
@@ -143,7 +208,7 @@ export const fakeOrders: Order[] = [
   },
   {
     id: "5",
-    totalPrice: 2499000,
+    totalPrice: 449.94, // (79.99 * 2) + 79.99 + (129.98 * 2)
     status: OrderStatus.Pending,
     paymentStatus: PaymentStatus.Pending,
     createAt: "2024-03-11T11:00:00",
