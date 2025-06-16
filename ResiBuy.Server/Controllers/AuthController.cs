@@ -8,6 +8,7 @@
         public async Task<IActionResult> Login([FromBody] LoginDto model)
         {
             var user = await context.Users
+                .Include(u => u.Reports)
                 .Include(u => u.UserRooms)
                     .ThenInclude(ur => ur.Room)
                         .ThenInclude(r => r.Building)
@@ -15,13 +16,18 @@
                 .FirstOrDefaultAsync(u => u.PhoneNumber == model.PhoneNumber);
             if (user == null)
             {
-                return BadRequest(new { message = "Invalid phone number" });
+                return BadRequest(new { message = "Không tồn tại số điện thoại." });
             }
 
             if (!CustomPasswordHasher.VerifyPassword(model.Password, user.PasswordHash))
             {
-                return BadRequest(new { message = "Wrong password" });
+                return BadRequest(new { message = "Sai mật khẩu." });
             }
+
+            if (user.IsLocked) return StatusCode(StatusCodes.Status403Forbidden, new
+            {
+                message = "Tài khoản của bạn đã bị khóa. Vui lòng liên hệ ban quản lí."
+            });
 
             var roles = user.Roles ?? [];
             var token = GenerateJwtToken(user, roles);
@@ -55,7 +61,8 @@
                         roomName = ur.Room.Name,
                         buildingName = ur.Room.Building.Name,
                         areaName = ur.Room.Building.Area.Name
-                    })
+                    }),
+                    reportsCount = user.Reports.Count()
                 }
             });
         }

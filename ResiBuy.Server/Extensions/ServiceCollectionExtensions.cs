@@ -1,9 +1,4 @@
-﻿using ResiBuy.Server.Infrastructure.DbServices.CategoryDbServices;
-using ResiBuy.Server.Infrastructure.DbServices.ImageServices;
-using ResiBuy.Server.Infrastructure.DbServices.ProductDbServices;
-using ResiBuy.Server.Services.CloudinaryServices;
-using ResiBuy.Server.Services.MailServices;
-namespace ResiBuy.Server.Extensions
+﻿namespace ResiBuy.Server.Extensions
 {
     public static class ServiceCollectionExtensions
     {

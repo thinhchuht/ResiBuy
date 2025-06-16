@@ -2,6 +2,18 @@
 {
     public class PagedResult<T>
     {
+        public PagedResult(List<T> items, int totalCount, int pageNumber, int pageSize)
+        {
+            TotalCount = totalCount;
+            PageNumber = pageNumber;
+            PageSize = pageSize;
+            Items = items;
+        }
+
+        public PagedResult()
+        {
+            
+        }
         public List<T> Items { get; set; } = new();
         public int TotalCount { get; set; }
         public int PageNumber { get; set; }

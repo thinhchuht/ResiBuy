@@ -1,7 +1,5 @@
 ﻿using ResiBuy.Server.Application.Commands.CategoryCommands;
 using ResiBuy.Server.Application.Queries.CategoryQueries;
-using ResiBuy.Server.Infrastructure.Filter;
-using static Microsoft.EntityFrameworkCore.DbLoggerCategory.Database;
 
 namespace ResiBuy.Server.Controllers
 {
