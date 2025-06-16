@@ -7,7 +7,7 @@ namespace ResiBuy.Server.Controllers
     [ApiController]
     public class ProductController(IMediator mediator) : ControllerBase
     {
-        [HttpPost("create")]
+        [HttpPost]
         public async Task<IActionResult> CreateAsync([FromBody] CreateProductCommand command)
         {
             try
