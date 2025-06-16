@@ -31,10 +31,11 @@ export interface User {
   id: string;
   email: string;
   fullName: string;
-  avatar : Image
+  avatar: Image;
   phoneNumber: string;
   dateOfBirth: string;
   identityNumber: string;
+  cartId: string;
   roles: string[];
   refreshTokens: RefreshToken[];
   orders: Order[];
@@ -222,7 +223,7 @@ export interface Image {
   thumbUrl: string;
   name: string;
   productId?: string;
-  userId?: string
+  userId?: string;
 }
 
 export interface UncostData {

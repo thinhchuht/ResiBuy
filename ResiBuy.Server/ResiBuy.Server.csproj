@@ -44,7 +44,6 @@
   </ItemGroup>
 
   <ItemGroup>
-    <Folder Include="Application\Commands\CartCommands\" />
     <Folder Include="Application\Queries\AreaQueries\" />
     <Folder Include="Application\Queries\BuildingQueries\" />
     <Folder Include="Application\Queries\RoomQueries\" />
