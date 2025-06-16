@@ -8,10 +8,13 @@
         public PaymentStatus          PaymentStatus     { get; set; }
         public DateTime               CreateAt          { get; set; }
         public DateTime               UpdateAt          { get; set; }
+        public string Note { get; set; }
+        public Guid ShippingAddressId { get; set; }
         public string                 UserId            { get; set; }
         public Guid                   StoreId           { get; set; }
         public Guid?                  ShipperId         { get; set; }
         public Guid?                  VoucherId         { get; set; }
+        public Room ShippingAddress { get; set; }
         public User                   User              { get; set; }
         public Store                  Store             { get; set; }
         public Shipper                Shipper           { get; set; }

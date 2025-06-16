@@ -5,7 +5,7 @@ namespace ResiBuy.Server.Controllers
 {
     [ApiController]
     [Route("api/[controller]")]
-    public class TestMailController(IMailService mailService) : Controller
+    public class TestMailController(IMailBaseService mailService) : Controller
     {
         [HttpGet]
         public async Task<IActionResult> TestMail()
