@@ -1,7 +1,4 @@
-﻿using System.Globalization;
-using System.Net;
-
-namespace ResiBuy.Server.Services.VNPayServices
+﻿namespace ResiBuy.Server.Services.VNPayServices
 {
     public class VNPayService(IConfiguration configuration) : IVNPayService
     {

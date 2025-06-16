@@ -1,7 +1,4 @@
-﻿
-using ResiBuy.Server.Services.MailServices;
-
-namespace ResiBuy.Server.Controllers
+﻿namespace ResiBuy.Server.Controllers
 {
     [ApiController]
     [Route("api/[controller]")]

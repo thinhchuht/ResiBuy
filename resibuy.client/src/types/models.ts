@@ -31,6 +31,7 @@ export interface User {
   id: string;
   email: string;
   fullName: string;
+  avatar : Image
   phoneNumber: string;
   dateOfBirth: string;
   identityNumber: string;
@@ -55,7 +56,7 @@ export interface Product {
   updatedAt: string;
   storeId: string;
   categoryId: string;
-  productImages: ProductImage[];
+  productImgs: Image[];
   costData: CostData[];
   cartItems: CartItem[];
   orderItems: OrderItem[];
@@ -215,12 +216,13 @@ export interface EventItem {
   storeId: string;
 }
 
-export interface ProductImage {
+export interface Image {
   id: string;
-  imgUrl: string;
+  url: string;
   thumbUrl: string;
   name: string;
-  productId: string;
+  productId?: string;
+  userId?: string
 }
 
 export interface UncostData {

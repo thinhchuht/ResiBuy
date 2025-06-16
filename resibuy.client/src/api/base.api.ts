@@ -1,4 +1,5 @@
 import axios from "axios";
+import { toast } from "react-toastify";
 
 const axiosClient = axios.create({
   baseURL: import.meta.env.VITE_BASE_API_URL,
@@ -38,7 +39,10 @@ const refreshToken = async () => {
     if (!refreshToken) {
       throw new Error("No refresh token available");
     }
-    const response = await axios.post(`${import.meta.env.VITE_BASE_API_URL}/auth/refresh-token`, { refreshToken });
+    const response = await axios.post(
+      `${import.meta.env.VITE_BASE_API_URL}/auth/refresh-token`,
+      { refreshToken }
+    );
 
     const { token } = response.data;
     localStorage.setItem("token", token);
@@ -75,10 +79,17 @@ axiosClient.interceptors.response.use(
   async (error) => {
     const originalRequest = error.config;
 
-    // Nếu lỗi 401 và chưa retry
+    // if (error.response?.status === 403) {
+    //   if (error.response?.data?.error) {
+    //     toast.error(error.response.data.error);
+    //   }
+    //   // window.location.href = "/forbidden";
+    //   return Promise.reject(error);
+    // }
+
+    // Xử lý lỗi 401 Unauthorized
     if (error.response?.status === 401 && !originalRequest._retry) {
       if (isRefreshing) {
-        // Nếu đang refresh token, thêm request vào queue
         return new Promise((resolve, reject) => {
           failedQueue.push({ resolve, reject });
         })
@@ -103,6 +114,11 @@ axiosClient.interceptors.response.use(
         return Promise.reject(refreshError);
       }
     }
+
+    // Xử lý các lỗi khác
+    if (error.response?.data?.message) {
+      toast.error(error.response.data.message);
+    } 
     return Promise.reject(error);
   }
 );
