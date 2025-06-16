@@ -1,10 +1,4 @@
-﻿using CloudinaryDotNet;
-using CloudinaryDotNet.Actions;
-using System.Net.Mime;
-using Microsoft.Extensions.Configuration;
-using ResiBuy.Server.Exceptions;
-
-namespace ResiBuy.Server.Services.CloudinaryServices;
+﻿namespace ResiBuy.Server.Services.CloudinaryServices;
 
 public class CloudinaryService : ICloudinaryService
 {

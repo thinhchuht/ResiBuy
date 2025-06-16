@@ -56,7 +56,7 @@
             try
             {
 
-                var room = await _context.Rooms.Include(r => r.Building).ThenInclude(b => b.Area).FirstOrDefaultAsync();
+                var room = await _context.Rooms.Include(r => r.Building).ThenInclude(b => b.Area).FirstOrDefaultAsync(r => r.Id == id);
                 return room;
             }
             catch (Exception ex)
@@ -69,17 +69,13 @@
         {
             try
             {
-                // Initialize a list to store the rooms
                 var rooms = new List<Room>();
-
                 foreach (var id in ids)
                 {
                     if (id == Guid.Empty)
                     {
-                        throw new CustomException(ExceptionErrorCode.ValidationFailed, "Id is not null");
+                        throw new CustomException(ExceptionErrorCode.ValidationFailed, $"Không có Id phòng: {id}");
                     }
-
-                    // Fetch the room by ID and add it to the list
                     var room = await GetRoomDetail(id);
                     if (room != null)
                     {

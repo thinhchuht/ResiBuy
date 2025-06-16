@@ -1,14 +1,17 @@
 ﻿namespace ResiBuy.Server.Application.Queries.UserQueries
 {
-    public record GetAllUsersQuery(int PageNumber = 1, int PageSize = 10) : IRequest<ResponseModel>;
-    public class GetAllUsersQueryHandler(IUserDbService UserDbService) : IRequestHandler<GetAllUsersQuery, ResponseModel>
+    public record SearchUserQuery(string Keyword, int PageNumber = 1, int PageSize = 10) : IRequest<ResponseModel>;
+    public class SearchUserQueryHandler(IUserDbService UserDbService) : IRequestHandler<SearchUserQuery, ResponseModel>
     {
-        public async Task<ResponseModel> Handle(GetAllUsersQuery query, CancellationToken cancellationToken)
+        public async Task<ResponseModel> Handle(SearchUserQuery query, CancellationToken cancellationToken)
         {
-            var pagedResult = await UserDbService.GetAllUsers(query.PageNumber, query.PageSize);
+            if (query.PageNumber < 1 || query.PageSize < 1)
+                throw new CustomException(ExceptionErrorCode.ValidationFailed, "Số trang và số phần tử phải lớn hơn 0");
+            if (string.IsNullOrEmpty(query.Keyword)) return ResponseModel.SuccessResponse(new PagedResult<UserQueryResult>(new List<UserQueryResult>(), 0, query.PageNumber, query.PageSize));
+            var pagedResult = await UserDbService.SearchUsers(query.Keyword, query.PageNumber, query.PageSize);
             if (pagedResult == null || !pagedResult.Items.Any())
             {
-                return ResponseModel.SuccessResponse(new PagedResult<UserQueryResult>(new List<UserQueryResult>(), pagedResult.TotalCount, pagedResult.PageNumber, pagedResult.PageSize));
+                return ResponseModel.SuccessResponse(new PagedResult<UserQueryResult>(new List<UserQueryResult>(), 0, query.PageNumber, query.PageSize));
             }
             var items = pagedResult.Items.Select(user => new UserQueryResult(
                 user.Id,

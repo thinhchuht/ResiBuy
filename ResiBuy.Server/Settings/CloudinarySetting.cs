@@ -1,5 +1,3 @@
-using CloudinaryDotNet;
-
 namespace ResiBuy.Server.Settings;
 
 public class CloudinarySetting

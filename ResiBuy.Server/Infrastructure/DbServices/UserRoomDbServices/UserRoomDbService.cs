@@ -24,7 +24,7 @@
             }
             catch (Exception ex)
             {
-                throw new CustomException(ExceptionErrorCode.RepositoryError,ex.Message);
+                throw new CustomException(ExceptionErrorCode.RepositoryError, ex.Message);
             }
         }
 
@@ -32,35 +32,16 @@
         {
             try
             {
-                if (!userIds.Any() || !roomIds.Any())
-                    throw new CustomException(ExceptionErrorCode.InvalidInput);
-
-                var existingUserRooms = await _context.UserRooms
-                    .Where(ur => userIds.Contains(ur.UserId) && roomIds.Contains(ur.RoomId))
-                    .Select(ur => new { ur.UserId, ur.RoomId })
-                    .ToListAsync();
-
-                var existingSet = new HashSet<string>(
-                    existingUserRooms.Select(e => $"{e.UserId}-{e.RoomId}")
-                );
-
-                var newUserRooms = userIds
-                    .SelectMany(userId => roomIds.Select(roomId => new { userId, roomId }))
-                    .Where(pair => !existingSet.Contains($"{pair.userId}-{pair.roomId}"))
-                    .Select(pair => new UserRoom { UserId = pair.userId, RoomId = pair.roomId })
-                    .ToList();
-
-                if (!newUserRooms.Any())
-                    throw new CustomException(ExceptionErrorCode.DuplicateValue);
-
-                await _context.UserRooms.AddRangeAsync(newUserRooms);
-                await _context.SaveChangesAsync();
-
-                return newUserRooms;
-            }
-            catch (CustomException)
-            {
-                throw;
+                var userRooms = new List<UserRoom>();
+                foreach (var userId in userIds)
+                {
+                    foreach (var roomId in roomIds)
+                    {
+                        userRooms.Add(new UserRoom(userId, roomId));
+                    }
+                }
+                await CreateBatchAsync(userRooms);
+                return userRooms;
             }
             catch (Exception ex)
             {
@@ -68,5 +49,23 @@
             }
         }
 
+        public async Task DeleteUserRoom(string userId, Guid roomId)
+        {
+            try
+            {
+                var userRoom = await _context.UserRooms
+                    .FirstOrDefaultAsync(ur => ur.UserId == userId && ur.RoomId == roomId);
+
+                if (userRoom != null)
+                {
+                     _context.UserRooms.Remove(userRoom);
+                }
+               await _context.SaveChangesAsync();
+            }
+            catch (Exception ex)
+            {
+                throw new CustomException(ExceptionErrorCode.RepositoryError, ex.Message);
+            }
+        }
     }
 }
