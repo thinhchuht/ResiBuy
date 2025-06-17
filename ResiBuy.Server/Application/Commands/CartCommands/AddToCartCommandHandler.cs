@@ -17,12 +17,13 @@ namespace ResiBuy.Server.Application.Commands.CartCommands
                 if (command.AddToCartDto.ProductId == Guid.Empty) throw new CustomException(ExceptionErrorCode.ValidationFailed, "Thiếu mã sản phẩm");
                 if (command.AddToCartDto.CostDataId == Guid.Empty) throw new CustomException(ExceptionErrorCode.ValidationFailed, "Thiếu phân loại sản phẩm");
                 var product = await baseProductDbService.GetByIdBaseAsync(command.AddToCartDto.ProductId) ?? throw new CustomException(ExceptionErrorCode.NotFound, "Sản phẩm không tồn tại");
-                if (!product.IsOutOfStock) throw new CustomException(ExceptionErrorCode.ValidationFailed, "Sản phẩm đã hết hàng");
+                if (product.IsOutOfStock) throw new CustomException(ExceptionErrorCode.ValidationFailed, "Sản phẩm đã hết hàng");
                 var costData = await baseCostDataDbService.GetByIdBaseAsync(command.AddToCartDto.CostDataId) ?? throw new CustomException(ExceptionErrorCode.NotFound, "Phân loại sản phẩm không tồn tại");
                 if (costData.ProductId != command.AddToCartDto.ProductId)
                     throw new CustomException(ExceptionErrorCode.ValidationFailed, "Phân loại sản phẩm không thuộc về sản phẩm này");
                 if (costData.IsOutOfStock) throw new CustomException(ExceptionErrorCode.ValidationFailed, "Phân loại sản phẩm đã hết hàng");
-                var uncostTasks = command.AddToCartDto.UncostDataIds.Select(async id =>
+                var uncostDataList = new List<UncostData>();
+                foreach (var id in command.AddToCartDto.UncostDataIds)
                 {
                     var uncost = await baseUncostDataDbService.GetByIdBaseAsync(id)
                         ?? throw new CustomException(ExceptionErrorCode.NotFound, $"Phân loại không tính giá (ID: {id}) không tồn tại");
@@ -33,9 +34,10 @@ namespace ResiBuy.Server.Application.Commands.CartCommands
                     if (uncost.IsOutOfStock)
                         throw new CustomException(ExceptionErrorCode.ValidationFailed, $"Phân loại {uncost.Key} - {uncost.Value} đã hết hàng");
 
-                    return uncost;
-                });
-                var uncostDataList = await Task.WhenAll(uncostTasks);
+                    uncostDataList.Add(uncost);
+                }
+                if (uncostDataList.GroupBy(s => s.Key).Any(g => g.Count() > 1))
+                    throw new CustomException(ExceptionErrorCode.ValidationFailed, "Không được chọn 2 phân loại giống nhau.");
                 var cart = await cartDbService.GetByIdAsync(command.Id) ?? throw new CustomException(ExceptionErrorCode.NotFound, "Giỏ hàng không tồn tại");
                 var existingItem = await cartItemDbService.GetMatchingCartItemsAsync(command.Id, command.AddToCartDto.ProductId, command.AddToCartDto.CostDataId, command.AddToCartDto.UncostDataIds);
                 if (existingItem != null)

@@ -8,6 +8,7 @@
         public async Task<IActionResult> Login([FromBody] LoginDto model)
         {
             var user = await context.Users
+                .Include(u => u.Avatar)
                 .Include(u => u.Reports)
                 .Include(u => u.UserRooms)
                     .ThenInclude(ur => ur.Room)
@@ -51,10 +52,11 @@
                 user = new
                 {
                     id = user.Id,
-                    email = user.Email,
+                    email = user.Email != null ? user.Email : null ,
                     fullName = user.FullName,
                     roles = roles,
                     phoneNumber = user.PhoneNumber,
+                    avatar = user.Avatar,
                     rooms = user.UserRooms.Select(ur => new
                     {
                         roomId = ur.RoomId,
@@ -143,7 +145,6 @@
             var claims = new List<Claim>
             {
                 new Claim(ClaimTypes.NameIdentifier, user.Id),
-                new Claim(ClaimTypes.Email, user.Email),
                 new Claim(ClaimTypes.Name, user.FullName),
                 new Claim(ClaimTypes.MobilePhone, user.PhoneNumber)
             };

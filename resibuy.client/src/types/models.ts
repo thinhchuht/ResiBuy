@@ -37,12 +37,14 @@ export interface User {
   identityNumber: string;
   cartId: string;
   roles: string[];
-  rooms: [{
-    id : string;
-    name : string;
-    buildingName : string;
-    areaName : string;
-  }]
+  rooms: [
+    {
+      id: string;
+      name: string;
+      buildingName: string;
+      areaName: string;
+    }
+  ];
   refreshTokens: RefreshToken[];
   orders: Order[];
   userVouchers: UserVoucher[];
@@ -101,6 +103,10 @@ export interface CartItem {
   productId: string;
   quantity: number;
   product: Product;
+  costData: CostData;
+  cartItemUncosts: {
+    uncostData: UncostData;
+  }[];
 }
 
 export interface Order {
@@ -225,7 +231,7 @@ export interface EventItem {
 
 export interface Image {
   id: string;
-  imgUrl : string;
+  imgUrl: string;
   thumbUrl: string;
   name: string;
   productId?: string;

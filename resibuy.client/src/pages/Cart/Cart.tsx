@@ -1,26 +1,59 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Box, Typography, Container, Paper } from "@mui/material";
 import { Link, useNavigate } from "react-router-dom";
-import { fakeCartItems } from "../../fakeData/fakeCartData";
 import type { CartItem } from "../../types/models";
 import CartItemSection from "./CartItemSection";
 import CartSummarySection from "./CartSummarySection";
+import cartApi from "../../api/cart.api";
+import cartItemApi from "../../api/cartItem.api";
+import { useAuth } from "../../contexts/AuthContext";
+import { toast } from "react-toastify";
 
 const Cart = () => {
-  const [cartItems, setCartItems] = useState<CartItem[]>(fakeCartItems);
+  const [cartItems, setCartItems] = useState<CartItem[]>([]);
   const [selectedItems, setSelectedCartItems] = useState<string[]>([]);
   const [page, setPage] = useState(0);
   const [rowsPerPage, setRowsPerPage] = useState(5);
-
+  const [totalItems, setTotalItems] = useState(0);
+  const { user } = useAuth();
   const navigate = useNavigate();
 
-  const handleQuantityChange = (itemId: string, newQuantity: number) => {
-    setCartItems((prevItems) => prevItems.map((item) => (item.id === itemId ? { ...item, quantity: newQuantity } : item)));
+  const fetchCartItems = async () => {
+    try {
+      if (!user?.cartId) return;
+      const response = await cartApi.getCartById(user.cartId, page + 1, rowsPerPage);
+      const { items, totalCount } = response.data.data;
+      setCartItems(items);
+      setTotalItems(totalCount);
+    } catch (error) {
+      toast.error("Không thể tải giỏ hàng!");
+      console.error("Error fetching cart items:", error);
+    }
   };
 
-  const handleRemoveItem = (itemId: string) => {
-    setCartItems((prevItems) => prevItems.filter((item) => item.id !== itemId));
-    setSelectedCartItems((prev) => prev.filter((id) => id !== itemId));
+  useEffect(() => {
+    fetchCartItems();
+  }, [page, rowsPerPage, user?.cartId]);
+
+  const handleQuantityChange = async (itemId: string, newQuantity: number) => {
+    try {
+      await cartItemApi.updateQuantity(itemId, newQuantity);
+      setCartItems((prevItems) => prevItems.map((item) => (item.id === itemId ? { ...item, quantity: newQuantity } : item)));
+    } catch (error) {
+      console.error("Error updating quantity:", error);
+    }
+  };
+
+  const handleRemoveItem = async (itemId: string) => {
+    try {
+      await cartApi.removeFromCart(user?.cartId || "", [itemId]);
+      setCartItems((prevItems) => prevItems.filter((item) => item.id !== itemId));
+      setSelectedCartItems((prev) => prev.filter((id) => id !== itemId));
+      toast.success("Xóa sản phẩm khỏi giỏ hàng thành công!");
+    } catch (error) {
+      toast.error("Không thể xóa sản phẩm khỏi giỏ hàng!");
+      console.error("Error removing item:", error);
+    }
   };
 
   const handleSelectItem = (itemId: string) => {
@@ -29,7 +62,6 @@ const Cart = () => {
 
   const handleSelectAllItems = (event: React.ChangeEvent<HTMLInputElement>) => {
     if (event.target.checked) {
-      console.log("allItemIds", cartItems);
       const allItemIds = cartItems.map((item) => item.id);
       setSelectedCartItems(allItemIds);
     } else {
@@ -51,10 +83,7 @@ const Cart = () => {
   };
 
   const selectedCartItems = cartItems.filter((item) => selectedItems.includes(item.id));
-
   const allSelected = selectedItems.length === cartItems.length && cartItems.length > 0;
-
-  const paginatedCartItems = cartItems.slice(page * rowsPerPage, page * rowsPerPage + rowsPerPage);
 
   return (
     <Container maxWidth="xl" sx={{ py: 4 }}>
@@ -75,7 +104,7 @@ const Cart = () => {
               border: "1px solid #eee",
             }}>
             <CartItemSection
-              items={paginatedCartItems}
+              items={cartItems}
               selectedItems={selectedItems}
               onSelect={handleSelectItem}
               onQuantityChange={handleQuantityChange}
@@ -84,7 +113,7 @@ const Cart = () => {
               rowsPerPage={rowsPerPage}
               onPageChange={handleChangePage}
               onRowsPerPageChange={handleChangeRowsPerPage}
-              totalItems={cartItems.length}
+              totalItems={totalItems}
               onSelectAll={handleSelectAllItems}
               allSelected={allSelected}
             />

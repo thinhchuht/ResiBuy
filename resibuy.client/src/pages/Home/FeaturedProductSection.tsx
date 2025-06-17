@@ -8,7 +8,7 @@ import type { Product } from "../../types/models";
 import { useToastify } from "../../hooks/useToastify";
 import ArrowRightIcon from "../../assets/icons/ArrowRightIcon";
 import { useAuth } from "../../contexts/AuthContext";
-import ProductCard from "../../components/ProductCard";
+import ProductCard, { type SelectedProduct } from "../../components/ProductCard";
 
 const FeaturedProductSection = () => {
   const { user } = useAuth();
@@ -34,28 +34,40 @@ const FeaturedProductSection = () => {
     };
 
     fetchProducts();
-  // eslint-disable-next-line react-hooks/exhaustive-deps
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
-  const handleAddToCart = async (product: Product) => {
+  const handleAddToCart = async (product: SelectedProduct) => {
     if (!user) {
       toast.error("Vui lòng đăng nhập để thêm sản phẩm vào giỏ hàng");
       navigate("/login");
       return;
     }
     if (!user.cartId) {
-        toast.error("Không tìm thấy giỏ hàng của bạn. Vui lòng liên hệ quản trị viên.");
-        return;
+      toast.error("Không tìm thấy giỏ hàng của bạn. Vui lòng liên hệ quản trị viên.");
+      return;
     }
     try {
-        await cartApi.addToCart(user.cartId, 1, product.id); 
-        toast.success(`Đã thêm ${product.name} vào giỏ hàng!`);
+      await cartApi.addToCart(
+        user.cartId,
+        1,
+        product.id,
+        product.costData.id,
+        product.costData.uncostData.map((uncost) => uncost.id)
+      );
+      console.log(
+        user.cartId,
+        1,
+        product.id,
+        product.costData.id,
+        product.costData.uncostData.map((uncost) => uncost.id)
+      );
+      toast.success(`Đã thêm ${product.name} vào giỏ hàng!`);
     } catch (error) {
-        console.error("Error adding to cart:", error);
-        toast.error("Không thể thêm sản phẩm vào giỏ hàng.");
+      console.error("Error adding to cart:", error);
     }
   };
-  const handleQuickView = (product: Product) => {
+  const handleQuickView = (product: SelectedProduct) => {
     navigate(`/products?id=${product.id}`);
   };
 
@@ -72,7 +84,7 @@ const FeaturedProductSection = () => {
     },
     {
       icon: <Store sx={{ color: "#FF6B6B", fontSize: 22 }} />,
-      onClick: (product: Product) => navigate(`/products?storeId=${product.storeId}`),
+      onClick: (product: SelectedProduct) => navigate(`/products?storeId=${product.storeId}`),
       label: "Ghé thăm cửa hàng",
     },
   ];

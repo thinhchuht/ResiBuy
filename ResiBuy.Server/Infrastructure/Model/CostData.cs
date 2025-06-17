@@ -8,7 +8,7 @@
         public decimal                  Price        { get; set; }
         public bool                     IsOutOfStock { get; set; }
         public Guid                     ProductId    { get; set; }
-        public Product                  Product      { get; set; } = null!;
+        public Product                  Product      { get; set; } 
         public IEnumerable<UncostData>? UncostData   { get; set; }
     }
 }

@@ -40,6 +40,7 @@
             modelBuilder.ApplyConfiguration(new ShipperConfig());
             modelBuilder.ApplyConfiguration(new VoucherConfig());
             modelBuilder.ApplyConfiguration(new ProductConfig());
+            modelBuilder.ApplyConfiguration(new CategoryConfig());
             modelBuilder.ApplyConfiguration(new CartConfig());
             modelBuilder.ApplyConfiguration(new CartItemConfig());
             modelBuilder.ApplyConfiguration(new CostDataConfig());

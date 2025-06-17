@@ -35,16 +35,21 @@
         {
             try
             {
-                return await _context.CartItems
+                var cartItems = await _context.CartItems
                     .Include(ci => ci.CartItemUncosts)
                     .Where(ci =>
                         ci.ProductId == productId &&
                         ci.CartId == cartId &&
-                        ci.CostDataId == costDataId &&
-                        ci.CartItemUncosts.Select(u => u.UncostDataId).OrderBy(x => x)
-                            .SequenceEqual(uncostDataIds.OrderBy(x => x))
-                    )
-                    .FirstOrDefaultAsync();
+                        ci.CostDataId == costDataId)
+                    .ToListAsync();
+
+                var matchedItem = cartItems.FirstOrDefault(ci =>
+                {
+                    var uncostIdsInDb = ci.CartItemUncosts.Select(u => u.UncostDataId);
+                    return new HashSet<Guid>(uncostIdsInDb).SetEquals(uncostDataIds);
+                });
+
+                return matchedItem;
             }
             catch (Exception ex)
             {
@@ -60,8 +65,7 @@
                     .Where(ci => ci.CartId == cartId)
                     .Include(ci => ci.Product)
                         .ThenInclude(p => p.ProductImgs)
-                    .Include(ci => ci.Product)
-                        .ThenInclude(p => p.CostData)
+                    .Include(ci => ci.CostData)
                     .AsQueryable();
 
                 var totalCount = await query.CountAsync();
