@@ -1,4 +1,6 @@
-﻿namespace ResiBuy.Server.Extensions
+﻿using ResiBuy.Server.Infrastructure.DbServices.CartItemDbService;
+
+namespace ResiBuy.Server.Extensions
 {
     public static class ServiceCollectionExtensions
     {
@@ -24,6 +26,8 @@
             services.AddScoped<ICategoryDbService, CategoryDbService>();
             services.AddScoped<IProductDbService, ProductDbService>();
             services.AddScoped<IMailBaseService, MailBaseService>();
+            services.AddScoped<ICartDbService, CartDbService>();
+            services.AddScoped<ICartItemDbService, CartItemDbService>();
             return services;
         }
 

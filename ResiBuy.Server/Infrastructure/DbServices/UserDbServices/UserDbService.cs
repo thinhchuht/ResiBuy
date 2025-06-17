@@ -54,9 +54,17 @@
 
         public async Task<User> CreateAdminUser(User user)
         {
-            context.Users.Add(user);
-            await context.SaveChangesAsync();
-            return user;
+            try
+            {
+                context.Users.Add(user);
+                await context.SaveChangesAsync();
+                return user;
+            }
+            catch (Exception ex)
+            {
+                throw new CustomException(ExceptionErrorCode.RepositoryError, ex.Message);
+            }
+
         }
 
         public async Task<User> GetUserById(string id)
@@ -130,6 +138,28 @@
                 PageNumber = pageNumber,
                 PageSize = pageSize
             };
+        }
+        public async Task CheckUniqueField(string phoneNumber = null, string email = null, string identityNumber = null)
+        {
+            var query = context.Users.AsQueryable();
+
+            if (!string.IsNullOrEmpty(phoneNumber))
+            {
+                bool exists = await query.AnyAsync(u => u.PhoneNumber == phoneNumber);
+                if (exists) throw new CustomException(ExceptionErrorCode.ValidationFailed, "Số điện thoại đã được sử dụng");
+            }
+
+            if (!string.IsNullOrEmpty(email))
+            {
+                bool exists = await query.AnyAsync(u => u.Email == email);
+                if (exists) throw new CustomException(ExceptionErrorCode.ValidationFailed, "Mail đã được sử dụng");
+            }
+
+            if (!string.IsNullOrEmpty(identityNumber))
+            {
+                bool exists = await query.AnyAsync(u => u.IdentityNumber == identityNumber);
+                if (exists) throw new CustomException(ExceptionErrorCode.ValidationFailed, "Số CCCD đã được sử dụng");
+            }
         }
     }
 }

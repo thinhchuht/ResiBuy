@@ -42,6 +42,7 @@ global using ResiBuy.Server.Infrastructure.Filter;
 global using ResiBuy.Server.Infrastructure.Model;
 global using ResiBuy.Server.Infrastructure.Model.Dtos;
 global using ResiBuy.Server.Infrastructure.Model.DTOs;
+global using ResiBuy.Server.Infrastructure.Model.DTOs.UserDtos;
 global using ResiBuy.Server.Services.CloudinaryServices;
 global using ResiBuy.Server.Services.HubServices;
 global using ResiBuy.Server.Services.KafkaServices;
@@ -59,6 +60,7 @@ global using System.Text.Json.Serialization;
 global using System.Text.RegularExpressions;
 global using static ResiBuy.Server.Application.Queries.QueryResults;
 global using static ResiBuy.Server.Common.BrciptHelper;
+
 
 
 

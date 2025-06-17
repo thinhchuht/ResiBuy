@@ -1,6 +1,4 @@
-﻿using ResiBuy.Server.Infrastructure.Filter;
-
-namespace ResiBuy.Server.Infrastructure.DbServices.UserDbServices
+﻿namespace ResiBuy.Server.Infrastructure.DbServices.UserDbServices
 {
     public interface IUserDbService : IBaseDbService<User>
     {
@@ -10,5 +8,6 @@ namespace ResiBuy.Server.Infrastructure.DbServices.UserDbServices
         Task<User> GetUserAsync(string userId, string identityNumber = null, string phoneNumber = null, string email = null);
         Task<User> CreateUser(RegisterDto user);
         Task<User> CreateAdminUser(User user);
+        Task CheckUniqueField(string phoneNumber = null, string email = null, string identityNumber = null);
     }
 }
