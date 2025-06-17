@@ -5,6 +5,8 @@
     {
         public async Task<ResponseModel> Handle(GetAllUsersQuery query, CancellationToken cancellationToken)
         {
+            if (query.PageNumber < 1 || query.PageSize < 1)
+                throw new CustomException(ExceptionErrorCode.ValidationFailed, "Số trang và số phần tử phải lớn hơn 0");
             var pagedResult = await UserDbService.GetAllUsers(query.PageNumber, query.PageSize);
             if (pagedResult == null || !pagedResult.Items.Any())
             {

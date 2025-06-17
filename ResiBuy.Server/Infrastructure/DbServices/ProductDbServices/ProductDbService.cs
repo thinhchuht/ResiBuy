@@ -1,6 +1,4 @@
-﻿using ResiBuy.Server.Infrastructure.Filter;
-
-namespace ResiBuy.Server.Infrastructure.DbServices.ProductDbServices
+﻿namespace ResiBuy.Server.Infrastructure.DbServices.ProductDbServices
 {
     public class ProductDbService : BaseDbService<Product>, IProductDbService
     {
@@ -19,6 +17,9 @@ namespace ResiBuy.Server.Infrastructure.DbServices.ProductDbServices
                 var totalCount = await query.CountAsync();
                 var items = await query
                     .OrderBy(p => p.Id)
+                    .Include(p => p.ProductImgs)
+                    .Include(p => p.CostData).ThenInclude(cd => cd.UncostData)
+                    .Include(p => p.Store)
                     .Skip((pageNumber - 1) * pageSize)
                     .Take(pageSize)
                     .ToListAsync();

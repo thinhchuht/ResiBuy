@@ -35,7 +35,7 @@ const ProductTableSection = ({ items, formatPrice }: ProductTableSectionProps) =
             boxShadow: "0 1px 4px rgba(0,0,0,0.03)",
           }}>
           <Box sx={{ width: 80, mr: 2 }}>
-            <img src={item.product.productImages[0]?.thumbUrl} alt={item.product.name} style={{ width: "60px", height: "60px", borderRadius: "4px", objectFit: "cover" }} />
+            <img src={item.product.productImgs [0]?.thumbUrl} alt={item.product.name} style={{ width: "60px", height: "60px", borderRadius: "4px", objectFit: "cover" }} />
           </Box>
           <Box sx={{ flex: 2 }}>
             <Typography variant="body1" sx={{ fontWeight: "bold" }}>

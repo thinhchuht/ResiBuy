@@ -13,5 +13,6 @@
 
         //Voucher query result 
         public record VoucherQueryResult(Guid Id);
+
     }
 }

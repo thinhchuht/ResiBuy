@@ -16,13 +16,7 @@ interface ProductInfoSectionProps {
   handleQuantityChange: (newQuantity: number) => void;
 }
 
-const ProductInfoSection: React.FC<ProductInfoSectionProps> = ({ 
-  product, 
-  quantity, 
-  handleIncrementQuantity, 
-  handleDecrementQuantity,
-  handleQuantityChange 
-}) => {
+const ProductInfoSection: React.FC<ProductInfoSectionProps> = ({ product, quantity, handleIncrementQuantity, handleDecrementQuantity, handleQuantityChange }) => {
   const theme = useTheme();
   const { user } = useAuth();
   const toast = useToastify();
@@ -211,7 +205,7 @@ const ProductInfoSection: React.FC<ProductInfoSectionProps> = ({
                 inputProps={{
                   min: 1,
                   max: 10,
-                  style: { textAlign: "center" }
+                  style: { textAlign: "center" },
                 }}
               />
               <IconButton onClick={handleIncrementQuantity} size="small" disabled={quantity >= 10}>

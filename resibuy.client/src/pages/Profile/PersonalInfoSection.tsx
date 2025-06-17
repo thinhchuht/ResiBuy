@@ -30,6 +30,7 @@ const PersonalInfoSection = ({
   const [avatarFile, setAvatarFile] = useState<File | null>(null);
   const toast = useToastify();
 
+  console.log(user)
   const handleAvatarChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     if (e.target.files && e.target.files[0]) {
       const file = e.target.files[0];
@@ -230,7 +231,7 @@ const PersonalInfoSection = ({
         }}
       >
         <Avatar
-          src={avatar ? avatar : user?.avatar.url || undefined}
+          src={avatar ? avatar : user?.avatar ? user?.avatar.url  : undefined}
           sx={{
             width: 140,
             height: 140,

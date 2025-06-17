@@ -35,7 +35,7 @@ const ProductImageSection: React.FC<ProductImageSectionProps> = ({ product }) =>
         }}>
         <StackCard
           cardDimensions={{ width: 400, height: 400 }}
-          cardsData={product.productImages.map((img, idx) => ({ id: idx, img: img.imgUrl }))}
+          cardsData={product.productImgs .map((img, idx) => ({ id: idx, img: img.imgUrl }))}
           randomRotation={true}
           sensitivity={100}
         />
