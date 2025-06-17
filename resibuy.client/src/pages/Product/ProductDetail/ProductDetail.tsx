@@ -46,6 +46,10 @@ const ProductDetail: React.FC = () => {
     setQuantity((prev) => Math.max(1, prev - 1));
   };
 
+  const handleQuantityChange = (newQuantity: number) => {
+    setQuantity(Math.max(1, newQuantity));
+  };
+
   if (loading) {
     return (
       <Box
@@ -88,6 +92,7 @@ const ProductDetail: React.FC = () => {
           quantity={quantity}
           handleIncrementQuantity={handleIncrementQuantity}
           handleDecrementQuantity={handleDecrementQuantity}
+          handleQuantityChange={handleQuantityChange}
         />
       </Box>
       <Divider />

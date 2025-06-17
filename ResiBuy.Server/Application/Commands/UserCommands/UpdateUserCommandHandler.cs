@@ -18,6 +18,7 @@
                 throw new CustomException(ExceptionErrorCode.ValidationFailed, "Không có thông tin nào mới để cập nhật");
             if (command.UpdateUserDto.Email != null)
             {
+                await userDbService.CheckUniqueField(null, command.UpdateUserDto.Email);
                 if(!Regex.IsMatch(command.UpdateUserDto.Email, Constants.EmailPattern)) throw new CustomException(ExceptionErrorCode.ValidationFailed, "Email không hợp lệ");
                 existingUser.Email = command.UpdateUserDto.Email;
                 //await mailService.SendEmailAsync(command.UpdateUserDto.Email, "Thêm Mail vào tài khoản", "<a>Click vào link để hoàn tất thêm mail vào tài khoản Resibuy </a>", true);

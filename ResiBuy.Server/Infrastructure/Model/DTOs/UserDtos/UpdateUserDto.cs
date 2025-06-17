@@ -1,4 +1,4 @@
-﻿namespace ResiBuy.Server.Infrastructure.Model.DTOs.UserDto
+﻿namespace ResiBuy.Server.Infrastructure.Model.DTOs.UserDtos
 {
     public class UpdateUserDto
     {

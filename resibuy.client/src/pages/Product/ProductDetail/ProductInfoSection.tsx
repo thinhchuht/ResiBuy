@@ -1,5 +1,5 @@
 import React, { useState } from "react";
-import { Box, Typography, Button, Chip, Rating, Divider, IconButton, useTheme, Accordion, AccordionSummary, AccordionDetails, Slider } from "@mui/material";
+import { Box, Typography, Button, Chip, Rating, Divider, IconButton, useTheme, Accordion, AccordionSummary, AccordionDetails, Slider, TextField } from "@mui/material";
 import ShoppingCartIcon from "@mui/icons-material/ShoppingCart";
 import ExpandMoreIcon from "@mui/icons-material/ExpandMore";
 import type { Product } from "../../../types/models";
@@ -13,9 +13,16 @@ interface ProductInfoSectionProps {
   quantity: number;
   handleIncrementQuantity: () => void;
   handleDecrementQuantity: () => void;
+  handleQuantityChange: (newQuantity: number) => void;
 }
 
-const ProductInfoSection: React.FC<ProductInfoSectionProps> = ({ product, quantity, handleIncrementQuantity, handleDecrementQuantity }) => {
+const ProductInfoSection: React.FC<ProductInfoSectionProps> = ({ 
+  product, 
+  quantity, 
+  handleIncrementQuantity, 
+  handleDecrementQuantity,
+  handleQuantityChange 
+}) => {
   const theme = useTheme();
   const { user } = useAuth();
   const toast = useToastify();
@@ -68,6 +75,17 @@ const ProductInfoSection: React.FC<ProductInfoSectionProps> = ({ product, quanti
       toast.error("Vui lòng đăng nhập để thêm sản phẩm vào giỏ hàng");
       navigate("/login");
     }
+  };
+
+  const handleQuantityInputChange = (event: React.ChangeEvent<HTMLInputElement>) => {
+    let value = parseInt(event.target.value);
+    if (isNaN(value) || value < 1) {
+      value = 1; // Mặc định về 1 nếu không hợp lệ
+    }
+    if (value > 10) {
+      value = 10; // Giới hạn tối đa là 10
+    }
+    handleQuantityChange(value);
   };
 
   return (
@@ -142,9 +160,9 @@ const ProductInfoSection: React.FC<ProductInfoSectionProps> = ({ product, quanti
                         borderColor: "#00D1FF",
                       },
                     }}>
-                    {key.toLowerCase().includes("màu") && product.productImages[options.indexOf(opt)] ? (
+                    {key.toLowerCase().includes("màu") && product.productImgs && product.productImgs[options.indexOf(opt)] ? (
                       <img
-                        src={product.productImages[options.indexOf(opt)]?.thumbUrl}
+                        src={product.productImgs[options.indexOf(opt)]?.thumbUrl}
                         alt={opt.value}
                         style={{ width: 22, height: 22, marginBottom: 2, borderRadius: 3, boxShadow: "0 1px 2px #eee" }}
                       />
@@ -169,13 +187,34 @@ const ProductInfoSection: React.FC<ProductInfoSectionProps> = ({ product, quanti
                 border: `1px solid ${theme.palette.divider}`,
                 borderRadius: 2,
               }}>
-              <IconButton onClick={handleDecrementQuantity} size="small">
+              <IconButton onClick={handleDecrementQuantity} size="small" disabled={quantity <= 1}>
                 -
               </IconButton>
-              <Typography variant="body1" sx={{ px: 1 }}>
-                {quantity}
-              </Typography>
-              <IconButton onClick={handleIncrementQuantity} size="small">
+              <TextField
+                value={quantity}
+                onChange={handleQuantityInputChange}
+                variant="standard"
+                size="small"
+                sx={{
+                  width: 30,
+                  "& .MuiInput-root": {
+                    fontWeight: 500,
+                    "&:before": { borderBottom: "none" },
+                    "&:after": { borderBottom: "none" },
+                    "&:hover:not(.Mui-disabled):before": { borderBottom: "none" },
+                  },
+                  "& .MuiInput-input": {
+                    textAlign: "center",
+                    padding: "8px 4px",
+                  },
+                }}
+                inputProps={{
+                  min: 1,
+                  max: 10,
+                  style: { textAlign: "center" }
+                }}
+              />
+              <IconButton onClick={handleIncrementQuantity} size="small" disabled={quantity >= 10}>
                 +
               </IconButton>
             </Box>

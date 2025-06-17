@@ -13,11 +13,12 @@
         {
             try
             {
-                if (string.IsNullOrEmpty(name)) throw new CustomException(ExceptionErrorCode.ValidationFailed, "Name is not null");
+                if (buildingId == Guid.Empty) throw new CustomException(ExceptionErrorCode.ValidationFailed, "Cần Id toàn nhà");
+                if (string.IsNullOrEmpty(name)) throw new CustomException(ExceptionErrorCode.ValidationFailed, "Tên tòa nhà là bắt buộc");
                 var getRoom = await GetByRoomNameAndBuildingIdAsync(buildingId, name);
                 if (getRoom != null)
-                    throw new CustomException(ExceptionErrorCode.DuplicateValue);
-                var room = new Room(name, buildingId); // Updated to match the constructor signature  
+                    throw new CustomException(ExceptionErrorCode.DuplicateValue, "Phòng đã tồn tại");
+                var room = new Room(name, buildingId); 
                 await CreateAsync(room);
                 return room;
             }

@@ -27,10 +27,15 @@
             if (!Regex.IsMatch(command.RegisterDto.PhoneNumber, Constants.PhoneNumberPattern)) throw new CustomException(ExceptionErrorCode.ValidationFailed, "Số điện thoại không hợp lệ");
             if (!string.IsNullOrEmpty(command.RegisterDto.Email) && !Regex.IsMatch(command.RegisterDto.Email, Constants.EmailPattern)) throw new CustomException(ExceptionErrorCode.ValidationFailed, "Email không hợp lệ");
             if (!Regex.IsMatch(command.RegisterDto.IdentityNumber, Constants.IndentityNumberPattern)) throw new CustomException(ExceptionErrorCode.ValidationFailed, "Số CCCD/CMND không hợp lệ");
+            await userDbService.CheckUniqueField(command.RegisterDto.PhoneNumber, command.RegisterDto.Email, command.RegisterDto.IdentityNumber);
             var user = await userDbService.CreateUser(command.RegisterDto);
             if (user != null)
             {
                 var rooms = await roomDbService.GetBatchAsync(command.RegisterDto.RoomIds);
+                if(rooms.Any(r => r == null))
+                    throw new CustomException(ExceptionErrorCode.ValidationFailed, "Một hoặc nhiều phòng không tồn tại");
+                if (rooms.Any(r => !r.IsActive))
+                    throw new CustomException(ExceptionErrorCode.ValidationFailed, "Một hoặc nhiều phòng không còn hoạt động");
                 var userRoom = await userRoomDbService.CreateUserRoomsBatch([user.Id], command.RegisterDto.RoomIds);
 
                 if (userRoom != null)
