@@ -22,19 +22,19 @@ namespace ResiBuy.Server.Controllers
             }
         }
 
-        [HttpPost("{id}/items")]
-        public async Task<IActionResult> AddToCart(Guid id, [FromBody] AddToCartDto addToCartDto)
-        {
-            try
-            {
-                var result = await mediator.Send(new AddToCartCommand(id, addToCartDto));
-                return Ok(result);
-            }
-            catch (Exception ex)
-            {
-                return BadRequest(ResponseModel.ExceptionResponse(ex.ToString()));
-            }
-        }
+        //[HttpPost("{id}/items")]
+        //public async Task<IActionResult> AddToCart(Guid id, [FromBody] AddToCartDto addToCartDto)
+        //{
+        //    try
+        //    {
+        //        var result = await mediator.Send(new AddToCartCommand(id, addToCartDto));
+        //        return Ok(result);
+        //    }
+        //    catch (Exception ex)
+        //    {
+        //        return BadRequest(ResponseModel.ExceptionResponse(ex.ToString()));
+        //    }
+        //}
 
         [HttpDelete("items")]
         public async Task<IActionResult> DeleteCartItems([FromBody] DeleteCartItemsDto deleteCartItemsDto)

@@ -2,15 +2,15 @@
 
 namespace ResiBuy.Server.Application.Queries.ProductQueries
 {
-    public record GetProductByIdWithStoreAsync(Guid id) : IRequest<ResponseModel>;
+    public record GetProductByIdWithStoreAsync(int id) : IRequest<ResponseModel>;
 
     public class GetProductByIdWithStoreHandler(IProductDbService ProductDbService)
         : IRequestHandler<GetProductByIdWithStoreAsync, ResponseModel>
     {
         public async Task<ResponseModel> Handle(GetProductByIdWithStoreAsync query, CancellationToken cancellationToken)
         {
-            if (query.id == Guid.Empty)
-                return ResponseModel.FailureResponse("Product is required");
+            //if (query.id == Guid.Empty)
+            //    return ResponseModel.FailureResponse("Product is required");
 
             var product = await ProductDbService.GetProductByIdWithStoreAsync(query.id);
             if (product == null)

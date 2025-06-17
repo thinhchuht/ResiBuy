@@ -24,7 +24,7 @@ namespace ResiBuy.Server.Controllers
 
 
         [HttpGet("get-product-by-id")]
-        public async Task<IActionResult> GetProductById([FromQuery] Guid id)
+        public async Task<IActionResult> GetProductById([FromQuery] int id)
         {
             try
             {
@@ -38,7 +38,7 @@ namespace ResiBuy.Server.Controllers
         }
 
         [HttpGet("get-product-by-id-with-store")]
-        public async Task<IActionResult> GetProductByIdWithStore([FromQuery] Guid id)
+        public async Task<IActionResult> GetProductByIdWithStore([FromQuery] int id)
         {
             try
             {
