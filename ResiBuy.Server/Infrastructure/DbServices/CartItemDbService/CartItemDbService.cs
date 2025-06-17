@@ -30,5 +30,18 @@
                 throw new CustomException(ExceptionErrorCode.RepositoryError, ex.ToString());
             }
         }
+
+        public async Task<CartItem> GetProductInCartAsync(Guid productId, Guid cartId)
+        {
+            try
+            {
+                return await _context.CartItems.FirstOrDefaultAsync(ci => ci.ProductId == productId && ci.CartId == cartId);
+
+            }
+            catch (Exception ex)
+            {
+                throw new CustomException(ExceptionErrorCode.RepositoryError, ex.ToString());
+            }
+        }
     }
 }

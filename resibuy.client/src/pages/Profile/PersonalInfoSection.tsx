@@ -14,15 +14,17 @@ interface PersonalInfoSectionProps {
 }
 
 const validationSchema = Yup.object().shape({
-  email: Yup.string()
-    .email("Email không hợp lệ")
-    .required("Email là bắt buộc"),
+  email: Yup.string().email("Email không hợp lệ").required("Email là bắt buộc"),
   dateOfBirth: Yup.date()
     .max(new Date(), "Ngày sinh không thể lớn hơn ngày hiện tại")
     .required("Ngày sinh là bắt buộc"),
 });
 
-const PersonalInfoSection = ({ isAdmin, formatDate, maskMiddle }: PersonalInfoSectionProps) => {
+const PersonalInfoSection = ({
+  isAdmin,
+  formatDate,
+  maskMiddle,
+}: PersonalInfoSectionProps) => {
   const { user, setUser } = useAuth();
   const [avatar, setAvatar] = useState<string | null>(null);
   const [avatarFile, setAvatarFile] = useState<File | null>(null);
@@ -31,7 +33,7 @@ const PersonalInfoSection = ({ isAdmin, formatDate, maskMiddle }: PersonalInfoSe
   const handleAvatarChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     if (e.target.files && e.target.files[0]) {
       const file = e.target.files[0];
-      
+
       if (file.size > 2 * 1024 * 1024) {
         toast.error("Kích thước file không được vượt quá 2MB!");
         return;
@@ -49,7 +51,9 @@ const PersonalInfoSection = ({ isAdmin, formatDate, maskMiddle }: PersonalInfoSe
 
   const initialValues = {
     email: user?.email || "",
-    dateOfBirth: user?.dateOfBirth ? user.dateOfBirth.substring(0, 10) : "1990-01-01",
+    dateOfBirth: user?.dateOfBirth
+      ? user.dateOfBirth.substring(0, 10)
+      : "1990-01-01",
   };
 
   const handleSubmit = async (values: typeof initialValues) => {
@@ -162,6 +166,18 @@ const PersonalInfoSection = ({ isAdmin, formatDate, maskMiddle }: PersonalInfoSe
                 }}
                 InputLabelProps={{ shrink: true }}
               />
+              {user?.rooms && user.rooms.length > 0 && (
+                <Box mb={3}>
+                  <Typography variant="subtitle2" color="text.secondary" mb={0.5}>
+                    Địa chỉ
+                  </Typography>
+                  {user.rooms.map((room, index) => (
+                    <Typography key={room.id} variant="body1" fontWeight={500}>
+                      Phòng {index +1} : {`${room.name} - ${room.buildingName} - ${room.areaName}`}
+                    </Typography>
+                  ))}
+                </Box>
+              )}
               <Box mb={3}>
                 <Typography variant="subtitle2" color="text.secondary" mb={0.5}>
                   Ngày tạo tài khoản
@@ -214,7 +230,7 @@ const PersonalInfoSection = ({ isAdmin, formatDate, maskMiddle }: PersonalInfoSe
         }}
       >
         <Avatar
-          src={avatar ? avatar :user?.avatar.url || undefined}
+          src={avatar ? avatar : user?.avatar.url || undefined}
           sx={{
             width: 140,
             height: 140,

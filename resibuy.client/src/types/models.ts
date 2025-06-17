@@ -37,6 +37,12 @@ export interface User {
   identityNumber: string;
   cartId: string;
   roles: string[];
+  rooms: [{
+    id : string;
+    name : string;
+    buildingName : string;
+    areaName : string;
+  }]
   refreshTokens: RefreshToken[];
   orders: Order[];
   userVouchers: UserVoucher[];

@@ -17,9 +17,13 @@
                 }
 
                 var newRooms = await roomDbService.GetBatchAsync(command.NewRoomIds);
-                if (newRooms == null || !newRooms.Any())
+                if (newRooms.Any( r => r == null))
                 {
-                    throw new CustomException(ExceptionErrorCode.NotFound, "Không tồn tại phòng");
+                    throw new CustomException(ExceptionErrorCode.NotFound, "Một hoặc nhiều phòng không tồn tại");
+                }
+                if (newRooms.Any(r => !r.IsActive))
+                {
+                    throw new CustomException(ExceptionErrorCode.NotFound, "Một hoặc nhiều phòng không còn hoạt động");
                 }
 
                 var currentUserRooms = user.UserRooms?.Select(ur => ur.RoomId).ToList() ?? new List<Guid>();

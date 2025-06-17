@@ -22,8 +22,8 @@ namespace ResiBuy.Server.Controllers
             }
         }
 
-        [HttpPost("{id}")]
-        public async Task<IActionResult> AddToCart(Guid id, AddToCartDto addToCartDto)
+        [HttpPost("{id}/items")]
+        public async Task<IActionResult> AddToCart(Guid id, [FromBody] AddToCartDto addToCartDto)
         {
             try
             {
@@ -36,12 +36,12 @@ namespace ResiBuy.Server.Controllers
             }
         }
 
-        [HttpDelete("{id}")]
-        public async Task<IActionResult> AddToCart(Guid id, AddToCartDto addToCartDto)
+        [HttpDelete("items")]
+        public async Task<IActionResult> DeleteCartItems([FromBody] DeleteCartItemsDto deleteCartItemsDto)
         {
             try
             {
-                var result = await mediator.Send(new AddToCartCommand(id, addToCartDto));
+                var result = await mediator.Send(new DeleteCartItemsCommand(deleteCartItemsDto));
                 return Ok(result);
             }
             catch (Exception ex)

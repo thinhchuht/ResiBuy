@@ -81,8 +81,8 @@
             }
         }
 
-        [HttpPut("{id}/update")]
-        public async Task<IActionResult> UpdateAsybc([FromForm] UpdateUserDto dto, string id)
+        [HttpPut("{id}")]
+        public async Task<IActionResult> UpdateAsync([FromForm] UpdateUserDto dto, string id)
         {
             try
             {
@@ -98,7 +98,7 @@
 
         //[Authorize(Roles = Constants.AdminRole)]
         [HttpPut("{id}/roles")]
-        public async Task<IActionResult> UpdateAsync(string id, [FromBody] List<string> roles)
+        public async Task<IActionResult> UpdateRoleAsync(string id, [FromBody] List<string> roles)
         {
             try
             {
@@ -113,7 +113,7 @@
         }
 
         [HttpPut("{id}/password")]
-        public async Task<IActionResult> ChangePassword(string id, [FromBody] ChangePasswordDto dto)
+        public async Task<IActionResult> UpdatePassword(string id, [FromBody] ChangePasswordDto dto)
         {
             try
             {
@@ -127,13 +127,29 @@
             }
         }
 
-        [Authorize(Roles = Constants.AdminRole)]
+        //[Authorize(Roles = Constants.AdminRole)]
         [HttpPut("{id}/room")]
-        public async Task<IActionResult> ChangeRoom(string id, [FromBody] List<Guid> newRoomIds)
+        public async Task<IActionResult> UpdateRoom(string id, [FromBody] List<Guid> newRoomIds)
         {
             try
             {
                 var command = new ChangeRoomCommand(id, newRoomIds);
+                var result = await mediator.Send(command);
+                return Ok(result);
+            }
+            catch (Exception ex)
+            {
+                return BadRequest(ResponseModel.ExceptionResponse(ex.ToString()));
+            }
+        }
+
+        //[Authorize(Roles = Constants.AdminRole)]
+        [HttpPut("{id}/name-phone")]
+        public async Task<IActionResult> UpdateNameOrPhoneNumber(string id, [FromBody] ChangeNameOrPhoneDto dto)
+        {
+            try
+            {
+                var command = new ChangeNameOrPasswordCommand(id, dto);
                 var result = await mediator.Send(command);
                 return Ok(result);
             }

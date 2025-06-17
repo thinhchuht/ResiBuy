@@ -1,14 +1,16 @@
-/* eslint-disable @typescript-eslint/no-explicit-any */
 import axiosClient from "./base.api";
 const cartUrl = "/api/cart";
 
 const cartApi = {
-  getCartByUserId: (userId: string) => {
-    return axiosClient.get(`${cartUrl}/${userId}`);
+  getCartByUserId: (id: string) => {
+    return axiosClient.get(`${cartUrl}/${id}`);
   },
 
-  addToCart: (userId: string, data: any) => {
-    return axiosClient.post(`${cartUrl}/${userId}`, data);
+  addToCart: (id: string, quantity: number, productId: number) => {
+    return axiosClient.post(`${cartUrl}/${id}/items`, {quantity , productId});
+  },
+  removeFromCart: (id: string, cartItemIds: string[]) => {
+    return axiosClient.delete(`${cartUrl}/${id}/items`,  {data : cartItemIds});
   },
 };
 

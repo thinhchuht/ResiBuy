@@ -50,7 +50,7 @@ const refreshToken = async () => {
   } catch (error) {
     // Nếu refresh token cũng hết hạn, logout user
     localStorage.removeItem("token");
-    localStorage.removeItem("user");
+    localStorage.removeItem("userId");
     localStorage.removeItem("refreshToken");
     window.location.href = "/login";
     throw error;
@@ -71,7 +71,6 @@ axiosClient.interceptors.request.use(
   }
 );
 
-// Interceptor cho response
 axiosClient.interceptors.response.use(
   (response) => {
     return response;
@@ -79,13 +78,12 @@ axiosClient.interceptors.response.use(
   async (error) => {
     const originalRequest = error.config;
 
-    // if (error.response?.status === 403) {
-    //   if (error.response?.data?.error) {
-    //     toast.error(error.response.data.error);
-    //   }
-    //   // window.location.href = "/forbidden";
-    //   return Promise.reject(error);
-    // }
+    if (error.response?.status === 500) {
+      if (error.response?.data?.error) {
+        console.error(error.response.data.error);
+      }
+      return Promise.reject(error);
+    }
 
     // Xử lý lỗi 401 Unauthorized
     if (error.response?.status === 401 && !originalRequest._retry) {
@@ -115,7 +113,6 @@ axiosClient.interceptors.response.use(
       }
     }
 
-    // Xử lý các lỗi khác
     if (error.response?.data?.message) {
       toast.error(error.response.data.message);
     } 
