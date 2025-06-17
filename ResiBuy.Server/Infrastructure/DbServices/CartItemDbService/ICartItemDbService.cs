@@ -1,4 +1,4 @@
-﻿namespace ResiBuy.Server.Infrastructure.DbServices.CartItemDbService
+namespace ResiBuy.Server.Infrastructure.DbServices.CartItemDbService
 {
     public interface ICartItemDbService : IBaseDbService<CartItem>
     {

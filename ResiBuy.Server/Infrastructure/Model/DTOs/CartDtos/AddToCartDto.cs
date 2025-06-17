@@ -1,4 +1,4 @@
-﻿namespace ResiBuy.Server.Infrastructure.Model.DTOs.CartDtos
+namespace ResiBuy.Server.Infrastructure.Model.DTOs.CartDtos
 {
     public class AddToCartDto
     {

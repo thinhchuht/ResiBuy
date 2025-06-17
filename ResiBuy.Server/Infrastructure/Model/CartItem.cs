@@ -1,4 +1,4 @@
-﻿namespace ResiBuy.Server.Infrastructure.Model
+namespace ResiBuy.Server.Infrastructure.Model
 {
     public class CartItem
     {
