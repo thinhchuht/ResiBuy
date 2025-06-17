@@ -13,7 +13,12 @@
             builder.HasOne(ci => ci.Product)
                    .WithMany(p => p.CartItems)
                    .HasForeignKey(ci => ci.ProductId)
-                   .OnDelete(DeleteBehavior.Restrict); 
+                   .OnDelete(DeleteBehavior.Restrict);
+
+            builder.HasOne(ci => ci.CostData)
+                .WithMany()
+                .HasForeignKey(ci => ci.CostDataId)
+                .OnDelete(DeleteBehavior.Restrict);
         }
     }
 } 

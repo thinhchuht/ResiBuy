@@ -6,7 +6,7 @@ const cartApi = {
     return axiosClient.get(`${cartUrl}/${id}`);
   },
 
-  addToCart: (id: string, quantity: number, productId: number) => {
+  addToCart: (id: string, quantity: number, productId: string) => {
     return axiosClient.post(`${cartUrl}/${id}/items`, {quantity , productId});
   },
   removeFromCart: (id: string, cartItemIds: string[]) => {

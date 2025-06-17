@@ -9,11 +9,11 @@ namespace ResiBuy.Server.Controllers
     public class CartController(IMediator mediator) : Controller
     {
         [HttpGet("{id}")]
-        public async Task<IActionResult> GetById(Guid id)
+        public async Task<IActionResult> GetById(Guid id, [FromQuery] int pageNumber = 1, [FromQuery] int pageSize = 10)
         {
             try
             {
-                var result = await mediator.Send(new GetCartByIdQuery(id));
+                var result = await mediator.Send(new GetCartByIdQuery(id, pageNumber, pageSize));
                 return Ok(result);
             }
             catch (Exception ex)

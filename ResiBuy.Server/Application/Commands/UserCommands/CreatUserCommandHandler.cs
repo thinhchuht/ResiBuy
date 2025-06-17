@@ -20,7 +20,7 @@
                 throw new CustomException(ExceptionErrorCode.ValidationFailed, "Không thể tạo người dùng mà không có số điện thoại");
             if (!command.RegisterDto.Roles.All(role => Constants.AllowedRoles.Contains(role)))
                 throw new CustomException(ExceptionErrorCode.ValidationFailed, "Vai trò người dùng không hợp lệ");
-            if (!string.IsNullOrEmpty(command.RegisterDto.Password))
+            if (string.IsNullOrEmpty(command.RegisterDto.Password))
             {
                 command.RegisterDto.Password = Constants.DefaulAccountPassword;
             }

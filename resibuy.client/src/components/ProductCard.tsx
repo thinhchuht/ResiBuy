@@ -18,7 +18,7 @@ const ProductCard = ({ product, productActions }: ProductCardProps) => {
   const basePrice = Math.min(...product.costData.map((cost) => cost.price));
   const discountedPrice = basePrice * (1 - product.discount / 100);
   // Get first image's thumbUrl
-  const thumbUrl = product.productImages[0]?.thumbUrl;
+  const thumbUrl = product.productImgs [0]?.thumbUrl;
 
   return (
     <Card

@@ -107,8 +107,8 @@ const CartItemSection = ({
                 <TableCell sx={{ ...tableCellStyle, minWidth: "300px" }}>
                   <Box sx={{ display: "flex", alignItems: "center", gap: 2 }}>
                     <img
-                      src={product.productImages[0]?.thumbUrl}
-                      alt={product.productImages[0].name}
+                      src={product.productImgs [0]?.thumbUrl}
+                      alt={product.productImgs [0].name}
                       style={{
                         width: "80px",
                         height: "80px",

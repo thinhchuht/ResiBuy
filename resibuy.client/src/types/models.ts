@@ -225,7 +225,7 @@ export interface EventItem {
 
 export interface Image {
   id: string;
-  url: string;
+  imgUrl : string;
   thumbUrl: string;
   name: string;
   productId?: string;
@@ -246,4 +246,20 @@ export interface CostData {
   price: number;
   productId: string;
   uncostData?: UncostData[];
+}
+
+export interface ProductDto {
+  id?: string; // Optional for creation
+  name: string;
+  imageUrl?: string; // This seems to be removed in later migrations based on codebase search, but keeping for now as per DTO.cs
+  quantity?: number;
+  describe: string;
+  price?: number; // This seems to be handled by CostData in later migrations, but keeping for now as per DTO.cs
+  weight: number;
+  isOutOfStock: boolean;
+  discount: number;
+  createdAt?: string;
+  updatedAt?: string;
+  storeId: string;
+  categoryId: string;
 }
