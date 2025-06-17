@@ -14,7 +14,7 @@ export const fakeProducts: Product[] = [
     updatedAt: "2024-01-01T00:00:00Z",
     storeId: "1",
     categoryId: "1",
-    productImages: [
+    productImgs : [
       {
         id: "img1-1",
         productId: "1",
@@ -92,7 +92,7 @@ export const fakeProducts: Product[] = [
     updatedAt: "2024-01-02T00:00:00Z",
     storeId: "2",
     categoryId: "2",
-    productImages: [
+    productImgs : [
       {
         id: "img2-1",
         productId: "2",
@@ -170,7 +170,7 @@ export const fakeProducts: Product[] = [
     updatedAt: "2024-01-03T00:00:00Z",
     storeId: "3",
     categoryId: "3",
-    productImages: [
+    productImgs : [
       {
         id: "img3-1",
         productId: "3",
@@ -233,7 +233,7 @@ export const fakeProducts: Product[] = [
     updatedAt: "2024-01-04T00:00:00Z",
     storeId: "4",
     categoryId: "4",
-    productImages: [
+    productImgs : [
       {
         id: "img4-1",
         productId: "4",
@@ -295,7 +295,7 @@ export const fakeProducts: Product[] = [
     updatedAt: "2024-01-05T00:00:00Z",
     storeId: "1",
     categoryId: "1",
-    productImages: [
+    productImgs : [
       {
         id: "img5-1",
         productId: "5",
@@ -373,7 +373,7 @@ export const fakeProducts: Product[] = [
     updatedAt: "2024-01-06T00:00:00Z",
     storeId: "2",
     categoryId: "2",
-    productImages: [
+    productImgs : [
       {
         id: "img6-1",
         productId: "6",
@@ -451,7 +451,7 @@ export const fakeProducts: Product[] = [
     updatedAt: "2024-01-07T00:00:00Z",
     storeId: "3",
     categoryId: "3",
-    productImages: [
+    productImgs : [
       {
         id: "img7-1",
         productId: "7",
@@ -515,7 +515,7 @@ export const fakeProducts: Product[] = [
     updatedAt: "2024-01-08T00:00:00Z",
     storeId: "4",
     categoryId: "4",
-    productImages: [
+    productImgs : [
       {
         id: "img8-1",
         productId: "8",
@@ -577,7 +577,7 @@ export const fakeProducts: Product[] = [
     updatedAt: "2024-01-09T00:00:00Z",
     storeId: "1",
     categoryId: "1",
-    productImages: [
+    productImgs : [
       {
         id: "img9-1",
         productId: "9",
@@ -655,7 +655,7 @@ export const fakeProducts: Product[] = [
     updatedAt: "2024-01-10T00:00:00Z",
     storeId: "2",
     categoryId: "2",
-    productImages: [
+    productImgs : [
       {
         id: "img10-1",
         productId: "10",

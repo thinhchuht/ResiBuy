@@ -107,8 +107,8 @@ const CartItemSection = ({
                 <TableCell sx={{ ...tableCellStyle, minWidth: "300px" }}>
                   <Box sx={{ display: "flex", alignItems: "center", gap: 2 }}>
                     <img
-                      src={product.productImages[0]?.thumbUrl}
-                      alt={product.productImages[0].name}
+                      src={product.productImgs[0]?.thumbUrl}
+                      alt={product.productImgs[0].name}
                       style={{
                         width: "80px",
                         height: "80px",
@@ -139,6 +139,14 @@ const CartItemSection = ({
                       <Typography variant="body2" color="text.secondary">
                         Giá: {formatPrice(getCartItemPrice(item))}
                       </Typography>
+                      <Typography variant="body2" color="text.secondary">
+                        Phân loại: {item.costData.key} - {item.costData.value}
+                      </Typography>
+                      {item.cartItemUncosts && item.cartItemUncosts.length > 0 && (
+                        <Typography variant="body2" color="text.secondary">
+                          Tùy chọn: {item.cartItemUncosts.map((uncost) => `${uncost.uncostData.key}: ${uncost.uncostData.value}`).join(", ")}
+                        </Typography>
+                      )}
                     </Box>
                   </Box>
                 </TableCell>
@@ -168,7 +176,7 @@ const CartItemSection = ({
                       inputProps={{
                         min: 1,
                         max: 10,
-                        style: { textAlign: "center" }
+                        style: { textAlign: "center" },
                       }}
                     />
                     <IconButton size="small" onClick={() => onQuantityChange(item.id, item.quantity + 1)} disabled={item.quantity >= 10}>

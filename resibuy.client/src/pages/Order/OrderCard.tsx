@@ -145,7 +145,7 @@ const OrderCard = ({ order }: OrderCardProps) => {
                 },
               },
             }}>
-            <Avatar src={item.product?.productImages[0]?.thumbUrl} variant="rounded" sx={{ width: 80, height: 80, mr: 2 }} />
+            <Avatar src={item.product?.productImgs [0]?.thumbUrl} variant="rounded" sx={{ width: 80, height: 80, mr: 2 }} />
             <Box sx={{ flex: 1 }}>
               <Typography variant="subtitle1" sx={{ fontWeight: 600, mb: 0.5, transition: "color 0.2s ease" }}>
                 {item.product?.name}

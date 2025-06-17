@@ -56,7 +56,7 @@ const ReviewFormModal: React.FC<ReviewFormModalProps> = ({ open, onClose, produc
 
         {product && (
           <Box display="flex" alignItems="center" gap={2} mb={3} border={1} borderColor="grey.300" p={2} borderRadius={1}>
-            <Avatar variant="square" src={product.productImages[0]?.thumbUrl} alt={product.name} sx={{ width: 60, height: 60 }} />
+            <Avatar variant="square" src={product.productImgs [0]?.thumbUrl} alt={product.name} sx={{ width: 60, height: 60 }} />
             <Box>
               <Typography variant="subtitle1" fontWeight="bold">
                 {product.name}

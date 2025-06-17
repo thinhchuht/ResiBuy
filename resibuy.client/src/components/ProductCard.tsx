@@ -4,21 +4,68 @@ import { Star } from "@mui/icons-material";
 import type { Product } from "../types/models";
 import { formatPrice } from "../utils/priceUtils";
 
+export interface SelectedProduct extends Omit<Product, "costData"> {
+  costData: {
+    id: string;
+    key: string;
+    value: string;
+    price: number;
+    uncostData: Array<{
+      id: string;
+      key: string;
+      value: string;
+    }>;
+  };
+}
+
 interface ProductCardProps {
   product: Product;
   productActions: {
     icon: React.ReactNode;
-    onClick: (product: Product) => void;
+    onClick: (selectedProduct: SelectedProduct) => void;
     label: string;
   }[];
 }
 
 const ProductCard = ({ product, productActions }: ProductCardProps) => {
-  // Get minimum price from costData
-  const basePrice = Math.min(...product.costData.map((cost) => cost.price));
+  // Get costData with minimum price
+  const defaultCostData = product.costData.reduce((min, current) => (current.price < min.price ? current : min), product.costData[0]);
+
+  const basePrice = defaultCostData.price;
   const discountedPrice = basePrice * (1 - product.discount / 100);
   // Get first image's thumbUrl
-  const thumbUrl = product.productImages[0]?.thumbUrl;
+  const thumbUrl = product.productImgs[0]?.thumbUrl;
+
+  const handleActionClick = (e: React.MouseEvent, action: ProductCardProps["productActions"][0]) => {
+    e.preventDefault();
+    if (!defaultCostData) return;
+
+    // Filter out duplicate uncostData keys, keeping only the first occurrence
+    const uniqueUncostData =
+      defaultCostData.uncostData?.reduce((acc, current) => {
+        if (!acc.find((item) => item.key === current.key)) {
+          acc.push(current);
+        }
+        return acc;
+      }, [] as typeof defaultCostData.uncostData) || [];
+
+    const selectedProduct: SelectedProduct = {
+      ...product,
+      costData: {
+        id: defaultCostData.id,
+        key: defaultCostData.key,
+        value: defaultCostData.value,
+        price: defaultCostData.price,
+        uncostData: uniqueUncostData.map((uncost) => ({
+          id: uncost.id,
+          key: uncost.key,
+          value: uncost.value,
+        })),
+      },
+    };
+
+    action.onClick(selectedProduct);
+  };
 
   return (
     <Card
@@ -125,10 +172,7 @@ const ProductCard = ({ product, productActions }: ProductCardProps) => {
                     transform: "scale(1.1)",
                   },
                 }}
-                onClick={(e) => {
-                  e.preventDefault();
-                  action.onClick(product);
-                }}
+                onClick={(e) => handleActionClick(e, action)}
                 aria-label={action.label}>
                 {action.icon}
               </Box>

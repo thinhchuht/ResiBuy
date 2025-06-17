@@ -8,8 +8,10 @@
         public string Name { get; set; }
         public Guid? ProductId { get; set; }
         public string? UserId { get; set; }
+        public Guid? CategoryId { get; set; }
+        public Category? Category { get; set; } = null!;
         public Product? Product { get; set; } = null!;
-        public User User { get; set; }
+        public User? User { get; set; }
 
         public void UpdateImage(Image src)
         { 

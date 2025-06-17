@@ -1,6 +1,6 @@
 import { useEffect, useState, useRef } from "react";
 import { motion, useMotionValue, useTransform, MotionValue } from "framer-motion";
-import type { PanInfo } from "framer-motion";
+import type { PanInfo, Transition } from "framer-motion";
 import { Box, Typography, styled, useTheme } from "@mui/material";
 import { useNavigate } from "react-router-dom";
 import ArrowBackIosNewIcon from "@mui/icons-material/ArrowBackIosNew";
@@ -275,7 +275,7 @@ export default function Carousel({ items, autoplay = true, autoplayDelay = 3000,
         }}
         onDragEnd={handleDragEnd}
         animate={{ x: -(currentIndex * trackItemOffset) + containerPadding }}
-        transition={effectiveTransition}
+        transition={effectiveTransition as Transition<unknown> | undefined}
         onAnimationComplete={handleAnimationComplete}>
         {carouselItems.map((item: EventItem, index: number) => (
           <StyledCarouselItem
@@ -283,13 +283,13 @@ export default function Carousel({ items, autoplay = true, autoplayDelay = 3000,
             className={round ? "round" : ""}
             style={{
               width: itemWidth,
-              height: round ? itemWidth : "800px",
-              maxHeight: "800px",
+              height: round ? itemWidth : "700px",
+              maxHeight: "700px",
               rotateY: transforms[index],
               cursor: "pointer",
             }}
             onClick={() => handleItemClick(item.storeId)}
-            transition={effectiveTransition}>
+            transition={effectiveTransition as Transition<unknown> | undefined}>
             <img src={item.image} alt={item.title || `Carousel item ${item.id}`} />
             {(item.title || item.description) && (
               <Box
