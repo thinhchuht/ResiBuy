@@ -1,12 +1,14 @@
 import React, { createContext, useContext, useState, useEffect } from "react";
 import axios from "axios";
 import authApi from "../api/auth.api";
+import userApi from "../api/user.api";
 import type { User } from "../types/models";
 
 interface AuthContextType {
   user: User | null;
   token: string | null;
   refreshToken: string | null;
+  setUser: (user: User | null) => void;
   login: (phoneNumber: string, password: string) => Promise<{ success: boolean; error?: { message: string } }>;
   logout: () => Promise<void>;
   isAuthenticated: boolean;
@@ -15,19 +17,27 @@ interface AuthContextType {
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
 export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
-  const [user, setUser] = useState<User | null>(() => {
-    try {
-      const savedUser = localStorage.getItem("user");
-      return savedUser ? JSON.parse(savedUser) : null;
-    } catch (error) {
-      console.error("Error parsing user from localStorage:", error);
-      localStorage.removeItem("user"); // Clean up invalid data
-      return null;
-    }
-  });
+  const [user, setUser] = useState<User | null>(null);
   const [token, setToken] = useState<string | null>(localStorage.getItem("token"));
   const [refreshToken, setRefreshToken] = useState<string | null>(localStorage.getItem("refreshToken"));
-  // Set up axios default headers
+  const [userId, setUserId] = useState<string | null>(localStorage.getItem("userId"));
+
+  useEffect(() => {
+    const fetchUser = async () => {
+      if (token && userId) {
+        try {
+          const response = await userApi.getById(userId);
+          if (response.data) {
+            setUser(response.data);
+          }
+        } catch (error) {
+          console.error("Error fetching user data:", error);
+        }
+      }
+    };
+    fetchUser();
+  }, [token, userId]);
+
   useEffect(() => {
     if (token) {
       axios.defaults.headers.common["Authorization"] = `Bearer ${token}`;
@@ -39,16 +49,14 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const login = async (phoneNumber: string, password: string) => {
     try {
       const response = await authApi.login(phoneNumber, password);
-      console.log(response);
       if (response.success) {
-        console.log("fdasfasdfas");
-        const { token, user, refreshToken } = response.data;
+        const { token, refreshToken, user } = response.data;
         localStorage.setItem("token", token);
         localStorage.setItem("refreshToken", refreshToken);
-        localStorage.setItem("user", JSON.stringify(user));
+        localStorage.setItem("userId", user.id);
         setToken(token);
         setRefreshToken(refreshToken);
-        setUser(user);
+        setUserId(user.id);
       }
       return response;
     } catch (error) {
@@ -70,9 +78,10 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         if (response.success) {
           localStorage.removeItem("token");
           localStorage.removeItem("refreshToken");
-          localStorage.removeItem("user");
+          localStorage.removeItem("userId");
           setToken(null);
           setRefreshToken(null);
+          setUserId(null);
           setUser(null);
         }
       }
@@ -87,6 +96,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         user,
         token,
         refreshToken,
+        setUser,
         login,
         logout,
         isAuthenticated: !!token,

@@ -1,6 +1,4 @@
-﻿using ResiBuy.Server.Services.VNPayServices;
-
-var builder = WebApplication.CreateBuilder(args);
+﻿var builder = WebApplication.CreateBuilder(args);
 
 var services = builder.Services;
 

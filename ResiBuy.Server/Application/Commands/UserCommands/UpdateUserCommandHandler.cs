@@ -1,10 +1,6 @@
-﻿using ResiBuy.Server.Infrastructure.DbServices.ImageServices;
-using ResiBuy.Server.Infrastructure.Model.DTOs;
-using ResiBuy.Server.Services.CloudinaryServices;
-
-namespace ResiBuy.Server.Application.Commands.UserCommands
+﻿namespace ResiBuy.Server.Application.Commands.UserCommands
 {
-    public record UpdateUserCommand(UpdateUserDto UpdateUserDto) : IRequest<ResponseModel>;
+    public record UpdateUserCommand(UpdateUserDto UpdateUserDto, string Id) : IRequest<ResponseModel>;
     public class UpdateUserCommandHandler(
         IUserDbService userDbService,
         ICloudinaryService cloudinaryService,
@@ -14,23 +10,30 @@ namespace ResiBuy.Server.Application.Commands.UserCommands
         public async Task<ResponseModel> Handle(UpdateUserCommand command, CancellationToken cancellationToken)
         {
             // Get existing user
-            var existingUser = await userDbService.GetUserById(command.UpdateUserDto.Id);
+            var existingUser = await userDbService.GetUserById(command.Id);
             if (existingUser == null)
                 return ResponseModel.FailureResponse("Không tìm thấy người dùng");
 
-            if (command.UpdateUserDto.Avatar == null && string.IsNullOrEmpty(command.UpdateUserDto.Email) && string.IsNullOrEmpty(command.UpdateUserDto.AvatarId))
-                throw new CustomException(ExceptionErrorCode.ValidationFailed, "Không có thông tin nào để cập nhật");
-
+            if (command.UpdateUserDto.Avatar == null && string.IsNullOrEmpty(command.UpdateUserDto.Email))
+                throw new CustomException(ExceptionErrorCode.ValidationFailed, "Không có thông tin nào mới để cập nhật");
+            if (command.UpdateUserDto.Email != null)
+            {
+                await userDbService.CheckUniqueField(null, command.UpdateUserDto.Email);
+                if(!Regex.IsMatch(command.UpdateUserDto.Email, Constants.EmailPattern)) throw new CustomException(ExceptionErrorCode.ValidationFailed, "Email không hợp lệ");
+                existingUser.Email = command.UpdateUserDto.Email;
+                //await mailService.SendEmailAsync(command.UpdateUserDto.Email, "Thêm Mail vào tài khoản", "<a>Click vào link để hoàn tất thêm mail vào tài khoản Resibuy </a>", true);
+            }
             var imgResult = new Image();
             if (command.UpdateUserDto.Avatar != null)
             {
                 var uploadResult = await cloudinaryService.UploadFileAsync(command.UpdateUserDto.Avatar, command.UpdateUserDto.AvatarId);
                 imgResult = new Image
                 {
-                    Id = uploadResult.Id,
-                    ImgUrl = uploadResult.Url,
+                    Id       = uploadResult.Id,
+                    ImgUrl   = uploadResult.Url,
                     ThumbUrl = uploadResult.ThumbnailUrl,
-                    Name = uploadResult.Name,
+                    Name     = uploadResult.Name,
+                    UserId   = existingUser.Id
                 };
                 var existingImg = await imageDbService.GetImageByIdAsync(imgResult.Id);
                 if (existingImg == null)
@@ -40,13 +43,8 @@ namespace ResiBuy.Server.Application.Commands.UserCommands
                     existingImg.UpdateImage(imgResult);
                     await imageDbService.UpdateAsync(existingImg);
                 }
-                existingUser.Avatar = existingImg;
             }
-            if (command.UpdateUserDto.Email != null)
-            {
-                existingUser.Email = command.UpdateUserDto.Email;
-                //await mailService.SendEmailAsync(command.UpdateUserDto.Email, "Thêm Mail vào tài khoản", "<a>Click vào link để hoàn tất thêm mail vào tài khoản Resibuy </a>", true);
-            }
+
             var updatedUser = await userDbService.UpdateAsync(existingUser);
             if (updatedUser == null)
                 throw new CustomException(ExceptionErrorCode.UpdateFailed, "Cập nhật thông tin người dùng thất bại");
@@ -54,6 +52,7 @@ namespace ResiBuy.Server.Application.Commands.UserCommands
             var userResult = new UserQueryResult(
                 updatedUser.Id,
                 updatedUser.Email,
+                updatedUser.PhoneNumber,
                 updatedUser.DateOfBirth,
                 updatedUser.IsLocked,
                 updatedUser.Roles,

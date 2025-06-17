@@ -14,6 +14,7 @@
         {
             try
             {
+                if (string.IsNullOrEmpty(name)) throw new CustomException(ExceptionErrorCode.ValidationFailed, "Tên tòa nhà là bắt buộc");
                 var existBuilding = await GetBuildingByNameAndAreaIdAssync(name, areaId);
                 if (existBuilding != null)
                 {

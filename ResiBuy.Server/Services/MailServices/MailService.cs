@@ -1,8 +1,4 @@
-﻿using MailKit.Net.Smtp;
-using MailKit.Security;
-using MimeKit;
-
-namespace ResiBuy.Server.Services.MailServices
+﻿namespace ResiBuy.Server.Services.MailServices
 {
     public class MailBaseService : IMailBaseService
     {

@@ -39,7 +39,6 @@ const Login: React.FC = () => {
         } else {
           const loginError = result.error as LoginError;
           setError(loginError?.message || "Số điện thoại hoặc mật khẩu không hợp lệ");
-          toast.error(loginError?.message || "Số điện thoại hoặc mật khẩu không hợp lệ");
         }
       } catch (err: unknown) {
         const error = err as LoginError;
@@ -48,7 +47,6 @@ const Login: React.FC = () => {
             ? "Không thể kết nối đến máy chủ. Thử lại sau"
             : error?.message || "An unexpected error occurred.";
         setError(errorMessage);
-        toast.error(errorMessage);
       } finally {
         setIsLoading(false);
       }

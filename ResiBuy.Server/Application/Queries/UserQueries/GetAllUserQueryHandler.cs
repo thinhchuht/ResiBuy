@@ -6,7 +6,35 @@
         public async Task<ResponseModel> Handle(GetAllUsersQuery query, CancellationToken cancellationToken)
         {
             var pagedResult = await UserDbService.GetAllUsers(query.PageNumber, query.PageSize);
-            return ResponseModel.SuccessResponse(pagedResult);
+            if (pagedResult == null || !pagedResult.Items.Any())
+            {
+                return ResponseModel.SuccessResponse(new PagedResult<UserQueryResult>(new List<UserQueryResult>(), pagedResult.TotalCount, pagedResult.PageNumber, pagedResult.PageSize));
+            }
+            var items = pagedResult.Items.Select(user => new UserQueryResult(
+                user.Id,
+                user.Email,
+                user.PhoneNumber,
+                user.DateOfBirth,
+                user.IsLocked,
+                user.Roles,
+                user.FullName,
+                user.CreatedAt,
+                user.UpdatedAt,
+                user.Cart?.Id ?? null,
+                user.Avatar != null ? new AvatarQueryResult(
+                    user.Avatar.Id,
+                    user.Avatar.Name,
+                    user.Avatar.ImgUrl,
+                    user.Avatar.ThumbUrl) : null,
+                user.UserRooms.Select(ur => new RoomQueryResult(
+                    ur.RoomId,
+                    ur.Room?.Name,
+                    ur.Room?.Building.Name,
+                    ur.Room?.Building.Area.Name)),
+                user.UserVouchers.Select(uv => uv.VoucherId),
+                user.Reports.ToList()
+            )).ToList();
+            return ResponseModel.SuccessResponse(new PagedResult<UserQueryResult>(items, pagedResult.TotalCount, pagedResult.PageNumber, pagedResult.PageSize));
         }
     }
 }

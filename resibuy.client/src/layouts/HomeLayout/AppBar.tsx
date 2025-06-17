@@ -16,7 +16,7 @@ import {
   Popover,
   Badge,
 } from "@mui/material";
-import { Login, Logout, Person, Settings, Home, ShoppingCart, Receipt, KeyboardArrowDown, Category, Notifications, Dashboard } from "@mui/icons-material";
+import { Login, Logout, Person, Settings, Home, ShoppingCart, Receipt, KeyboardArrowDown, Category, Notifications, Dashboard, Store, LocalShipping, Storefront } from "@mui/icons-material";
 import { Link, useNavigate } from "react-router-dom";
 import { useAuth } from "../../contexts/AuthContext";
 import SearchBase from "../../components/SearchBase";
@@ -407,7 +407,7 @@ const AppBar: React.FC = () => {
               }}>
               <Dashboard fontSize="small" sx={{ transition: "all 0.2s ease-in-out" }} />
               <Typography variant="body2" sx={{ fontWeight: 500 }}>
-                Quản trị viên
+                Trang quản trị
               </Typography>
             </MenuItem>
           )}
@@ -430,9 +430,9 @@ const AppBar: React.FC = () => {
                 },
                 transition: "all 0.2s ease-in-out",
               }}>
-              <Dashboard fontSize="small" sx={{ transition: "all 0.2s ease-in-out" }} />
+              <Store fontSize="small" sx={{ transition: "all 0.2s ease-in-out" }} />
               <Typography variant="body2" sx={{ fontWeight: 500 }}>
-                Người bán
+                Cửa hàng của bạn
               </Typography>
             </MenuItem>
           )}
@@ -455,9 +455,9 @@ const AppBar: React.FC = () => {
                 },
                 transition: "all 0.2s ease-in-out",
               }}>
-              <Dashboard fontSize="small" sx={{ transition: "all 0.2s ease-in-out" }} />
+              <LocalShipping fontSize="small" sx={{ transition: "all 0.2s ease-in-out" }} />
               <Typography variant="body2" sx={{ fontWeight: 500 }}>
-                Người giao hàng
+                Trang giao hàng
               </Typography>
             </MenuItem>
           )}
@@ -480,9 +480,9 @@ const AppBar: React.FC = () => {
                 },
                 transition: "all 0.2s ease-in-out",
               }}>
-              <Dashboard fontSize="small" sx={{ transition: "all 0.2s ease-in-out" }} />
+              <Storefront fontSize="small" sx={{ transition: "all 0.2s ease-in-out" }} />
               <Typography variant="body2" sx={{ fontWeight: 500 }}>
-                Khách hàng
+                Trang chủ
               </Typography>
             </MenuItem>
           )}
