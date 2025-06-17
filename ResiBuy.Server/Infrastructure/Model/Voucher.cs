@@ -4,7 +4,7 @@
     {
         public Guid                     Id               { get; set; }
         public decimal                  DiscountAmount   { get; set; }
-        public string                   Type             { get; set; }
+        public VoucherType Type { get; set; }
         public int                      Quantity         { get; set; }
         public decimal                  MinOrderPrice    { get; set; }
         public decimal                  MaxDiscountPrice { get; set; }
@@ -16,4 +16,11 @@
         public IEnumerable<UserVoucher> UserVouchers     { get; set; }
         public IEnumerable<Order>       Orders           { get; set; }
     }
+
+    public enum VoucherType
+    {
+        Amount = 1,
+        Percentage = 2
+    }
+
 }

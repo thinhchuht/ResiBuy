@@ -12,10 +12,10 @@ namespace ResiBuy.Server.Application.Commands.CartCommands
             {
                 if (command.Id == Guid.Empty) throw new CustomException(ExceptionErrorCode.ValidationFailed, "Thiếu Id giỏ hàng");
                 if (command.AddToCartDto.Quantity <= 0) throw new CustomException(ExceptionErrorCode.ValidationFailed, "Số lượng phải là lớn hơn 0");
-                if (command.AddToCartDto.ProductId == Guid.Empty) throw new CustomException(ExceptionErrorCode.ValidationFailed, "Thiếu Id sản phẩm");
+                if (command.AddToCartDto.ProductDetailId <= 0) throw new CustomException(ExceptionErrorCode.ValidationFailed, "Thiếu Id sản phẩm");
                 var cart = await cartDbService.GetByIdAsync(command.Id) ?? throw new CustomException(ExceptionErrorCode.NotFound, "Giỏ hàng không tồn tại");
 
-                var existingItem = await cartItemDbService.GetProductInCartAsync(command.AddToCartDto.ProductId, command.Id);
+                var existingItem = await cartItemDbService.GetProductInCartAsync(command.AddToCartDto.ProductDetailId, command.Id);
 
                 if (existingItem != null)
                 {
@@ -28,7 +28,7 @@ namespace ResiBuy.Server.Application.Commands.CartCommands
                     return ResponseModel.SuccessResponse(existingItem);
                 }
 
-                var cartItem = await cartItemDbService.CreateAsync(new CartItem(command.AddToCartDto.Quantity, command.Id, command.AddToCartDto.ProductId));
+                var cartItem = await cartItemDbService.CreateAsync(new CartItem(command.AddToCartDto.Quantity, command.Id, command.AddToCartDto.ProductDetailId));
                 return ResponseModel.SuccessResponse(cartItem);
             }
             catch (Exception ex)

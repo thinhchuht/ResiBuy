@@ -31,7 +31,7 @@
                 updatedUser.CreatedAt,
                 updatedUser.UpdatedAt,
                 updatedUser.Cart.Id,
-                updatedUser.Avatar == null ? null : new AvatarQueryResult(updatedUser.Avatar.Id, updatedUser.Avatar.Name, updatedUser.Avatar.ImgUrl, updatedUser.Avatar.ThumbUrl),
+                updatedUser.Avatar == null ? null : new AvatarQueryResult(updatedUser.Avatar.Id, updatedUser.Avatar.Name, updatedUser.Avatar.Url, updatedUser.Avatar.ThumbUrl),
                 updatedUser.UserRooms.Select(ur => new RoomQueryResult(ur.Room.Id, ur.Room.Name, ur.Room.Building.Name, ur.Room.Building.Area.Name)),
                 [],
                 []));

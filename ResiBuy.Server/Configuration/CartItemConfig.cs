@@ -10,9 +10,9 @@
                    .HasForeignKey(ci => ci.CartId)
                    .OnDelete(DeleteBehavior.Cascade); // Xóa Cart sẽ xóa CartItem
 
-            builder.HasOne(ci => ci.Product)
+            builder.HasOne(ci => ci.ProductDetail)
                    .WithMany(p => p.CartItems)
-                   .HasForeignKey(ci => ci.ProductId)
+                   .HasForeignKey(ci => ci.ProductDetailId)
                    .OnDelete(DeleteBehavior.Restrict); 
         }
     }

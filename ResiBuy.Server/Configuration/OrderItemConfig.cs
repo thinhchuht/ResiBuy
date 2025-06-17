@@ -10,10 +10,10 @@
                    .HasForeignKey(oi => oi.OrderId)
                    .OnDelete(DeleteBehavior.Cascade); // Xóa Order sẽ xóa OrderItem
 
-            builder.HasOne(oi => oi.Product)
+            builder.HasOne(oi => oi.ProductDetail)
                    .WithMany(p => p.OrderItems)
-                   .HasForeignKey(oi => oi.ProductId)
-                   .OnDelete(DeleteBehavior.Restrict); // Ngăn xóa Product nếu có OrderItem
+                   .HasForeignKey(oi => oi.ProductDetailId)
+                   .OnDelete(DeleteBehavior.Restrict); // Ngăn xóa ProductDetail nếu có OrderItem
         }
     }
 }

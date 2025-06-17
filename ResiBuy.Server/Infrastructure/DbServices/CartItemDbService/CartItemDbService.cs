@@ -1,4 +1,6 @@
-﻿namespace ResiBuy.Server.Infrastructure.DbServices.CartItemDbService
+﻿using ResiBuy.Server.Infrastructure.Model;
+
+namespace ResiBuy.Server.Infrastructure.DbServices.CartItemDbService
 {
     public class CartItemDbService : BaseDbService<CartItem>, ICartItemDbService
     {
@@ -31,11 +33,11 @@
             }
         }
 
-        public async Task<CartItem> GetProductInCartAsync(Guid productId, Guid cartId)
+        public async Task<CartItem> GetProductInCartAsync(int productDetailId, Guid cartId)
         {
             try
             {
-                return await _context.CartItems.FirstOrDefaultAsync(ci => ci.ProductId == productId && ci.CartId == cartId);
+                return await _context.CartItems.FirstOrDefaultAsync(ci => ci.ProductDetailId == productDetailId && ci.CartId == cartId);
 
             }
             catch (Exception ex)

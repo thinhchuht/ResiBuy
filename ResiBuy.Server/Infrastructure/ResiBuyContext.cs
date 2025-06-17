@@ -22,8 +22,8 @@
         public DbSet<Voucher> Vouchers { get; set; }
         public DbSet<UserVoucher> UserVouchers { get; set; }
         public DbSet<RefreshToken> RefreshTokens { get; set; }
-        public DbSet<CostData> CostData { get; set; }
-        public DbSet<UncostData> UncostData { get; set; }
+        public DbSet<AdditionalData> AdditionalData { get; set; }
+        public DbSet<ProductDetail> ProductDetail { get; set; }
         public DbSet<Image> Images { get; set; }
 
         protected override void OnModelCreating(ModelBuilder modelBuilder)
@@ -41,7 +41,6 @@
             modelBuilder.ApplyConfiguration(new CartConfig());
             modelBuilder.ApplyConfiguration(new CartItemConfig());
             modelBuilder.ApplyConfiguration(new CostDataConfig());
-            modelBuilder.ApplyConfiguration(new UncostDataConfig());
 
             // default admin
             var admin = new User

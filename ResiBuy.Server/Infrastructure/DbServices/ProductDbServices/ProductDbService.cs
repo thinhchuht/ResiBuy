@@ -37,7 +37,7 @@ namespace ResiBuy.Server.Infrastructure.DbServices.ProductDbServices
             }
         }
 
-        public async Task<Product> GetByIdAsync(Guid id)
+        public async Task<Product> GetByIdAsync(int id)
         {
             try
             {
@@ -54,7 +54,7 @@ namespace ResiBuy.Server.Infrastructure.DbServices.ProductDbServices
             }
         }
 
-        public async Task<Product> GetProductByIdWithStoreAsync(Guid id)
+        public async Task<Product> GetProductByIdWithStoreAsync(int id)
         {
             try
             {

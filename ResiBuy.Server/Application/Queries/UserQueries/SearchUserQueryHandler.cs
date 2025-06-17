@@ -27,7 +27,7 @@
                 user.Avatar != null ? new AvatarQueryResult(
                     user.Avatar.Id,
                     user.Avatar.Name,
-                    user.Avatar.ImgUrl,
+                    user.Avatar.Url,
                     user.Avatar.ThumbUrl) : null,
                 user.UserRooms.Select(ur => new RoomQueryResult(
                     ur.RoomId,

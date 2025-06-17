@@ -14,15 +14,6 @@ namespace ResiBuy.Server.Configuration
                    .HasForeignKey(p => p.CategoryId)
                    .OnDelete(DeleteBehavior.Restrict);
 
-            builder.HasMany(p => p.CartItems)
-                   .WithOne(ci => ci.Product)
-                   .HasForeignKey(ci => ci.ProductId)
-                   .OnDelete(DeleteBehavior.Restrict); // Đã cấu hình trong CartItemConfig
-
-            builder.HasMany(p => p.OrderItems)
-                   .WithOne(oi => oi.Product)
-                   .HasForeignKey(oi => oi.ProductId)
-                   .OnDelete(DeleteBehavior.Restrict);
         }
     }
 } 

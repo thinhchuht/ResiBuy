@@ -3,7 +3,7 @@
     public class Image
     {
         public string Id { get; set; }
-        public string ImgUrl { get; set; } = null!;
+        public string Url { get; set; } = null!;
         public string ThumbUrl { get; set; }
         public string Name { get; set; }
         public Guid? ProductId { get; set; }
@@ -13,7 +13,7 @@
 
         public void UpdateImage(Image src)
         { 
-            ImgUrl = src.ImgUrl;
+            Url = src.Url;
             ThumbUrl = src.ThumbUrl;
             Name = src.Name;
             UserId = src.UserId;

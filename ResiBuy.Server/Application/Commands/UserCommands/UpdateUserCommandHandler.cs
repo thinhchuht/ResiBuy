@@ -30,7 +30,7 @@
                 imgResult = new Image
                 {
                     Id       = uploadResult.Id,
-                    ImgUrl   = uploadResult.Url,
+                    Url   = uploadResult.Url,
                     ThumbUrl = uploadResult.ThumbnailUrl,
                     Name     = uploadResult.Name,
                     UserId   = existingUser.Id
@@ -60,7 +60,7 @@
                 updatedUser.CreatedAt,
                 updatedUser.UpdatedAt,
                 updatedUser.Cart.Id,
-                new AvatarQueryResult(imgResult.Id, imgResult.Name, imgResult.ImgUrl, imgResult.ThumbUrl),
+                new AvatarQueryResult(imgResult.Id, imgResult.Name, imgResult.Url, imgResult.ThumbUrl),
                 updatedUser.UserRooms.Select(ur => new RoomQueryResult(
                     ur.Room.Id,
                     ur.Room.Name,
