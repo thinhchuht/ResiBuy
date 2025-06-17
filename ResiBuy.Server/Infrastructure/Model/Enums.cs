@@ -9,8 +9,16 @@ public enum OrderStatus
 }
 
 [JsonConverter(typeof(JsonStringEnumConverter))]
-public enum PaymentStatus
+public enum PaymentMethod
 {
     COD,
     BankTransfer
+}
+
+[JsonConverter(typeof(JsonStringEnumConverter))]
+public enum PaymentStatus
+{
+    Success,
+    Fail,
+    UnPaid
 }

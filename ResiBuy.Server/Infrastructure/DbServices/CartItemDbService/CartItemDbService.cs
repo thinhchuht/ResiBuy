@@ -35,21 +35,21 @@ namespace ResiBuy.Server.Infrastructure.DbServices.CartItemDbService
         {
             try
             {
-                var cartItems = await _context.CartItems
-                    .Include(ci => ci.CartItemUncosts)
-                    .Where(ci =>
-                        ci.ProductId == productId &&
-                        ci.CartId == cartId &&
-                        ci.CostDataId == costDataId)
-                    .ToListAsync();
+                //var cartItems = await _context.CartItems
+                //    .Include(ci => ci.CartItemUncosts)
+                //    .Where(ci =>
+                //        ci.ProductId == productId &&
+                //        ci.CartId == cartId &&
+                //        ci.CostDataId == costDataId)
+                //    .ToListAsync();
 
-                var matchedItem = cartItems.FirstOrDefault(ci =>
-                {
-                    var uncostIdsInDb = ci.CartItemUncosts.Select(u => u.UncostDataId);
-                    return new HashSet<Guid>(uncostIdsInDb).SetEquals(uncostDataIds);
-                });
+                //var matchedItem = cartItems.FirstOrDefault(ci =>
+                //{
+                //    var uncostIdsInDb = ci.CartItemUncosts.Select(u => u.UncostDataId);
+                //    return new HashSet<Guid>(uncostIdsInDb).SetEquals(uncostDataIds);
+                //});
 
-                return matchedItem;
+                return null;
             }
             catch (Exception ex)
             {
@@ -63,9 +63,9 @@ namespace ResiBuy.Server.Infrastructure.DbServices.CartItemDbService
             {
                 var query = _context.CartItems
                     .Where(ci => ci.CartId == cartId)
-                    .Include(ci => ci.Product)
-                        .ThenInclude(p => p.ProductImgs)
-                    .Include(ci => ci.CostData)
+                    .Include(ci => ci.ProductDetail)
+                        .ThenInclude(p => p.Image)
+
                     .AsQueryable();
 
                 var totalCount = await query.CountAsync();
