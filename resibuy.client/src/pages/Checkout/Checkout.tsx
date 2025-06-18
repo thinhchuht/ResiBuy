@@ -3,10 +3,10 @@ import { Box, Typography, Container, Paper, Divider } from "@mui/material";
 import ShoppingCartIcon from "@mui/icons-material/ShoppingCart";
 import { useLocation, useNavigate } from "react-router-dom";
 import type { CartItem, Voucher } from "../../types/models";
+import { VoucherType } from "../../types/models";
 import VoucherSelectionModal from "../../components/VoucherSelectionModal";
 import { useAuth } from "../../contexts/AuthContext";
 import { fakeVouchers } from "../../fakeData/fakeVoucherData";
-import { fakeAreas, fakeBuildings, fakeRooms } from "../../fakeData/fakeRoomData";
 import ProductTableSection from "./ProductTableSection";
 import CheckoutVoucherSection from "./CheckoutVoucherSection";
 import NoteSection from "./NoteSection";
@@ -14,7 +14,7 @@ import CheckoutSummarySection from "./CheckoutSummarySection";
 import NotFound from "../../components/NotFound";
 import vnPayApi from "../../api/vnpay.api";
 import { useToastify } from "../../hooks/useToastify";
-import { formatPrice, getMinPrice } from "../../utils/priceUtils";
+import { formatPrice } from "../../utils/priceUtils";
 
 interface GroupedItems {
   storeId: string;
@@ -28,6 +28,14 @@ interface info {
   selectedBuilding: string;
   selectedOtherRoom: string;
   paymentMethod: string;
+}
+
+export interface checkoutItems {
+  cartId: string;
+  storeId: string;
+  note: string;
+  productDetailId: string;
+  quantity : number
 }
 
 const Checkout: React.FC = () => {
@@ -56,7 +64,7 @@ const Checkout: React.FC = () => {
   }
 
   const groupedItems = selectedItems.reduce((groups: GroupedItems[], item) => {
-    const storeId = item.product.storeId;
+    const storeId = item.productDetail.product.storeId;
     const existingGroup = groups.find((group) => group.storeId === storeId);
 
     if (existingGroup) {
@@ -71,18 +79,15 @@ const Checkout: React.FC = () => {
     return groups;
   }, []);
 
-  // Helper to get min price from costData
-
   const calculateStoreTotal = (items: CartItem[], storeId: string) => {
-    const subtotal = items.reduce((total, item) => total + getMinPrice(item.product) * item.quantity, 0);
+    const subtotal = items.reduce((total, item) => total + item.productDetail.price * item.quantity, 0);
     const selectedVoucher = selectedVouchers[storeId];
 
     if (selectedVoucher) {
       let discountAmount = 0;
-
-      if (selectedVoucher.type === "Discount") {
+      if (selectedVoucher.type === VoucherType.Amount) {
         discountAmount = selectedVoucher.discountAmount;
-      } else {
+      } else if (selectedVoucher.type === VoucherType.Percentage) {
         discountAmount = (subtotal * selectedVoucher.discountAmount) / 100;
       }
       discountAmount = Math.min(discountAmount, selectedVoucher.maxDiscountPrice);
@@ -112,13 +117,13 @@ const Checkout: React.FC = () => {
   };
 
   const orders = groupedItems.map((group) => {
-    const subtotal = group.items.reduce((total, item) => total + getMinPrice(item.product) * item.quantity, 0);
+    const subtotal = group.items.reduce((total, item) => total + item.productDetail.price * item.quantity, 0);
     const selectedVoucher = selectedVouchers[group.storeId];
     let discount = 0;
     if (selectedVoucher) {
-      if (selectedVoucher.type === "Discount") {
+      if (selectedVoucher.type === VoucherType.Amount) {
         discount = selectedVoucher.discountAmount;
-      } else {
+      } else if (selectedVoucher.type === VoucherType.Percentage) {
         discount = (subtotal * selectedVoucher.discountAmount) / 100;
       }
       discount = Math.min(discount, selectedVoucher.maxDiscountPrice);
@@ -143,8 +148,8 @@ const Checkout: React.FC = () => {
         TotalPrice: order.totalAfterDiscount,
         Items: groupedItems[idx].items.map((item) => ({
           Quantity: item.quantity,
-          Price: getMinPrice(item.product),
-          ProductId: item.product.id,
+          Price: item.productDetail.price,
+          ProductDetailId: item.productDetail.id,
         })),
         RoomId: info.deliveryType === "my-room" ? info.selectedRoom : info.selectedOtherRoom,
         AreaId: info.selectedArea,
@@ -153,28 +158,37 @@ const Checkout: React.FC = () => {
         Note: notes[groupedItems[idx].storeId],
       }));
 
-      if (info.paymentMethod === "bank-transfer") {
-        const response = await vnPayApi.getPaymentUrl(grandTotal, `ORDER_${Date.now()}`, `Thanh toan don hang ResiBuy - ${allOrders.length} don`);
+      console.log(allOrders)
 
-        if (response.success) {
-          window.history.replaceState({}, "");
-          window.location.href = response.data.paymentUrl;
-        } else {
-          toast.error("Lỗi khi tạo thanh toán, thử lại sau.");
-          console.error("Payment creation failed:", response.error);
-        }
-      } else if (info.paymentMethod === "cash") {
-        window.history.replaceState({}, "");
-        navigate("/checkout-success", {
-          state: { isOrderSuccess: true },
-        });
-      }
+      // if (info.paymentMethod === "bank-transfer") {
+      //   const response = await vnPayApi.getPaymentUrl(grandTotal, `ORDER_${Date.now()}`, `Thanh toan don hang ResiBuy - ${allOrders.length} don`);
+
+      //   if (response.success) {
+      //     window.history.replaceState({}, "");
+      //     window.location.href = response.data.paymentUrl;
+      //   } else {
+      //     toast.error("Lỗi khi tạo thanh toán, thử lại sau.");
+      //     console.error("Payment creation failed:", response.error);
+      //   }
+      // } else if (info.paymentMethod === "cash") {
+      //   window.history.replaceState({}, "");
+      //   navigate("/checkout-success", {
+      //     state: { isOrderSuccess: true },
+      //   });
+      // }
     } catch (error) {
       console.error("Checkout error:", error);
     } finally {
       setIsLoading(false);
     }
   };
+
+  const userRooms = user?.rooms?.map(r => ({
+    roomId: r.id,
+    roomName: r.name,
+    buildingName: r.buildingName,
+    areaName: r.areaName,
+  }));
 
   return (
     <Container maxWidth="xl" sx={{ py: 3 }}>
@@ -218,10 +232,7 @@ const Checkout: React.FC = () => {
             orders={orders}
             grandTotal={grandTotal}
             onCheckout={handleCheckout}
-            userRooms={user?.rooms}
-            areas={fakeAreas}
-            buildings={fakeBuildings}
-            rooms={fakeRooms}
+            userRooms={userRooms}
             isLoading={isLoading}
           />
         </Box>

@@ -19,7 +19,7 @@ public class KafkaProducerService : IKafkaProducerService, IDisposable
         _producer = new ProducerBuilder<string, string>(config).Build();
     }
 
-    public Task ProduceMessageAsync(string topic, string key, string message)
+    public Task ProduceMessageAsync(string key, string message, string topic )
     {
         return Task.Run(async () =>
         {

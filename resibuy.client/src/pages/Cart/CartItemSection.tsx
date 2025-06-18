@@ -2,7 +2,7 @@ import { Box, Typography, IconButton, Checkbox, Table, TableBody, TableCell, Tab
 import { Add, Remove, Delete } from "@mui/icons-material";
 import { useNavigate } from "react-router-dom";
 import type { CartItem as CartItemType } from "../../types/models";
-import { formatPrice, getMinPrice } from "../../utils/priceUtils";
+import { formatPrice } from "../../utils/priceUtils";
 
 interface CartItemSectionProps {
   items: CartItemType[];
@@ -34,12 +34,6 @@ const CartItemSection = ({
   allSelected,
 }: CartItemSectionProps) => {
   const navigate = useNavigate();
-
-  const getCartItemPrice = (item: CartItemType) => getMinPrice(item.product);
-
-  const calculateItemTotal = (item: CartItemType): string => {
-    return formatPrice(getCartItemPrice(item) * item.quantity);
-  };
 
   const tableCellStyle = {
     wordBreak: "break-word" as const,
@@ -95,7 +89,8 @@ const CartItemSection = ({
         </TableHead>
         <TableBody>
           {items.map((item, index) => {
-            const product = item.product;
+            const productDetail = item.productDetail;
+            const product = productDetail.product;
             return (
               <TableRow key={item.id}>
                 <TableCell padding="checkbox">
@@ -107,8 +102,8 @@ const CartItemSection = ({
                 <TableCell sx={{ ...tableCellStyle, minWidth: "300px" }}>
                   <Box sx={{ display: "flex", alignItems: "center", gap: 2 }}>
                     <img
-                      src={product.productImgs[0]?.thumbUrl}
-                      alt={product.productImgs[0].name}
+                      src={productDetail.image?.thumbUrl || productDetail.image?.url}
+                      alt={product.name}
                       style={{
                         width: "80px",
                         height: "80px",
@@ -124,29 +119,25 @@ const CartItemSection = ({
                         fontWeight="bold"
                         sx={{
                           cursor: "pointer",
-                          "&:hover": {
-                            color: "red",
-                          },
+                          "&:hover": { color: "red" },
                           overflow: "hidden",
                           textOverflow: "ellipsis",
                           display: "-webkit-box",
                           WebkitLineClamp: 2,
                           WebkitBoxOrient: "vertical",
                         }}
-                        onClick={() => navigate(`/products?id=${product.id}`)}>
+                        onClick={() => navigate(`/products?id=${product.id}`)}
+                      >
                         {product.name}
                       </Typography>
                       <Typography variant="body2" color="text.secondary">
-                        Giá: {formatPrice(getCartItemPrice(item))}
+                        Giá: {formatPrice(productDetail.price)}
                       </Typography>
                       <Typography variant="body2" color="text.secondary">
-                        Phân loại: {item.costData.key} - {item.costData.value}
+                        {Array.isArray(productDetail.additionalData)
+                          ? productDetail.additionalData.map(ad => ad.value).join(", ")
+                          : ""}
                       </Typography>
-                      {item.cartItemUncosts && item.cartItemUncosts.length > 0 && (
-                        <Typography variant="body2" color="text.secondary">
-                          Tùy chọn: {item.cartItemUncosts.map((uncost) => `${uncost.uncostData.key}: ${uncost.uncostData.value}`).join(", ")}
-                        </Typography>
-                      )}
                     </Box>
                   </Box>
                 </TableCell>
@@ -192,7 +183,7 @@ const CartItemSection = ({
                 </TableCell>
                 <TableCell align="right" sx={{ ...tableCellStyle, minWidth: "150px" }}>
                   <Typography variant="h6" color="red">
-                    {calculateItemTotal(item)}
+                    {formatPrice(productDetail.price * item.quantity)}
                   </Typography>
                 </TableCell>
               </TableRow>

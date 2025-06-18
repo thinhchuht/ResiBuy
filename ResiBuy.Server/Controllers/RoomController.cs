@@ -18,6 +18,20 @@
             }
         }
 
+        [HttpGet("building/{id}")]
+        public async Task<IActionResult> GetByBuildingIdAsync(Guid id)
+        {
+            try
+            {
+                var result = await mediator.Send(new GetByBuildingIdQuery(id));
+                return Ok(result);
+            }
+            catch (Exception ex)
+            {
+                return BadRequest(ResponseModel.ExceptionResponse(ex.ToString()));
+            }
+        }
+
         [HttpPost("create")]
         public async Task<IActionResult> CreateAsync([FromBody] CreateRoomCommand command)
         {

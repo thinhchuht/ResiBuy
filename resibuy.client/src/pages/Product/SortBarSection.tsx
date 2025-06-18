@@ -2,7 +2,7 @@ import { Box, Typography, TextField, MenuItem } from "@mui/material";
 import type { Category } from "../../types/models";
 
 interface SortBarProps {
-  selectedCategory: string;
+  selectedCategory: string | null;
   sortBy: string;
   setSortBy: (value: string) => void;
   fakeCategories: Category[];

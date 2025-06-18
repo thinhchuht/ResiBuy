@@ -46,8 +46,6 @@
   <ItemGroup>
     <Folder Include="Application\Commands\CartitemCommands\" />
     <Folder Include="Application\Queries\AreaQueries\" />
-    <Folder Include="Application\Queries\BuildingQueries\" />
-    <Folder Include="Application\Queries\RoomQueries\" />
     <Folder Include="Services\HttpServices\" />
   </ItemGroup>
 </Project>

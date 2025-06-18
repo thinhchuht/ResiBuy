@@ -9,6 +9,8 @@ import cartItemApi from "../../api/cartItem.api";
 import { useAuth } from "../../contexts/AuthContext";
 import { toast } from "react-toastify";
 
+
+
 const Cart = () => {
   const [cartItems, setCartItems] = useState<CartItem[]>([]);
   const [selectedItems, setSelectedCartItems] = useState<string[]>([]);
@@ -21,7 +23,11 @@ const Cart = () => {
   const fetchCartItems = async () => {
     try {
       if (!user?.cartId) return;
-      const response = await cartApi.getCartById(user.cartId, page + 1, rowsPerPage);
+      const response = await cartApi.getCartById(
+        user.cartId,
+        page + 1,
+        rowsPerPage
+      );
       const { items, totalCount } = response.data.data;
       setCartItems(items);
       setTotalItems(totalCount);
@@ -33,12 +39,17 @@ const Cart = () => {
 
   useEffect(() => {
     fetchCartItems();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [page, rowsPerPage, user?.cartId]);
 
   const handleQuantityChange = async (itemId: string, newQuantity: number) => {
     try {
       await cartItemApi.updateQuantity(itemId, newQuantity);
-      setCartItems((prevItems) => prevItems.map((item) => (item.id === itemId ? { ...item, quantity: newQuantity } : item)));
+      setCartItems((prevItems) =>
+        prevItems.map((item) =>
+          item.id === itemId ? { ...item, quantity: newQuantity } : item
+        )
+      );
     } catch (error) {
       console.error("Error updating quantity:", error);
     }
@@ -47,7 +58,9 @@ const Cart = () => {
   const handleRemoveItem = async (itemId: string) => {
     try {
       await cartApi.removeFromCart(user?.cartId || "", [itemId]);
-      setCartItems((prevItems) => prevItems.filter((item) => item.id !== itemId));
+      setCartItems((prevItems) =>
+        prevItems.filter((item) => item.id !== itemId)
+      );
       setSelectedCartItems((prev) => prev.filter((id) => id !== itemId));
       toast.success("Xóa sản phẩm khỏi giỏ hàng thành công!");
     } catch (error) {
@@ -57,7 +70,11 @@ const Cart = () => {
   };
 
   const handleSelectItem = (itemId: string) => {
-    setSelectedCartItems((prev) => (prev.includes(itemId) ? prev.filter((id) => id !== itemId) : [...prev, itemId]));
+    setSelectedCartItems((prev) =>
+      prev.includes(itemId)
+        ? prev.filter((id) => id !== itemId)
+        : [...prev, itemId]
+    );
   };
 
   const handleSelectAllItems = (event: React.ChangeEvent<HTMLInputElement>) => {
@@ -70,24 +87,34 @@ const Cart = () => {
   };
 
   const handleCheckout = () => {
+    console.log("selectedItems", selectedCartItems);
     navigate("/checkout", { state: { selectedItems: selectedCartItems } });
   };
 
-  const handleChangePage = (event: unknown, newPage: number) => {
+  const handleChangePage = (_event: unknown, newPage: number) => {
     setPage(newPage);
   };
 
-  const handleChangeRowsPerPage = (event: React.ChangeEvent<HTMLInputElement>) => {
+  const handleChangeRowsPerPage = (
+    event: React.ChangeEvent<HTMLInputElement>
+  ) => {
     setRowsPerPage(parseInt(event.target.value, 10));
     setPage(0);
   };
 
-  const selectedCartItems = cartItems.filter((item) => selectedItems.includes(item.id));
-  const allSelected = selectedItems.length === cartItems.length && cartItems.length > 0;
+  const selectedCartItems = cartItems.filter((item) =>
+    selectedItems.includes(item.id)
+  );
+  const allSelected =
+    selectedItems.length === cartItems.length && cartItems.length > 0;
 
   return (
     <Container maxWidth="xl" sx={{ py: 4 }}>
-      <Typography variant="body2" color="text.secondary" sx={{ mb: 3, fontSize: 24 }}>
+      <Typography
+        variant="body2"
+        color="text.secondary"
+        sx={{ mb: 3, fontSize: 24 }}
+      >
         <Link to="/" style={{ textDecoration: "none", color: "inherit" }}>
           Trang chủ
         </Link>{" "}
@@ -102,7 +129,8 @@ const Cart = () => {
               p: 3,
               borderRadius: 4,
               border: "1px solid #eee",
-            }}>
+            }}
+          >
             <CartItemSection
               items={cartItems}
               selectedItems={selectedItems}
@@ -120,7 +148,10 @@ const Cart = () => {
           </Paper>
         </Box>
 
-        <CartSummarySection selectedItems={selectedCartItems} onCheckout={handleCheckout} />
+        <CartSummarySection
+          selectedItems={selectedCartItems}
+          onCheckout={handleCheckout}
+        />
       </Box>
     </Container>
   );

@@ -31,25 +31,14 @@ namespace ResiBuy.Server.Infrastructure.DbServices.CartItemDbService
             }
         }
 
-        public async Task<CartItem> GetMatchingCartItemsAsync(Guid cartId, Guid productId, Guid costDataId, List<Guid> uncostDataIds)
+        public async Task<CartItem> GetMatchingCartItemsAsync(Guid cartId, int productDetailId)
         {
             try
             {
-                //var cartItems = await _context.CartItems
-                //    .Include(ci => ci.CartItemUncosts)
-                //    .Where(ci =>
-                //        ci.ProductId == productId &&
-                //        ci.CartId == cartId &&
-                //        ci.CostDataId == costDataId)
-                //    .ToListAsync();
-
-                //var matchedItem = cartItems.FirstOrDefault(ci =>
-                //{
-                //    var uncostIdsInDb = ci.CartItemUncosts.Select(u => u.UncostDataId);
-                //    return new HashSet<Guid>(uncostIdsInDb).SetEquals(uncostDataIds);
-                //});
-
-                return null;
+                var cartItem = await _context.CartItems
+                    .Include(ci => ci.ProductDetail)
+                    .FirstOrDefaultAsync(ci => ci.CartId == cartId && ci.ProductDetailId == productDetailId);
+                return cartItem;
             }
             catch (Exception ex)
             {
@@ -64,8 +53,11 @@ namespace ResiBuy.Server.Infrastructure.DbServices.CartItemDbService
                 var query = _context.CartItems
                     .Where(ci => ci.CartId == cartId)
                     .Include(ci => ci.ProductDetail)
-                        .ThenInclude(p => p.Image)
-
+                    .ThenInclude(p => p.Image)
+                    .Include(ci => ci.ProductDetail)
+                    .ThenInclude(p => p.Product)
+                    .Include(ci => ci.ProductDetail)
+                    .ThenInclude(p => p.AdditionalData)
                     .AsQueryable();
 
                 var totalCount = await query.CountAsync();

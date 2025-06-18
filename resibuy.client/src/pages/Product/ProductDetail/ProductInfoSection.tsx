@@ -7,6 +7,8 @@ import { useAuth } from "../../../contexts/AuthContext";
 import { useToastify } from "../../../hooks/useToastify";
 import { useNavigate } from "react-router-dom";
 import { formatPrice } from "../../../utils/priceUtils";
+import Tooltip from '@mui/material/Tooltip';
+import cartApi from "../../../api/cart.api";
 
 interface ProductInfoSectionProps {
   product: Product;
@@ -22,44 +24,69 @@ const ProductInfoSection: React.FC<ProductInfoSectionProps> = ({ product, quanti
   const toast = useToastify();
   const navigate = useNavigate();
 
-  // Group costData by key
-  const costGroups = product.costData.reduce((acc: Record<string, typeof product.costData>, cost) => {
-    if (!acc[cost.key]) acc[cost.key] = [];
-    acc[cost.key].push(cost);
-    return acc;
-  }, {} as Record<string, typeof product.costData>);
+  const optionGroups: Record<string, string[]> = {};
+  product.productDetails.forEach(detail => {
+    if (Array.isArray(detail.additionalData)) {
+      detail.additionalData.forEach(({ key, value }) => {
+        if (!optionGroups[key]) optionGroups[key] = [];
+        if (!optionGroups[key].includes(value)) optionGroups[key].push(value);
+      });
+    }
+  });
 
-  // State for selected options
   const [selectedOptions, setSelectedOptions] = useState(() => {
     const initial: Record<string, string> = {};
-    Object.keys(costGroups).forEach((key) => {
-      initial[key] = costGroups[key][0]?.id || "";
+    Object.entries(optionGroups).forEach(([key, values]) => {
+      initial[key] = values[0];
     });
     return initial;
   });
 
-  // Find selected costData
-  const selectedCost =
-    Object.values(costGroups)
-      .flat()
-      .find((cost) => Object.values(selectedOptions).includes(cost.id)) || product.costData[0];
+  const selectedDetail = product.productDetails.find((detail) => {
+    if (!Array.isArray(detail.additionalData)) return false;
+    const keys = Object.keys(selectedOptions);
+    return keys.every((key) =>
+      Array.isArray(detail.additionalData) &&
+      detail.additionalData.some((ad: { key: string; value: string }) => ad.key === key && ad.value === selectedOptions[key])
+    );
+  }) || null;
 
-  // Handle option change
-  const handleOptionChange = (key: string, id: string) => {
-    setSelectedOptions((prev) => ({ ...prev, [key]: id }));
+  const handleOptionChange = (key: string, value: string) => {
+    const keys = Object.keys(optionGroups);
+    const idx = keys.indexOf(key);
+
+    const newSelected: Record<string, string> = {};
+    keys.forEach((k, i) => {
+      if (i < idx) newSelected[k] = selectedOptions[k];
+      else if (i === idx) newSelected[k] = value;
+    });
+
+    for (let i = idx + 1; i < keys.length; i++) {
+      const k = keys[i];
+      const validValue = optionGroups[k].find(v => {
+        const testOptions = { ...newSelected, [k]: v };
+        return product.productDetails.some((detail) =>
+          Object.entries(testOptions).every(([kk, vv]) =>
+            Array.isArray(detail.additionalData) &&
+            detail.additionalData.some((ad: { key: string; value: string }) => ad.key === kk && ad.value === vv)
+          )
+        );
+      });
+      newSelected[k] = validValue || optionGroups[k][0];
+    }
+
+    setSelectedOptions(newSelected);
   };
 
-  // Price logic
-  const basePrice = selectedCost.price;
+  const basePrice = selectedDetail?.price || 0;
   const discountedPrice = basePrice * (1 - product.discount / 100);
 
-  const handleAddToCart = (product: Product) => {
-    if (user) {
-      toast.success(`Đã thêm ${product.name} vào giỏ hàng!`);
-    } else {
-      toast.error("Vui lòng đăng nhập để thêm sản phẩm vào giỏ hàng");
-      navigate("/login");
-    }
+  const handleAddToCart = () => {
+    if (!selectedDetail || !user) return;
+    console.log(selectedDetail.id);
+    console.log(quantity);
+    cartApi.addToCart( user?.cartId, selectedDetail.id, quantity );
+    toast.success(`Đã thêm sản phẩm vào giỏ hàng!`);
   };
 
   const handleBuy = (product: Product) => {
@@ -74,10 +101,10 @@ const ProductInfoSection: React.FC<ProductInfoSectionProps> = ({ product, quanti
   const handleQuantityInputChange = (event: React.ChangeEvent<HTMLInputElement>) => {
     let value = parseInt(event.target.value);
     if (isNaN(value) || value < 1) {
-      value = 1; // Mặc định về 1 nếu không hợp lệ
+      value = 1; 
     }
     if (value > 10) {
-      value = 10; // Giới hạn tối đa là 10
+      value = 10; 
     }
     handleQuantityChange(value);
   };
@@ -123,47 +150,64 @@ const ProductInfoSection: React.FC<ProductInfoSectionProps> = ({ product, quanti
         </Box>
 
         <Box mb={2}>
-          {Object.entries(costGroups).map(([key, options]) => (
+          {Object.entries(optionGroups).map(([key, values], groupIdx, arr) => (
             <Box key={key} mb={1.2} display="flex" alignItems="center" gap={2}>
-              <Typography sx={{ minWidth: 48, fontWeight: 500, color: "#888", fontSize: 14 }}>{key}</Typography>
+              <Typography sx={{ minWidth: 48, fontWeight: 500, color: "#888", fontSize: 14 }}>{key}:</Typography>
               <Box display="flex" gap={1} flexWrap="wrap">
-                {options.map((opt) => (
-                  <Button
-                    key={opt.id}
-                    variant={selectedOptions[key] === opt.id ? "contained" : "outlined"}
-                    onClick={() => handleOptionChange(key, opt.id)}
-                    sx={{
-                      minWidth: 36,
-                      height: 36,
-                      p: 0.2,
-                      borderRadius: 2,
-                      borderWidth: 2,
-                      boxShadow: selectedOptions[key] === opt.id ? "0 1px 4px 0 rgba(0,209,255,0.10)" : "none",
-                      borderColor: selectedOptions[key] === opt.id ? "#00D1FF" : "#e0e0e0",
-                      color: selectedOptions[key] === opt.id ? "#fff" : "#333",
-                      background: selectedOptions[key] === opt.id ? "#00D1FF" : "#fff",
-                      fontWeight: 500,
-                      fontSize: 13,
-                      display: "flex",
-                      flexDirection: "column",
-                      alignItems: "center",
-                      transition: "all 0.2s",
-                      "&:hover": {
-                        background: selectedOptions[key] === opt.id ? "#00D1FF" : "#f8f8f8",
-                        color: "#00D1FF",
-                        borderColor: "#00D1FF",
-                      },
-                    }}>
-                    {key.toLowerCase().includes("màu") && product.productImgs && product.productImgs[options.indexOf(opt)] ? (
-                      <img
-                        src={product.productImgs[options.indexOf(opt)]?.thumbUrl}
-                        alt={opt.value}
-                        style={{ width: 22, height: 22, marginBottom: 2, borderRadius: 3, boxShadow: "0 1px 2px #eee" }}
-                      />
-                    ) : null}
-                    <span>{opt.value}</span>
-                  </Button>
-                ))}
+                {values.map((value) => {
+                  let isValid = true;
+                  if (groupIdx > 0) {
+                    const testOptions: Record<string, string> = {};
+                    arr.slice(0, groupIdx).forEach(([prevKey]) => {
+                      testOptions[prevKey] = selectedOptions[prevKey];
+                    });
+                    testOptions[key] = value;
+                    isValid = product.productDetails.some((detail) =>
+                      Object.entries(testOptions).every(([k, v]) =>
+                        Array.isArray(detail.additionalData) &&
+                        detail.additionalData.some((ad: { key: string; value: string }) => ad.key === k && ad.value === v)
+                      )
+                    );
+                  }
+                  const button = (
+                    <Button
+                      key={value}
+                      variant={selectedOptions[key] === value ? "contained" : "outlined"}
+                      onClick={() => handleOptionChange(key, value)}
+                      disabled={!isValid}
+                      sx={{
+                        opacity: isValid ? 1 : 0.5,
+                        minWidth: 36,
+                        height: 36,
+                        p: 0.2,
+                        borderRadius: 2,
+                        borderWidth: 2,
+                        boxShadow: selectedOptions[key] === value ? "0 1px 4px 0 rgba(0,209,255,0.10)" : "none",
+                        borderColor: selectedOptions[key] === value ? "#00D1FF" : "#e0e0e0",
+                        color: selectedOptions[key] === value ? "#fff" : "#333",
+                        background: selectedOptions[key] === value ? "#00D1FF" : "#fff",
+                        fontWeight: 500,
+                        fontSize: 13,
+                        display: "flex",
+                        flexDirection: "column",
+                        alignItems: "center",
+                        transition: "all 0.2s",
+                        "&:hover": {
+                          background: selectedOptions[key] === value ? "#00D1FF" : "#f8f8f8",
+                          color: "#00D1FF",
+                          borderColor: "#00D1FF",
+                        },
+                      }}
+                    >
+                      <span>{value}</span>
+                    </Button>
+                  );
+                  return isValid ? button : (
+                    <Tooltip key={value} title="Hiện tại đang hết hàng" arrow>
+                      <span>{button}</span>
+                    </Tooltip>
+                  );
+                })}
               </Box>
             </Box>
           ))}
@@ -217,7 +261,7 @@ const ProductInfoSection: React.FC<ProductInfoSectionProps> = ({ product, quanti
             variant="contained"
             size="large"
             startIcon={<ShoppingCartIcon />}
-            disabled={product.isOutOfStock}
+            disabled={product.isOutOfStock || !selectedDetail}
             sx={{
               borderRadius: 8,
               px: 4,
@@ -230,15 +274,22 @@ const ProductInfoSection: React.FC<ProductInfoSectionProps> = ({ product, quanti
               },
               flex: 1,
             }}
-            onClick={() => handleAddToCart(product)}>
+            onClick={handleAddToCart}
+          >
             Thêm vào giỏ hàng
           </Button>
         </Box>
 
+        {!selectedDetail && (
+          <Typography color="error" fontSize={14} mt={1}>
+            Không có tổ hợp sản phẩm phù hợp với lựa chọn hiện tại.
+          </Typography>
+        )}
+
         <Button
           variant="contained"
           size="large"
-          disabled={product.isOutOfStock}
+          disabled={product.isOutOfStock || !selectedDetail}
           sx={{
             borderRadius: 8,
             px: 4,
