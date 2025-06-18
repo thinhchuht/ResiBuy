@@ -12,7 +12,7 @@ import {
 export const menuItems = [
   { title: "Dashboard", url: "/admin/dashboard", icon: Dashboard },
   { title: "Products", url: "/products", icon: Inventory2 },
-  { title: "Categories", url: "/categories", icon: Category },
+  { title: "Danh mục", url: "/admin/category", icon: Category },
   { title: "Orders", url: "/orders", icon: ShoppingCart },
   { title: "Users", url: "/users", icon: People },
   { title: "Vouchers", url: "/vouchers", icon: ConfirmationNumber },

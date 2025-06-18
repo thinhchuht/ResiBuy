@@ -21,7 +21,7 @@ import CheckoutFailed from "../pages/CheckoutFailed/CheckoutFailed";
 import AdminLayout from "../layouts/AdminLayout";
 import Dashboard from "../pages/Admin/dashboard/Dashboard";
 import StoresPage from "../pages/Admin/Store/page";
-
+import CategoriesPage from "../pages/Admin/Category/page";
 const AppRoutes: React.FC = () => {
   const { user } = useAuth();
 
@@ -110,7 +110,7 @@ const AppRoutes: React.FC = () => {
               {/* Add other admin subroutes here, e.g.:
               <Route path="products" element={<Products />} />
               */}
-          
+           <Route path="Category" element={<CategoriesPage />} />
             <Route path="Store" element={<StoresPage />} />
             </Route>}
         <Route

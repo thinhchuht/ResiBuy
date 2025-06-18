@@ -1,4 +1,5 @@
 import { useEffect } from "react";
+
 import {
   Dialog,
   DialogTitle,
@@ -22,7 +23,7 @@ import {
   Image,
   ToggleOff,
 } from "@mui/icons-material";
-import { useStoreForm } from "../../../components/admin/Store/seg/utlis";
+import { useStoreForm } from "./seg/utlis";
 import type { Store } from "../../../types/models";
 
 interface AddStoreModalProps {
@@ -70,7 +71,6 @@ export function AddStoreModal({
         },
       }}
       PaperProps={{ sx: { bgcolor: "background.paper" } }}
-      
     >
       {/* Backdrop */}
       {/* <Box
@@ -290,7 +290,9 @@ export function AddStoreModal({
                     fullWidth
                     type="tel"
                     value={formData.phoneNumber}
-                    onChange={(e) => handleInputChange("phoneNumber", e.target.value)}
+                    onChange={(e) =>
+                      handleInputChange("phoneNumber", e.target.value)
+                    }
                     placeholder="+84 123 456 789"
                     size="small"
                     error={!!errors.phoneNumber}
@@ -299,10 +301,14 @@ export function AddStoreModal({
                       "& .MuiOutlinedInput-root": {
                         borderRadius: 2,
                         "& fieldset": {
-                          borderColor: errors.phoneNumber ? "error.main" : "grey.300",
+                          borderColor: errors.phoneNumber
+                            ? "error.main"
+                            : "grey.300",
                         },
                         "&:hover fieldset": {
-                          borderColor: errors.phoneNumber ? "error.main" : "grey.500",
+                          borderColor: errors.phoneNumber
+                            ? "error.main"
+                            : "grey.500",
                         },
                         "&.Mui-focused fieldset": {
                           borderColor: "primary.main",
@@ -419,7 +425,9 @@ export function AddStoreModal({
                   multiline
                   rows={3}
                   value={formData.description}
-                  onChange={(e) => handleInputChange("description", e.target.value)}
+                  onChange={(e) =>
+                    handleInputChange("description", e.target.value)
+                  }
                   placeholder="Nhập mô tả cửa hàng"
                   sx={{
                     bgcolor: "background.paper",
@@ -471,7 +479,9 @@ export function AddStoreModal({
                   fullWidth
                   type="url"
                   value={formData.imageUrl}
-                  onChange={(e) => handleInputChange("imageUrl", e.target.value)}
+                  onChange={(e) =>
+                    handleInputChange("imageUrl", e.target.value)
+                  }
                   placeholder="https://example.com/image.jpg"
                   size="small"
                   sx={{
@@ -524,7 +534,9 @@ export function AddStoreModal({
                   control={
                     <Checkbox
                       checked={formData.isActive}
-                      onChange={(e) => handleInputChange("isActive", e.target.checked)}
+                      onChange={(e) =>
+                        handleInputChange("isActive", e.target.checked)
+                      }
                       sx={{
                         color: "grey.300", // Thay border-gray-300
                         "&.Mui-checked": {
@@ -597,7 +609,11 @@ export function AddStoreModal({
             "&:disabled": { opacity: 0.5, cursor: "not-allowed" }, // Thay disabled:opacity-50 disabled:cursor-not-allowed
           }}
         >
-          {isSubmitting ? "Đang Lưu..." : editStore ? "Cập Nhật Cửa Hàng" : "Thêm Cửa Hàng"}
+          {isSubmitting
+            ? "Đang Lưu..."
+            : editStore
+            ? "Cập Nhật Cửa Hàng"
+            : "Thêm Cửa Hàng"}
         </Button>
       </DialogActions>
     </Dialog>

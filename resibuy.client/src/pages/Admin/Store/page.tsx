@@ -9,7 +9,7 @@ import {
   Delete,
 } from "@mui/icons-material";
 import CustomTable from "../../../components/CustomTable";
-import { AddStoreModal } from "../../../components/admin/Store/add-store-model";
+import { AddStoreModal } from "../../../components/admin/Store/add-store-modal";
 import { StoreDetailModal } from "../../../components/admin/Store/store-detail-modal";
 import {
   calculateStoreStats,
@@ -33,7 +33,6 @@ function StoreStatsCards() {
       iconColor: "#1976d2", // Xanh dương
       iconBgColor: "#e3f2fd", // Xanh dương nhạt
       valueColor: "#1976d2",
-   
     },
     {
       title: "Chưa Kích Hoạt",
@@ -42,7 +41,6 @@ function StoreStatsCards() {
       iconColor: "#2e7d32", // Xanh lá
       iconBgColor: "#e8f5e9", // Xanh lá nhạt
       valueColor: "#2e7d32",
-    
     },
     {
       title: "Cửa Hàng Hoạt Động",
@@ -51,7 +49,6 @@ function StoreStatsCards() {
       iconColor: "#7b1fa2", // Tím
       iconBgColor: "#f3e5f5", // Tím nhạt
       valueColor: "#7b1fa2",
-      
     },
     {
       title: "Tổng Sản Phẩm",
@@ -60,7 +57,6 @@ function StoreStatsCards() {
       iconColor: "#d81b60", // Hồng
       iconBgColor: "#fce4ec", // Hồng nhạt
       valueColor: "#d81b60",
-     
     },
   ];
 
@@ -91,7 +87,9 @@ function StoreStatsCards() {
     },
     {
       title: "Đã Hủy",
-      value: stats.averageRevenue ? Math.round(stats.averageRevenue).toString() : "0",
+      value: stats.averageRevenue
+        ? Math.round(stats.averageRevenue).toString()
+        : "0",
       icon: CheckCircle,
       iconColor: "#7b1fa2", // Tím
       iconBgColor: "#f3e5f5", // Tím nhạt
@@ -122,7 +120,6 @@ function StoreStatsCards() {
             iconColor={card.iconColor}
             iconBgColor={card.iconBgColor}
             valueColor={card.valueColor}
-            
           />
         ))}
       </Box>
@@ -181,7 +178,11 @@ export default function StoresPage() {
       render: (store: Store) => (
         <Typography
           variant="body2"
-          sx={{ fontFamily: "monospace", fontWeight: "medium", color: "primary.main" }}
+          sx={{
+            fontFamily: "monospace",
+            fontWeight: "medium",
+            color: "primary.main",
+          }}
         >
           {store.id}
         </Typography>
@@ -304,7 +305,10 @@ export default function StoresPage() {
           sx={{ fontWeight: "medium", color: "grey.900" }}
         >
           {formatCurrency(
-            store.products.reduce((sum, product) => sum + product.price * product.sold, 0)
+            store.products.reduce(
+              (sum, product) => sum + product.price * product.sold,
+              0
+            )
           )}
         </Typography>
       ),
@@ -337,8 +341,8 @@ export default function StoresPage() {
               "&:hover": {
                 color: "primary.dark",
                 bgcolor: "blue[50]",
-              }}
-            }
+              },
+            }}
             title="Xem Chi Tiết"
           >
             <Visibility sx={{ fontSize: 16 }} />
@@ -353,8 +357,8 @@ export default function StoresPage() {
               "&:hover": {
                 color: "success.dark",
                 bgcolor: "green[50]",
-              }}
-            }
+              },
+            }}
             title="Sửa Cửa Hàng"
           >
             <Edit sx={{ fontSize: 16 }} />
@@ -369,11 +373,15 @@ export default function StoresPage() {
               "&:hover": {
                 color: store.isActive ? "warning.dark" : "success.dark",
                 bgcolor: store.isActive ? "yellow[50]" : "green[50]",
-              }}
-            }
+              },
+            }}
             title={store.isActive ? "Vô Hiệu Hóa" : "Kích Hoạt"}
           >
-            {store.isActive ? <ToggleOff sx={{ fontSize: 16 }} /> : <CheckCircle sx={{ fontSize: 16 }} />}
+            {store.isActive ? (
+              <ToggleOff sx={{ fontSize: 16 }} />
+            ) : (
+              <CheckCircle sx={{ fontSize: 16 }} />
+            )}
           </IconButton>
           <IconButton
             onClick={() => handleDeleteStore(store.id)}
@@ -385,8 +393,8 @@ export default function StoresPage() {
               "&:hover": {
                 color: "error.dark",
                 bgcolor: "red[50]",
-              }}
-            }
+              },
+            }}
             title="Xóa Cửa Hàng"
           >
             <Delete sx={{ fontSize: 16 }} />
@@ -401,7 +409,14 @@ export default function StoresPage() {
   };
 
   return (
-    <Box sx={{ display: "flex", flexDirection: "column", height: "100%", bgcolor: (theme) => theme.palette.grey[50] }}>
+    <Box
+      sx={{
+        display: "flex",
+        flexDirection: "column",
+        height: "100%",
+        bgcolor: (theme) => theme.palette.grey[50],
+      }}
+    >
       <Box
         component="header"
         sx={{
@@ -415,16 +430,15 @@ export default function StoresPage() {
           px: 2,
         }}
       >
-       <Typography
-  variant="h6"
-  sx={(theme) => ({
-    color: theme.palette.grey[700],
-    fontWeight: theme.typography.fontWeightMedium, // hoặc số: 500
-  })}
->
-  Quản Lý Cửa Hàng
-</Typography>
-
+        <Typography
+          variant="h6"
+          sx={(theme) => ({
+            color: theme.palette.grey[700],
+            fontWeight: theme.typography.fontWeightMedium, // hoặc số: 500
+          })}
+        >
+          Quản Lý Cửa Hàng
+        </Typography>
       </Box>
 
       <Box
@@ -439,14 +453,13 @@ export default function StoresPage() {
       >
         <Box>
           <Typography
-  variant="body2"
-  sx={(theme) => ({
-    color: theme.palette.grey[600],
-  })}
->
-  Quản lý cửa hàng, đơn hàng, sản phẩm
-</Typography>
-
+            variant="body2"
+            sx={(theme) => ({
+              color: theme.palette.grey[600],
+            })}
+          >
+            Quản lý cửa hàng, đơn hàng, sản phẩm
+          </Typography>
         </Box>
 
         <StoreStatsCards />

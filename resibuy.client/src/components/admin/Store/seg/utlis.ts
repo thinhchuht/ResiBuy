@@ -6,7 +6,8 @@ import { fakeOrders } from "../../../../fakeData/fakeOrderData";
 import { fakeOrderItems } from "../../../../fakeData/fakeOrderData";
 import { fakeUsers } from "../../../../fakeData/fakeUserData";
 import type { SxProps, Theme } from "@mui/material";
-export interface StoreFormData {
+import { useToastify } from "../../../../hooks/useToastify";
+  export interface StoreFormData {
   name: string;
   address: string;
   phoneNumber: string;
@@ -15,6 +16,7 @@ export interface StoreFormData {
   imageUrl: string;
   isActive: boolean;
 }
+
 
 // Hook quản lý stores
 export function useStoresLogic() {
@@ -25,7 +27,7 @@ export function useStoresLogic() {
   const [editingStore, setEditingStore] = useState<Store | null>(null);
   const [selectedOrder, setSelectedOrder] = useState<Order | null>(null);
 
-
+const toast = useToastify();
 const getUserById = (userId: string): User | undefined =>{
     fakeUsers.find((user) => user.id === userId);
 };
@@ -66,13 +68,16 @@ const getUserById = (userId: string): User | undefined =>{
       // Update selectedStore if viewing details
       if (selectedStore && selectedStore.id === storeData.id) {
         setSelectedStore(storeData);
+         toast.success("Cập nhật cửa hàng thành công!");
       }
     } else {
       // Add new store
       setStores((prev) => [...prev, storeData]);
+         toast.success("Thêm cửa hàng mới thành công!");
     }
     setIsAddModalOpen(false);
     setEditingStore(null);
+
   };
 
   const handleDeleteStore = (storeId: string) => {
@@ -88,21 +93,24 @@ const getUserById = (userId: string): User | undefined =>{
     }
   };
 
-  const handleToggleStoreStatus = (storeId: string) => {
-    setStores((prev) =>
-      prev.map((store) =>
-        store.id === storeId
-          ? { ...store, isActive: !store.isActive }
-          : store
-      )
+ const handleToggleStoreStatus = (storeId: string) => {
+  setStores((prev) =>
+    prev.map((store) =>
+      store.id === storeId
+        ? { ...store, isActive: !store.isActive }
+        : store
+    )
+  );
+  if (selectedStore && selectedStore.id === storeId) {
+    setSelectedStore((prev) =>
+      prev ? { ...prev, isActive: !prev.isActive } : null
     );
-    // Update selectedStore if viewing details
-    if (selectedStore && selectedStore.id === storeId) {
-      setSelectedStore((prev) =>
-        prev ? { ...prev, isActive: !prev.isActive } : null
-      );
-    }
-  };
+  }
+
+  const store = stores.find((s) => s.id === storeId);
+  const newStatus = store?.isActive ? "ngừng hoạt động" : "hoạt động lại";
+  toast.info(`Cửa hàng đã được ${newStatus}.`);
+};
 
   const handleExportStores = () => {
     const headers = [
@@ -140,6 +148,7 @@ const getUserById = (userId: string): User | undefined =>{
     a.download = `stores_${new Date().toISOString().split("T")[0]}.csv`;
     a.click();
     window.URL.revokeObjectURL(url);
+      toast.success("Export danh sách cửa hàng thành công!");
   };
 
   // Hàm đếm số sản phẩm của một cửa hàng theo storeId
