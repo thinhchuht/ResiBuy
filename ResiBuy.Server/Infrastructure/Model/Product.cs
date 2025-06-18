@@ -5,6 +5,7 @@
         public int                   Id           { get; set; }
         public string                 Name         { get; set; }
         public string                 Describe     { get; set; }
+        public float                  Weight       { get; set; }
         public bool                   IsOutOfStock { get; set; }
         public int                    Discount     { get; set; }
         public int                    Sold         { get; set; }

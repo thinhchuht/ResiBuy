@@ -14,6 +14,7 @@ namespace ResiBuy.Server.Application.Commands.ProductCommands
                 {
                     Name = command.ProductDto.Name,
                     Describe = command.ProductDto.Describe,
+                    Weight = command.ProductDto.Weight,
                     IsOutOfStock = command.ProductDto.IsOutOfStock,
                     Discount = command.ProductDto.Discount,
                     CreatedAt = DateTime.UtcNow,
