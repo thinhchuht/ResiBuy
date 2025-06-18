@@ -6,7 +6,7 @@ using Microsoft.EntityFrameworkCore.Migrations;
 namespace ResiBuy.Server.Infrastructure.Migrations
 {
     /// <inheritdoc />
-    public partial class _1 : Migration
+    public partial class Initial_Create_01 : Migration
     {
         /// <inheritdoc />
         protected override void Up(MigrationBuilder migrationBuilder)
@@ -233,7 +233,6 @@ namespace ResiBuy.Server.Infrastructure.Migrations
                         .Annotation("SqlServer:Identity", "1, 1"),
                     Name = table.Column<string>(type: "nvarchar(max)", nullable: true),
                     Describe = table.Column<string>(type: "nvarchar(max)", nullable: true),
-                    Weight = table.Column<float>(type: "real", nullable: false),
                     IsOutOfStock = table.Column<bool>(type: "bit", nullable: false),
                     Discount = table.Column<int>(type: "int", nullable: false),
                     Sold = table.Column<int>(type: "int", nullable: false),
@@ -294,7 +293,8 @@ namespace ResiBuy.Server.Infrastructure.Migrations
                     IsOutOfStock = table.Column<bool>(type: "bit", nullable: false),
                     ProductId = table.Column<int>(type: "int", nullable: false),
                     Sold = table.Column<int>(type: "int", nullable: false),
-                    Price = table.Column<decimal>(type: "decimal(18,2)", nullable: false)
+                    Price = table.Column<decimal>(type: "decimal(18,2)", nullable: false),
+                    Weight = table.Column<int>(type: "int", nullable: false)
                 },
                 constraints: table =>
                 {
@@ -440,7 +440,7 @@ namespace ResiBuy.Server.Infrastructure.Migrations
                     Name = table.Column<string>(type: "nvarchar(max)", nullable: true),
                     ProductDetailId = table.Column<int>(type: "int", nullable: true),
                     UserId = table.Column<string>(type: "nvarchar(450)", nullable: true),
-                    CategoryId = table.Column<Guid>(type: "uniqueidentifier", nullable: false)
+                    CategoryId = table.Column<Guid>(type: "uniqueidentifier", nullable: true)
                 },
                 constraints: table =>
                 {
@@ -521,7 +521,7 @@ namespace ResiBuy.Server.Infrastructure.Migrations
             migrationBuilder.InsertData(
                 table: "Users",
                 columns: new[] { "Id", "AvatarId", "CreatedAt", "DateOfBirth", "Email", "EmailConfirmed", "FullName", "IdentityNumber", "IsLocked", "PasswordHash", "PhoneNumber", "PhoneNumberConfirmed", "Roles", "UpdatedAt" },
-                values: new object[] { "adm_df", null, new DateTime(2025, 6, 18, 1, 47, 56, 583, DateTimeKind.Local).AddTicks(6426), new DateTime(1990, 1, 1, 0, 0, 0, 0, DateTimeKind.Unspecified), "admin@123", true, "Administrator", "admin", false, "$2a$11$IitenmplatJ2Xr8kiEHc.OFsvlHhK17E.QliY7vHpsxJI0zceCEV2", "admin", true, "[\"ADMIN\"]", new DateTime(2025, 6, 18, 1, 47, 56, 583, DateTimeKind.Local).AddTicks(6450) });
+                values: new object[] { "adm_df", null, new DateTime(2025, 6, 18, 23, 2, 23, 59, DateTimeKind.Local).AddTicks(7422), new DateTime(1990, 1, 1, 0, 0, 0, 0, DateTimeKind.Unspecified), "admin@123", true, "Administrator", "admin", false, "$2a$11$HL0/t9Pe17zdro5NA6OnRePaKbGXMgB6Q.9nEsMUZFBrC0sIILrBi", "admin", true, "[\"ADMIN\"]", new DateTime(2025, 6, 18, 23, 2, 23, 59, DateTimeKind.Local).AddTicks(7443) });
 
             migrationBuilder.CreateIndex(
                 name: "IX_AdditionalDatas_ProductDetailId",
@@ -554,7 +554,8 @@ namespace ResiBuy.Server.Infrastructure.Migrations
                 name: "IX_Images_CategoryId",
                 table: "Images",
                 column: "CategoryId",
-                unique: true);
+                unique: true,
+                filter: "[CategoryId] IS NOT NULL");
 
             migrationBuilder.CreateIndex(
                 name: "IX_Images_ProductDetailId",

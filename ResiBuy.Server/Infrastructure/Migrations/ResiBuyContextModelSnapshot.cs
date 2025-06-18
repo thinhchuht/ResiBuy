@@ -149,7 +149,7 @@ namespace ResiBuy.Server.Infrastructure.Migrations
                     b.Property<string>("Id")
                         .HasColumnType("nvarchar(450)");
 
-                    b.Property<Guid>("CategoryId")
+                    b.Property<Guid?>("CategoryId")
                         .HasColumnType("uniqueidentifier");
 
                     b.Property<string>("Name")
@@ -170,7 +170,8 @@ namespace ResiBuy.Server.Infrastructure.Migrations
                     b.HasKey("Id");
 
                     b.HasIndex("CategoryId")
-                        .IsUnique();
+                        .IsUnique()
+                        .HasFilter("[CategoryId] IS NOT NULL");
 
                     b.HasIndex("ProductDetailId")
                         .IsUnique()
@@ -302,9 +303,6 @@ namespace ResiBuy.Server.Infrastructure.Migrations
                     b.Property<DateTime>("UpdatedAt")
                         .HasColumnType("datetime2");
 
-                    b.Property<float>("Weight")
-                        .HasColumnType("real");
-
                     b.HasKey("Id");
 
                     b.HasIndex("CategoryId");
@@ -332,6 +330,9 @@ namespace ResiBuy.Server.Infrastructure.Migrations
                         .HasColumnType("int");
 
                     b.Property<int>("Sold")
+                        .HasColumnType("int");
+
+                    b.Property<int>("Weight")
                         .HasColumnType("int");
 
                     b.HasKey("Id");
@@ -552,18 +553,18 @@ namespace ResiBuy.Server.Infrastructure.Migrations
                         new
                         {
                             Id = "adm_df",
-                            CreatedAt = new DateTime(2025, 6, 18, 1, 47, 56, 583, DateTimeKind.Local).AddTicks(6426),
+                            CreatedAt = new DateTime(2025, 6, 18, 23, 2, 23, 59, DateTimeKind.Local).AddTicks(7422),
                             DateOfBirth = new DateTime(1990, 1, 1, 0, 0, 0, 0, DateTimeKind.Unspecified),
                             Email = "admin@123",
                             EmailConfirmed = true,
                             FullName = "Administrator",
                             IdentityNumber = "admin",
                             IsLocked = false,
-                            PasswordHash = "$2a$11$IitenmplatJ2Xr8kiEHc.OFsvlHhK17E.QliY7vHpsxJI0zceCEV2",
+                            PasswordHash = "$2a$11$HL0/t9Pe17zdro5NA6OnRePaKbGXMgB6Q.9nEsMUZFBrC0sIILrBi",
                             PhoneNumber = "admin",
                             PhoneNumberConfirmed = true,
                             Roles = "[\"ADMIN\"]",
-                            UpdatedAt = new DateTime(2025, 6, 18, 1, 47, 56, 583, DateTimeKind.Local).AddTicks(6450)
+                            UpdatedAt = new DateTime(2025, 6, 18, 23, 2, 23, 59, DateTimeKind.Local).AddTicks(7443)
                         });
                 });
 
@@ -693,8 +694,7 @@ namespace ResiBuy.Server.Infrastructure.Migrations
                     b.HasOne("ResiBuy.Server.Infrastructure.Model.Category", "Category")
                         .WithOne("Image")
                         .HasForeignKey("ResiBuy.Server.Infrastructure.Model.Image", "CategoryId")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired();
+                        .OnDelete(DeleteBehavior.Cascade);
 
                     b.HasOne("ResiBuy.Server.Infrastructure.Model.ProductDetail", "ProductDetail")
                         .WithOne("Image")
