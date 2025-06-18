@@ -12,7 +12,7 @@ import CheckoutVoucherSection from "./CheckoutVoucherSection";
 import NoteSection from "./NoteSection";
 import CheckoutSummarySection from "./CheckoutSummarySection";
 import NotFound from "../../components/NotFound";
-import vnPayApi from "../../api/vnpay.api";
+import vnPayApi, { type CheckoutRequest } from "../../api/vnpay.api";
 import { useToastify } from "../../hooks/useToastify";
 import { formatPrice } from "../../utils/priceUtils";
 
@@ -35,7 +35,7 @@ export interface checkoutItems {
   storeId: string;
   note: string;
   productDetailId: string;
-  quantity : number
+  quantity: number;
 }
 
 const Checkout: React.FC = () => {
@@ -158,32 +158,56 @@ const Checkout: React.FC = () => {
         Note: notes[groupedItems[idx].storeId],
       }));
 
-      console.log(allOrders)
+      console.log("Checkout data:", allOrders);
 
-      // if (info.paymentMethod === "bank-transfer") {
-      //   const response = await vnPayApi.getPaymentUrl(grandTotal, `ORDER_${Date.now()}`, `Thanh toan don hang ResiBuy - ${allOrders.length} don`);
+      if (info.paymentMethod === "bank-transfer") {
+        // Create checkout request with session
+        const checkoutRequest: CheckoutRequest = {
+          orders: allOrders.map((order) => ({
+            voucherId: order.VoucherId,
+            totalPrice: order.TotalPrice,
+            items: order.Items.map((item) => ({
+              quantity: item.Quantity,
+              price: item.Price,
+              productDetailId: item.ProductDetailId.toString(),
+            })),
+            roomId: order.RoomId,
+            areaId: order.AreaId,
+            buildingId: order.BuildingId,
+            paymentMethod: order.PaymentMethod,
+            note: order.Note,
+          })),
+          totalAmount: grandTotal,
+          paymentMethod: info.paymentMethod,
+          userId: user?.id || "",
+        };
 
-      //   if (response.success) {
-      //     window.history.replaceState({}, "");
-      //     window.location.href = response.data.paymentUrl;
-      //   } else {
-      //     toast.error("Lỗi khi tạo thanh toán, thử lại sau.");
-      //     console.error("Payment creation failed:", response.error);
-      //   }
-      // } else if (info.paymentMethod === "cash") {
-      //   window.history.replaceState({}, "");
-      //   navigate("/checkout-success", {
-      //     state: { isOrderSuccess: true },
-      //   });
-      // }
+        const response = await vnPayApi.createPaymentWithSession(checkoutRequest);
+
+        if (response.success) {
+          window.history.replaceState({}, "");
+          window.location.href = response.data.paymentUrl;
+        } else {
+          toast.error("Lỗi khi tạo thanh toán, thử lại sau.");
+          console.error("Payment creation failed:", response.error);
+        }
+      } else if (info.paymentMethod === "cash") {
+        // For cash payment, you might want to create orders directly
+        // or implement a different flow
+        window.history.replaceState({}, "");
+        navigate("/checkout-success", {
+          state: { isOrderSuccess: true },
+        });
+      }
     } catch (error) {
       console.error("Checkout error:", error);
+      toast.error("Có lỗi xảy ra, vui lòng thử lại.");
     } finally {
       setIsLoading(false);
     }
   };
 
-  const userRooms = user?.rooms?.map(r => ({
+  const userRooms = user?.rooms?.map((r) => ({
     roomId: r.id,
     roomName: r.name,
     buildingName: r.buildingName,
@@ -228,13 +252,7 @@ const Checkout: React.FC = () => {
           ))}
         </Box>
         <Box sx={{ width: 400, flexShrink: 0 }}>
-          <CheckoutSummarySection
-            orders={orders}
-            grandTotal={grandTotal}
-            onCheckout={handleCheckout}
-            userRooms={userRooms}
-            isLoading={isLoading}
-          />
+          <CheckoutSummarySection orders={orders} grandTotal={grandTotal} onCheckout={handleCheckout} userRooms={userRooms} isLoading={isLoading} />
         </Box>
       </Box>
       <VoucherSelectionModal

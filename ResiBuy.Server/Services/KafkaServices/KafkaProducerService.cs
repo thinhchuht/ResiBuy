@@ -19,9 +19,9 @@ public class KafkaProducerService : IKafkaProducerService, IDisposable
         _producer = new ProducerBuilder<string, string>(config).Build();
     }
 
-    public Task ProduceMessageAsync(string key, string message, string topic )
+    public void ProduceMessageAsync(string key, string message, string topic)
     {
-        return Task.Run(async () =>
+        _ = Task.Run(async () =>
         {
             try
             {
@@ -41,8 +41,13 @@ public class KafkaProducerService : IKafkaProducerService, IDisposable
             }
             catch (ProduceException<string, string> ex)
             {
-                Console.WriteLine($"Failed to deliver message: {ex.Error.Reason}");
-                throw;
+                Console.WriteLine($"Kafka send failed: {ex.Error.Reason}");
+                throw new CustomException(ExceptionErrorCode.RepositoryError, message, ex);
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"Unexpected error while sending Kafka message: {ex.Message}");
+                throw new CustomException(ExceptionErrorCode.RepositoryError, message, ex);
             }
         });
     }

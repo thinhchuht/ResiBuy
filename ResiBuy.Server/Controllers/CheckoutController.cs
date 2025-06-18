@@ -1,18 +1,17 @@
-﻿using ResiBuy.Server.Application.Commands.CheckoutCommands;
-
-namespace ResiBuy.Server.Controllers
+﻿namespace ResiBuy.Server.Controllers
 {
     [Route("api/[controller]")]
     [ApiController]
-    public class CheckoutController(IMediator mediator) : ControllerBase
+    public class CheckoutController(IKafkaProducerService producer) : ControllerBase
     {
         [HttpPost("checkout")]
-        public async Task<IActionResult> Checkout([FromBody] CheckoutDto checkoutDto)
+        public IActionResult Checkout ([FromBody] CheckoutDto checkoutDto)
         {
             try
             {
-                var result = await mediator.Send(new CheckoutCommand(checkoutDto));
-                return Ok(result);
+                var message = JsonSerializer.Serialize(checkoutDto);
+                producer.ProduceMessageAsync("checkout", message, "checkout-topic");
+                return Ok(ResponseModel.SuccessResponse());
             }
             catch (Exception ex)
             {

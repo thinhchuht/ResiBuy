@@ -7,7 +7,7 @@ import { useAuth } from "../../../contexts/AuthContext";
 import { useToastify } from "../../../hooks/useToastify";
 import { useNavigate } from "react-router-dom";
 import { formatPrice } from "../../../utils/priceUtils";
-import Tooltip from '@mui/material/Tooltip';
+import Tooltip from "@mui/material/Tooltip";
 import cartApi from "../../../api/cart.api";
 
 interface ProductInfoSectionProps {
@@ -25,7 +25,7 @@ const ProductInfoSection: React.FC<ProductInfoSectionProps> = ({ product, quanti
   const navigate = useNavigate();
 
   const optionGroups: Record<string, string[]> = {};
-  product.productDetails.forEach(detail => {
+  product.productDetails.forEach((detail) => {
     if (Array.isArray(detail.additionalData)) {
       detail.additionalData.forEach(({ key, value }) => {
         if (!optionGroups[key]) optionGroups[key] = [];
@@ -42,14 +42,14 @@ const ProductInfoSection: React.FC<ProductInfoSectionProps> = ({ product, quanti
     return initial;
   });
 
-  const selectedDetail = product.productDetails.find((detail) => {
-    if (!Array.isArray(detail.additionalData)) return false;
-    const keys = Object.keys(selectedOptions);
-    return keys.every((key) =>
-      Array.isArray(detail.additionalData) &&
-      detail.additionalData.some((ad: { key: string; value: string }) => ad.key === key && ad.value === selectedOptions[key])
-    );
-  }) || null;
+  const selectedDetail =
+    product.productDetails.find((detail) => {
+      if (!Array.isArray(detail.additionalData)) return false;
+      const keys = Object.keys(selectedOptions);
+      return keys.every(
+        (key) => Array.isArray(detail.additionalData) && detail.additionalData.some((ad: { key: string; value: string }) => ad.key === key && ad.value === selectedOptions[key])
+      );
+    }) || null;
 
   const handleOptionChange = (key: string, value: string) => {
     const keys = Object.keys(optionGroups);
@@ -63,12 +63,11 @@ const ProductInfoSection: React.FC<ProductInfoSectionProps> = ({ product, quanti
 
     for (let i = idx + 1; i < keys.length; i++) {
       const k = keys[i];
-      const validValue = optionGroups[k].find(v => {
+      const validValue = optionGroups[k].find((v) => {
         const testOptions = { ...newSelected, [k]: v };
         return product.productDetails.some((detail) =>
-          Object.entries(testOptions).every(([kk, vv]) =>
-            Array.isArray(detail.additionalData) &&
-            detail.additionalData.some((ad: { key: string; value: string }) => ad.key === kk && ad.value === vv)
+          Object.entries(testOptions).every(
+            ([kk, vv]) => Array.isArray(detail.additionalData) && detail.additionalData.some((ad: { key: string; value: string }) => ad.key === kk && ad.value === vv)
           )
         );
       });
@@ -85,7 +84,7 @@ const ProductInfoSection: React.FC<ProductInfoSectionProps> = ({ product, quanti
     if (!selectedDetail || !user) return;
     console.log(selectedDetail.id);
     console.log(quantity);
-    cartApi.addToCart( user?.cartId, selectedDetail.id, quantity );
+    cartApi.addToCart(user?.cartId, quantity, selectedDetail.id);
     toast.success(`Đã thêm sản phẩm vào giỏ hàng!`);
   };
 
@@ -101,10 +100,10 @@ const ProductInfoSection: React.FC<ProductInfoSectionProps> = ({ product, quanti
   const handleQuantityInputChange = (event: React.ChangeEvent<HTMLInputElement>) => {
     let value = parseInt(event.target.value);
     if (isNaN(value) || value < 1) {
-      value = 1; 
+      value = 1;
     }
     if (value > 10) {
-      value = 10; 
+      value = 10;
     }
     handleQuantityChange(value);
   };
@@ -163,9 +162,8 @@ const ProductInfoSection: React.FC<ProductInfoSectionProps> = ({ product, quanti
                     });
                     testOptions[key] = value;
                     isValid = product.productDetails.some((detail) =>
-                      Object.entries(testOptions).every(([k, v]) =>
-                        Array.isArray(detail.additionalData) &&
-                        detail.additionalData.some((ad: { key: string; value: string }) => ad.key === k && ad.value === v)
+                      Object.entries(testOptions).every(
+                        ([k, v]) => Array.isArray(detail.additionalData) && detail.additionalData.some((ad: { key: string; value: string }) => ad.key === k && ad.value === v)
                       )
                     );
                   }
@@ -197,12 +195,13 @@ const ProductInfoSection: React.FC<ProductInfoSectionProps> = ({ product, quanti
                           color: "#00D1FF",
                           borderColor: "#00D1FF",
                         },
-                      }}
-                    >
+                      }}>
                       <span>{value}</span>
                     </Button>
                   );
-                  return isValid ? button : (
+                  return isValid ? (
+                    button
+                  ) : (
                     <Tooltip key={value} title="Hiện tại đang hết hàng" arrow>
                       <span>{button}</span>
                     </Tooltip>
@@ -274,8 +273,7 @@ const ProductInfoSection: React.FC<ProductInfoSectionProps> = ({ product, quanti
               },
               flex: 1,
             }}
-            onClick={handleAddToCart}
-          >
+            onClick={handleAddToCart}>
             Thêm vào giỏ hàng
           </Button>
         </Box>
