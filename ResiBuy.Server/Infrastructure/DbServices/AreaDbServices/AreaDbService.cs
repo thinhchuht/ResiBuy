@@ -15,7 +15,7 @@
             {
                 IEnumerable<Area> areas = await _context.Areas
                     .Include(a => a.Buildings)
-                    .Include(a => a.Shippers)
+                    .ThenInclude(b => b.Rooms)
                     .ToListAsync();
                 return areas;
             }

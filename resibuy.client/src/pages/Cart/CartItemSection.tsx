@@ -2,13 +2,15 @@ import { Box, Typography, IconButton, Checkbox, Table, TableBody, TableCell, Tab
 import { Add, Remove, Delete } from "@mui/icons-material";
 import { useNavigate } from "react-router-dom";
 import type { CartItem as CartItemType } from "../../types/models";
-import { formatPrice, getMinPrice } from "../../utils/priceUtils";
+import { formatPrice } from "../../utils/priceUtils";
+import { useEffect, useRef, useState } from "react";
+import debounce from "lodash.debounce";
 
 interface CartItemSectionProps {
   items: CartItemType[];
   selectedItems: string[];
   onSelect: (itemId: string) => void;
-  onQuantityChange: (itemId: string, newQuantity: number) => void;
+  onQuantityChange: (productDetailId: number, newQuantity: number) => void;
   onRemove: (itemId: string) => void;
   page: number;
   rowsPerPage: number;
@@ -35,27 +37,61 @@ const CartItemSection = ({
 }: CartItemSectionProps) => {
   const navigate = useNavigate();
 
-  const getCartItemPrice = (item: CartItemType) => getMinPrice(item.product);
+  const [localQuantities, setLocalQuantities] = useState<{ [productDetailId: number]: number }>({});
 
-  const calculateItemTotal = (item: CartItemType): string => {
-    return formatPrice(getCartItemPrice(item) * item.quantity);
+  useEffect(() => {
+    const initialQuantities: { [productDetailId: number]: number } = {};
+    items.forEach((item) => {
+      initialQuantities[item.productDetailId] = item.quantity;
+    });
+    setLocalQuantities(initialQuantities);
+  }, [items]);
+
+  // Bỏ phần ref timer, thay bằng ref lưu debounce function
+  const debounceRefs = useRef<{ [productDetailId: number]: ((id: number, value: number) => void) & { cancel?: () => void } }>({});
+
+  const getDebouncedChange = (productDetailId: number) => {
+    if (!debounceRefs.current[productDetailId]) {
+      debounceRefs.current[productDetailId] = debounce((id: number, value: number) => {
+        onQuantityChange(id, value);
+      }, 400);
+    }
+    return debounceRefs.current[productDetailId];
   };
+
+  // Handler cho input số lượng
+  const handleQuantityInputChange = (productDetailId: number, event: React.ChangeEvent<HTMLInputElement>) => {
+    let value = parseInt(event.target.value);
+    if (isNaN(value) || value < 1) {
+      value = 1;
+    }
+    if (value > 10) {
+      value = 10;
+    }
+    setLocalQuantities((prev) => ({ ...prev, [productDetailId]: value }));
+    getDebouncedChange(productDetailId)(productDetailId, value);
+  };
+
+  // Handler cho nút +/-, tương tự
+  const handleQuantityButton = (productDetailId: number, newQuantity: number) => {
+    if (newQuantity < 1) newQuantity = 1;
+    if (newQuantity > 10) newQuantity = 10;
+    setLocalQuantities((prev) => ({ ...prev, [productDetailId]: newQuantity }));
+    getDebouncedChange(productDetailId)(productDetailId, newQuantity);
+  };
+
+  // Cleanup debounce khi unmount
+  useEffect(() => {
+    return () => {
+      // eslint-disable-next-line react-hooks/exhaustive-deps
+      Object.values(debounceRefs.current).forEach((fn) => fn.cancel && fn.cancel());
+    };
+  }, []);
 
   const tableCellStyle = {
     wordBreak: "break-word" as const,
     whiteSpace: "normal" as const,
     maxWidth: "200px",
-  };
-
-  const handleQuantityInputChange = (itemId: string, event: React.ChangeEvent<HTMLInputElement>) => {
-    let value = parseInt(event.target.value);
-    if (isNaN(value) || value < 1) {
-      value = 1; // Mặc định về 1 nếu không hợp lệ
-    }
-    if (value > 10) {
-      value = 10; // Giới hạn tối đa là 10
-    }
-    onQuantityChange(itemId, value);
   };
 
   return (
@@ -95,7 +131,8 @@ const CartItemSection = ({
         </TableHead>
         <TableBody>
           {items.map((item, index) => {
-            const product = item.product;
+            const productDetail = item.productDetail;
+            const product = productDetail.product;
             return (
               <TableRow key={item.id}>
                 <TableCell padding="checkbox">
@@ -107,8 +144,8 @@ const CartItemSection = ({
                 <TableCell sx={{ ...tableCellStyle, minWidth: "300px" }}>
                   <Box sx={{ display: "flex", alignItems: "center", gap: 2 }}>
                     <img
-                      src={product.productImgs[0]?.thumbUrl}
-                      alt={product.productImgs[0].name}
+                      src={productDetail.image?.thumbUrl || productDetail.image?.url}
+                      alt={product.name}
                       style={{
                         width: "80px",
                         height: "80px",
@@ -124,9 +161,7 @@ const CartItemSection = ({
                         fontWeight="bold"
                         sx={{
                           cursor: "pointer",
-                          "&:hover": {
-                            color: "red",
-                          },
+                          "&:hover": { color: "red" },
                           overflow: "hidden",
                           textOverflow: "ellipsis",
                           display: "-webkit-box",
@@ -137,27 +172,33 @@ const CartItemSection = ({
                         {product.name}
                       </Typography>
                       <Typography variant="body2" color="text.secondary">
-                        Giá: {formatPrice(getCartItemPrice(item))}
+                        Giá :
+                        {product.discount > 0 ? (
+                          <>
+                            <span style={{ textDecoration: "line-through", color: "#888", marginRight: 6, marginLeft: 4 }}>{formatPrice(productDetail.price)}</span>
+                            <span style={{ color: "red", fontWeight: 600 }}>{formatPrice(productDetail.price * (1 - product.discount / 100))}</span>
+                          </>
+                        ) : (
+                          <span>{formatPrice(productDetail.price)}</span>
+                        )}
                       </Typography>
                       <Typography variant="body2" color="text.secondary">
-                        Phân loại: {item.costData.key} - {item.costData.value}
+                        {Array.isArray(productDetail.additionalData) ? productDetail.additionalData.map((ad) => ad.value).join(", ") : ""}
                       </Typography>
-                      {item.cartItemUncosts && item.cartItemUncosts.length > 0 && (
-                        <Typography variant="body2" color="text.secondary">
-                          Tùy chọn: {item.cartItemUncosts.map((uncost) => `${uncost.uncostData.key}: ${uncost.uncostData.value}`).join(", ")}
-                        </Typography>
-                      )}
                     </Box>
                   </Box>
                 </TableCell>
                 <TableCell align="right" sx={{ ...tableCellStyle, minWidth: "150px" }}>
                   <Box sx={{ display: "flex", alignItems: "center", gap: 1, justifyContent: "flex-end" }}>
-                    <IconButton size="small" onClick={() => onQuantityChange(item.id, item.quantity - 1)} disabled={item.quantity <= 1}>
+                    <IconButton
+                      size="small"
+                      onClick={() => handleQuantityButton(item.productDetailId, (localQuantities[item.productDetailId] || 1) - 1)}
+                      disabled={(localQuantities[item.productDetailId] || 1) <= 1}>
                       <Remove fontSize="small" />
                     </IconButton>
                     <TextField
-                      value={item.quantity}
-                      onChange={(e: React.ChangeEvent<HTMLInputElement>) => handleQuantityInputChange(item.id, e)}
+                      value={localQuantities[item.productDetailId] ?? item.quantity}
+                      onChange={(e: React.ChangeEvent<HTMLInputElement>) => handleQuantityInputChange(item.productDetailId, e)}
                       variant="standard"
                       size="small"
                       sx={{
@@ -179,7 +220,10 @@ const CartItemSection = ({
                         style: { textAlign: "center" },
                       }}
                     />
-                    <IconButton size="small" onClick={() => onQuantityChange(item.id, item.quantity + 1)} disabled={item.quantity >= 10}>
+                    <IconButton
+                      size="small"
+                      onClick={() => handleQuantityButton(item.productDetailId, (localQuantities[item.productDetailId] || 1) + 1)}
+                      disabled={(localQuantities[item.productDetailId] || 1) >= 10}>
                       <Add fontSize="small" />
                     </IconButton>
                     <IconButton size="small" color="error" onClick={() => onRemove(item.id)}>
@@ -192,7 +236,7 @@ const CartItemSection = ({
                 </TableCell>
                 <TableCell align="right" sx={{ ...tableCellStyle, minWidth: "150px" }}>
                   <Typography variant="h6" color="red">
-                    {calculateItemTotal(item)}
+                    {formatPrice(productDetail.price * (1 - (product.discount || 0) / 100) * item.quantity)}
                   </Typography>
                 </TableCell>
               </TableRow>

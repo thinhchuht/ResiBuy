@@ -54,6 +54,19 @@
             if (building == null) return null;
             return building;
         }
+
+        public async Task<IEnumerable<Building>> GetByAreaIdAsync(Guid id)
+        {
+            try
+            {
+                return await context.Buildings.Where(b => b.AreaId == id).ToListAsync();
+            }
+            catch (Exception ex)
+            {
+                throw new CustomException(ExceptionErrorCode.RepositoryError, ex.Message);
+            }
+        }
+
         public async Task<Building> GetByIdAsync(Guid id)
         {
             try

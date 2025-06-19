@@ -9,6 +9,14 @@ interface ProductImageSectionProps {
 }
 
 const ProductImageSection: React.FC<ProductImageSectionProps> = ({ product }) => {
+  // Map images from all productDetails
+  const productImages = product.productDetails
+    .filter(detail => detail.image) // Filter out details without images
+    .map((detail, idx) => ({ 
+      id: idx, 
+      img: detail.image.thumbUrl || detail.image.url 
+    }));
+
   return (
     <Box sx={{ width: { xs: "100%", md: "50%" } }}>
       <Breadcrumbs aria-label="breadcrumb" sx={{ mb: 1, fontSize: 24 }}>
@@ -35,7 +43,7 @@ const ProductImageSection: React.FC<ProductImageSectionProps> = ({ product }) =>
         }}>
         <StackCard
           cardDimensions={{ width: 400, height: 400 }}
-          cardsData={product.productImgs .map((img, idx) => ({ id: idx, img: img.imgUrl }))}
+          cardsData={productImages}
           randomRotation={true}
           sensitivity={100}
         />

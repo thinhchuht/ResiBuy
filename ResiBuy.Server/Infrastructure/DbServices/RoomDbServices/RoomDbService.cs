@@ -44,7 +44,9 @@
         {
             try
             {
-                return await _context.Rooms.Include(r => r.UserRooms).ThenInclude(ur => ur.User).ToListAsync();
+                var a = await _context.Rooms.ToListAsync();
+                var b = await _context.Rooms.Include(r => r.UserRooms).ToListAsync();
+                return b;
             }
             catch (Exception ex)
             {
@@ -85,6 +87,18 @@
                 }
 
                 return rooms;
+            }
+            catch (Exception ex)
+            {
+                throw new CustomException(ExceptionErrorCode.RepositoryError, ex.Message);
+            }
+        }
+
+        public async Task<IEnumerable<Room>> GetByBuildingIdAsync(Guid id)
+        {
+            try
+            {
+                return await _context.Rooms.Where(r => r.BuildingId == id).ToListAsync();
             }
             catch (Exception ex)
             {

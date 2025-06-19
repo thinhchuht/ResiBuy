@@ -4,7 +4,7 @@ using ResiBuy.Server.Infrastructure.Model.DTOs.CartDtos;
 namespace ResiBuy.Server.Application.Commands.CartCommands
 {
     public record DeleteCartItemsCommand(DeleteCartItemsDto Dto) : IRequest<ResponseModel>;
-    public class DeleteCartItemsCommandHandler(ICartItemDbService cartItemDbService) : IRequestHandler<DeleteCartItemsCommand, ResponseModel>
+    public class DeleteCartItemsCommandHandler(ICartItemDbService cartItemDbService, ICartDbService cartDbService) : IRequestHandler<DeleteCartItemsCommand, ResponseModel>
     {
         public async Task<ResponseModel> Handle(DeleteCartItemsCommand command, CancellationToken cancellationToken)
         {

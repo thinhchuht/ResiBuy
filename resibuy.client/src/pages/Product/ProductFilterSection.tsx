@@ -2,8 +2,8 @@ import { Box, Typography, Button, Slider, Stack, Paper } from "@mui/material";
 import type { Category } from "../../types/models";
 
 interface ProductFilterProps {
-  selectedCategory: string;
-  setSelectedCategory: (id: string) => void;
+  selectedCategory: string | null;
+  setSelectedCategory: (id: string | null) => void;
   priceRange: number[];
   setPriceRange: (range: number[]) => void;
   fakeCategories: Category[];
@@ -34,14 +34,14 @@ const ProductFilterSection = ({ selectedCategory, setSelectedCategory, priceRang
       </Typography>
       <Stack spacing={1}>
         <Button
-          variant={selectedCategory === "all" ? "contained" : "text"}
-          onClick={() => setSelectedCategory("all")}
+          variant={selectedCategory === null ? "contained" : "text"}
+          onClick={() => setSelectedCategory(null)}
           sx={{
             justifyContent: "flex-start",
-            color: selectedCategory === "all" ? "#fff" : "#666",
-            bgcolor: selectedCategory === "all" ? "#FF6B6B" : "transparent",
+            color: selectedCategory === null ? "#fff" : "#666",
+            bgcolor: selectedCategory === null ? "#FF6B6B" : "transparent",
             "&:hover": {
-              bgcolor: selectedCategory === "all" ? "#FF6B6B" : "#f5f5f5",
+              bgcolor: selectedCategory === null ? "#FF6B6B" : "#f5f5f5",
             },
           }}>
           Tất cả

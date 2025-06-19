@@ -26,10 +26,11 @@ const ProductDetail: React.FC = () => {
         setLoading(true);
         if (productId) {
           const response = await productApi.getById(productId);
+          console.log(response.data)
           if (response.data) {
             setProduct(response.data);
           } else {
-            setProduct(null); // Product not found
+            setProduct(null); 
           }
         }
       } catch (error) {
