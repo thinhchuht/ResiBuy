@@ -22,6 +22,7 @@ import AdminLayout from "../layouts/AdminLayout";
 import Dashboard from "../pages/Admin/dashboard/Dashboard";
 import StoresPage from "../pages/Admin/Store/page";
 import CategoriesPage from "../pages/Admin/Category/page";
+import ShippersPage from "../pages/Admin/Shipper/page";
 const AppRoutes: React.FC = () => {
   const { user } = useAuth();
 
@@ -107,9 +108,7 @@ const AppRoutes: React.FC = () => {
               }
             >
               <Route path="dashboard" element={<Dashboard />} />
-              {/* Add other admin subroutes here, e.g.:
-              <Route path="products" element={<Products />} />
-              */}
+               <Route path="Shipper" element={<ShippersPage />} />
            <Route path="Category" element={<CategoriesPage />} />
             <Route path="Store" element={<StoresPage />} />
             </Route>}

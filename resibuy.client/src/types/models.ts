@@ -113,7 +113,11 @@ export interface Shipper {
   userId: string;
   isAvailable: boolean;
   orders: Order[];
+  startWorkTime: string;  
+  endWorkTime: string;    
+  reportCount: number;
 }
+
 
 export interface Voucher {
   id: string;

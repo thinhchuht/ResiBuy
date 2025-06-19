@@ -83,9 +83,9 @@ export function StoreDetailModal({
 
   const getStatusIcon = (isActive: boolean) => {
     return isActive ? (
-      <CheckCircle sx={{ fontSize: 20, color: "success.main" }} /> // Thay w-5 h-5 text-green-600
+      <CheckCircle sx={{ fontSize: 20, color: "success.main" }} />
     ) : (
-      <ToggleOff sx={{ fontSize: 20, color: "error.main" }} /> // Thay w-5 h-5 text-red-600
+      <ToggleOff sx={{ fontSize: 20, color: "error.main" }} />
     );
   };
 
@@ -97,35 +97,24 @@ export function StoreDetailModal({
       fullWidth
       sx={{
         "& .MuiDialog-paper": {
-          maxWidth: "80rem", // Thay max-w-5xl
-          height: "100%",
+          maxWidth: "80rem",
+          height: "90vh", // Giới hạn chiều cao modal
           margin: 0,
           borderRadius: 0,
-          boxShadow: 24, // Thay shadow-2xl
+          boxShadow: 24,
           transform: isOpen ? "translateX(0)" : "translateX(100%)",
-          transition: "transform 0.3s ease-in-out", // Thay transition-transform duration-300 ease-in-out
+          transition: "transform 0.3s ease-in-out",
+          display: "flex",
+          flexDirection: "column",
         },
       }}
       PaperProps={{ sx: { bgcolor: "background.paper" } }}
     >
-      {/* Backdrop */}
-      {/* <Box
-        sx={{
-          position: "fixed",
-          inset: 0,
-          bgcolor: "rgba(0, 0, 0, 0.6)", // Thay bg-black bg-opacity-60
-          zIndex: 9998,
-          transition: "opacity 0.3s", // Thay transition-opacity duration-300
-          opacity: isOpen ? 1 : 0,
-        }}
-        onClick={onClose}
-      /> */}
-
       <DialogTitle
         sx={{
-          p: 3, // Thay p-6
+          p: 3,
           borderBottom: 1,
-          borderColor: "grey.200", // Thay border-b border-gray-200
+          borderColor: "grey.200",
           bgcolor: "background.paper",
           position: "sticky",
           top: 0,
@@ -138,29 +127,29 @@ export function StoreDetailModal({
         <Box>
           <Typography
             variant="h6"
-            sx={{ color: "grey.900", fontWeight: "medium" }} // Thay text-xl font-semibold text-gray-900
+            sx={{ color: "grey.900", fontWeight: "medium" }}
           >
             Chi Tiết Cửa Hàng
           </Typography>
           <Typography
             variant="body2"
-            sx={{ color: "grey.500" }} // Thay text-sm text-gray-500
+            sx={{ color: "grey.500" }}
           >
             ID Cửa Hàng: {store.id}
           </Typography>
         </Box>
-        <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}> {/* Thay gap-2 */}
+        <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
           {onEdit && (
             <Button
               onClick={() => onEdit(store)}
-              startIcon={<Edit sx={{ fontSize: 16 }} />} // Thay w-4 h-4
+              startIcon={<Edit sx={{ fontSize: 16 }} />}
               sx={{
-                px: 1.5, // Thay px-3
-                py: 1, // Thay py-2
-                bgcolor: "primary.main", // Thay bg-blue-600
-                color: "white", // Thay text-white
-                borderRadius: 2, // Thay rounded-lg
-                "&:hover": { bgcolor: "primary.dark" }, // Thay hover:bg-blue-700
+                px: 1.5,
+                py: 1,
+                bgcolor: "primary.main",
+                color: "white",
+                borderRadius: 2,
+                "&:hover": { bgcolor: "primary.dark" },
               }}
             >
               Sửa
@@ -175,15 +164,15 @@ export function StoreDetailModal({
                 ) : (
                   <CheckCircle sx={{ fontSize: 16 }} />
                 )
-              } // Thay w-4 h-4
+              }
               sx={{
                 px: 1.5,
                 py: 1,
-                bgcolor: store.isActive ? "warning.main" : "success.main", // Thay bg-yellow-600, bg-green-600
+                bgcolor: store.isActive ? "warning.main" : "success.main",
                 color: "white",
                 borderRadius: 2,
                 "&:hover": {
-                  bgcolor: store.isActive ? "warning.dark" : "success.dark", // Thay hover:bg-yellow-700, hover:bg-green-700
+                  bgcolor: store.isActive ? "warning.dark" : "success.dark",
                 },
               }}
             >
@@ -193,14 +182,14 @@ export function StoreDetailModal({
           {onDelete && (
             <Button
               onClick={() => onDelete(store.id)}
-              startIcon={<Delete sx={{ fontSize: 16 }} />} // Thay w-4 h-4
+              startIcon={<Delete sx={{ fontSize: 16 }} />}
               sx={{
                 px: 1.5,
                 py: 1,
-                bgcolor: "error.main", // Thay bg-red-600
+                bgcolor: "error.main",
                 color: "white",
                 borderRadius: 2,
-                "&:hover": { bgcolor: "error.dark" }, // Thay hover:bg-red-700
+                "&:hover": { bgcolor: "error.dark" },
               }}
             >
               Xóa
@@ -209,32 +198,33 @@ export function StoreDetailModal({
           <IconButton
             onClick={onClose}
             sx={{
-              color: "grey.400", // Thay text-gray-400
+              color: "grey.400",
               bgcolor: "background.paper",
-              p: 1, // Thay p-2
-              borderRadius: 2, // Thay rounded-lg
+              p: 1,
+              borderRadius: 2,
               "&:hover": {
-                color: "grey.600", // Thay hover:text-gray-600
-                bgcolor: "grey.100", // Thay hover:bg-gray-100
+                color: "grey.600",
+                bgcolor: "grey.100",
               },
             }}
           >
-            <Close sx={{ fontSize: 20 }} /> {/* Thay h-5 w-5 */}
+            <Close sx={{ fontSize: 20 }} />
           </IconButton>
         </Box>
       </DialogTitle>
 
       <DialogContent
         sx={{
-          p: 3, // Thay p-6
-          bgcolor: "grey.50", // Thay bg-gray-50
+          p: 3,
+          bgcolor: "grey.50",
           borderBottom: 1,
-          borderColor: "grey.200", // Thay border-b border-gray-200
+          borderColor: "grey.200",
+          flex: "0 0 auto", // Không cho phép phần tóm tắt mở rộng
         }}
       >
         {/* Store Summary */}
-        <Box sx={{ display: "flex", gap: 3, alignItems: "flex-start" }}> {/* Thay gap-6 */}
-          <Box sx={{ width: 80, height: 80 }}> {/* Thay w-20 h-20 */}
+        <Box sx={{ display: "flex", gap: 3, alignItems: "flex-start" }}>
+          <Box sx={{ width: 80, height: 80 }}>
             {store.imageUrl ? (
               <Avatar
                 src={store.imageUrl}
@@ -242,11 +232,11 @@ export function StoreDetailModal({
                 sx={{
                   width: "100%",
                   height: "100%",
-                  borderRadius: "50%", // Thay rounded-full
+                  borderRadius: "50%",
                 }}
                 imgProps={{
                   onError: (e) => {
-                    e.currentTarget.src = "/images/default-store.png"; // Hình ảnh mặc định
+                    e.currentTarget.src = "/images/default-store.png";
                   },
                 }}
               />
@@ -256,12 +246,12 @@ export function StoreDetailModal({
                   width: "100%",
                   height: "100%",
                   borderRadius: "50%",
-                  bgcolor: "linear-gradient(135deg, #3b82f6 0%, #a855f7 100%)", // Thay bg-gradient-to-br from-blue-500 to-purple-600
+                  bgcolor: "linear-gradient(135deg, #3b82f6 0%, #a855f7 100%)",
                   display: "flex",
                   alignItems: "center",
                   justifyContent: "center",
                   color: "white",
-                  fontSize: "1.5rem", // Thay text-2xl
+                  fontSize: "1.5rem",
                   fontWeight: "bold",
                 }}
               >
@@ -274,10 +264,10 @@ export function StoreDetailModal({
             )}
           </Box>
           <Box sx={{ flex: 1 }}>
-            <Box sx={{ display: "flex", alignItems: "center", gap: 1.5, mb: 1 }}> {/* Thay gap-3 mb-2 */}
+            <Box sx={{ display: "flex", alignItems: "center", gap: 1.5, mb: 1 }}>
               <Typography
                 variant="h5"
-                sx={{ color: "grey.900", fontWeight: "bold" }} // Thay text-2xl font-bold text-gray-900
+                sx={{ color: "grey.900", fontWeight: "bold" }}
               >
                 {store.name}
               </Typography>
@@ -285,14 +275,14 @@ export function StoreDetailModal({
                 sx={{
                   display: "inline-flex",
                   alignItems: "center",
-                  gap: 0.5, // Thay gap-1
-                  px: 1, // Thay px-2
-                  py: 0.5, // Thay py-1
-                  fontSize: "0.75rem", // Thay text-xs
+                  gap: 0.5,
+                  px: 1,
+                  py: 0.5,
+                  fontSize: "0.75rem",
                   fontWeight: "medium",
-                  borderRadius: 1, // Thay rounded-full
-                  bgcolor: store.isActive ? "success.light" : "error.light", // Thay bg-green-100, bg-red-100
-                  color: store.isActive ? "success.dark" : "error.dark", // Thay text-green-800, text-red-800
+                  borderRadius: 1,
+                  bgcolor: store.isActive ? "success.light" : "error.light",
+                  color: store.isActive ? "success.dark" : "error.dark",
                 }}
               >
                 {getStatusIcon(store.isActive)}
@@ -302,14 +292,14 @@ export function StoreDetailModal({
             <Box
               sx={{
                 display: "grid",
-                gridTemplateColumns: { xs: "1fr", md: "1fr 1fr" }, // Thay grid-cols-1 md:grid-cols-2
-                gap: 2, // Thay gap-4
-                fontSize: "0.875rem", // Thay text-sm
+                gridTemplateColumns: { xs: "1fr", md: "1fr 1fr" },
+                gap: 2,
+                fontSize: "0.875rem",
               }}
             >
-              <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}> {/* Thay gap-2 */}
-                <Email sx={{ fontSize: 16, color: "grey.400" }} /> {/* Thay w-4 h-4 text-gray-400 */}
-                <Typography sx={{ color: "grey.600" }}>{store.email}</Typography> {/* Thay text-gray-600 */}
+              <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
+                <Email sx={{ fontSize: 16, color: "grey.400" }} />
+                <Typography sx={{ color: "grey.600" }}>{store.email}</Typography>
               </Box>
               <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
                 <Phone sx={{ fontSize: 16, color: "grey.400" }} />
@@ -330,21 +320,21 @@ export function StoreDetailModal({
           <Box
             sx={{
               display: "grid",
-              gridTemplateColumns: "1fr 1fr 1fr", // Thay grid-cols-3
-              gap: 2, // Thay gap-4
+              gridTemplateColumns: "1fr 1fr 1fr",
+              gap: 2,
               textAlign: "center",
             }}
           >
             <Box>
               <Typography
                 variant="h5"
-                sx={{ color: "primary.main", fontWeight: "bold" }} // Thay text-2xl font-bold text-blue-600
+                sx={{ color: "primary.main", fontWeight: "bold" }}
               >
                 {totalProducts}
               </Typography>
               <Typography
                 variant="caption"
-                sx={{ color: "grey.500" }} // Thay text-xs text-gray-500
+                sx={{ color: "grey.500" }}
               >
                 Tổng Sản Phẩm
               </Typography>
@@ -363,7 +353,7 @@ export function StoreDetailModal({
             <Box>
               <Typography
                 variant="h5"
-                sx={{ color: "secondary.main", fontWeight: "bold" }} // Thay text-2xl font-bold text-purple-600
+                sx={{ color: "secondary.main", fontWeight: "bold" }}
               >
                 {totalOrders}
               </Typography>
@@ -379,13 +369,17 @@ export function StoreDetailModal({
       <Box
         sx={{
           borderBottom: 1,
-          borderColor: "grey.200", // Thay border-b border-gray-200
+          borderColor: "grey.200",
+          position: "sticky",
+          top: 0,
+          zIndex: 9,
+          bgcolor: "background.paper",
         }}
       >
         <Tabs
           value={activeTab}
           onChange={(_, newValue) => setActiveTab(newValue)}
-          sx={{ "& .MuiTabs-indicator": { bgcolor: "primary.main" } }} // Thay border-blue-500
+          sx={{ "& .MuiTabs-indicator": { bgcolor: "primary.main" } }}
         >
           {[
             { id: "overview", label: "Tổng Quan", icon: <StoreIcon sx={{ fontSize: 16 }} /> },
@@ -396,19 +390,18 @@ export function StoreDetailModal({
               key={tab.id}
               value={tab.id}
               label={
-                <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}> {/* Thay gap-2 */}
+                <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
                   {tab.icon}
                   {tab.label}
                 </Box>
               }
               sx={{
-                px: 3, // Thay px-6
-                py: 2, // Thay py-4
-                fontSize: "0.875rem", // Thay text-sm
+                px: 3,
+                py: 2,
+                fontSize: "0.875rem",
                 fontWeight: "medium",
-                color: activeTab === tab.id ? "primary.main" : "grey.500", // Thay text-blue-600, text-gray-500
-                "&:hover": { color: "grey.700" }, // Thay hover:text-gray-700
-                bgcolor: "background.paper",
+                color: activeTab === tab.id ? "primary.main" : "grey.500",
+                "&:hover": { color: "grey.700" },
               }}
             />
           ))}
@@ -416,26 +409,36 @@ export function StoreDetailModal({
       </Box>
 
       {/* Tab Content */}
-      <DialogContent sx={{ p: 3, display: "flex", flexDirection: "column", gap: 3 }}> {/* Thay p-6 space-y-6 */}
+      <DialogContent
+        sx={{
+          p: 3,
+          flex: 1,
+          overflowY: "auto",
+          minHeight: "300px", // Đảm bảo chiều cao tối thiểu
+          display: "flex",
+          flexDirection: "column",
+          gap: 3,
+        }}
+      >
         {activeTab === "overview" && (
           <Box>
             <Typography
               variant="h6"
-              sx={{ color: "grey.900", mb: 2 }} // Thay text-lg font-medium text-gray-900 mb-4
+              sx={{ color: "grey.900", mb: 2 }}
             >
               Thông Tin Cửa Hàng
             </Typography>
             <Box
               sx={{
                 display: "grid",
-                gridTemplateColumns: { xs: "1fr", md: "1fr 1fr" }, // Thay grid-cols-1 md:grid-cols-2
-                gap: 3, // Thay gap-6
+                gridTemplateColumns: { xs: "1fr", md: "1fr 1fr" },
+                gap: 3,
               }}
             >
               <Box>
                 <Typography
                   variant="body2"
-                  sx={{ color: "grey.500", fontWeight: "medium" }} // Thay text-sm font-medium text-gray-500
+                  sx={{ color: "grey.500", fontWeight: "medium" }}
                 >
                   Mô Tả
                 </Typography>
@@ -474,16 +477,16 @@ export function StoreDetailModal({
                 </Typography>
                 <Box
                   sx={{
-                    bgcolor: "grey.50", // Thay bg-gray-50
-                    borderRadius: 2, // Thay rounded-lg
-                    p: 2, // Thay p-4
+                    bgcolor: "grey.50",
+                    borderRadius: 2,
+                    p: 2,
                   }}
                 >
                   <Box
                     sx={{
                       display: "grid",
-                      gridTemplateColumns: { xs: "1fr 1fr", md: "1fr 1fr 1fr" }, // Thay grid-cols-2 md:grid-cols-3
-                      gap: 2, // Thay gap-4
+                      gridTemplateColumns: { xs: "1fr 1fr", md: "1fr 1fr 1fr" },
+                      gap: 2,
                     }}
                   >
                     <Box>
@@ -575,7 +578,7 @@ export function StoreDetailModal({
               </Box>
             ) : (
               <Box sx={{ textAlign: "center", py: 4, color: "grey.500" }}>
-                <Inventory sx={{ fontSize: 48, color: "grey.300", mb: 2 }} /> {/* Thay w-12 h-12 */}
+                <Inventory sx={{ fontSize: 48, color: "grey.300", mb: 2 }} />
                 <Typography>Không tìm thấy sản phẩm cho cửa hàng này</Typography>
               </Box>
             )}
@@ -622,11 +625,11 @@ export function StoreDetailModal({
                           <Box
                             sx={{
                               display: "inline-flex",
-                              px: 1, // Thay px-2
-                              py: 0.5, // Thay py-1
-                              fontSize: "0.75rem", // Thay text-xs
+                              px: 1,
+                              py: 0.5,
+                              fontSize: "0.75rem",
                               fontWeight: "medium",
-                              borderRadius: 1, // Thay rounded-full
+                              borderRadius: 1,
                               ...getOrderStatusColor(order.status),
                             }}
                           >
@@ -640,11 +643,11 @@ export function StoreDetailModal({
                           <Button
                             onClick={() => handleViewOrderDetails(order.id)}
                             sx={{
-                              color: "primary.main", // Thay text-blue-600
+                              color: "primary.main",
                               textTransform: "none",
-                              fontSize: "0.875rem", // Thay text-sm
+                              fontSize: "0.875rem",
                               bgcolor: "background.paper",
-                              "&:hover": { textDecoration: "underline" }, // Thay hover:underline
+                              "&:hover": { textDecoration: "underline" },
                             }}
                           >
                             Xem Chi Tiết
@@ -665,107 +668,107 @@ export function StoreDetailModal({
         )}
 
         {/* Order Details Modal */}
-       {selectedOrder && (
-  <Dialog
-    open={!!selectedOrder}
-    onClose={() => handleViewOrderDetails("")}
-    maxWidth="sm"
-    fullWidth
-    sx={{
-      "& .MuiDialog-paper": {
-        borderRadius: 2,
-        boxShadow: 24,
-        p: 3,
-        bgcolor: "background.paper",
-      },
-    }}
-    BackdropProps={{
-      sx: {
-        bgcolor: "rgba(0, 0, 0, 0.5)",
-      },
-    }}
-    onClick={(e) => e.stopPropagation()} // Ngăn sự kiện lan truyền
-  >
-    <Typography
-      variant="h6"
-      sx={{ color: "grey.900", fontWeight: "medium", mb: 2 }}
-    >
-      Chi Tiết Đơn Hàng #{selectedOrder.id}
-    </Typography>
-    <Box sx={{ display: "flex", flexDirection: "column", gap: 2 }}>
-      <Box>
-        <Typography variant="body2" sx={{ color: "grey.500", fontWeight: "medium" }}>
-          Người Đặt Hàng
-        </Typography>
-        <Typography sx={{ color: "grey.900" }}>
-          {getUserById(selectedOrder.userId)?.fullName || "Không xác định"}
-        </Typography>
-        <Typography variant="body2" sx={{ color: "grey.500", fontWeight: "medium", mt: 1 }}>
-          Tổng Số Tiền
-        </Typography>
-        <Typography sx={{ color: "grey.900" }}>
-          {formatCurrency(selectedOrder.totalAmount)}
-        </Typography>
-      </Box>
-      <Box>
-        <Typography variant="body2" sx={{ color: "grey.500", fontWeight: "medium" }}>
-          Trạng Thái
-        </Typography>
-        <Typography sx={{ color: "grey.900" }}>
-          {formatOrderStatus(selectedOrder.status)}
-        </Typography>
-      </Box>
-      <Box>
-        <Typography variant="body2" sx={{ color: "grey.500", fontWeight: "medium" }}>
-          Địa Chỉ Giao Hàng
-        </Typography>
-        <Typography sx={{ color: "grey.900" }}>{selectedOrder.shippingAddress}</Typography>
-      </Box>
-      <Box>
-        <Typography variant="body2" sx={{ color: "grey.500", fontWeight: "medium" }}>
-          Ngày Tạo
-        </Typography>
-        <Typography sx={{ color: "grey.900" }}>{formatDate(selectedOrder.createdAt)}</Typography>
-      </Box>
-      <Box>
-        <Typography variant="body2" sx={{ color: "grey.500", fontWeight: "medium" }}>
-          Sản Phẩm Đơn Hàng
-        </Typography>
-        {selectedOrder.orderItems.length > 0 ? (
-          <List sx={{ pl: 2 }}>
-            {selectedOrder.orderItems.map((item) => {
-              const product = store.products.find((p) => p.id === item.productId);
-              return (
-                <ListItem key={item.id} sx={{ color: "grey.900" }}>
-                  <ListItemText
-                    primary={`${product ? product.name : "Sản phẩm không xác định"} - Số lượng: ${item.quantity} - Giá: ${formatCurrency(item.price)}`}
-                  />
-                </ListItem>
-              );
-            })}
-          </List>
-        ) : (
-          <Typography sx={{ color: "grey.500" }}>Không tìm thấy sản phẩm</Typography>
+        {selectedOrder && (
+          <Dialog
+            open={!!selectedOrder}
+            onClose={() => handleViewOrderDetails("")}
+            maxWidth="sm"
+            fullWidth
+            sx={{
+              "& .MuiDialog-paper": {
+                borderRadius: 2,
+                boxShadow: 24,
+                p: 3,
+                bgcolor: "background.paper",
+              },
+            }}
+            BackdropProps={{
+              sx: {
+                bgcolor: "rgba(0, 0, 0, 0.5)",
+              },
+            }}
+            onClick={(e) => e.stopPropagation()}
+          >
+            <Typography
+              variant="h6"
+              sx={{ color: "grey.900", fontWeight: "medium", mb: 2 }}
+            >
+              Chi Tiết Đơn Hàng #{selectedOrder.id}
+            </Typography>
+            <Box sx={{ display: "flex", flexDirection: "column", gap: 2 }}>
+              <Box>
+                <Typography variant="body2" sx={{ color: "grey.500", fontWeight: "medium" }}>
+                  Người Đặt Hàng
+                </Typography>
+                <Typography sx={{ color: "grey.900" }}>
+                  {getUserById(selectedOrder.userId)?.fullName || "Không xác định"}
+                </Typography>
+                <Typography variant="body2" sx={{ color: "grey.500", fontWeight: "medium", mt: 1 }}>
+                  Tổng Số Tiền
+                </Typography>
+                <Typography sx={{ color: "grey.900" }}>
+                  {formatCurrency(selectedOrder.totalAmount)}
+                </Typography>
+              </Box>
+              <Box>
+                <Typography variant="body2" sx={{ color: "grey.500", fontWeight: "medium" }}>
+                  Trạng Thái
+                </Typography>
+                <Typography sx={{ color: "grey.900" }}>
+                  {formatOrderStatus(selectedOrder.status)}
+                </Typography>
+              </Box>
+              <Box>
+                <Typography variant="body2" sx={{ color: "grey.500", fontWeight: "medium" }}>
+                  Địa Chỉ Giao Hàng
+                </Typography>
+                <Typography sx={{ color: "grey.900" }}>{selectedOrder.shippingAddress}</Typography>
+              </Box>
+              <Box>
+                <Typography variant="body2" sx={{ color: "grey.500", fontWeight: "medium" }}>
+                  Ngày Tạo
+                </Typography>
+                <Typography sx={{ color: "grey.900" }}>{formatDate(selectedOrder.createdAt)}</Typography>
+              </Box>
+              <Box>
+                <Typography variant="body2" sx={{ color: "grey.500", fontWeight: "medium" }}>
+                  Sản Phẩm Đơn Hàng
+                </Typography>
+                {selectedOrder.orderItems.length > 0 ? (
+                  <List sx={{ pl: 2 }}>
+                    {selectedOrder.orderItems.map((item) => {
+                      const product = store.products.find((p) => p.id === item.productId);
+                      return (
+                        <ListItem key={item.id} sx={{ color: "grey.900" }}>
+                          <ListItemText
+                            primary={`${product ? product.name : "Sản phẩm không xác định"} - Số lượng: ${item.quantity} - Giá: ${formatCurrency(item.price)}`}
+                          />
+                        </ListItem>
+                      );
+                    })}
+                  </List>
+                ) : (
+                  <Typography sx={{ color: "grey.500" }}>Không tìm thấy sản phẩm</Typography>
+                )}
+              </Box>
+            </Box>
+            <Box sx={{ display: "flex", justifyContent: "flex-end", mt: 3 }}>
+              <Button
+                onClick={() => handleViewOrderDetails("")}
+                sx={{
+                  px: 2,
+                  py: 1,
+                  bgcolor: "grey.100",
+                  color: "grey.700",
+                  borderRadius: 2,
+                  "&:hover": { bgcolor: "grey.200" },
+                }}
+              >
+                Đóng
+              </Button>
+            </Box>
+          </Dialog>
         )}
-      </Box>
-    </Box>
-    <Box sx={{ display: "flex", justifyContent: "flex-end", mt: 3 }}>
-      <Button
-        onClick={() => handleViewOrderDetails("")}
-        sx={{
-          px: 2,
-          py: 1,
-          bgcolor: "grey.100",
-          color: "grey.700",
-          borderRadius: 2,
-          "&:hover": { bgcolor: "grey.200" },
-        }}
-      >
-        Đóng
-      </Button>
-    </Box>
-  </Dialog>
-)}
       </DialogContent>
     </Dialog>
   );

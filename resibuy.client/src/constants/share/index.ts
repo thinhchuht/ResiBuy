@@ -7,6 +7,7 @@ import {
   ConfirmationNumber,
   Chat,
   Store,
+  DeliveryDiningSharp,
 } from "@mui/icons-material";
 
 export const menuItems = [
@@ -14,6 +15,7 @@ export const menuItems = [
   { title: "Products", url: "/products", icon: Inventory2 },
   { title: "Danh mục", url: "/admin/category", icon: Category },
   { title: "Orders", url: "/orders", icon: ShoppingCart },
+   { title: "Shipper", url: "/admin/shipper", icon: DeliveryDiningSharp  },
   { title: "Users", url: "/users", icon: People },
   { title: "Vouchers", url: "/vouchers", icon: ConfirmationNumber },
   { title: "Messages", url: "/messages", icon: Chat },
