@@ -8,6 +8,7 @@
             builder.HasOne(pd => pd.Image)
                 .WithOne(i => i.Category)
                 .HasForeignKey<Image>(i => i.CategoryId)
+                .IsRequired(false)
                 .OnDelete(DeleteBehavior.Cascade);
 
         }

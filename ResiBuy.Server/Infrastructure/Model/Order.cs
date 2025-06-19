@@ -2,6 +2,21 @@
 {
     public class Order
     {
+        public Order(Guid id, decimal totalPrice, PaymentMethod paymentMethod, string note, Guid shippingAddressId, string userId, Guid storeId)
+        {
+            Id = id;
+            TotalPrice = totalPrice;
+            Status = OrderStatus.Pending;
+            PaymentStatus = PaymentStatus.Pending;
+            PaymentMethod = paymentMethod;
+            CreateAt = DateTime.Now;
+            UpdateAt = DateTime.Now;
+            Note = note;
+            ShippingAddressId = shippingAddressId;
+            UserId = userId;
+            StoreId = storeId;
+        }
+
         public Guid Id { get; set; }
         public decimal TotalPrice { get; set; }
         public OrderStatus Status { get; set; }

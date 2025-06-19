@@ -15,15 +15,24 @@ export enum PaymentStatus {
 }
 
 export enum PaymentMethod {
-  Cash = 0,
-  CreditCard = 1,
-  BankTransfer = 2,
+  COD = 0,
+  BankTransfer = 1,
 }
 
 export enum UserRole {
   Admin = 0,
   User = 1,
   Shipper = 2,
+}
+
+export enum VoucherType {
+  Amount = 1,
+  Percentage = 2
+}
+
+export enum DeliveryType {
+  MyRoom = 'my-room',
+  Other = 'other',
 }
 
 // Base Models
@@ -54,7 +63,7 @@ export interface User {
 }
 
 export interface Product {
-  id: string;
+  id: number;
   name: string;
   describe: string;
   weight: number;
@@ -65,10 +74,22 @@ export interface Product {
   updatedAt: string;
   storeId: string;
   categoryId: string;
-  productImgs: Image[];
-  costData: CostData[];
-  cartItems: CartItem[];
-  orderItems: OrderItem[];
+  store : Store
+  category : Category
+  productDetails: ProductDetail[];
+}
+
+export interface ProductDetail {
+  id: number
+  isOutOfStock : boolean
+  productId : number
+  product : Product
+  sold : number
+  price : number
+  image : Image
+  cartItems : CartItem[]
+  orderItems : OrderItem[]
+  additionalData : AdditionalData[]
 }
 
 export interface Store {
@@ -100,13 +121,10 @@ export interface Cart {
 export interface CartItem {
   id: string;
   cartId: string;
-  productId: string;
+  productDetailId: number;
   quantity: number;
-  product: Product;
-  costData: CostData;
-  cartItemUncosts: {
-    uncostData: UncostData;
-  }[];
+  cart: Cart;
+  productDetail: ProductDetail;
 }
 
 export interface Order {
@@ -114,8 +132,10 @@ export interface Order {
   totalPrice: number;
   status: OrderStatus;
   paymentStatus: PaymentStatus;
+  paymentMethod: PaymentMethod
   createAt: string;
   updateAt: string;
+  note : string
   shipAddressId: string;
   shipAddress: Room;
   userId: string;
@@ -135,9 +155,9 @@ export interface OrderItem {
   quantity: number;
   price: number;
   orderId: string;
-  productId: string;
+  productDetailId: number;
   order?: Order;
-  product?: Product;
+  product?: ProductDetail;
 }
 
 export interface Shipper {
@@ -145,12 +165,16 @@ export interface Shipper {
   userId: string;
   isAvailable: boolean;
   orders: Order[];
+  startWorkTime: string;  
+  endWorkTime: string;    
+  reportCount: number;
 }
+
 
 export interface Voucher {
   id: string;
   discountAmount: number;
-  type: string;
+  type: VoucherType;
   quantity: number;
   minOrderPrice: number;
   maxDiscountPrice: number;
@@ -228,30 +252,39 @@ export interface EventItem {
   description?: string;
   storeId: string;
 }
+export interface TooltipProps {
+  active?: boolean;
+  payload?: {
+    payload: {
+      name: string;
+      revenue: number;
+      hasData: boolean;
+    };
+  }[];
+  label?: string;
+}
+
+export interface StatisticsSectionProps {
+  activeTab: string;
+  setActiveTab: (value: string) => void;
+
 
 export interface Image {
   id: string;
-  imgUrl: string;
+  url: string;
   thumbUrl: string;
   name: string;
-  productId?: string;
+  productDetailId?: number;
   userId?: string;
+  categoryId : string
 }
 
-export interface UncostData {
+export interface AdditionalData {
   id: string;
   key: string;
   value: string;
-  costDataId: string;
-}
-
-export interface CostData {
-  id: string;
-  key: string;
-  value: string;
-  price: number;
-  productId: string;
-  uncostData?: UncostData[];
+  productDetailId: string;
+  productDetail : ProductDetail
 }
 
 export interface ProductDto {

@@ -31,25 +31,14 @@ namespace ResiBuy.Server.Infrastructure.DbServices.CartItemDbService
             }
         }
 
-        public async Task<CartItem> GetMatchingCartItemsAsync(Guid cartId, Guid productId, Guid costDataId, List<Guid> uncostDataIds)
+        public async Task<IEnumerable<CartItem>> GetMatchingCartItemsAsync(Guid cartId, IEnumerable<int> productDetailIds)
         {
             try
             {
-                //var cartItems = await _context.CartItems
-                //    .Include(ci => ci.CartItemUncosts)
-                //    .Where(ci =>
-                //        ci.ProductId == productId &&
-                //        ci.CartId == cartId &&
-                //        ci.CostDataId == costDataId)
-                //    .ToListAsync();
-
-                //var matchedItem = cartItems.FirstOrDefault(ci =>
-                //{
-                //    var uncostIdsInDb = ci.CartItemUncosts.Select(u => u.UncostDataId);
-                //    return new HashSet<Guid>(uncostIdsInDb).SetEquals(uncostDataIds);
-                //});
-
-                return null;
+                var cartItems = await _context.CartItems
+                    .Where(ci => productDetailIds.Contains(ci.ProductDetailId) && ci.CartId == cartId)
+                    .ToListAsync();
+                return cartItems;
             }
             catch (Exception ex)
             {
@@ -64,8 +53,11 @@ namespace ResiBuy.Server.Infrastructure.DbServices.CartItemDbService
                 var query = _context.CartItems
                     .Where(ci => ci.CartId == cartId)
                     .Include(ci => ci.ProductDetail)
-                        .ThenInclude(p => p.Image)
-
+                    .ThenInclude(p => p.Image)
+                    .Include(ci => ci.ProductDetail)
+                    .ThenInclude(p => p.Product)
+                    .Include(ci => ci.ProductDetail)
+                    .ThenInclude(p => p.AdditionalData)
                     .AsQueryable();
 
                 var totalCount = await query.CountAsync();
@@ -80,6 +72,24 @@ namespace ResiBuy.Server.Infrastructure.DbServices.CartItemDbService
             catch (Exception ex)
             {
                 throw new CustomException(ExceptionErrorCode.RepositoryError, ex.Message);
+            }
+        }
+
+        public async Task<ResponseModel> DeleteBatchByProductDetailIdAsync(Guid cartId, IEnumerable<int> productDetailIds)
+        {
+            try
+            {
+
+                //if (productDetailIds == null || !productDetailIds.Any()) throw new CustomException(ExceptionErrorCode.InvalidInput, "Không có sản phẩm nào trong giỏ hàng");
+                var cartItems = await GetMatchingCartItemsAsync(cartId, productDetailIds);
+                _context.CartItems.RemoveRange(cartItems);
+                await _context.SaveChangesAsync();
+                return ResponseModel.SuccessResponse();
+            }
+
+            catch (Exception ex)
+            {
+                throw new CustomException(ExceptionErrorCode.RepositoryError, ex.ToString());
             }
         }
     }
