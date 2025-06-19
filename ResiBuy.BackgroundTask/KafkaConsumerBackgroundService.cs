@@ -1,11 +1,11 @@
 namespace ResiBuy.BackgroundTask
 {
-    public class Worker : BackgroundService
+    public class KafkaConsumerBackgroundService : BackgroundService
     {
-        private readonly ILogger<Worker> _logger;
+        private readonly ILogger<KafkaConsumerBackgroundService> _logger;
         private readonly IKafkaConsumerService _kafkaConsumerService;
 
-        public Worker(ILogger<Worker> logger, IKafkaConsumerService kafkaConsumerService)
+        public KafkaConsumerBackgroundService(ILogger<KafkaConsumerBackgroundService> logger, IKafkaConsumerService kafkaConsumerService)
         {
             _logger = logger;
             _kafkaConsumerService = kafkaConsumerService;

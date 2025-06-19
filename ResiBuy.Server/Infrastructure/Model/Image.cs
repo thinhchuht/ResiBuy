@@ -9,8 +9,8 @@
         public int? ProductDetailId { get; set; }
         public string? UserId { get; set; }
         public ProductDetail? ProductDetail { get; set; } = null!;
-        public User? User { get; set; }
-        public Guid? CategoryId { get; set; }
+        public User User { get; set; }
+        public Guid CategoryId { get; set; }
         public Category? Category { get; set; } = null!;
         public void UpdateImage(Image src)
         {
