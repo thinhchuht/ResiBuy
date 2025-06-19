@@ -11,12 +11,11 @@ const CartSummarySection = ({ selectedItems, onCheckout }: CartSummaryProps) => 
   const calculateSubtotal = (): string => {
     let subtotal = 0;
     selectedItems.forEach((item) => {
-      subtotal += item.productDetail.price * item.quantity;
+      const discount = item.productDetail.product.discount || 0;
+      const discountedPrice = item.productDetail.price * (1 - discount / 100);
+      subtotal += discountedPrice * item.quantity;
     });
     return formatPrice(subtotal);
-  };
-  const calculateItemTotal = (item: CartItem): string => {
-    return formatPrice(item.productDetail.price * item.quantity);
   };
 
   return (
@@ -88,7 +87,7 @@ const CartSummarySection = ({ selectedItems, onCheckout }: CartSummaryProps) => 
                       )}
                     </Typography>
                     <Typography variant="body2" fontWeight={500} color="red">
-                      {calculateItemTotal(item)}
+                      {formatPrice((productDetail.price * (1 - (product.discount || 0) / 100)) * item.quantity)}
                     </Typography>
                   </Box>
                 );

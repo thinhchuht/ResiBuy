@@ -9,8 +9,6 @@ import cartItemApi from "../../api/cartItem.api";
 import { useAuth } from "../../contexts/AuthContext";
 import { toast } from "react-toastify";
 
-
-
 const Cart = () => {
   const [cartItems, setCartItems] = useState<CartItem[]>([]);
   const [selectedItems, setSelectedCartItems] = useState<string[]>([]);
@@ -42,14 +40,17 @@ const Cart = () => {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [page, rowsPerPage, user?.cartId]);
 
-  const handleQuantityChange = async (itemId: string, newQuantity: number) => {
+  const handleQuantityChange = async (productDetailId: number, newQuantity: number) => {
     try {
-      await cartItemApi.updateQuantity(itemId, newQuantity);
-      setCartItems((prevItems) =>
-        prevItems.map((item) =>
-          item.id === itemId ? { ...item, quantity: newQuantity } : item
-        )
-      );
+      if (user) {
+        // await cartApi.addToCart(user?.cartId, productDetailId, newQuantity, false);
+        console.log(newQuantity)
+        setCartItems((prevItems) =>
+          prevItems.map((item) =>
+            item.productDetailId === productDetailId ? { ...item, quantity: newQuantity } : item
+          )
+        );
+      }
     } catch (error) {
       console.error("Error updating quantity:", error);
     }
@@ -87,8 +88,20 @@ const Cart = () => {
   };
 
   const handleCheckout = () => {
-    console.log("selectedItems", selectedCartItems);
-    navigate("/checkout", { state: { selectedItems: selectedCartItems } });
+    const selectedItemsWithDiscount = selectedCartItems.map((item) => {
+      const discount = item.productDetail.product.discount || 0;
+      const discountedPrice = item.productDetail.price * (1 - discount / 100);
+      return {
+        ...item,
+        productDetail: {
+          ...item.productDetail,
+          price: discountedPrice,
+        },
+      };
+    });
+    navigate("/checkout", {
+      state: { selectedItems: selectedItemsWithDiscount },
+    });
   };
 
   const handleChangePage = (_event: unknown, newPage: number) => {

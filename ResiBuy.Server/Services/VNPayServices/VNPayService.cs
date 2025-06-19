@@ -50,7 +50,7 @@ namespace ResiBuy.Server.Services.VNPayServices
             vnpay.Remove("vnp_SecureHash");
 
             var signData = string.Join("&", vnpay.Select(kvp => $"{kvp.Key}={kvp.Value}"));
-            var hash = HmacSHA512(configuration.GetValue<string>("VnPay:HashSecret"), signData);
+            var hash = HmacSHA512(configuration.GetValue<string>("VnPay:HashSecret"), signData.ToString());
 
             return secureHash == hash;
         }

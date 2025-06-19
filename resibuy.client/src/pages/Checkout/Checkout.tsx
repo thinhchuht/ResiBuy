@@ -12,9 +12,10 @@ import CheckoutVoucherSection from "./CheckoutVoucherSection";
 import NoteSection from "./NoteSection";
 import CheckoutSummarySection from "./CheckoutSummarySection";
 import NotFound from "../../components/NotFound";
-import vnPayApi, { type CheckoutRequest } from "../../api/vnpay.api";
 import { useToastify } from "../../hooks/useToastify";
 import { formatPrice } from "../../utils/priceUtils";
+import vnPayApi from "../../api/vnpay.api";
+import checkoutApi from "../../api/checkout.api";
 
 interface GroupedItems {
   storeId: string;
@@ -48,7 +49,9 @@ const Checkout: React.FC = () => {
   }) || { selectedItems: [] };
   const [openVoucherModal, setOpenVoucherModal] = useState(false);
   const [selectedStoreId, setSelectedStoreId] = useState<string | null>(null);
-  const [selectedVouchers, setSelectedVouchers] = useState<Record<string, Voucher>>({});
+  const [selectedVouchers, setSelectedVouchers] = useState<
+    Record<string, Voucher>
+  >({});
   const [notes, setNotes] = useState<Record<string, string>>({});
   const [isLoading, setIsLoading] = useState(false);
 
@@ -80,7 +83,10 @@ const Checkout: React.FC = () => {
   }, []);
 
   const calculateStoreTotal = (items: CartItem[], storeId: string) => {
-    const subtotal = items.reduce((total, item) => total + item.productDetail.price * item.quantity, 0);
+    const subtotal = items.reduce(
+      (total, item) => total + item.productDetail.price * item.quantity,
+      0
+    );
     const selectedVoucher = selectedVouchers[storeId];
 
     if (selectedVoucher) {
@@ -90,7 +96,10 @@ const Checkout: React.FC = () => {
       } else if (selectedVoucher.type === VoucherType.Percentage) {
         discountAmount = (subtotal * selectedVoucher.discountAmount) / 100;
       }
-      discountAmount = Math.min(discountAmount, selectedVoucher.maxDiscountPrice);
+      discountAmount = Math.min(
+        discountAmount,
+        selectedVoucher.maxDiscountPrice
+      );
       return Math.max(subtotal - discountAmount, 0);
     }
     return subtotal;
@@ -117,7 +126,10 @@ const Checkout: React.FC = () => {
   };
 
   const orders = groupedItems.map((group) => {
-    const subtotal = group.items.reduce((total, item) => total + item.productDetail.price * item.quantity, 0);
+    const subtotal = group.items.reduce(
+      (total, item) => total + item.productDetail.price * item.quantity,
+      0
+    );
     const selectedVoucher = selectedVouchers[group.storeId];
     let discount = 0;
     if (selectedVoucher) {
@@ -129,81 +141,83 @@ const Checkout: React.FC = () => {
       discount = Math.min(discount, selectedVoucher.maxDiscountPrice);
     }
     const totalAfterDiscount = Math.max(subtotal - discount, 0);
-    const itemCount = group.items.reduce((total, item) => total + item.quantity, 0);
+    const itemCount = group.items.reduce(
+      (total, item) => total + item.quantity,
+      0
+    );
+    const storeId = group.storeId
     return {
       totalBeforeDiscount: subtotal,
       totalAfterDiscount,
       discount,
       itemCount,
+      storeId,
       note: notes[group.storeId],
     };
   });
-  const grandTotal = orders.reduce((sum, order) => sum + order.totalAfterDiscount, 0);
+  const grandTotal = orders.reduce(
+    (sum, order) => (sum + order.totalAfterDiscount),
+    0
+  );
 
   const handleCheckout = async (info: info) => {
-    try {
-      setIsLoading(true);
-      const allOrders = orders.map((order, idx) => ({
-        VoucherId: selectedVouchers[groupedItems[idx].storeId]?.id ?? null,
-        TotalPrice: order.totalAfterDiscount,
-        Items: groupedItems[idx].items.map((item) => ({
-          Quantity: item.quantity,
-          Price: item.productDetail.price,
-          ProductDetailId: item.productDetail.id,
-        })),
-        RoomId: info.deliveryType === "my-room" ? info.selectedRoom : info.selectedOtherRoom,
-        AreaId: info.selectedArea,
-        BuildingId: info.selectedBuilding,
-        PaymentMethod: info.paymentMethod,
-        Note: notes[groupedItems[idx].storeId],
-      }));
-
-      console.log("Checkout data:", allOrders);
-
-      if (info.paymentMethod === "bank-transfer") {
-        // Create checkout request with session
-        const checkoutRequest: CheckoutRequest = {
-          orders: allOrders.map((order) => ({
-            voucherId: order.VoucherId,
-            totalPrice: order.TotalPrice,
-            items: order.Items.map((item) => ({
-              quantity: item.Quantity,
-              price: item.Price,
-              productDetailId: item.ProductDetailId.toString(),
-            })),
-            roomId: order.RoomId,
-            areaId: order.AreaId,
-            buildingId: order.BuildingId,
-            paymentMethod: order.PaymentMethod,
-            note: order.Note,
+    if (user) {
+      try {
+        setIsLoading(true);
+        const allOrders = orders.map((order, idx) => ({
+          voucherId: selectedVouchers[groupedItems[idx].storeId]?.id ?? null,
+          storeId : order.storeId,
+          totalPrice: order.totalAfterDiscount,
+          items: groupedItems[idx].items.map((item) => ({
+            quantity: item.quantity,
+            price: item.productDetail.price,
+            productDetailId: item.productDetail.id,
           })),
-          totalAmount: grandTotal,
-          paymentMethod: info.paymentMethod,
-          userId: user?.id || "",
-        };
 
-        const response = await vnPayApi.createPaymentWithSession(checkoutRequest);
+          note: notes[groupedItems[idx].storeId],
+        }));
 
-        if (response.success) {
-          window.history.replaceState({}, "");
-          window.location.href = response.data.paymentUrl;
-        } else {
-          toast.error("Lỗi khi tạo thanh toán, thử lại sau.");
-          console.error("Payment creation failed:", response.error);
-        }
-      } else if (info.paymentMethod === "cash") {
-        // For cash payment, you might want to create orders directly
-        // or implement a different flow
-        window.history.replaceState({}, "");
-        navigate("/checkout-success", {
-          state: { isOrderSuccess: true },
+        console.log("Checkout data:", {
+          userId: user?.id,
+          roomId:
+          info.deliveryType === "my-room"
+            ? info.selectedRoom
+            : info.selectedOtherRoom,
+          grandTotal: Math.round(grandTotal),
+          orders: allOrders,
         });
+        const checkoutData = {
+          userId: user?.id,
+          addressId : info.deliveryType === "my-room"
+          ? info.selectedRoom
+          : info.selectedOtherRoom,
+          grandTotal: Math.round(grandTotal),
+          paymentMethod: info.paymentMethod,
+          orders : allOrders
+        }
+        if (info.paymentMethod === "BankTransfer") {
+          const response = await vnPayApi.getPaymentUrl(checkoutData);
+
+          if (response.success) {
+            window.history.replaceState({}, "");
+            window.location.href = response.data.paymentUrl;
+          } else {
+            toast.error("Lỗi khi tạo thanh toán, thử lại sau.");
+            console.error("Payment creation failed:", response.error);
+          }
+        } else if (info.paymentMethod === "COD") {
+          await checkoutApi.checkout(checkoutData)
+          window.history.replaceState({}, "");
+          navigate("/checkout-success", {
+            state: { isOrderSuccess: true },
+          });
+        }
+      } catch (error) {
+        console.error("Checkout error:", error);
+        toast.error("Có lỗi xảy ra, vui lòng thử lại.");
+      } finally {
+        setIsLoading(false);
       }
-    } catch (error) {
-      console.error("Checkout error:", error);
-      toast.error("Có lỗi xảy ra, vui lòng thử lại.");
-    } finally {
-      setIsLoading(false);
     }
   };
 
@@ -216,23 +230,43 @@ const Checkout: React.FC = () => {
 
   return (
     <Container maxWidth="xl" sx={{ py: 3 }}>
-      <Typography variant="h4" component="h1" gutterBottom sx={{ fontWeight: "bold", color: "#333" }}>
+      <Typography
+        variant="h4"
+        component="h1"
+        gutterBottom
+        sx={{ fontWeight: "bold", color: "#333" }}
+      >
         Thanh toán đơn hàng
       </Typography>
       <Box sx={{ display: "flex", gap: 4 }}>
         <Box sx={{ flex: 1 }}>
           {groupedItems.map((group, index) => (
-            <Paper key={group.storeId} elevation={3} sx={{ p: 3, borderRadius: 2, mb: 4 }}>
+            <Paper
+              key={group.storeId}
+              elevation={3}
+              sx={{ p: 3, borderRadius: 2, mb: 4 }}
+            >
               <Box sx={{ display: "flex", alignItems: "center", mb: 2 }}>
                 <ShoppingCartIcon color="primary" sx={{ mr: 1 }} />
-                <Typography variant="h6" sx={{ fontWeight: "bold", color: "#555" }}>
+                <Typography
+                  variant="h6"
+                  sx={{ fontWeight: "bold", color: "#555" }}
+                >
                   Đơn hàng {index + 1}
                 </Typography>
               </Box>
               <Divider sx={{ mb: 2 }} />
-              <ProductTableSection items={group.items} formatPrice={formatPrice} />
-              <CheckoutVoucherSection selectedVoucher={selectedVouchers[group.storeId]} onOpenVoucherModal={() => handleOpenVoucherModal(group.storeId)} />
-              <NoteSection onNoteSubmit={(note) => handleNoteSubmit(group.storeId, note)} />
+              <ProductTableSection
+                items={group.items}
+                formatPrice={formatPrice}
+              />
+              <CheckoutVoucherSection
+                selectedVoucher={selectedVouchers[group.storeId]}
+                onOpenVoucherModal={() => handleOpenVoucherModal(group.storeId)}
+              />
+              <NoteSection
+                onNoteSubmit={(note) => handleNoteSubmit(group.storeId, note)}
+              />
               <Divider sx={{ my: 3 }} />
               <Box
                 sx={{
@@ -240,11 +274,18 @@ const Checkout: React.FC = () => {
                   justifyContent: "flex-end",
                   alignItems: "center",
                   gap: 2,
-                }}>
-                <Typography variant="h6" sx={{ fontWeight: "bold", color: "#555" }}>
+                }}
+              >
+                <Typography
+                  variant="h6"
+                  sx={{ fontWeight: "bold", color: "#555" }}
+                >
                   Tổng tiền đơn hàng:
                 </Typography>
-                <Typography variant="h5" sx={{ fontWeight: "bold", color: "red" }}>
+                <Typography
+                  variant="h5"
+                  sx={{ fontWeight: "bold", color: "red" }}
+                >
                   {formatPrice(calculateStoreTotal(group.items, group.storeId))}
                 </Typography>
               </Box>
@@ -252,16 +293,26 @@ const Checkout: React.FC = () => {
           ))}
         </Box>
         <Box sx={{ width: 400, flexShrink: 0 }}>
-          <CheckoutSummarySection orders={orders} grandTotal={grandTotal} onCheckout={handleCheckout} userRooms={userRooms} isLoading={isLoading} />
+          <CheckoutSummarySection
+            orders={orders}
+            grandTotal={Math.round(grandTotal)}
+            onCheckout={handleCheckout}
+            userRooms={userRooms}
+            isLoading={isLoading}
+          />
         </Box>
       </Box>
       <VoucherSelectionModal
         open={openVoucherModal}
         onClose={handleCloseVoucherModal}
-        userVouchers={fakeVouchers.filter((v) => v.userVouchers.some((uv) => uv.userId === user?.id))}
+        userVouchers={fakeVouchers.filter((v) =>
+          v.userVouchers.some((uv) => uv.userId === user?.id)
+        )}
         shopVouchers={fakeVouchers.filter((v) => v.storeId === selectedStoreId)}
         onSelectVoucher={handleSelectVoucher}
-        selectedVoucherId={selectedStoreId ? selectedVouchers[selectedStoreId]?.id : undefined}
+        selectedVoucherId={
+          selectedStoreId ? selectedVouchers[selectedStoreId]?.id : undefined
+        }
       />
     </Container>
   );

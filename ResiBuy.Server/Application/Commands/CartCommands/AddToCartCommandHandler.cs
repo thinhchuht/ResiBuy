@@ -18,9 +18,10 @@ namespace ResiBuy.Server.Application.Commands.CartCommands
                 var productDetail = await baseProductDbService.GetByIntIdBaseAsync(command.AddToCartDto.ProductDetailId) ?? throw new CustomException(ExceptionErrorCode.NotFound, "Sản phẩm không tồn tại");
                 if (productDetail.IsOutOfStock) throw new CustomException(ExceptionErrorCode.ValidationFailed, "Sản phẩm đã hết hàng");
                 var cart = await cartDbService.GetByIdBaseAsync(command.Id) ?? throw new CustomException(ExceptionErrorCode.NotFound, "Giỏ hàng không tồn tại");
-                var existingItem = await cartItemDbService.GetMatchingCartItemsAsync(command.Id, command.AddToCartDto.ProductDetailId);
-                if (existingItem != null)
+                var existingItems = (await cartItemDbService.GetMatchingCartItemsAsync(command.Id, [command.AddToCartDto.ProductDetailId]));
+                if (existingItems.Any())
                 {
+                    var existingItem = existingItems.FirstOrDefault();
                     existingItem.Quantity = command.AddToCartDto.IsAdd ? existingItem.Quantity + command.AddToCartDto.Quantity : command.AddToCartDto.Quantity;
                     if (existingItem.Quantity > 10)
                     {

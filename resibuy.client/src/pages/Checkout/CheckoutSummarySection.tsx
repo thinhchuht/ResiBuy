@@ -114,7 +114,7 @@ const CheckoutSummarySection = ({
     selectedArea: "",
     selectedBuilding: "",
     selectedOtherRoom: "",
-    paymentMethod: "bank-transfer",
+    paymentMethod: "BankTransfer",
   };
 
   const fetchBuildings = async (areaId: string) => {
@@ -190,7 +190,7 @@ const CheckoutSummarySection = ({
         onSubmit={(values) => {
           const formValues = {
             ...values,
-            paymentMethod: values.paymentMethod || "bank-transfer"
+            paymentMethod: values.paymentMethod || "BankTransfer"
           };
           console.log('CheckoutSummarySection onSubmit formValues:', formValues);
           onCheckout?.(formValues);
@@ -246,7 +246,7 @@ const CheckoutSummarySection = ({
 
             const formValues = {
               ...values,
-              paymentMethod: values.paymentMethod || "bank-transfer"
+              paymentMethod: values.paymentMethod || "BankTransfer"
             };
             onCheckout?.(formValues);
           };
@@ -575,7 +575,7 @@ const CheckoutSummarySection = ({
                   {({ field }: FieldProps) => (
                     <RadioGroup {...field}>
                       <FormControlLabel
-                        value="bank-transfer"
+                        value="BankTransfer"
                         control={<Radio />}
                         label={
                           <Box>
@@ -593,7 +593,7 @@ const CheckoutSummarySection = ({
                         sx={{ mb: 1 }}
                       />
                       <FormControlLabel
-                        value="cash"
+                        value="COD"
                         control={<Radio />}
                         label={
                           <Box>

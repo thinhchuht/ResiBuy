@@ -4,7 +4,7 @@
     [ApiController]
     public class CheckoutController(IKafkaProducerService producer) : ControllerBase
     {
-        [HttpPost("checkout")]
+        [HttpPost]
         public IActionResult Checkout ([FromBody] CheckoutDto checkoutDto)
         {
             try

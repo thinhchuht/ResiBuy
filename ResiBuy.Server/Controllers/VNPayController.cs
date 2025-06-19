@@ -11,9 +11,9 @@ namespace ResiBuy.Server.Controllers
         [HttpPost("create-payment")]
         public IActionResult CreatePayment([FromBody] CheckoutDto dto)
         {
-            var orderId = Guid.NewGuid();
-            checkoutSessionService.StoreCheckoutSession(orderId, dto);
-            var paymentUrl = vnPayService.CreatePaymentUrl(dto.TotalPrice, orderId, $"Thanh toán {dto.Items.Count()} đơn hàng - ResiBuy");
+            var paymentId = Guid.NewGuid();
+            checkoutSessionService.StoreCheckoutSession(paymentId, dto);
+            var paymentUrl = vnPayService.CreatePaymentUrl(dto.GrandTotal, paymentId, $"ResiBuy");
             return Ok(new { paymentUrl });
         }
 
@@ -37,8 +37,8 @@ namespace ResiBuy.Server.Controllers
                 {
                     try
                     {
-                        var message = JsonSerializer.Serialize(checkoutData);
-                         producer.ProduceMessageAsync("checkout", message, "checkout-topic");
+                        //var message = JsonSerializer.Serialize(checkoutData);
+                        // producer.ProduceMessageAsync("checkout", message, "checkout-topic");
                         //checkoutSessionService.RemoveCheckoutSession(sessionId);
                         var token = GenerateToken();
                         _paymentTokens[token] = DateTime.UtcNow.AddMinutes(5);

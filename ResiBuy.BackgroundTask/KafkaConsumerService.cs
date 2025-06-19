@@ -1,5 +1,7 @@
 using Confluent.Kafka;
 using Microsoft.Extensions.Options;
+using ResiBuy.BackgroundTask.Model;
+using ResiBuy.BackgroundTask.Services.HttpService;
 using System.Text.Json;
 
 namespace ResiBuy.BackgroundTask;
@@ -9,12 +11,14 @@ public class KafkaConsumerService : IKafkaConsumerService, IDisposable
     private readonly IConsumer<string, string> _consumer;
     private readonly ILogger<KafkaConsumerService> _logger;
     private readonly KafkaSettings _kafkaSettings;
+    private readonly ICheckoutService _checkoutService;
     private bool _disposed = false;
 
-    public KafkaConsumerService(IOptions<KafkaSettings> kafkaSettings, ILogger<KafkaConsumerService> logger)
+    public KafkaConsumerService(IOptions<KafkaSettings> kafkaSettings, ILogger<KafkaConsumerService> logger, ICheckoutService checkoutService)
     {
         _kafkaSettings = kafkaSettings.Value;
         _logger = logger;
+        _checkoutService = checkoutService;
 
         var config = new ConsumerConfig
         {
@@ -24,7 +28,6 @@ public class KafkaConsumerService : IKafkaConsumerService, IDisposable
             EnableAutoCommit = false,
             EnablePartitionEof = true
         };
-
         _consumer = new ConsumerBuilder<string, string>(config).Build();
     }
 
@@ -49,7 +52,7 @@ public class KafkaConsumerService : IKafkaConsumerService, IDisposable
                         continue;
                     }
 
-                    await ProcessMessageAsync(consumeResult);
+                    await ProcessMessageAsync(consumeResult, _checkoutService);
                     _consumer.Commit(consumeResult);
                 }
                 catch (ConsumeException ex)
@@ -74,7 +77,7 @@ public class KafkaConsumerService : IKafkaConsumerService, IDisposable
         }
     }
 
-    private async Task ProcessMessageAsync(ConsumeResult<string, string> consumeResult)
+    private async Task ProcessMessageAsync(ConsumeResult<string, string> consumeResult, ICheckoutService checkoutService)
     {
         try
         {
@@ -88,11 +91,11 @@ public class KafkaConsumerService : IKafkaConsumerService, IDisposable
             switch (consumeResult.Topic)
             {
                 case "checkout-topic":
-                    await ProcessCheckoutMessageAsync(consumeResult.Message.Value);
+                    await ProcessCheckoutMessageAsync(consumeResult.Message.Value, checkoutService);
                     break;
-                case "resi-topic":
-                    await ProcessResiMessageAsync(consumeResult.Message.Value);
-                    break;
+                //case "resi-topic":
+                //    await ProcessResiMessageAsync(consumeResult.Message.Value);
+                //    break;
                 default:
                     _logger.LogWarning("Unknown topic: {Topic}", consumeResult.Topic);
                     break;
@@ -104,29 +107,20 @@ public class KafkaConsumerService : IKafkaConsumerService, IDisposable
         }
     }
 
-    private async Task ProcessCheckoutMessageAsync(string message)
+    private async Task ProcessCheckoutMessageAsync(string message, ICheckoutService checkoutService)
     {
         try
         {
             _logger.LogInformation("Processing checkout message: {Message}", message);
 
             // Parse the checkout message with typed model
-            var checkoutData = JsonSerializer.Deserialize<CheckoutMessage>(message);
+            var checkoutData = JsonSerializer.Deserialize<CheckoutData>(message);
 
             if (checkoutData != null)
             {
-                _logger.LogInformation("Processing checkout for user {UserId}, order {OrderId}, total: {TotalAmount}",
-                    checkoutData.UserId, checkoutData.OrderId, checkoutData.TotalAmount);
-
-                // Add your checkout processing logic here
-                // For example:
-                // - Update order status in database
-                // - Send email notifications
-                // - Update inventory
-                // - Send notifications via SignalR
-
-                await Task.Delay(100); // Simulate processing time
-                _logger.LogInformation("Checkout message processed successfully for order {OrderId}", checkoutData.OrderId);
+                _logger.LogInformation("Processing checkout for user");
+                await checkoutService.Checkout(checkoutData);
+                await Task.Delay(100); 
             }
             else
             {

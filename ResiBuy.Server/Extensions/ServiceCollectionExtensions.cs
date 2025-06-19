@@ -1,6 +1,7 @@
 ﻿using ResiBuy.Server.Infrastructure.DbServices.CartItemDbService;
+using ResiBuy.Server.Infrastructure.DbServices.OrderDbServices;
+using ResiBuy.Server.Infrastructure.DbServices.OrderItemDbServices;
 using ResiBuy.Server.Services.CheckoutSessionService;
-using ResiBuy.Server.Services.OrderServices;
 
 namespace ResiBuy.Server.Extensions
 {
@@ -30,6 +31,9 @@ namespace ResiBuy.Server.Extensions
             services.AddScoped<IMailBaseService, MailBaseService>();
             services.AddScoped<ICartDbService, CartDbService>();
             services.AddScoped<ICartItemDbService, CartItemDbService>();
+            services.AddScoped<IOrderDbService, OrderDbService>();
+            services.AddScoped<IOrderItemDbService, OrderItemDbService>();
+
             return services;
         }
 
@@ -38,7 +42,6 @@ namespace ResiBuy.Server.Extensions
             services.AddScoped<INotificationService, NotificationService>();
             services.AddSingleton<IKafkaProducerService, KafkaProducerService>();
             services.AddSingleton<ICheckoutSessionService, CheckoutSessionService>();
-            services.AddScoped<IOrderService, OrderService>();
             services.AddHostedService<CheckoutSessionCleanupService>();
             return services;
         }

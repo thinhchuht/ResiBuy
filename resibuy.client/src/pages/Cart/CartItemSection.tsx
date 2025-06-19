@@ -8,7 +8,7 @@ interface CartItemSectionProps {
   items: CartItemType[];
   selectedItems: string[];
   onSelect: (itemId: string) => void;
-  onQuantityChange: (itemId: string, newQuantity: number) => void;
+  onQuantityChange: (productDetailId: number, newQuantity: number) => void;
   onRemove: (itemId: string) => void;
   page: number;
   rowsPerPage: number;
@@ -41,7 +41,7 @@ const CartItemSection = ({
     maxWidth: "200px",
   };
 
-  const handleQuantityInputChange = (itemId: string, event: React.ChangeEvent<HTMLInputElement>) => {
+  const handleQuantityInputChange = (productDetailId: number, event: React.ChangeEvent<HTMLInputElement>) => {
     let value = parseInt(event.target.value);
     if (isNaN(value) || value < 1) {
       value = 1; // Mặc định về 1 nếu không hợp lệ
@@ -49,7 +49,7 @@ const CartItemSection = ({
     if (value > 10) {
       value = 10; // Giới hạn tối đa là 10
     }
-    onQuantityChange(itemId, value);
+    onQuantityChange(productDetailId, value);
   };
 
   return (
@@ -131,7 +131,19 @@ const CartItemSection = ({
                         {product.name}
                       </Typography>
                       <Typography variant="body2" color="text.secondary">
-                        Giá: {formatPrice(productDetail.price)}
+                        Giá : 
+                        {product.discount > 0 ? (
+                          <>
+                            <span style={{ textDecoration: 'line-through', color: '#888', marginRight: 6, marginLeft : 4 }}>
+                              {formatPrice(productDetail.price)}
+                            </span>
+                            <span style={{ color: 'red', fontWeight: 600 }}>
+                              {formatPrice(productDetail.price * (1 - product.discount / 100))}
+                            </span>
+                          </>
+                        ) : (
+                          <span>{formatPrice(productDetail.price)}</span>
+                        )}
                       </Typography>
                       <Typography variant="body2" color="text.secondary">
                         {Array.isArray(productDetail.additionalData)
@@ -143,12 +155,12 @@ const CartItemSection = ({
                 </TableCell>
                 <TableCell align="right" sx={{ ...tableCellStyle, minWidth: "150px" }}>
                   <Box sx={{ display: "flex", alignItems: "center", gap: 1, justifyContent: "flex-end" }}>
-                    <IconButton size="small" onClick={() => onQuantityChange(item.id, item.quantity - 1)} disabled={item.quantity <= 1}>
+                    <IconButton size="small" onClick={() => onQuantityChange(item.productDetailId, item.quantity - 1)} disabled={item.quantity <= 1}>
                       <Remove fontSize="small" />
                     </IconButton>
                     <TextField
                       value={item.quantity}
-                      onChange={(e: React.ChangeEvent<HTMLInputElement>) => handleQuantityInputChange(item.id, e)}
+                      onChange={(e: React.ChangeEvent<HTMLInputElement>) => handleQuantityInputChange(item.productDetailId, e)}
                       variant="standard"
                       size="small"
                       sx={{
@@ -170,7 +182,7 @@ const CartItemSection = ({
                         style: { textAlign: "center" },
                       }}
                     />
-                    <IconButton size="small" onClick={() => onQuantityChange(item.id, item.quantity + 1)} disabled={item.quantity >= 10}>
+                    <IconButton size="small" onClick={() => onQuantityChange(item.productDetailId, item.quantity + 1)} disabled={item.quantity >= 10}>
                       <Add fontSize="small" />
                     </IconButton>
                     <IconButton size="small" color="error" onClick={() => onRemove(item.id)}>
@@ -183,7 +195,7 @@ const CartItemSection = ({
                 </TableCell>
                 <TableCell align="right" sx={{ ...tableCellStyle, minWidth: "150px" }}>
                   <Typography variant="h6" color="red">
-                    {formatPrice(productDetail.price * item.quantity)}
+                    {formatPrice((productDetail.price * (1 - (product.discount || 0) / 100)) * item.quantity)}
                   </Typography>
                 </TableCell>
               </TableRow>

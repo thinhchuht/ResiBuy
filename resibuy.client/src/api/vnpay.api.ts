@@ -2,27 +2,24 @@
 import axiosClient from "./base.api";
 
 export interface CheckoutRequest {
-  orders: OrderRequest[];
-  totalAmount: number;
-  paymentMethod: string;
   userId: string;
+  grandTotal: number;
+  addressId : string;
+  paymentMethod: string;
+  orders: OrderRequest[];
 }
 
 export interface OrderRequest {
   voucherId?: string;
   totalPrice: number;
   items: OrderItemRequest[];
-  roomId: string;
-  areaId: string;
-  buildingId: string;
-  paymentMethod: string;
   note?: string;
 }
 
 export interface OrderItemRequest {
   quantity: number;
   price: number;
-  productDetailId: string;
+  productDetailId: number;
 }
 
 export interface SessionStatistics {
@@ -36,22 +33,12 @@ export interface SessionStatistics {
 
 const vnPayUrl = "/api/vnpay";
 const vnPayApi = {
-  getPaymentUrl: async (amount: number, orderId: string, orderInfo: string) => {
+  getPaymentUrl: async (checkoutRequest : CheckoutRequest) => {
     try {
-      const response = await axiosClient.post(vnPayUrl + "/create-payment", { amount, orderId, orderInfo });
+      const response = await axiosClient.post(vnPayUrl + "/create-payment", checkoutRequest);
       return { success: true, data: response.data };
     } catch (error: any) {
       console.error("Createpayment failed:", error);
-      return { success: false, error };
-    }
-  },
-
-  createPaymentWithSession: async (checkoutRequest: CheckoutRequest) => {
-    try {
-      const response = await axiosClient.post(vnPayUrl + "/create-payment-with-session", checkoutRequest);
-      return { success: true, data: response.data };
-    } catch (error: any) {
-      console.error("Create payment with session failed:", error);
       return { success: false, error };
     }
   },

@@ -9,12 +9,13 @@ namespace ResiBuy.Server.Infrastructure.DbServices.CartItemDbService
             _context = context;
         }
 
-        public async Task<ResponseModel> DeleteBatchAsync(IEnumerable<Guid> cartItemIds)
+        public async Task<ResponseModel> DeleteBatchAsync(Guid id, IEnumerable<Guid> cartItemIds)
         {
             try
             {
                 if (cartItemIds == null || !cartItemIds.Any()) throw new CustomException(ExceptionErrorCode.InvalidInput, "Không có sản phẩm nào trong giỏ hàng");
                 var cartItems = await _context.CartItems
+                    .Where(ci => ci.CartId == id)
                     .Where(ci => cartItemIds.Contains(ci.Id))
                     .ToListAsync();
 
@@ -31,14 +32,14 @@ namespace ResiBuy.Server.Infrastructure.DbServices.CartItemDbService
             }
         }
 
-        public async Task<CartItem> GetMatchingCartItemsAsync(Guid cartId, int productDetailId)
+        public async Task<IEnumerable<CartItem>> GetMatchingCartItemsAsync(Guid cartId, IEnumerable<int> productDetailIds)
         {
             try
             {
-                var cartItem = await _context.CartItems
-                    .Include(ci => ci.ProductDetail)
-                    .FirstOrDefaultAsync(ci => ci.CartId == cartId && ci.ProductDetailId == productDetailId);
-                return cartItem;
+                var cartItems = await _context.CartItems
+                    .Where(ci => productDetailIds.Contains(ci.ProductDetailId) && ci.CartId == cartId)
+                    .ToListAsync();
+                return cartItems;
             }
             catch (Exception ex)
             {
@@ -72,6 +73,24 @@ namespace ResiBuy.Server.Infrastructure.DbServices.CartItemDbService
             catch (Exception ex)
             {
                 throw new CustomException(ExceptionErrorCode.RepositoryError, ex.Message);
+            }
+        }
+
+        public async Task<ResponseModel> DeleteBatchByProductDetailIdAsync(Guid cartId, IEnumerable<int> productDetailIds)
+        {
+            try
+            {
+
+                //if (productDetailIds == null || !productDetailIds.Any()) throw new CustomException(ExceptionErrorCode.InvalidInput, "Không có sản phẩm nào trong giỏ hàng");
+                var cartItems = await GetMatchingCartItemsAsync(cartId, productDetailIds);
+                _context.CartItems.RemoveRange(cartItems);
+                await _context.SaveChangesAsync();
+                return ResponseModel.SuccessResponse();
+            }
+
+            catch (Exception ex)
+            {
+                throw new CustomException(ExceptionErrorCode.RepositoryError, ex.ToString());
             }
         }
     }

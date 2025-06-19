@@ -45,6 +45,7 @@
 
   <ItemGroup>
     <Folder Include="Application\Commands\CartitemCommands\" />
+    <Folder Include="Application\Commands\NewFolder\" />
     <Folder Include="Application\Queries\AreaQueries\" />
     <Folder Include="Services\HttpServices\" />
   </ItemGroup>
