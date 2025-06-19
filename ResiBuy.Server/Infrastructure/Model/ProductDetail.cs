@@ -12,7 +12,15 @@
         public Image Image { get; set; }
         public IEnumerable<CartItem> CartItems { get; set; }
         public IEnumerable<OrderItem> OrderItems { get; set; }
-        public IEnumerable<AdditionalData> AdditionalData { get; set; } = new List<AdditionalData>();
+        public List<AdditionalData> AdditionalData { get; set; } = new List<AdditionalData>();
+
+        public ProductDetail( decimal price, WeightCategory weight, bool isOutOfStock = false)
+        {
+            Price = price;
+            Weight = weight;
+            IsOutOfStock = isOutOfStock;
+            Sold = 0;
+        }
     }
 
     public enum WeightCategory

@@ -1,4 +1,5 @@
 ﻿using ResiBuy.Server.Application.Commands.ProductCommands;
+using ResiBuy.Server.Application.Commands.ProductCommands.DTOs;
 using ResiBuy.Server.Application.Queries.ProductQueries;
 
 namespace ResiBuy.Server.Controllers
@@ -8,11 +9,11 @@ namespace ResiBuy.Server.Controllers
     public class ProductController(IMediator mediator) : ControllerBase
     {
         [HttpPost("create")]
-        public async Task<IActionResult> CreateAsync([FromBody] CreateProductCommand command)
+        public async Task<IActionResult> CreateAsync([FromBody] CreateProductDto dto)
         {
             try
             {
-                var result = await mediator.Send(command);
+                var result = await mediator.Send(new CreateProductCommand(dto));
                 return Ok(result);
             }
             catch (Exception ex)
@@ -20,6 +21,8 @@ namespace ResiBuy.Server.Controllers
                 return BadRequest(ResponseModel.ExceptionResponse(ex.ToString()));
             }
         }
+
+
 
 
 

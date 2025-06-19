@@ -1,4 +1,6 @@
-﻿var builder = WebApplication.CreateBuilder(args);
+﻿using ResiBuy.Server.Application.Commands.ProductCommands;
+
+var builder = WebApplication.CreateBuilder(args);
 
 var services = builder.Services;
 

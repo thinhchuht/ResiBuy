@@ -235,7 +235,6 @@ namespace ResiBuy.Server.Infrastructure.Migrations
                     Describe = table.Column<string>(type: "nvarchar(max)", nullable: true),
                     IsOutOfStock = table.Column<bool>(type: "bit", nullable: false),
                     Discount = table.Column<int>(type: "int", nullable: false),
-                    Sold = table.Column<int>(type: "int", nullable: false),
                     CreatedAt = table.Column<DateTime>(type: "datetime2", nullable: false),
                     UpdatedAt = table.Column<DateTime>(type: "datetime2", nullable: false),
                     StoreId = table.Column<Guid>(type: "uniqueidentifier", nullable: false),
@@ -333,7 +332,7 @@ namespace ResiBuy.Server.Infrastructure.Migrations
                         column: x => x.ShippingAddressId,
                         principalTable: "Rooms",
                         principalColumn: "Id",
-                        onDelete: ReferentialAction.Restrict);
+                        onDelete: ReferentialAction.Cascade);
                     table.ForeignKey(
                         name: "FK_Orders_Shippers_ShipperId",
                         column: x => x.ShipperId,
@@ -521,7 +520,7 @@ namespace ResiBuy.Server.Infrastructure.Migrations
             migrationBuilder.InsertData(
                 table: "Users",
                 columns: new[] { "Id", "AvatarId", "CreatedAt", "DateOfBirth", "Email", "EmailConfirmed", "FullName", "IdentityNumber", "IsLocked", "PasswordHash", "PhoneNumber", "PhoneNumberConfirmed", "Roles", "UpdatedAt" },
-                values: new object[] { "adm_df", null, new DateTime(2025, 6, 18, 23, 2, 23, 59, DateTimeKind.Local).AddTicks(7422), new DateTime(1990, 1, 1, 0, 0, 0, 0, DateTimeKind.Unspecified), "admin@123", true, "Administrator", "admin", false, "$2a$11$HL0/t9Pe17zdro5NA6OnRePaKbGXMgB6Q.9nEsMUZFBrC0sIILrBi", "admin", true, "[\"ADMIN\"]", new DateTime(2025, 6, 18, 23, 2, 23, 59, DateTimeKind.Local).AddTicks(7443) });
+                values: new object[] { "adm_df", null, new DateTime(2025, 6, 19, 18, 52, 1, 448, DateTimeKind.Local).AddTicks(2955), new DateTime(1990, 1, 1, 0, 0, 0, 0, DateTimeKind.Unspecified), "admin@123", true, "Administrator", "admin", false, "$2a$11$qRC9hUNrfIrM921JJH/WDONgqgBOyC4DybfDcWRdr4z5/Eo6NKAZu", "admin", true, "[\"ADMIN\"]", new DateTime(2025, 6, 19, 18, 52, 1, 448, DateTimeKind.Local).AddTicks(2972) });
 
             migrationBuilder.CreateIndex(
                 name: "IX_AdditionalDatas_ProductDetailId",

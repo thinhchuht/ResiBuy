@@ -150,7 +150,6 @@ namespace ResiBuy.Server.Infrastructure.Migrations
                         .HasColumnType("nvarchar(450)");
 
                     b.Property<Guid?>("CategoryId")
-
                         .HasColumnType("uniqueidentifier");
 
                     b.Property<string>("Name")
@@ -171,7 +170,6 @@ namespace ResiBuy.Server.Infrastructure.Migrations
                     b.HasKey("Id");
 
                     b.HasIndex("CategoryId")
-
                         .IsUnique()
                         .HasFilter("[CategoryId] IS NOT NULL");
 
@@ -296,9 +294,6 @@ namespace ResiBuy.Server.Infrastructure.Migrations
                     b.Property<string>("Name")
                         .HasColumnType("nvarchar(max)");
 
-                    b.Property<int>("Sold")
-                        .HasColumnType("int");
-
                     b.Property<Guid>("StoreId")
                         .HasColumnType("uniqueidentifier");
 
@@ -333,7 +328,6 @@ namespace ResiBuy.Server.Infrastructure.Migrations
 
                     b.Property<int>("Sold")
                         .HasColumnType("int");
-
 
                     b.Property<int>("Weight")
                         .HasColumnType("int");
@@ -556,21 +550,18 @@ namespace ResiBuy.Server.Infrastructure.Migrations
                         new
                         {
                             Id = "adm_df",
-
-                            CreatedAt = new DateTime(2025, 6, 18, 23, 2, 23, 59, DateTimeKind.Local).AddTicks(7422),
+                            CreatedAt = new DateTime(2025, 6, 19, 18, 52, 1, 448, DateTimeKind.Local).AddTicks(2955),
                             DateOfBirth = new DateTime(1990, 1, 1, 0, 0, 0, 0, DateTimeKind.Unspecified),
                             Email = "admin@123",
                             EmailConfirmed = true,
                             FullName = "Administrator",
                             IdentityNumber = "admin",
                             IsLocked = false,
-
-                            PasswordHash = "$2a$11$HL0/t9Pe17zdro5NA6OnRePaKbGXMgB6Q.9nEsMUZFBrC0sIILrBi",
+                            PasswordHash = "$2a$11$qRC9hUNrfIrM921JJH/WDONgqgBOyC4DybfDcWRdr4z5/Eo6NKAZu",
                             PhoneNumber = "admin",
                             PhoneNumberConfirmed = true,
                             Roles = "[\"ADMIN\"]",
-                            UpdatedAt = new DateTime(2025, 6, 18, 23, 2, 23, 59, DateTimeKind.Local).AddTicks(7443)
-
+                            UpdatedAt = new DateTime(2025, 6, 19, 18, 52, 1, 448, DateTimeKind.Local).AddTicks(2972)
                         });
                 });
 
@@ -702,7 +693,6 @@ namespace ResiBuy.Server.Infrastructure.Migrations
                         .HasForeignKey("ResiBuy.Server.Infrastructure.Model.Image", "CategoryId")
                         .OnDelete(DeleteBehavior.Cascade);
 
-
                     b.HasOne("ResiBuy.Server.Infrastructure.Model.ProductDetail", "ProductDetail")
                         .WithOne("Image")
                         .HasForeignKey("ResiBuy.Server.Infrastructure.Model.Image", "ProductDetailId");
@@ -729,7 +719,7 @@ namespace ResiBuy.Server.Infrastructure.Migrations
                     b.HasOne("ResiBuy.Server.Infrastructure.Model.Room", "ShippingAddress")
                         .WithMany("Orders")
                         .HasForeignKey("ShippingAddressId")
-                        .OnDelete(DeleteBehavior.Restrict)
+                        .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
 
                     b.HasOne("ResiBuy.Server.Infrastructure.Model.Store", "Store")

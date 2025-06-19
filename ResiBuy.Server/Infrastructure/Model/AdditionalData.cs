@@ -7,5 +7,11 @@
         public string Value { get; set; }
         public int ProductDetailId { get; set; }
         public ProductDetail ProductDetail { get; set; } = null!;
+
+        public AdditionalData( string key, string value)
+        {
+            Key = key;
+            Value = value;
+        }
     }
 }
