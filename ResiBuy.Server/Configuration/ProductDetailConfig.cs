@@ -7,7 +7,7 @@
             builder.HasMany(oi => oi.OrderItems)
                  .WithOne(p => p.ProductDetail)
                  .HasForeignKey(oi => oi.ProductDetailId)
-                 .OnDelete(DeleteBehavior.Restrict); // Ngăn xóa ProductDetail nếu có OrderItem
+                 .OnDelete(DeleteBehavior.Restrict); 
         }
     }
 }
