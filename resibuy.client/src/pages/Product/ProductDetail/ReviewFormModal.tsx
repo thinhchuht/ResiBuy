@@ -2,7 +2,7 @@ import React, { useState } from "react";
 import { Modal, Box, Typography, IconButton, Rating, TextField, Button, Select, MenuItem, FormControl, InputLabel, Avatar } from "@mui/material";
 import CloseIcon from "@mui/icons-material/Close";
 import type { Product } from "../../../types/models";
-import { formatPrice, getMinPrice } from "../../../utils/priceUtils";
+import { formatPrice } from "../../../utils/priceUtils";
 
 interface ReviewFormModalProps {
   open: boolean;
@@ -15,6 +15,19 @@ const ReviewFormModal: React.FC<ReviewFormModalProps> = ({ open, onClose, produc
   const [reviewTitle, setReviewTitle] = useState("");
   const [productReview, setProductReview] = useState("");
   const [nameDisplayFormat, setNameDisplayFormat] = useState("anonymous");
+
+  // Get minimum price from productDetails
+  const getMinPrice = (product: Product) => {
+    if (!product.productDetails || product.productDetails.length === 0) return 0;
+    return Math.min(...product.productDetails.map(detail => detail.price));
+  };
+
+  // Get first image from productDetails
+  const getFirstImage = (product: Product) => {
+    if (!product.productDetails || product.productDetails.length === 0) return null;
+    const firstDetail = product.productDetails[0];
+    return firstDetail.image?.thumbUrl || firstDetail.image?.url || null;
+  };
 
   const handleSubmit = () => {
     console.log({
@@ -56,7 +69,7 @@ const ReviewFormModal: React.FC<ReviewFormModalProps> = ({ open, onClose, produc
 
         {product && (
           <Box display="flex" alignItems="center" gap={2} mb={3} border={1} borderColor="grey.300" p={2} borderRadius={1}>
-            <Avatar variant="square" src={product.productImgs [0]?.thumbUrl} alt={product.name} sx={{ width: 60, height: 60 }} />
+            <Avatar variant="square" src={getFirstImage(product) || undefined} alt={product.name} sx={{ width: 60, height: 60 }} />
             <Box>
               <Typography variant="subtitle1" fontWeight="bold">
                 {product.name}
@@ -77,7 +90,7 @@ const ReviewFormModal: React.FC<ReviewFormModalProps> = ({ open, onClose, produc
             name="product-rating"
             value={rating}
             precision={1}
-            onChange={(event, newValue) => {
+            onChange={(_event, newValue) => {
               setRating(newValue);
             }}
             size="large"

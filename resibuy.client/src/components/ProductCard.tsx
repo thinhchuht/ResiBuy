@@ -4,67 +4,28 @@ import { Star } from "@mui/icons-material";
 import type { Product } from "../types/models";
 import { formatPrice } from "../utils/priceUtils";
 
-export interface SelectedProduct extends Omit<Product, "costData"> {
-  costData: {
-    id: string;
-    key: string;
-    value: string;
-    price: number;
-    uncostData: Array<{
-      id: string;
-      key: string;
-      value: string;
-    }>;
-  };
-}
-
 interface ProductCardProps {
   product: Product;
   productActions: {
     icon: React.ReactNode;
-    onClick: (selectedProduct: SelectedProduct) => void;
+    onClick: (product: Product) => void;
     label: string;
   }[];
 }
 
 const ProductCard = ({ product, productActions }: ProductCardProps) => {
-  // Get costData with minimum price
-  const defaultCostData = product.costData.reduce((min, current) => (current.price < min.price ? current : min), product.costData[0]);
+  // Get productDetail with minimum price
+  const defaultProductDetail = product.productDetails.reduce((min, current) => 
+    (current.price < min.price ? current : min), product.productDetails[0]);
 
-  const basePrice = defaultCostData.price;
+  const basePrice = defaultProductDetail.price;
   const discountedPrice = basePrice * (1 - product.discount / 100);
-  // Get first image's thumbUrl
-  const thumbUrl = product.productImgs[0]?.thumbUrl;
+  // Get first image's thumbUrl from the default product detail
+  const thumbUrl = defaultProductDetail.image?.thumbUrl;
 
   const handleActionClick = (e: React.MouseEvent, action: ProductCardProps["productActions"][0]) => {
     e.preventDefault();
-    if (!defaultCostData) return;
-
-    // Filter out duplicate uncostData keys, keeping only the first occurrence
-    const uniqueUncostData =
-      defaultCostData.uncostData?.reduce((acc, current) => {
-        if (!acc.find((item) => item.key === current.key)) {
-          acc.push(current);
-        }
-        return acc;
-      }, [] as typeof defaultCostData.uncostData) || [];
-
-    const selectedProduct: SelectedProduct = {
-      ...product,
-      costData: {
-        id: defaultCostData.id,
-        key: defaultCostData.key,
-        value: defaultCostData.value,
-        price: defaultCostData.price,
-        uncostData: uniqueUncostData.map((uncost) => ({
-          id: uncost.id,
-          key: uncost.key,
-          value: uncost.value,
-        })),
-      },
-    };
-
-    action.onClick(selectedProduct);
+    action.onClick(product);
   };
 
   return (

@@ -5,7 +5,6 @@ import type { CartItem } from "../../types/models";
 import CartItemSection from "./CartItemSection";
 import CartSummarySection from "./CartSummarySection";
 import cartApi from "../../api/cart.api";
-import cartItemApi from "../../api/cartItem.api";
 import { useAuth } from "../../contexts/AuthContext";
 import { toast } from "react-toastify";
 
@@ -30,15 +29,21 @@ const Cart = () => {
       console.error("Error fetching cart items:", error);
     }
   };
+  useEffect(() => {
+    console.log("render");
+  }, []);
 
   useEffect(() => {
     fetchCartItems();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [page, rowsPerPage, user?.cartId]);
 
-  const handleQuantityChange = async (itemId: string, newQuantity: number) => {
+  const handleQuantityChange = async (productDetailId: number, newQuantity: number) => {
     try {
-      await cartItemApi.updateQuantity(itemId, newQuantity);
-      setCartItems((prevItems) => prevItems.map((item) => (item.id === itemId ? { ...item, quantity: newQuantity } : item)));
+      if (user) {
+        await cartApi.addToCart(user?.cartId, productDetailId, newQuantity, false);
+        setCartItems((prevItems) => prevItems.map((item) => (item.productDetailId === productDetailId ? { ...item, quantity: newQuantity } : item)));
+      }
     } catch (error) {
       console.error("Error updating quantity:", error);
     }
@@ -46,7 +51,7 @@ const Cart = () => {
 
   const handleRemoveItem = async (itemId: string) => {
     try {
-      await cartApi.removeFromCart(user?.cartId || "", [itemId]);
+      await cartApi.removeFromCart( [itemId]);
       setCartItems((prevItems) => prevItems.filter((item) => item.id !== itemId));
       setSelectedCartItems((prev) => prev.filter((id) => id !== itemId));
       toast.success("Xóa sản phẩm khỏi giỏ hàng thành công!");
@@ -70,10 +75,23 @@ const Cart = () => {
   };
 
   const handleCheckout = () => {
-    navigate("/checkout", { state: { selectedItems: selectedCartItems } });
+    const selectedItemsWithDiscount = selectedCartItems.map((item) => {
+      const discount = item.productDetail.product.discount || 0;
+      const discountedPrice = item.productDetail.price * (1 - discount / 100);
+      return {
+        ...item,
+        productDetail: {
+          ...item.productDetail,
+          price: discountedPrice,
+        },
+      };
+    });
+    navigate("/checkout", {
+      state: { selectedItems: selectedItemsWithDiscount },
+    });
   };
 
-  const handleChangePage = (event: unknown, newPage: number) => {
+  const handleChangePage = (_event: unknown, newPage: number) => {
     setPage(newPage);
   };
 

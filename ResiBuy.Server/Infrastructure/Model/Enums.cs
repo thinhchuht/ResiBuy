@@ -18,7 +18,8 @@ public enum PaymentMethod
 [JsonConverter(typeof(JsonStringEnumConverter))]
 public enum PaymentStatus
 {
-    Success,
-    Fail,
-    UnPaid
+    Pending = 0,
+    Paid = 1,
+    Failed = 2,
+    Refunded = 3,
 }
