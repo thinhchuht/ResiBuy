@@ -165,7 +165,11 @@ export interface Shipper {
   userId: string;
   isAvailable: boolean;
   orders: Order[];
+  startWorkTime: string;  
+  endWorkTime: string;    
+  reportCount: number;
 }
+
 
 export interface Voucher {
   id: string;
@@ -248,6 +252,22 @@ export interface EventItem {
   description?: string;
   storeId: string;
 }
+export interface TooltipProps {
+  active?: boolean;
+  payload?: {
+    payload: {
+      name: string;
+      revenue: number;
+      hasData: boolean;
+    };
+  }[];
+  label?: string;
+}
+
+export interface StatisticsSectionProps {
+  activeTab: string;
+  setActiveTab: (value: string) => void;
+
 
 export interface Image {
   id: string;
