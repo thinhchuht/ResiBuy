@@ -3,6 +3,8 @@ import { Add, Remove, Delete } from "@mui/icons-material";
 import { useNavigate } from "react-router-dom";
 import type { CartItem as CartItemType } from "../../types/models";
 import { formatPrice } from "../../utils/priceUtils";
+import { useEffect, useRef, useState } from "react";
+import debounce from "lodash.debounce";
 
 interface CartItemSectionProps {
   items: CartItemType[];
@@ -35,21 +37,61 @@ const CartItemSection = ({
 }: CartItemSectionProps) => {
   const navigate = useNavigate();
 
+  const [localQuantities, setLocalQuantities] = useState<{ [productDetailId: number]: number }>({});
+
+  useEffect(() => {
+    const initialQuantities: { [productDetailId: number]: number } = {};
+    items.forEach((item) => {
+      initialQuantities[item.productDetailId] = item.quantity;
+    });
+    setLocalQuantities(initialQuantities);
+  }, [items]);
+
+  // Bỏ phần ref timer, thay bằng ref lưu debounce function
+  const debounceRefs = useRef<{ [productDetailId: number]: ((id: number, value: number) => void) & { cancel?: () => void } }>({});
+
+  const getDebouncedChange = (productDetailId: number) => {
+    if (!debounceRefs.current[productDetailId]) {
+      debounceRefs.current[productDetailId] = debounce((id: number, value: number) => {
+        onQuantityChange(id, value);
+      }, 400);
+    }
+    return debounceRefs.current[productDetailId];
+  };
+
+  // Handler cho input số lượng
+  const handleQuantityInputChange = (productDetailId: number, event: React.ChangeEvent<HTMLInputElement>) => {
+    let value = parseInt(event.target.value);
+    if (isNaN(value) || value < 1) {
+      value = 1;
+    }
+    if (value > 10) {
+      value = 10;
+    }
+    setLocalQuantities((prev) => ({ ...prev, [productDetailId]: value }));
+    getDebouncedChange(productDetailId)(productDetailId, value);
+  };
+
+  // Handler cho nút +/-, tương tự
+  const handleQuantityButton = (productDetailId: number, newQuantity: number) => {
+    if (newQuantity < 1) newQuantity = 1;
+    if (newQuantity > 10) newQuantity = 10;
+    setLocalQuantities((prev) => ({ ...prev, [productDetailId]: newQuantity }));
+    getDebouncedChange(productDetailId)(productDetailId, newQuantity);
+  };
+
+  // Cleanup debounce khi unmount
+  useEffect(() => {
+    return () => {
+      // eslint-disable-next-line react-hooks/exhaustive-deps
+      Object.values(debounceRefs.current).forEach((fn) => fn.cancel && fn.cancel());
+    };
+  }, []);
+
   const tableCellStyle = {
     wordBreak: "break-word" as const,
     whiteSpace: "normal" as const,
     maxWidth: "200px",
-  };
-
-  const handleQuantityInputChange = (productDetailId: number, event: React.ChangeEvent<HTMLInputElement>) => {
-    let value = parseInt(event.target.value);
-    if (isNaN(value) || value < 1) {
-      value = 1; // Mặc định về 1 nếu không hợp lệ
-    }
-    if (value > 10) {
-      value = 10; // Giới hạn tối đa là 10
-    }
-    onQuantityChange(productDetailId, value);
   };
 
   return (
@@ -126,40 +168,36 @@ const CartItemSection = ({
                           WebkitLineClamp: 2,
                           WebkitBoxOrient: "vertical",
                         }}
-                        onClick={() => navigate(`/products?id=${product.id}`)}
-                      >
+                        onClick={() => navigate(`/products?id=${product.id}`)}>
                         {product.name}
                       </Typography>
                       <Typography variant="body2" color="text.secondary">
-                        Giá : 
+                        Giá :
                         {product.discount > 0 ? (
                           <>
-                            <span style={{ textDecoration: 'line-through', color: '#888', marginRight: 6, marginLeft : 4 }}>
-                              {formatPrice(productDetail.price)}
-                            </span>
-                            <span style={{ color: 'red', fontWeight: 600 }}>
-                              {formatPrice(productDetail.price * (1 - product.discount / 100))}
-                            </span>
+                            <span style={{ textDecoration: "line-through", color: "#888", marginRight: 6, marginLeft: 4 }}>{formatPrice(productDetail.price)}</span>
+                            <span style={{ color: "red", fontWeight: 600 }}>{formatPrice(productDetail.price * (1 - product.discount / 100))}</span>
                           </>
                         ) : (
                           <span>{formatPrice(productDetail.price)}</span>
                         )}
                       </Typography>
                       <Typography variant="body2" color="text.secondary">
-                        {Array.isArray(productDetail.additionalData)
-                          ? productDetail.additionalData.map(ad => ad.value).join(", ")
-                          : ""}
+                        {Array.isArray(productDetail.additionalData) ? productDetail.additionalData.map((ad) => ad.value).join(", ") : ""}
                       </Typography>
                     </Box>
                   </Box>
                 </TableCell>
                 <TableCell align="right" sx={{ ...tableCellStyle, minWidth: "150px" }}>
                   <Box sx={{ display: "flex", alignItems: "center", gap: 1, justifyContent: "flex-end" }}>
-                    <IconButton size="small" onClick={() => onQuantityChange(item.productDetailId, item.quantity - 1)} disabled={item.quantity <= 1}>
+                    <IconButton
+                      size="small"
+                      onClick={() => handleQuantityButton(item.productDetailId, (localQuantities[item.productDetailId] || 1) - 1)}
+                      disabled={(localQuantities[item.productDetailId] || 1) <= 1}>
                       <Remove fontSize="small" />
                     </IconButton>
                     <TextField
-                      value={item.quantity}
+                      value={localQuantities[item.productDetailId] ?? item.quantity}
                       onChange={(e: React.ChangeEvent<HTMLInputElement>) => handleQuantityInputChange(item.productDetailId, e)}
                       variant="standard"
                       size="small"
@@ -182,7 +220,10 @@ const CartItemSection = ({
                         style: { textAlign: "center" },
                       }}
                     />
-                    <IconButton size="small" onClick={() => onQuantityChange(item.productDetailId, item.quantity + 1)} disabled={item.quantity >= 10}>
+                    <IconButton
+                      size="small"
+                      onClick={() => handleQuantityButton(item.productDetailId, (localQuantities[item.productDetailId] || 1) + 1)}
+                      disabled={(localQuantities[item.productDetailId] || 1) >= 10}>
                       <Add fontSize="small" />
                     </IconButton>
                     <IconButton size="small" color="error" onClick={() => onRemove(item.id)}>
@@ -195,7 +236,7 @@ const CartItemSection = ({
                 </TableCell>
                 <TableCell align="right" sx={{ ...tableCellStyle, minWidth: "150px" }}>
                   <Typography variant="h6" color="red">
-                    {formatPrice((productDetail.price * (1 - (product.discount || 0) / 100)) * item.quantity)}
+                    {formatPrice(productDetail.price * (1 - (product.discount || 0) / 100) * item.quantity)}
                   </Typography>
                 </TableCell>
               </TableRow>

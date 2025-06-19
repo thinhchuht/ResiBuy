@@ -9,13 +9,12 @@ namespace ResiBuy.Server.Infrastructure.DbServices.CartItemDbService
             _context = context;
         }
 
-        public async Task<ResponseModel> DeleteBatchAsync(Guid id, IEnumerable<Guid> cartItemIds)
+        public async Task<ResponseModel> DeleteBatchAsync(IEnumerable<Guid> cartItemIds)
         {
             try
             {
                 if (cartItemIds == null || !cartItemIds.Any()) throw new CustomException(ExceptionErrorCode.InvalidInput, "Không có sản phẩm nào trong giỏ hàng");
                 var cartItems = await _context.CartItems
-                    .Where(ci => ci.CartId == id)
                     .Where(ci => cartItemIds.Contains(ci.Id))
                     .ToListAsync();
 

@@ -5,7 +5,6 @@ import type { CartItem } from "../../types/models";
 import CartItemSection from "./CartItemSection";
 import CartSummarySection from "./CartSummarySection";
 import cartApi from "../../api/cart.api";
-import cartItemApi from "../../api/cartItem.api";
 import { useAuth } from "../../contexts/AuthContext";
 import { toast } from "react-toastify";
 
@@ -21,11 +20,7 @@ const Cart = () => {
   const fetchCartItems = async () => {
     try {
       if (!user?.cartId) return;
-      const response = await cartApi.getCartById(
-        user.cartId,
-        page + 1,
-        rowsPerPage
-      );
+      const response = await cartApi.getCartById(user.cartId, page + 1, rowsPerPage);
       const { items, totalCount } = response.data.data;
       setCartItems(items);
       setTotalItems(totalCount);
@@ -34,6 +29,9 @@ const Cart = () => {
       console.error("Error fetching cart items:", error);
     }
   };
+  useEffect(() => {
+    console.log("render");
+  }, []);
 
   useEffect(() => {
     fetchCartItems();
@@ -43,13 +41,8 @@ const Cart = () => {
   const handleQuantityChange = async (productDetailId: number, newQuantity: number) => {
     try {
       if (user) {
-        // await cartApi.addToCart(user?.cartId, productDetailId, newQuantity, false);
-        console.log(newQuantity)
-        setCartItems((prevItems) =>
-          prevItems.map((item) =>
-            item.productDetailId === productDetailId ? { ...item, quantity: newQuantity } : item
-          )
-        );
+        await cartApi.addToCart(user?.cartId, productDetailId, newQuantity, false);
+        setCartItems((prevItems) => prevItems.map((item) => (item.productDetailId === productDetailId ? { ...item, quantity: newQuantity } : item)));
       }
     } catch (error) {
       console.error("Error updating quantity:", error);
@@ -58,10 +51,8 @@ const Cart = () => {
 
   const handleRemoveItem = async (itemId: string) => {
     try {
-      await cartApi.removeFromCart(user?.cartId || "", [itemId]);
-      setCartItems((prevItems) =>
-        prevItems.filter((item) => item.id !== itemId)
-      );
+      await cartApi.removeFromCart( [itemId]);
+      setCartItems((prevItems) => prevItems.filter((item) => item.id !== itemId));
       setSelectedCartItems((prev) => prev.filter((id) => id !== itemId));
       toast.success("Xóa sản phẩm khỏi giỏ hàng thành công!");
     } catch (error) {
@@ -71,11 +62,7 @@ const Cart = () => {
   };
 
   const handleSelectItem = (itemId: string) => {
-    setSelectedCartItems((prev) =>
-      prev.includes(itemId)
-        ? prev.filter((id) => id !== itemId)
-        : [...prev, itemId]
-    );
+    setSelectedCartItems((prev) => (prev.includes(itemId) ? prev.filter((id) => id !== itemId) : [...prev, itemId]));
   };
 
   const handleSelectAllItems = (event: React.ChangeEvent<HTMLInputElement>) => {
@@ -108,26 +95,17 @@ const Cart = () => {
     setPage(newPage);
   };
 
-  const handleChangeRowsPerPage = (
-    event: React.ChangeEvent<HTMLInputElement>
-  ) => {
+  const handleChangeRowsPerPage = (event: React.ChangeEvent<HTMLInputElement>) => {
     setRowsPerPage(parseInt(event.target.value, 10));
     setPage(0);
   };
 
-  const selectedCartItems = cartItems.filter((item) =>
-    selectedItems.includes(item.id)
-  );
-  const allSelected =
-    selectedItems.length === cartItems.length && cartItems.length > 0;
+  const selectedCartItems = cartItems.filter((item) => selectedItems.includes(item.id));
+  const allSelected = selectedItems.length === cartItems.length && cartItems.length > 0;
 
   return (
     <Container maxWidth="xl" sx={{ py: 4 }}>
-      <Typography
-        variant="body2"
-        color="text.secondary"
-        sx={{ mb: 3, fontSize: 24 }}
-      >
+      <Typography variant="body2" color="text.secondary" sx={{ mb: 3, fontSize: 24 }}>
         <Link to="/" style={{ textDecoration: "none", color: "inherit" }}>
           Trang chủ
         </Link>{" "}
@@ -142,8 +120,7 @@ const Cart = () => {
               p: 3,
               borderRadius: 4,
               border: "1px solid #eee",
-            }}
-          >
+            }}>
             <CartItemSection
               items={cartItems}
               selectedItems={selectedItems}
@@ -161,10 +138,7 @@ const Cart = () => {
           </Paper>
         </Box>
 
-        <CartSummarySection
-          selectedItems={selectedCartItems}
-          onCheckout={handleCheckout}
-        />
+        <CartSummarySection selectedItems={selectedCartItems} onCheckout={handleCheckout} />
       </Box>
     </Container>
   );

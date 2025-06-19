@@ -36,12 +36,12 @@ namespace ResiBuy.Server.Controllers
             }
         }
 
-        [HttpDelete("{id}/items")]
-        public async Task<IActionResult> DeleteCartItems(Guid id,[FromBody] DeleteCartItemsDto deleteCartItemsDto)
+        [HttpDelete("items")]
+        public async Task<IActionResult> DeleteCartItems([FromBody] DeleteCartItemsDto deleteCartItemsDto)
         {
             try
             {
-                var result = await mediator.Send(new DeleteCartItemsCommand(id, deleteCartItemsDto));
+                var result = await mediator.Send(new DeleteCartItemsCommand( deleteCartItemsDto));
                 return Ok(result);
             }
             catch (Exception ex)

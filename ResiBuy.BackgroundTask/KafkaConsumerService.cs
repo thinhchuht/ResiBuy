@@ -87,15 +87,12 @@ public class KafkaConsumerService : IKafkaConsumerService, IDisposable
             _logger.LogInformation("Message Key: {Key}", consumeResult.Message.Key);
             _logger.LogInformation("Message Value: {Value}", consumeResult.Message.Value);
 
-            // Process different topics
             switch (consumeResult.Topic)
             {
                 case "checkout-topic":
                     await ProcessCheckoutMessageAsync(consumeResult.Message.Value, checkoutService);
                     break;
-                //case "resi-topic":
-                //    await ProcessResiMessageAsync(consumeResult.Message.Value);
-                //    break;
+
                 default:
                     _logger.LogWarning("Unknown topic: {Topic}", consumeResult.Topic);
                     break;
@@ -113,7 +110,6 @@ public class KafkaConsumerService : IKafkaConsumerService, IDisposable
         {
             _logger.LogInformation("Processing checkout message: {Message}", message);
 
-            // Parse the checkout message with typed model
             var checkoutData = JsonSerializer.Deserialize<CheckoutData>(message);
 
             if (checkoutData != null)
@@ -137,76 +133,6 @@ public class KafkaConsumerService : IKafkaConsumerService, IDisposable
         }
     }
 
-    private async Task ProcessResiMessageAsync(string message)
-    {
-        try
-        {
-            _logger.LogInformation("Processing resi message: {Message}", message);
-
-            // Parse the resi message with typed model
-            var resiData = JsonSerializer.Deserialize<ResiMessage>(message);
-
-            if (resiData != null)
-            {
-                _logger.LogInformation("Processing resi message - Type: {Type}, Action: {Action}",
-                    resiData.Type, resiData.Action);
-
-                // Add your resi processing logic here based on type and action
-                switch (resiData.Type.ToLower())
-                {
-                    case "area":
-                        await ProcessAreaMessageAsync(resiData);
-                        break;
-                    case "building":
-                        await ProcessBuildingMessageAsync(resiData);
-                        break;
-                    case "room":
-                        await ProcessRoomMessageAsync(resiData);
-                        break;
-                    default:
-                        _logger.LogWarning("Unknown resi type: {Type}", resiData.Type);
-                        break;
-                }
-
-                await Task.Delay(100); // Simulate processing time
-                _logger.LogInformation("Resi message processed successfully for {Type} {Action}",
-                    resiData.Type, resiData.Action);
-            }
-            else
-            {
-                _logger.LogWarning("Failed to deserialize resi message");
-            }
-        }
-        catch (JsonException ex)
-        {
-            _logger.LogError(ex, "Error deserializing resi message");
-        }
-        catch (Exception ex)
-        {
-            _logger.LogError(ex, "Error processing resi message");
-        }
-    }
-
-    private async Task ProcessAreaMessageAsync(ResiMessage resiData)
-    {
-        _logger.LogInformation("Processing area message - Action: {Action}", resiData.Action);
-        // Add area-specific processing logic
-        await Task.CompletedTask;
-    }
-
-    private async Task ProcessBuildingMessageAsync(ResiMessage resiData)
-    {
-        _logger.LogInformation("Processing building message - Action: {Action}", resiData.Action);
-        // Add building-specific processing logic
-        await Task.CompletedTask;
-    }
-
-    private async Task ProcessRoomMessageAsync(ResiMessage resiData)
-    {
-        _logger.LogInformation("Processing room message - Action: {Action}", resiData.Action);
-        // Add room-specific processing logic
-        await Task.CompletedTask;
-    }
 
     public async Task StopConsumingAsync()
     {
