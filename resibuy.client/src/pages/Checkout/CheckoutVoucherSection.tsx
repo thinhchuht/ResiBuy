@@ -1,6 +1,6 @@
 import { Box, Typography, Button, Divider } from "@mui/material";
 import LocalOfferIcon from "@mui/icons-material/LocalOffer";
-import type { Voucher } from "../../types/models";
+import { VoucherType, type Voucher } from "../../types/models";
 
 interface CheckoutVoucherSectionProps {
   selectedVoucher?: Voucher;
@@ -24,7 +24,7 @@ const CheckoutVoucherSection = ({ selectedVoucher, onOpenVoucherModal }: Checkou
       <Box sx={{ mb: 2, p: 2, bgcolor: "#f5f5f5", borderRadius: 1 }}>
         <Typography variant="body2" color="text.secondary">
           Đã chọn: Giảm {selectedVoucher.discountAmount}
-          {selectedVoucher.type === "Discount" ? "đ " : "% "}
+          {selectedVoucher.type === VoucherType.Amount ? "đ " : "% "}
           tối đa {selectedVoucher.maxDiscountPrice}đ
         </Typography>
       </Box>

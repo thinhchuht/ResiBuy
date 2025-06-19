@@ -1,6 +1,6 @@
 import { Box, Typography, Button, Divider, Paper } from "@mui/material";
 import type { CartItem } from "../../types/models";
-import { formatPrice, getMinPrice } from "../../utils/priceUtils";
+import { formatPrice } from "../../utils/priceUtils";
 
 interface CartSummaryProps {
   selectedItems: CartItem[];
@@ -8,17 +8,14 @@ interface CartSummaryProps {
 }
 
 const CartSummarySection = ({ selectedItems, onCheckout }: CartSummaryProps) => {
-  // Helper to get min price from costData
-  const getCartItemPrice = (item: CartItem) => getMinPrice(item.product);
   const calculateSubtotal = (): string => {
     let subtotal = 0;
     selectedItems.forEach((item) => {
-      subtotal += getCartItemPrice(item) * item.quantity;
+      const discount = item.productDetail.product.discount || 0;
+      const discountedPrice = item.productDetail.price * (1 - discount / 100);
+      subtotal += discountedPrice * item.quantity;
     });
     return formatPrice(subtotal);
-  };
-  const calculateItemTotal = (item: CartItem): string => {
-    return formatPrice(getCartItemPrice(item) * item.quantity);
   };
 
   return (
@@ -60,8 +57,8 @@ const CartSummarySection = ({ selectedItems, onCheckout }: CartSummaryProps) => 
           <>
             <Box sx={{ mb: 3 }}>
               {selectedItems.map((item, index) => {
-                const product = item.product;
-                console.log("product", product);
+                const productDetail = item.productDetail;
+                const product = productDetail.product;
                 return (
                   <Box
                     key={item.id}
@@ -80,9 +77,17 @@ const CartSummarySection = ({ selectedItems, onCheckout }: CartSummaryProps) => 
                     }}>
                     <Typography variant="body2">
                       {index + 1}. {product.name} x {item.quantity}
+                      {Array.isArray(productDetail.additionalData) && productDetail.additionalData.length > 0 && (
+                        <>
+                          <br />
+                          <span style={{ color: '#888', fontSize: 13 }}>
+                            {productDetail.additionalData.map(ad => ad.value).join(", ")}
+                          </span>
+                        </>
+                      )}
                     </Typography>
                     <Typography variant="body2" fontWeight={500} color="red">
-                      {calculateItemTotal(item)}
+                      {formatPrice((productDetail.price * (1 - (product.discount || 0) / 100)) * item.quantity)}
                     </Typography>
                   </Box>
                 );

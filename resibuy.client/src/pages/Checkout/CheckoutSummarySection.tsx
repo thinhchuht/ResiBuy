@@ -17,8 +17,12 @@ import type { PaperProps as MuiPaperProps } from "@mui/material";
 import { Formik, Form, Field } from "formik";
 import type { FieldProps } from "formik";
 import * as Yup from "yup";
+import { useState } from "react";
 import type { Room, Building, Area } from "../../types/models";
 import { useToastify } from "../../hooks/useToastify";
+import areaApi from "../../api/area.api";
+import buildingApi from "../../api/building.api";
+import roomApi from "../../api/room.api";
 
 interface OrderSummary {
   totalBeforeDiscount: number;
@@ -46,17 +50,6 @@ interface CheckoutSummarySectionProps {
     buildingName: string;
     areaName: string;
   }[];
-  areas?: Area[];
-  buildings?: Building[];
-  rooms?: Room[];
-  onDeliveryInfoChange?: (info: {
-    deliveryType: "my-room" | "other";
-    selectedRoom: string;
-    selectedArea: string;
-    selectedBuilding: string;
-    selectedOtherRoom: string;
-    paymentMethod: string;
-  }) => void;
   isLoading?: boolean;
 }
 
@@ -90,15 +83,6 @@ const validationSchema = Yup.object().shape({
   paymentMethod: Yup.string().required("Vui lòng chọn phương thức thanh toán"),
 });
 
-const initialValues: FormValues = {
-  deliveryType: "my-room",
-  selectedRoom: "",
-  selectedArea: "",
-  selectedBuilding: "",
-  selectedOtherRoom: "",
-  paymentMethod: "bank-transfer",
-};
-
 const formatPrice = (price: number) => (
   <Box component="span" sx={{ display: "inline-flex", alignItems: "baseline" }}>
     {price.toLocaleString()}
@@ -113,13 +97,64 @@ const CheckoutSummarySection = ({
   grandTotal,
   onCheckout,
   userRooms = [],
-  areas = [],
-  buildings = [],
-  rooms = [],
-  onDeliveryInfoChange,
   isLoading = false,
 }: CheckoutSummarySectionProps) => {
   const { error: showError } = useToastify();
+  
+  const [areasData, setAreasData] = useState<Area[]>([]);
+  const [buildingsData, setBuildingsData] = useState<Building[]>([]);
+  const [roomsData, setRoomsData] = useState<Room[]>([]);
+  const [fetchedAreas, setFetchedAreas] = useState<Set<string>>(new Set());
+  const [fetchedBuildings, setFetchedBuildings] = useState<Set<string>>(new Set());
+  const [areasLoaded, setAreasLoaded] = useState(false);
+
+  const initialValues: FormValues = {
+    deliveryType: "my-room",
+    selectedRoom: userRooms[0]?.roomId || "",
+    selectedArea: "",
+    selectedBuilding: "",
+    selectedOtherRoom: "",
+    paymentMethod: "BankTransfer",
+  };
+
+  const fetchBuildings = async (areaId: string) => {
+    if (fetchedAreas.has(areaId)) {
+      return;
+    }
+
+    try {
+      setBuildingsData([]);
+      setRoomsData([]);
+      setFetchedBuildings(new Set()); 
+      
+      const buildingsData = await buildingApi.getByBuilingId(areaId);
+      setBuildingsData(buildingsData);
+      setFetchedAreas(prev => new Set([...prev, areaId]));
+    } catch (error) {
+      console.error("Error fetching buildings:", error);
+      showError("Không thể tải danh sách tòa nhà");
+    }
+  };
+
+  const fetchRooms = async (buildingId: string) => {
+    if (fetchedBuildings.has(buildingId)) {
+      return;
+    }
+
+    try {
+      setRoomsData([]);
+      const roomsData = await roomApi.getByBuilingId(buildingId);
+      setRoomsData(roomsData);
+      setFetchedBuildings(prev => new Set([...prev, buildingId]));
+    } catch (error) {
+      console.error("Error fetching rooms:", error);
+      showError("Không thể tải danh sách phòng");
+    }
+  };
+
+  const displayAreas = areasData.length > 0 ? areasData : [];
+  const displayBuildings = buildingsData.length > 0 ? buildingsData : [];
+  const displayRooms = roomsData.length > 0 ? roomsData : [];
 
   return (
     <Paper
@@ -150,14 +185,14 @@ const CheckoutSummarySection = ({
 
       <Formik<FormValues>
         initialValues={initialValues}
+        enableReinitialize
         validationSchema={validationSchema}
         onSubmit={(values) => {
           const formValues = {
             ...values,
-            paymentMethod: values.paymentMethod || "bank-transfer"
+            paymentMethod: values.paymentMethod || "BankTransfer"
           };
           console.log('CheckoutSummarySection onSubmit formValues:', formValues);
-          onDeliveryInfoChange?.(formValues);
           onCheckout?.(formValues);
         }}
       >
@@ -169,10 +204,10 @@ const CheckoutSummarySection = ({
           handleBlur,
           setFieldValue,
         }) => {
-          const filteredBuildings = buildings.filter(
+          const filteredBuildings = displayBuildings.filter(
             (b) => b.areaId === values.selectedArea
           );
-          const filteredRooms = rooms.filter(
+          const filteredRooms = displayRooms.filter(
             (r) => r.buildingId === values.selectedBuilding
           );
 
@@ -211,9 +246,8 @@ const CheckoutSummarySection = ({
 
             const formValues = {
               ...values,
-              paymentMethod: values.paymentMethod || "bank-transfer"
+              paymentMethod: values.paymentMethod || "BankTransfer"
             };
-            onDeliveryInfoChange?.(formValues);
             onCheckout?.(formValues);
           };
 
@@ -227,12 +261,24 @@ const CheckoutSummarySection = ({
                   {({ field }: FieldProps) => (
                     <RadioGroup
                       {...field}
-                      onChange={(e) => {
+                      onChange={async (e) => {
                         field.onChange(e);
+                        if (e.target.value === "other" && !areasLoaded) {
+                          try {
+                            const areas = await areaApi.getAll();
+                            setAreasData(areas);
+                            setAreasLoaded(true);
+                          } catch {
+                            showError("Không thể tải danh sách khu vực");
+                          }
+                        }
                         if (e.target.value === "my-room") {
                           setFieldValue("selectedArea", "");
                           setFieldValue("selectedBuilding", "");
                           setFieldValue("selectedOtherRoom", "");
+                          if (!values.selectedRoom && userRooms.length > 0) {
+                            setFieldValue("selectedRoom", userRooms[0].roomId);
+                          }
                         } else {
                           setFieldValue("selectedRoom", "");
                         }
@@ -300,10 +346,14 @@ const CheckoutSummarySection = ({
                           handleChange(e);
                           setFieldValue("selectedBuilding", "");
                           setFieldValue("selectedOtherRoom", "");
+                          // Fetch buildings for selected area
+                          if (e.target.value) {
+                            fetchBuildings(e.target.value);
+                          }
                         }}
                         onBlur={() => handleFieldBlur("selectedArea")}
                       >
-                        {areas.map((area) => (
+                        {displayAreas.map((area) => (
                           <MenuItem key={area.id} value={area.id}>
                             {area.name}
                           </MenuItem>
@@ -329,6 +379,10 @@ const CheckoutSummarySection = ({
                         onChange={(e) => {
                           handleChange(e);
                           setFieldValue("selectedOtherRoom", "");
+                          // Fetch rooms for selected building
+                          if (e.target.value) {
+                            fetchRooms(e.target.value);
+                          }
                         }}
                         onBlur={() => handleFieldBlur("selectedBuilding")}
                         disabled={!values.selectedArea}
@@ -521,7 +575,7 @@ const CheckoutSummarySection = ({
                   {({ field }: FieldProps) => (
                     <RadioGroup {...field}>
                       <FormControlLabel
-                        value="bank-transfer"
+                        value="BankTransfer"
                         control={<Radio />}
                         label={
                           <Box>
@@ -539,7 +593,7 @@ const CheckoutSummarySection = ({
                         sx={{ mb: 1 }}
                       />
                       <FormControlLabel
-                        value="cash"
+                        value="COD"
                         control={<Radio />}
                         label={
                           <Box>
