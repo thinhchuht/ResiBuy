@@ -1,6 +1,4 @@
-﻿using ResiBuy.Server.Infrastructure.DbServices.CartDbService;
-
-namespace ResiBuy.Server.Application.Commands.UserCommands
+﻿namespace ResiBuy.Server.Application.Commands.UserCommands
 {
     public record CreatUserCommand(RegisterDto RegisterDto) : IRequest<ResponseModel>;
     public class CreatUserCommandHandler(
@@ -13,31 +11,52 @@ namespace ResiBuy.Server.Application.Commands.UserCommands
         public async Task<ResponseModel> Handle(CreatUserCommand command, CancellationToken cancellationToken)
         {
             if (!command.RegisterDto.RoomIds.Any())
-                return ResponseModel.FailureResponse("You cant create User without a room");
-            var createUserResponse = await userDbService.CreateUser(command.RegisterDto);
-            
-            if (createUserResponse != null)
+                 throw new CustomException(ExceptionErrorCode.ValidationFailed,"Không thể tạo người dùng mà không có phòng");
+            if (!command.RegisterDto.Roles.Any())
+                throw new CustomException(ExceptionErrorCode.ValidationFailed, "Không thể tạo người dùng mà không có vài trò");
+            if (!command.RegisterDto.IdentityNumber.Any())
+                throw new CustomException(ExceptionErrorCode.ValidationFailed, "Không thể tạo người dùng mà không có số CCCD");
+            if (!command.RegisterDto.PhoneNumber.Any())
+                throw new CustomException(ExceptionErrorCode.ValidationFailed, "Không thể tạo người dùng mà không có số điện thoại");
+            if (!command.RegisterDto.Roles.All(role => Constants.AllowedRoles.Contains(role)))
+                throw new CustomException(ExceptionErrorCode.ValidationFailed, "Vai trò người dùng không hợp lệ");
+            if (string.IsNullOrEmpty(command.RegisterDto.Password))
+            {
+                command.RegisterDto.Password = Constants.DefaulAccountPassword;
+            }
+            if (!Regex.IsMatch(command.RegisterDto.PhoneNumber, Constants.PhoneNumberPattern)) throw new CustomException(ExceptionErrorCode.ValidationFailed, "Số điện thoại không hợp lệ");
+            if (!string.IsNullOrEmpty(command.RegisterDto.Email) && !Regex.IsMatch(command.RegisterDto.Email, Constants.EmailPattern)) throw new CustomException(ExceptionErrorCode.ValidationFailed, "Email không hợp lệ");
+            if (!Regex.IsMatch(command.RegisterDto.IdentityNumber, Constants.IndentityNumberPattern)) throw new CustomException(ExceptionErrorCode.ValidationFailed, "Số CCCD/CMND không hợp lệ");
+            await userDbService.CheckUniqueField(command.RegisterDto.PhoneNumber, command.RegisterDto.Email, command.RegisterDto.IdentityNumber);
+            var user = await userDbService.CreateUser(command.RegisterDto);
+            if (user != null)
             {
                 var rooms = await roomDbService.GetBatchAsync(command.RegisterDto.RoomIds);
-                var createRoomResponse = await userRoomDbService.CreateUserRoomsBatch([createUserResponse.Id], command.RegisterDto.RoomIds);
+                if(rooms.Any(r => r == null))
+                    throw new CustomException(ExceptionErrorCode.ValidationFailed, "Một hoặc nhiều phòng không tồn tại");
+                if (rooms.Any(r => !r.IsActive))
+                    throw new CustomException(ExceptionErrorCode.ValidationFailed, "Một hoặc nhiều phòng không còn hoạt động");
+                var userRoom = await userRoomDbService.CreateUserRoomsBatch([user.Id], command.RegisterDto.RoomIds);
 
-                if (createRoomResponse != null)
+                if (userRoom != null)
                 {
-                    var cart = new Cart(createUserResponse.Id);
-                    var createCartResponse = await baseCartDbService.CreateAsync(cart);
-
-                    if (createCartResponse != null)
+                    var newCart = new Cart(user.Id);
+                    var cart = await baseCartDbService.CreateAsync(newCart);
+                    if (cart != null)
                     {
                         var userResult = new UserQueryResult(
-                            createUserResponse.Id,
-                            createUserResponse.DateOfBirth,
-                            createUserResponse.IsLocked,
-                            createUserResponse.Roles,
-                            createUserResponse.FullName,
-                            createUserResponse.CreatedAt,
-                            createUserResponse.UpdatedAt,
+                            user.Id,
+                            user.Email,
+                            user.PhoneNumber,
+                            user.DateOfBirth,
+                            user.IsLocked,
+                            user.Roles,
+                            user.FullName,
+                            user.CreatedAt,
+                            user.UpdatedAt,
                             cart.Id,
-                            rooms.Select(r => new { r.Id, r.Name, r.BuildingId }),
+                            null,
+                            rooms.Select(r => new RoomQueryResult(r.Id, r.Name, r.Building.Name, r.Building.Area.Name)),
                             [],
                             []
                         );
@@ -46,7 +65,7 @@ namespace ResiBuy.Server.Application.Commands.UserCommands
                     }
                 }
             }
-            return ResponseModel.SuccessResponse(createUserResponse);
+            return ResponseModel.SuccessResponse(user);
         }
     }
 }

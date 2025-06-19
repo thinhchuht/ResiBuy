@@ -1,6 +1,4 @@
-﻿using ResiBuy.Server.Infrastructure.Filter;
-
-namespace ResiBuy.Server.Infrastructure.DbServices.ProductDbServices
+﻿namespace ResiBuy.Server.Infrastructure.DbServices.ProductDbServices
 {
     public class ProductDbService : BaseDbService<Product>, IProductDbService
     {
@@ -14,21 +12,24 @@ namespace ResiBuy.Server.Infrastructure.DbServices.ProductDbServices
         {
             try
             {
-                var query = _context.Products.AsQueryable();
+                //var query = _context.Products.AsQueryable();
 
-                var totalCount = await query.CountAsync();
-                var items = await query
-                    .OrderBy(p => p.Id)
-                    .Skip((pageNumber - 1) * pageSize)
-                    .Take(pageSize)
-                    .ToListAsync();
+                //var totalCount = await query.CountAsync();
+                //var items = await query
+                //    .OrderBy(p => p.Id)
+                //    .Include(p => p.ProductImgs)
+                //    .Include(p => p.CostData).ThenInclude(cd => cd.UncostData)
+                //    .Include(p => p.Store)
+                //    .Skip((pageNumber - 1) * pageSize)
+                //    .Take(pageSize)
+                //    .ToListAsync();
 
                 return new PagedResult<Product>
                 {
-                    Items = items,
-                    TotalCount = totalCount,
-                    PageNumber = pageNumber,
-                    PageSize = pageSize
+                    //Items = items,
+                    //TotalCount = totalCount,
+                    //PageNumber = pageNumber,
+                    //PageSize = pageSize
                 };
             }
             catch (Exception ex)
@@ -37,7 +38,7 @@ namespace ResiBuy.Server.Infrastructure.DbServices.ProductDbServices
             }
         }
 
-        public async Task<Product> GetByIdAsync(Guid id)
+        public async Task<Product> GetByIdAsync(int id)
         {
             try
             {
@@ -54,7 +55,7 @@ namespace ResiBuy.Server.Infrastructure.DbServices.ProductDbServices
             }
         }
 
-        public async Task<Product> GetProductByIdWithStoreAsync(Guid id)
+        public async Task<Product> GetProductByIdWithStoreAsync(int id)
         {
             try
             {

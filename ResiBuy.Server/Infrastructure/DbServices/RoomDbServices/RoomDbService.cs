@@ -13,11 +13,12 @@
         {
             try
             {
-                if (string.IsNullOrEmpty(name)) throw new CustomException(ExceptionErrorCode.ValidationFailed, "Name is not null");
+                if (buildingId == Guid.Empty) throw new CustomException(ExceptionErrorCode.ValidationFailed, "Cần Id toàn nhà");
+                if (string.IsNullOrEmpty(name)) throw new CustomException(ExceptionErrorCode.ValidationFailed, "Tên tòa nhà là bắt buộc");
                 var getRoom = await GetByRoomNameAndBuildingIdAsync(buildingId, name);
                 if (getRoom != null)
-                    throw new CustomException(ExceptionErrorCode.DuplicateValue);
-                var room = new Room(name, buildingId); // Updated to match the constructor signature  
+                    throw new CustomException(ExceptionErrorCode.DuplicateValue, "Phòng đã tồn tại");
+                var room = new Room(name, buildingId); 
                 await CreateAsync(room);
                 return room;
             }
@@ -43,7 +44,23 @@
         {
             try
             {
-                return await _context.Rooms.Include(r => r.UserRooms).ThenInclude(ur => ur.User).ToListAsync();
+                var a = await _context.Rooms.ToListAsync();
+                var b = await _context.Rooms.Include(r => r.UserRooms).ToListAsync();
+                return b;
+            }
+            catch (Exception ex)
+            {
+                throw new CustomException(ExceptionErrorCode.RepositoryError, ex.Message);
+            }
+        }
+
+        public async Task<Room> GetRoomDetail(Guid id)
+        {
+            try
+            {
+
+                var room = await _context.Rooms.Include(r => r.Building).ThenInclude(b => b.Area).FirstOrDefaultAsync(r => r.Id == id);
+                return room;
             }
             catch (Exception ex)
             {
@@ -55,18 +72,14 @@
         {
             try
             {
-                // Initialize a list to store the rooms
                 var rooms = new List<Room>();
-
                 foreach (var id in ids)
                 {
                     if (id == Guid.Empty)
                     {
-                        throw new CustomException(ExceptionErrorCode.ValidationFailed, "Id is not null");
+                        throw new CustomException(ExceptionErrorCode.ValidationFailed, $"Không có Id phòng: {id}");
                     }
-
-                    // Fetch the room by ID and add it to the list
-                    var room = await GetByIdBaseAsync(id);
+                    var room = await GetRoomDetail(id);
                     if (room != null)
                     {
                         rooms.Add(room);
@@ -74,6 +87,18 @@
                 }
 
                 return rooms;
+            }
+            catch (Exception ex)
+            {
+                throw new CustomException(ExceptionErrorCode.RepositoryError, ex.Message);
+            }
+        }
+
+        public async Task<IEnumerable<Room>> GetByBuildingIdAsync(Guid id)
+        {
+            try
+            {
+                return await _context.Rooms.Where(r => r.BuildingId == id).ToListAsync();
             }
             catch (Exception ex)
             {

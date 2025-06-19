@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from "react";
 import { useSearchParams } from "react-router-dom";
-import { fakeProducts } from "../../../fakeData/fakeProductData";
+import productApi from "../../../api/product.api";
 import {
   Box,
   Container,
@@ -23,19 +23,25 @@ const ProductDetail: React.FC = () => {
   useEffect(() => {
     const fetchProductDetail = async () => {
       try {
-        console.log('fetch')
-        const data = fakeProducts.find((product) => product.id === productId);
-        if (data) setProduct(data);
-        setLoading(false);
+        setLoading(true);
+        if (productId) {
+          const response = await productApi.getById(productId);
+          console.log(response.data)
+          if (response.data) {
+            setProduct(response.data);
+          } else {
+            setProduct(null); 
+          }
+        }
       } catch (error) {
         console.error("Error fetching product details:", error);
+        setProduct(null);
+      } finally {
         setLoading(false);
       }
     };
 
-    if (productId) {
-      fetchProductDetail();
-    }
+    fetchProductDetail();
   }, [productId]);
 
   const handleIncrementQuantity = () => {
@@ -46,6 +52,10 @@ const ProductDetail: React.FC = () => {
     setQuantity((prev) => Math.max(1, prev - 1));
   };
 
+  const handleQuantityChange = (newQuantity: number) => {
+    setQuantity(Math.max(1, newQuantity));
+  };
+
   if (loading) {
     return (
       <Box
@@ -54,7 +64,7 @@ const ProductDetail: React.FC = () => {
         alignItems="center"
         minHeight="80vh"
       >
-        <Typography variant="h5">Loading...</Typography>
+        <Typography variant="h5">Đang tải sản phẩm...</Typography>
       </Box>
     );
   }
@@ -67,7 +77,7 @@ const ProductDetail: React.FC = () => {
         alignItems="center"
         minHeight="80vh"
       >
-        <Typography variant="h5">Product not found</Typography>
+        <Typography variant="h5">Không tìm thấy sản phẩm</Typography>
       </Box>
     );
   }
@@ -88,6 +98,7 @@ const ProductDetail: React.FC = () => {
           quantity={quantity}
           handleIncrementQuantity={handleIncrementQuantity}
           handleDecrementQuantity={handleDecrementQuantity}
+          handleQuantityChange={handleQuantityChange}
         />
       </Box>
       <Divider />

@@ -21,7 +21,7 @@ const VoucherSection = () => {
 
   const handleGetVoucher = (voucher: Voucher) => {
     if (user) {
-      console.log(voucher);
+      navigate("/products?storeId=" + voucher.storeId);
       toast.success("Cùng mua sắm với voucher vừa nhận được nhé!");
     } else {
       toast.error("Vui lòng đăng nhập để lưu voucher");

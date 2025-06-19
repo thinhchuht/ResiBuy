@@ -1,6 +1,6 @@
 namespace ResiBuy.Server.Settings;
 
-public class KafkaSettings
+public class KafkaSetting
 {
     public string BootstrapServers { get; set; } = string.Empty;
     public string GroupId { get; set; } = string.Empty;

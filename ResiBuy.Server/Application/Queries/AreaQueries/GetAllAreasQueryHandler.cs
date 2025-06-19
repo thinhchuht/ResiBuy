@@ -5,7 +5,7 @@
     {
         public async Task<ResponseModel> Handle(GetAllAreasQuery query, CancellationToken cancellationToken)
         {
-            var areas = await AreaDbService.GetAllAreaAsync();
+            var areas = await AreaDbService.GetAllWithOutInclude();
             return ResponseModel.SuccessResponse(areas);
         }
     }

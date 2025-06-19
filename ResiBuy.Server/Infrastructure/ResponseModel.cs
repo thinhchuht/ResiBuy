@@ -10,12 +10,12 @@
         public bool IsSuccess() => Code == 0;
 
         public static ResponseModel SuccessResponse(object data = null) =>
-            new ResponseModel { Code = 0, Message = "Success", Data = data };
+            new ResponseModel { Code = 0, Message = "Thành công", Data = data };
 
         public static ResponseModel FailureResponse(string message, object data = null) =>
             new ResponseModel { Code = 1, Message = message };
 
         public static ResponseModel ExceptionResponse(string error = null) =>
-            new ResponseModel { Code = -1, Message = error ?? "There is Exception, try again" };
+            new ResponseModel { Code = -1, Message = error ?? "Đã có lỗi xảy ra, thử lại sau" };
     }
 }

@@ -34,24 +34,24 @@ const ProductTableSection = ({ items, formatPrice }: ProductTableSectionProps) =
             boxShadow: "0 1px 4px rgba(0,0,0,0.03)",
           }}>
           <Box sx={{ width: 80, mr: 2 }}>
-            <img src={item.product.imageUrl} alt={item.product.name} style={{ width: "60px", height: "60px", borderRadius: "4px", objectFit: "cover" }} />
+            <img src={item.productDetail.image?.thumbUrl || item.productDetail.image?.url} alt={item.productDetail.product.name} style={{ width: "60px", height: "60px", borderRadius: "4px", objectFit: "cover" }} />
           </Box>
           <Box sx={{ flex: 2 }}>
             <Typography variant="body1" sx={{ fontWeight: "bold" }}>
-              {item.product.name}
+              {item.productDetail.product.name}
             </Typography>
             <Typography variant="body2" color="text.secondary">
-              Loại: {item.product.categoryId}
+              Loại: {item.productDetail.additionalData.map(ad => `${ad.value}`).join(', ')}
             </Typography>
           </Box>
           <Box sx={{ flex: 1, textAlign: "center" }}>
             <Typography variant="body1" sx={{ fontWeight: 500 }}>
-              {item.product.weight}kg
+              {item.productDetail.product.weight}kg
             </Typography>
           </Box>
           <Box sx={{ flex: 1, textAlign: "center" }}>
             <Typography variant="body1" sx={{ fontWeight: 500 }}>
-              {formatPrice(item.product.price)}
+              {formatPrice(item.productDetail.price)}
             </Typography>
           </Box>
           <Box sx={{ flex: 1, textAlign: "center" }}>
@@ -61,7 +61,7 @@ const ProductTableSection = ({ items, formatPrice }: ProductTableSectionProps) =
           </Box>
           <Box sx={{ flex: 1, textAlign: "right" }}>
             <Typography variant="body1" sx={{ fontWeight: "bold", color: "red" }}>
-              {formatPrice(item.product.price * item.quantity)}
+              {formatPrice(item.productDetail.price * item.quantity)}
             </Typography>
           </Box>
         </Box>

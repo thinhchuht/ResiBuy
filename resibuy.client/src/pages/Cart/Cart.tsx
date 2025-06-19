@@ -1,40 +1,68 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Box, Typography, Container, Paper } from "@mui/material";
 import { Link, useNavigate } from "react-router-dom";
-import { fakeCartItems } from "../../fakeData/fakeCartData";
 import type { CartItem } from "../../types/models";
 import CartItemSection from "./CartItemSection";
 import CartSummarySection from "./CartSummarySection";
+import cartApi from "../../api/cart.api";
+import { useAuth } from "../../contexts/AuthContext";
+import { toast } from "react-toastify";
 
 const Cart = () => {
-  const [cartItems, setCartItems] = useState<CartItem[]>(fakeCartItems);
+  const [cartItems, setCartItems] = useState<CartItem[]>([]);
   const [selectedItems, setSelectedCartItems] = useState<string[]>([]);
   const [page, setPage] = useState(0);
   const [rowsPerPage, setRowsPerPage] = useState(5);
-
+  const [totalItems, setTotalItems] = useState(0);
+  const { user } = useAuth();
   const navigate = useNavigate();
 
-  const handleQuantityChange = (itemId: string, newQuantity: number) => {
-    setCartItems((prevItems) =>
-      prevItems.map((item) =>
-        item.id === itemId ? { ...item, quantity: newQuantity } : item
-      )
-    );
+  const fetchCartItems = async () => {
+    try {
+      if (!user?.cartId) return;
+      const response = await cartApi.getCartById(user.cartId, page + 1, rowsPerPage);
+      const { items, totalCount } = response.data.data;
+      setCartItems(items);
+      setTotalItems(totalCount);
+    } catch (error) {
+      toast.error("Không thể tải giỏ hàng!");
+      console.error("Error fetching cart items:", error);
+    }
+  };
+  useEffect(() => {
+    console.log("render");
+  }, []);
+
+  useEffect(() => {
+    fetchCartItems();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [page, rowsPerPage, user?.cartId]);
+
+  const handleQuantityChange = async (productDetailId: number, newQuantity: number) => {
+    try {
+      if (user) {
+        await cartApi.addToCart(user?.cartId, productDetailId, newQuantity, false);
+        setCartItems((prevItems) => prevItems.map((item) => (item.productDetailId === productDetailId ? { ...item, quantity: newQuantity } : item)));
+      }
+    } catch (error) {
+      console.error("Error updating quantity:", error);
+    }
   };
 
-  const handleRemoveItem = (itemId: string) => {
-    setCartItems((prevItems) =>
-      prevItems.filter((item) => item.id !== itemId)
-    );
-    setSelectedCartItems((prev) => prev.filter((id) => id !== itemId));
+  const handleRemoveItem = async (itemId: string) => {
+    try {
+      await cartApi.removeFromCart( [itemId]);
+      setCartItems((prevItems) => prevItems.filter((item) => item.id !== itemId));
+      setSelectedCartItems((prev) => prev.filter((id) => id !== itemId));
+      toast.success("Xóa sản phẩm khỏi giỏ hàng thành công!");
+    } catch (error) {
+      toast.error("Không thể xóa sản phẩm khỏi giỏ hàng!");
+      console.error("Error removing item:", error);
+    }
   };
 
   const handleSelectItem = (itemId: string) => {
-    setSelectedCartItems((prev) =>
-      prev.includes(itemId)
-        ? prev.filter((id) => id !== itemId)
-        : [...prev, itemId]
-    );
+    setSelectedCartItems((prev) => (prev.includes(itemId) ? prev.filter((id) => id !== itemId) : [...prev, itemId]));
   };
 
   const handleSelectAllItems = (event: React.ChangeEvent<HTMLInputElement>) => {
@@ -47,10 +75,23 @@ const Cart = () => {
   };
 
   const handleCheckout = () => {
-    navigate('/checkout', { state: { selectedItems: selectedCartItems } });
+    const selectedItemsWithDiscount = selectedCartItems.map((item) => {
+      const discount = item.productDetail.product.discount || 0;
+      const discountedPrice = item.productDetail.price * (1 - discount / 100);
+      return {
+        ...item,
+        productDetail: {
+          ...item.productDetail,
+          price: discountedPrice,
+        },
+      };
+    });
+    navigate("/checkout", {
+      state: { selectedItems: selectedItemsWithDiscount },
+    });
   };
 
-  const handleChangePage = (event: unknown, newPage: number) => {
+  const handleChangePage = (_event: unknown, newPage: number) => {
     setPage(newPage);
   };
 
@@ -59,16 +100,8 @@ const Cart = () => {
     setPage(0);
   };
 
-  const selectedCartItems = cartItems.filter((item) =>
-    selectedItems.includes(item.id)
-  );
-
+  const selectedCartItems = cartItems.filter((item) => selectedItems.includes(item.id));
   const allSelected = selectedItems.length === cartItems.length && cartItems.length > 0;
-
-  const paginatedCartItems = cartItems.slice(
-    page * rowsPerPage,
-    page * rowsPerPage + rowsPerPage
-  );
 
   return (
     <Container maxWidth="xl" sx={{ py: 4 }}>
@@ -87,10 +120,9 @@ const Cart = () => {
               p: 3,
               borderRadius: 4,
               border: "1px solid #eee",
-            }}
-          >
+            }}>
             <CartItemSection
-              items={paginatedCartItems}
+              items={cartItems}
               selectedItems={selectedItems}
               onSelect={handleSelectItem}
               onQuantityChange={handleQuantityChange}
@@ -99,17 +131,14 @@ const Cart = () => {
               rowsPerPage={rowsPerPage}
               onPageChange={handleChangePage}
               onRowsPerPageChange={handleChangeRowsPerPage}
-              totalItems={cartItems.length}
+              totalItems={totalItems}
               onSelectAll={handleSelectAllItems}
               allSelected={allSelected}
             />
           </Paper>
         </Box>
 
-        <CartSummarySection
-          selectedItems={selectedCartItems}
-          onCheckout={handleCheckout}
-        />
+        <CartSummarySection selectedItems={selectedCartItems} onCheckout={handleCheckout} />
       </Box>
     </Container>
   );

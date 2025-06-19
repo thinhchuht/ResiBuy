@@ -3,9 +3,11 @@ Microsoft Visual Studio Solution File, Format Version 12.00
 # Visual Studio Version 17
 VisualStudioVersion = 17.11.35327.3
 MinimumVisualStudioVersion = 10.0.40219.1
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "ResiBuy.Server", "ResiBuy.Server\ResiBuy.Server.csproj", "{D203F2BE-0144-4BF1-BCE5-12F14CB6428D}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "ResiBuy.Server", "ResiBuy.Server\ResiBuy.Server.csproj", "{D203F2BE-0144-4BF1-BCE5-12F14CB6428D}"
 EndProject
 Project("{54A90642-561A-4BB1-A94E-469ADEE60C69}") = "resibuy.client", "resibuy.client\resibuy.client.esproj", "{13DFF5A3-3B33-4A84-80CB-34F09EB2A73C}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "ResiBuy.BackgroundTask", "ResiBuy.BackgroundTask\ResiBuy.BackgroundTask.csproj", "{B8A8653D-D03D-46A2-BA96-8B16C8151EAF}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -23,6 +25,10 @@ Global
 		{13DFF5A3-3B33-4A84-80CB-34F09EB2A73C}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{13DFF5A3-3B33-4A84-80CB-34F09EB2A73C}.Release|Any CPU.Build.0 = Release|Any CPU
 		{13DFF5A3-3B33-4A84-80CB-34F09EB2A73C}.Release|Any CPU.Deploy.0 = Release|Any CPU
+		{B8A8653D-D03D-46A2-BA96-8B16C8151EAF}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{B8A8653D-D03D-46A2-BA96-8B16C8151EAF}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{B8A8653D-D03D-46A2-BA96-8B16C8151EAF}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{B8A8653D-D03D-46A2-BA96-8B16C8151EAF}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE

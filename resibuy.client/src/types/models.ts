@@ -7,10 +7,16 @@ export enum OrderStatus {
   Cancelled = 4,
 }
 
+export enum PaymentStatus {
+  Pending = 0,
+  Paid = 1,
+  Failed = 2,
+  Refunded = 3,
+}
+
 export enum PaymentMethod {
-  Cash = 0,
-  CreditCard = 1,
-  BankTransfer = 2,
+  COD = 0,
+  BankTransfer = 1,
 }
 
 export enum UserRole {
@@ -19,38 +25,71 @@ export enum UserRole {
   Shipper = 2,
 }
 
+export enum VoucherType {
+  Amount = 1,
+  Percentage = 2
+}
+
+export enum DeliveryType {
+  MyRoom = 'my-room',
+  Other = 'other',
+}
+
 // Base Models
 export interface User {
   id: string;
   email: string;
   fullName: string;
+  avatar: Image;
   phoneNumber: string;
   dateOfBirth: string;
   identityNumber: string;
-  roles: UserRole[];
+  cartId: string;
+  roles: string[];
+  rooms: [
+    {
+      id: string;
+      name: string;
+      buildingName: string;
+      areaName: string;
+    }
+  ];
   refreshTokens: RefreshToken[];
   orders: Order[];
   userVouchers: UserVoucher[];
   userRooms: UserRoom[];
+  createdAt: string;
+  updatedAt: string;
 }
 
 export interface Product {
-  id: string;
+  id: number;
   name: string;
-  imageUrl: string;
-  quantity: number;
-  sold: number;
   describe: string;
-  price: number;
   weight: number;
   isOutOfStock: boolean;
   discount: number;
+  sold: number;
   createdAt: string;
   updatedAt: string;
   storeId: string;
   categoryId: string;
-  cartItems: CartItem[];
-  orderItems: OrderItem[];
+  store : Store
+  category : Category
+  productDetails: ProductDetail[];
+}
+
+export interface ProductDetail {
+  id: number
+  isOutOfStock : boolean
+  productId : number
+  product : Product
+  sold : number
+  price : number
+  image : Image
+  cartItems : CartItem[]
+  orderItems : OrderItem[]
+  additionalData : AdditionalData[]
 }
 
 export interface Store {
@@ -82,30 +121,43 @@ export interface Cart {
 export interface CartItem {
   id: string;
   cartId: string;
-  productId: string;
+  productDetailId: number;
   quantity: number;
-  product: Product;
+  cart: Cart;
+  productDetail: ProductDetail;
 }
 
 export interface Order {
   id: string;
-  userId: string;
-  shipperId: string;
+  totalPrice: number;
   status: OrderStatus;
-  totalAmount: number;
-  paymentMethod: PaymentMethod;
-  shippingAddress: string;
-  createdAt: string;
-  updatedAt: string;
-  orderItems: OrderItem[];
+  paymentStatus: PaymentStatus;
+  paymentMethod: PaymentMethod
+  createAt: string;
+  updateAt: string;
+  note : string
+  shipAddressId: string;
+  shipAddress: Room;
+  userId: string;
+  storeId: string;
+  shipperId?: string;
+  voucherId?: string;
+  user?: User;
+  store?: Store;
+  shipper?: Shipper;
+  voucher?: Voucher;
+  reports?: Report[];
+  items: OrderItem[];
 }
 
 export interface OrderItem {
   id: string;
-  orderId: string;
-  productId: string;
   quantity: number;
   price: number;
+  orderId: string;
+  productDetailId: number;
+  order?: Order;
+  product?: ProductDetail;
 }
 
 export interface Shipper {
@@ -122,7 +174,7 @@ export interface Shipper {
 export interface Voucher {
   id: string;
   discountAmount: number;
-  type: string;
+  type: VoucherType;
   quantity: number;
   minOrderPrice: number;
   maxDiscountPrice: number;
@@ -215,4 +267,38 @@ export interface TooltipProps {
 export interface StatisticsSectionProps {
   activeTab: string;
   setActiveTab: (value: string) => void;
+
+
+export interface Image {
+  id: string;
+  url: string;
+  thumbUrl: string;
+  name: string;
+  productDetailId?: number;
+  userId?: string;
+  categoryId : string
+}
+
+export interface AdditionalData {
+  id: string;
+  key: string;
+  value: string;
+  productDetailId: string;
+  productDetail : ProductDetail
+}
+
+export interface ProductDto {
+  id?: string; // Optional for creation
+  name: string;
+  imageUrl?: string; // This seems to be removed in later migrations based on codebase search, but keeping for now as per DTO.cs
+  quantity?: number;
+  describe: string;
+  price?: number; // This seems to be handled by CostData in later migrations, but keeping for now as per DTO.cs
+  weight: number;
+  isOutOfStock: boolean;
+  discount: number;
+  createdAt?: string;
+  updatedAt?: string;
+  storeId: string;
+  categoryId: string;
 }

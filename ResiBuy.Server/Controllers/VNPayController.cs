@@ -1,26 +1,24 @@
-using ResiBuy.Server.Services.VNPayServices;
+﻿using ResiBuy.Server.Services.CheckoutSessionService;
 
 namespace ResiBuy.Server.Controllers
 {
     [ApiController]
     [Route("api/[controller]")]
-    public class VNPayController(IVNPayService vnPayService) : ControllerBase
+    public class VNPayController(IVNPayService vnPayService, ICheckoutSessionService checkoutSessionService, IKafkaProducerService producer) : ControllerBase
     {
         private static readonly Dictionary<string, DateTime> _paymentTokens = new();
 
         [HttpPost("create-payment")]
-        public IActionResult CreatePayment([FromBody] PaymentRequest request)
+        public IActionResult CreatePayment([FromBody] CheckoutDto dto)
         {
-            var paymentUrl = vnPayService.CreatePaymentUrl(
-                amount: request.Amount,
-                orderId: request.OrderId,
-                orderInfo: request.OrderInfo
-            );
+            var paymentId = Guid.NewGuid();
+            checkoutSessionService.StoreCheckoutSession(paymentId, dto);
+            var paymentUrl = vnPayService.CreatePaymentUrl(dto.GrandTotal, paymentId, $"ResiBuy");
             return Ok(new { paymentUrl });
         }
 
         [HttpGet("payment-callback")]
-        public IActionResult PaymentCallback([FromQuery] VNPayCallback callback)
+        public IActionResult PaymentCallbackAsync([FromQuery] VNPayCallback callback)
         {
             var responseData = Request.QueryString.ToString().TrimStart('?');
             if (!vnPayService.ValidatePayment(responseData))
@@ -32,10 +30,35 @@ namespace ResiBuy.Server.Controllers
 
             if (callback.vnp_ResponseCode == "00" && callback.vnp_TransactionStatus == "00")
             {
-                var token = GenerateToken();
-                _paymentTokens[token] = DateTime.UtcNow.AddMinutes(5);                
-                return Redirect($"http://localhost:5001/checkout-success?token={token}");
+                var sessionId = callback.vnp_TxnRef;
+                var checkoutData = checkoutSessionService.GetCheckoutSession(sessionId);
+
+                if (checkoutData != null)
+                {
+                    try
+                    {
+                        //var message = JsonSerializer.Serialize(checkoutData);
+                        // producer.ProduceMessageAsync("checkout", message, "checkout-topic");
+                        //checkoutSessionService.RemoveCheckoutSession(sessionId);
+                        var token = GenerateToken();
+                        _paymentTokens[token] = DateTime.UtcNow.AddMinutes(5);
+                        return Redirect($"http://localhost:5001/checkout-success?token={token}");
+                    }
+                    catch (Exception)
+                    {
+                        var token = GenerateToken();
+                        _paymentTokens[token] = DateTime.UtcNow.AddMinutes(5);
+                        return Redirect($"http://localhost:5001/checkout-failed?token={token}");
+                    }
+                }
+                else
+                {
+                    var token = GenerateToken();
+                    _paymentTokens[token] = DateTime.UtcNow.AddMinutes(5);
+                    return Redirect($"http://localhost:5001/checkout-failed?token={token}");
+                }
             }
+
             var failedToken = GenerateToken();
             _paymentTokens[failedToken] = DateTime.UtcNow.AddMinutes(5);
             return Redirect($"http://localhost:5001/checkout-failed?token={failedToken}");
@@ -75,13 +98,6 @@ namespace ResiBuy.Server.Controllers
             }
             return Convert.ToBase64String(randomBytes);
         }
-    }
-
-    public class PaymentRequest
-    {
-        public decimal Amount { get; set; }
-        public string OrderId { get; set; } = string.Empty;
-        public string OrderInfo { get; set; } = string.Empty;
     }
 
     public class VNPayCallback

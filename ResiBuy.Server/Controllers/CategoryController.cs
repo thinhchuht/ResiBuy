@@ -1,13 +1,11 @@
 ﻿using ResiBuy.Server.Application.Commands.CategoryCommands;
 using ResiBuy.Server.Application.Queries.CategoryQueries;
-using ResiBuy.Server.Infrastructure.Filter;
-using static Microsoft.EntityFrameworkCore.DbLoggerCategory.Database;
 
 namespace ResiBuy.Server.Controllers
 {
     [Route("api/[controller]")]
     [ApiController]
-    public class CategoryController(IMediator mediator) : ControllerBase
+    public class CategoryController(IMediator mediator, ResiBuyContext context) : ControllerBase
     {
 
         [HttpPost("create")]
@@ -24,12 +22,13 @@ namespace ResiBuy.Server.Controllers
             }
         }
 
-        [HttpGet("get-all-category")]
+        [HttpGet()]
         public async Task<IActionResult> GetAllAsync()
         {
             try
             {
-                var result = await mediator.Send(new GetAllCategoriesQuery());
+                
+                var result = await context.Categories.Include(c => c.Image).ToListAsync();
                 return Ok(result);
             }
             catch (Exception ex)

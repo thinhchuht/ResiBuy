@@ -4,6 +4,18 @@
     {
         protected readonly DbSet<T> _dbSet = context.Set<T>();
 
+        public virtual async Task<List<T>> GetAllWithOutInclude()
+        {
+            try
+            {
+                return await _dbSet.ToListAsync();
+            }
+            catch (Exception ex)
+            {
+                throw new CustomException(ExceptionErrorCode.RepositoryError, ex.Message);
+            }
+        }
+
         public virtual async Task<T> CreateAsync(T entity)
         {
             try
@@ -14,7 +26,7 @@
             }
             catch (Exception ex)
             {
-                throw new CustomException(ExceptionErrorCode.CreateFailed,ex.Message);
+                throw new CustomException(ExceptionErrorCode.RepositoryError, ex.Message);
             }
         }
 
@@ -28,7 +40,7 @@
             }
             catch (Exception ex)
             {
-                throw new CustomException(ExceptionErrorCode.CreateFailed,ex.Message);
+                throw new CustomException(ExceptionErrorCode.RepositoryError, ex.Message);
             }
         }
 
@@ -42,7 +54,7 @@
             }
             catch (Exception ex)
             {
-                throw new CustomException(ExceptionErrorCode.UpdateFailed,ex.Message);
+                throw new CustomException(ExceptionErrorCode.RepositoryError,ex.Message);
             }
         }
 
@@ -61,7 +73,7 @@
             }
             catch (Exception ex)
             {
-                throw new CustomException(ExceptionErrorCode.DeleteFailed, ex.Message);
+                throw new CustomException(ExceptionErrorCode.RepositoryError, ex.Message);
             }
         }
 
@@ -76,7 +88,22 @@
             }
             catch (Exception ex)
             {
-                throw new CustomException(ExceptionErrorCode.RepositoryError,ex.Message);
+                throw new CustomException(ExceptionErrorCode.RepositoryError, ex.Message);
+            }
+        }
+
+        public virtual async Task<T> GetByIntIdBaseAsync(int id)
+        {
+            try
+            {
+                var entity = await _dbSet.FindAsync(id);
+                if (entity == null)
+                    return null;
+                return entity;
+            }
+            catch (Exception ex)
+            {
+                throw new CustomException(ExceptionErrorCode.RepositoryError, ex.Message);
             }
         }
     }

@@ -2,14 +2,15 @@ import { Box, Typography, Button, Slider, Stack, Paper } from "@mui/material";
 import type { Category } from "../../types/models";
 
 interface ProductFilterProps {
-  selectedCategory: string;
-  setSelectedCategory: (id: string) => void;
+  selectedCategory: string | null;
+  setSelectedCategory: (id: string | null) => void;
   priceRange: number[];
   setPriceRange: (range: number[]) => void;
   fakeCategories: Category[];
+  storeId?: string;
 }
 
-const ProductFilterSection = ({ selectedCategory, setSelectedCategory, priceRange, setPriceRange, fakeCategories }: ProductFilterProps) => (
+const ProductFilterSection = ({ selectedCategory, setSelectedCategory, priceRange, setPriceRange, fakeCategories, storeId }: ProductFilterProps) => (
   <Paper
     elevation={0}
     sx={{
@@ -19,23 +20,28 @@ const ProductFilterSection = ({ selectedCategory, setSelectedCategory, priceRang
       position: "sticky",
       top: 150,
     }}>
-    <Typography variant="h6" sx={{ mb: 3, fontWeight: 600, color: "#2c3e50" }}>
+    <Typography variant="h6" sx={{ mb: 1, fontWeight: 600, color: "#2c3e50" }}>
       Bộ lọc sản phẩm
     </Typography>
+    {storeId && (
+      <Typography variant="body2" sx={{ color: "red", fontWeight: 500, mb: 3 }}>
+        Sản phẩm áp dụng được voucher
+      </Typography>
+    )}
     <Box sx={{ mb: 4 }}>
       <Typography variant="subtitle2" sx={{ mb: 1, color: "#666" }}>
         Danh mục
       </Typography>
       <Stack spacing={1}>
         <Button
-          variant={selectedCategory === "all" ? "contained" : "text"}
-          onClick={() => setSelectedCategory("all")}
+          variant={selectedCategory === null ? "contained" : "text"}
+          onClick={() => setSelectedCategory(null)}
           sx={{
             justifyContent: "flex-start",
-            color: selectedCategory === "all" ? "#fff" : "#666",
-            bgcolor: selectedCategory === "all" ? "#FF6B6B" : "transparent",
+            color: selectedCategory === null ? "#fff" : "#666",
+            bgcolor: selectedCategory === null ? "#FF6B6B" : "transparent",
             "&:hover": {
-              bgcolor: selectedCategory === "all" ? "#FF6B6B" : "#f5f5f5",
+              bgcolor: selectedCategory === null ? "#FF6B6B" : "#f5f5f5",
             },
           }}>
           Tất cả
