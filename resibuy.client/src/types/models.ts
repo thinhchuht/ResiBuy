@@ -265,8 +265,9 @@ export interface TooltipProps {
 }
 
 export interface StatisticsSectionProps {
-  activeTab: string;
-  setActiveTab: (value: string) => void;
+    activeTab: string;
+    setActiveTab: (value: string) => void;
+}
 
 
 export interface Image {
