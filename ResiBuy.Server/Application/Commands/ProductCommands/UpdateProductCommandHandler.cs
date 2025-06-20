@@ -12,7 +12,6 @@ namespace ResiBuy.Server.Application.Commands.ProductCommands
             try
             {
                 var dto = command.ProductDto;
-
                 var product = await productDbService.GetByIdAsync(dto.Id);
 
                 if (product == null)
@@ -21,9 +20,41 @@ namespace ResiBuy.Server.Application.Commands.ProductCommands
                 product.UpdateProduct(dto.Name, dto.Describe, dto.Discount, dto.CategoryId, dto.IsOutOfStock);
 
                 var existingDetails = product.ProductDetails.ToDictionary(d => d.Id);
+                var allDataSets = new List<HashSet<string>>();
 
                 foreach (var detailDto in dto.ProductDetails)
                 {
+                    var currentSet = new HashSet<string>();
+
+                    if (detailDto.AdditionalData != null && detailDto.AdditionalData.Any())
+                    {
+
+                        var duplicates = detailDto.AdditionalData
+                            .GroupBy(a => new { a.Key, a.Value })
+                            .Where(g => g.Count() > 1)
+                            .Select(g => $"({g.Key.Key}, {g.Key.Value})")
+                            .ToList();
+
+                        if (duplicates.Any())
+                        {
+                            var msg = string.Join(", ", duplicates);
+                            return ResponseModel.FailureResponse($"Dữ liệu AdditionalData bị trùng trong một sản phẩm chi tiết: {msg}");
+                        }
+
+
+                        currentSet = detailDto.AdditionalData
+                            .Select(a => $"{a.Key}|{a.Value}")
+                            .ToHashSet();
+
+                        if (allDataSets.Any(set => set.SetEquals(currentSet)))
+                        {
+                            var msg = string.Join(", ", currentSet);
+                            return ResponseModel.FailureResponse($"Dữ liệu AdditionalData bị trùng hoàn toàn giữa các sản phẩm chi tiết: {msg}");
+                        }
+
+                        allDataSets.Add(currentSet);
+                    }
+
                     ProductDetail detail;
 
                     if (detailDto.Id == 0 || !existingDetails.ContainsKey(detailDto.Id))
@@ -32,7 +63,6 @@ namespace ResiBuy.Server.Application.Commands.ProductCommands
                         detail.AdditionalData = detailDto.AdditionalData?
                             .Select(a => new AdditionalData(a.Key, a.Value))
                             .ToList();
-
                         product.ProductDetails.Add(detail);
                         continue;
                     }
@@ -42,18 +72,6 @@ namespace ResiBuy.Server.Application.Commands.ProductCommands
 
                     if (detailDto.AdditionalData != null)
                     {
-                        var duplicates = detailDto.AdditionalData
-                            .GroupBy(a => new { a.Key, a.Value })
-                            .Where(g => g.Count() > 1)
-                            .Select(g => $"({g.Key.Key}, {g.Key.Value})")
-                            .ToList();
-
-                        if (duplicates.Any())
-                        {
-                            var duplicateMessage = string.Join(", ", duplicates);
-                            return ResponseModel.FailureResponse($"Dữ liệu AdditionalData bị trùng: {duplicateMessage}");
-                        }
-
                         var existingAdds = detail.AdditionalData.ToDictionary(a => a.Id);
 
                         foreach (var addDto in detailDto.AdditionalData)
@@ -73,7 +91,6 @@ namespace ResiBuy.Server.Application.Commands.ProductCommands
                         var dtoAddIds = detailDto.AdditionalData.Select(a => a.Id).ToHashSet();
                         detail.AdditionalData.RemoveAll(a => a.Id != 0 && !dtoAddIds.Contains(a.Id));
                     }
-
                 }
 
                 var dtoDetailIds = dto.ProductDetails.Select(d => d.Id).ToHashSet();
@@ -94,6 +111,7 @@ namespace ResiBuy.Server.Application.Commands.ProductCommands
             {
                 throw new CustomException(ExceptionErrorCode.RepositoryError, ex.Message);
             }
+
         }
     }
 

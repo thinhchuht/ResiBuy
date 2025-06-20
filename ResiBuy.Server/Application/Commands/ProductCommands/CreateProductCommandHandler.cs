@@ -11,25 +11,38 @@ namespace ResiBuy.Server.Application.Commands.ProductCommands
             try
             {
                 var dto = command.ProductDto;
-
                 var product = new Product(dto.Name, dto.Describe, dto.Discount, dto.StoreId, dto.CategoryId);
+
+                var detailDataSets = new List<HashSet<string>>();
 
                 foreach (var detailDto in dto.ProductDetails)
                 {
                     var detail = new ProductDetail(detailDto.Price, detailDto.Weight, detailDto.IsOutOfStock);
+                    var dataSet = new HashSet<string>();
 
                     if (detailDto.AdditionalData != null && detailDto.AdditionalData.Any())
                     {
-                        var duplicates = detailDto.AdditionalData
+
+                        var duplicatesInSame = detailDto.AdditionalData
                             .GroupBy(a => new { a.Key, a.Value })
                             .Where(g => g.Count() > 1)
                             .Select(g => $"({g.Key.Key}, {g.Key.Value})")
                             .ToList();
 
-                        if (duplicates.Any())
+                        if (duplicatesInSame.Any())
                         {
-                            var duplicateMessage = string.Join(", ", duplicates);
-                            return ResponseModel.FailureResponse($"Dữ liệu AdditionalData bị trùng: {duplicateMessage}");
+                            var message = string.Join(", ", duplicatesInSame);
+                            return ResponseModel.ExceptionResponse($"Dữ liệu AdditionalData bị trùng trong 1 sản phẩm chi tiết: {message}");
+                        }
+
+                        dataSet = detailDto.AdditionalData
+                            .Select(a => $"{a.Key}|{a.Value}")
+                            .ToHashSet();
+
+                        if (detailDataSets.Any(existing => existing.SetEquals(dataSet)))
+                        {
+                            var formatted = string.Join(", ", dataSet);
+                            return ResponseModel.ExceptionResponse($"Dữ liệu AdditionalData bị trùng hoàn toàn giữa các sản phẩm chi tiết: {formatted}");
                         }
 
                         detail.AdditionalData = detailDto.AdditionalData
@@ -37,6 +50,8 @@ namespace ResiBuy.Server.Application.Commands.ProductCommands
                             .ToList();
                     }
 
+                    if (dataSet.Count > 0)
+                        detailDataSets.Add(dataSet);
 
                     product.ProductDetails.Add(detail);
                 }
@@ -48,6 +63,8 @@ namespace ResiBuy.Server.Application.Commands.ProductCommands
             {
                 throw new CustomException(ExceptionErrorCode.RepositoryError, ex.Message);
             }
+
+
         }
     }
 
