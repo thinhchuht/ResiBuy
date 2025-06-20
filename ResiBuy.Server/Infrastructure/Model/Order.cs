@@ -7,7 +7,7 @@
             Id = id;
             TotalPrice = totalPrice;
             Status = OrderStatus.Pending;
-            PaymentStatus = PaymentStatus.Pending;
+            PaymentStatus = paymentMethod == PaymentMethod.COD ?  PaymentStatus.Pending : PaymentStatus.Paid;
             PaymentMethod = paymentMethod;
             CreateAt = DateTime.Now;
             UpdateAt = DateTime.Now;

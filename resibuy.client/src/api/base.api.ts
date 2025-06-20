@@ -78,8 +78,9 @@ axiosClient.interceptors.response.use(
   async (error) => {
     const originalRequest = error.config;
 
-    if (error.response?.status === 500) {
+    if (error.response?.status === 500 || error.response?.status === 501 ) {
       if (error.response?.data?.error) {
+        toast.error("Đã có lỗi xảy ra từ máy chủ. Vui lòng thử lại sau.")
         console.error(error.response.data.error);
       }
       return Promise.reject(error);
