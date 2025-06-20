@@ -8,8 +8,8 @@ import debounce from "lodash.debounce";
 
 interface CartItemSectionProps {
   items: CartItemType[];
-  selectedItems: string[];
-  onSelect: (itemId: string) => void;
+  selectedItems: CartItemType[];
+  onSelect: (item: CartItemType) => void;
   onQuantityChange: (productDetailId: number, newQuantity: number) => void;
   onRemove: (itemId: string) => void;
   page: number;
@@ -136,7 +136,7 @@ const CartItemSection = ({
             return (
               <TableRow key={item.id}>
                 <TableCell padding="checkbox">
-                  <Checkbox checked={selectedItems.includes(item.id)} onChange={() => onSelect(item.id)} />
+                  <Checkbox checked={selectedItems.some((sel) => sel.id === item.id)} onChange={() => onSelect(item)} />
                 </TableCell>
                 <TableCell align="center">
                   <Typography variant="body2">{index + 1}</Typography>
