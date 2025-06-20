@@ -43,7 +43,8 @@
             modelBuilder.ApplyConfiguration(new CartItemConfig());
             modelBuilder.ApplyConfiguration(new AdditionalDataConfig());
             modelBuilder.ApplyConfiguration(new ProductDetailConfig());
-
+            modelBuilder.ApplyConfiguration(new OrderItemConfig());
+            modelBuilder.ApplyConfiguration(new RoomConfig());
             // default admin
             var admin = new User
             {
