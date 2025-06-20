@@ -1,8 +1,8 @@
-﻿using ResiBuy.Server.Application.Commands.ProductCommands.DTOs;
+﻿using ResiBuy.Server.Application.Commands.ProductCommands.DTOs.Update;
 
 namespace ResiBuy.Server.Application.Commands.ProductCommands
 {
-    public record UpdateProductCommand(CreateProductDto ProductDto) : IRequest<ResponseModel>;
+    public record UpdateProductCommand(UpdateProductDto ProductDto) : IRequest<ResponseModel>;
 
     public class UpdateProductCommandHandler(IProductDbService productDbService) : IRequestHandler<UpdateProductCommand, ResponseModel>
     {
@@ -15,32 +15,79 @@ namespace ResiBuy.Server.Application.Commands.ProductCommands
 
                 var product = await productDbService.GetByIdAsync(dto.Id);
 
-                if (product != null)
+                if (product == null)
+                    return ResponseModel.FailureResponse($"Product {dto.Id} không tồn tại");
+
+                product.UpdateProduct(dto.Name, dto.Describe, dto.Discount, dto.CategoryId, dto.IsOutOfStock);
+
+                var existingDetails = product.ProductDetails.ToDictionary(d => d.Id);
+
+                foreach (var detailDto in dto.ProductDetails)
                 {
-                    product.Name = dto.Name;
-                    product.Describe = dto.Describe;
-                    product.Discount = dto.Discount;
-                    product.StoreId = dto.StoreId;
-                    product.CategoryId = dto.CategoryId;
+                    ProductDetail detail;
 
-                    foreach (var detailDto in dto.ProductDetails)
+                    if (detailDto.Id == 0 || !existingDetails.ContainsKey(detailDto.Id))
                     {
-
-                        var detail = new ProductDetail(detailDto.Price, detailDto.Weight, detailDto.IsOutOfStock);
-
-                        if (detailDto.AdditionalData != null && detailDto.AdditionalData.Any())
-                        {
-                            detail.AdditionalData = detailDto.AdditionalData
-                                .Select(a => new AdditionalData(a.Key, a.Value))
-                                .ToList();
-                        }
+                        detail = new ProductDetail(detailDto.Price, detailDto.Weight, detailDto.IsOutOfStock);
+                        detail.AdditionalData = detailDto.AdditionalData?
+                            .Select(a => new AdditionalData(a.Key, a.Value))
+                            .ToList();
 
                         product.ProductDetails.Add(detail);
+                        continue;
                     }
+
+                    detail = existingDetails[detailDto.Id];
+                    detail.UpdateProductDetail(detailDto.Price, detailDto.Weight, detailDto.IsOutOfStock);
+
+                    if (detailDto.AdditionalData != null)
+                    {
+                        var duplicates = detailDto.AdditionalData
+                            .GroupBy(a => new { a.Key, a.Value })
+                            .Where(g => g.Count() > 1)
+                            .Select(g => $"({g.Key.Key}, {g.Key.Value})")
+                            .ToList();
+
+                        if (duplicates.Any())
+                        {
+                            var duplicateMessage = string.Join(", ", duplicates);
+                            return ResponseModel.FailureResponse($"Dữ liệu AdditionalData bị trùng: {duplicateMessage}");
+                        }
+
+                        var existingAdds = detail.AdditionalData.ToDictionary(a => a.Id);
+
+                        foreach (var addDto in detailDto.AdditionalData)
+                        {
+                            if (addDto.Id == 0 || !existingAdds.ContainsKey(addDto.Id))
+                            {
+                                detail.AdditionalData.Add(new AdditionalData(addDto.Key, addDto.Value));
+                            }
+                            else
+                            {
+                                var add = existingAdds[addDto.Id];
+                                add.Key = addDto.Key;
+                                add.Value = addDto.Value;
+                            }
+                        }
+
+                        var dtoAddIds = detailDto.AdditionalData.Select(a => a.Id).ToHashSet();
+                        detail.AdditionalData.RemoveAll(a => a.Id != 0 && !dtoAddIds.Contains(a.Id));
+                    }
+
+                }
+
+                var dtoDetailIds = dto.ProductDetails.Select(d => d.Id).ToHashSet();
+                var toRemoveDetails = product.ProductDetails
+                    .Where(d => !dtoDetailIds.Contains(d.Id))
+                    .ToList();
+
+                foreach (var removeDetail in toRemoveDetails)
+                {
+                    if (removeDetail.OrderItems == null || !removeDetail.OrderItems.Any())
+                        product.ProductDetails.Remove(removeDetail);
                 }
 
                 var result = await productDbService.UpdateAsync(product);
-
                 return ResponseModel.SuccessResponse(result);
             }
             catch (Exception ex)

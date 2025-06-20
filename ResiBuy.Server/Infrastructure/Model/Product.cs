@@ -35,6 +35,22 @@
             ProductDetails = new List<ProductDetail>();
            
         }
+
+        public void UpdateProduct(
+              string name,
+              string describe,
+              int discount,
+              Guid categoryId,
+              bool isOutOfStock)
+        {
+            Name = name;
+            Describe = describe;
+            Discount = discount;
+            CategoryId = categoryId;
+            IsOutOfStock = isOutOfStock;
+            UpdatedAt = DateTime.UtcNow;
+
+        }
     }
 
 

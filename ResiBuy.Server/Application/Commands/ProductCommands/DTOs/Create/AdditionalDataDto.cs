@@ -1,4 +1,4 @@
-﻿namespace ResiBuy.Server.Application.Commands.ProductCommands.DTOs
+﻿namespace ResiBuy.Server.Application.Commands.ProductCommands.DTOs.Create
 {
     public class AdditionalDataDto
     {

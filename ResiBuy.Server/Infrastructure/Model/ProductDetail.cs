@@ -21,6 +21,13 @@
             IsOutOfStock = isOutOfStock;
             Sold = 0;
         }
+
+        public void UpdateProductDetail(decimal price, WeightCategory weight, bool isOutOfStock)
+        {
+            Price = price;
+            Weight = weight;
+            IsOutOfStock = isOutOfStock;
+        }
     }
 
     public enum WeightCategory

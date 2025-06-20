@@ -12,8 +12,8 @@ using ResiBuy.Server.Infrastructure;
 namespace ResiBuy.Server.Infrastructure.Migrations
 {
     [DbContext(typeof(ResiBuyContext))]
-    [Migration("20250619115202_Initial_Create_01")]
-    partial class Initial_Create_01
+    [Migration("20250620114739_Initial_Create")]
+    partial class Initial_Create
     {
         /// <inheritdoc />
         protected override void BuildTargetModel(ModelBuilder modelBuilder)
@@ -556,18 +556,18 @@ namespace ResiBuy.Server.Infrastructure.Migrations
                         new
                         {
                             Id = "adm_df",
-                            CreatedAt = new DateTime(2025, 6, 19, 18, 52, 1, 448, DateTimeKind.Local).AddTicks(2955),
+                            CreatedAt = new DateTime(2025, 6, 20, 18, 47, 38, 860, DateTimeKind.Local).AddTicks(7558),
                             DateOfBirth = new DateTime(1990, 1, 1, 0, 0, 0, 0, DateTimeKind.Unspecified),
                             Email = "admin@123",
                             EmailConfirmed = true,
                             FullName = "Administrator",
                             IdentityNumber = "admin",
                             IsLocked = false,
-                            PasswordHash = "$2a$11$qRC9hUNrfIrM921JJH/WDONgqgBOyC4DybfDcWRdr4z5/Eo6NKAZu",
+                            PasswordHash = "$2a$11$i1UtG5WAPDxkcmSXeVtHTubtwQXwX/YS3M4cMas.JqRiD7HG7VQM6",
                             PhoneNumber = "admin",
                             PhoneNumberConfirmed = true,
                             Roles = "[\"ADMIN\"]",
-                            UpdatedAt = new DateTime(2025, 6, 19, 18, 52, 1, 448, DateTimeKind.Local).AddTicks(2972)
+                            UpdatedAt = new DateTime(2025, 6, 20, 18, 47, 38, 860, DateTimeKind.Local).AddTicks(7582)
                         });
                 });
 

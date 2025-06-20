@@ -42,7 +42,7 @@
         {
             try
             {
-                var product = await _context.Products.FirstOrDefaultAsync(a => a.Id == id);
+                var product = await _context.Products.Include(p => p.ProductDetails).ThenInclude(pd => pd.AdditionalData).FirstOrDefaultAsync(a => a.Id == id);
                 if (product == null)
                 {
                     return null;

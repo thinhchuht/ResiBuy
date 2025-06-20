@@ -1,8 +1,7 @@
-﻿namespace ResiBuy.Server.Application.Commands.ProductCommands.DTOs
+﻿namespace ResiBuy.Server.Application.Commands.ProductCommands.DTOs.Create
 {
     public class CreateProductDto
     {
-        public int Id { get; set; }
         public string Name { get; set; }
         public string Describe { get; set; }
         public int Discount { get; set; }

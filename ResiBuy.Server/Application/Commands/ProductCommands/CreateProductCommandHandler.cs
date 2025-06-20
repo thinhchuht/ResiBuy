@@ -1,4 +1,4 @@
-﻿using ResiBuy.Server.Application.Commands.ProductCommands.DTOs;
+﻿using ResiBuy.Server.Application.Commands.ProductCommands.DTOs.Create;
 
 namespace ResiBuy.Server.Application.Commands.ProductCommands
 {
@@ -20,10 +20,23 @@ namespace ResiBuy.Server.Application.Commands.ProductCommands
 
                     if (detailDto.AdditionalData != null && detailDto.AdditionalData.Any())
                     {
+                        var duplicates = detailDto.AdditionalData
+                            .GroupBy(a => new { a.Key, a.Value })
+                            .Where(g => g.Count() > 1)
+                            .Select(g => $"({g.Key.Key}, {g.Key.Value})")
+                            .ToList();
+
+                        if (duplicates.Any())
+                        {
+                            var duplicateMessage = string.Join(", ", duplicates);
+                            return ResponseModel.FailureResponse($"Dữ liệu AdditionalData bị trùng: {duplicateMessage}");
+                        }
+
                         detail.AdditionalData = detailDto.AdditionalData
                             .Select(a => new AdditionalData(a.Key, a.Value))
                             .ToList();
                     }
+
 
                     product.ProductDetails.Add(detail);
                 }
