@@ -1,5 +1,7 @@
 ﻿using ResiBuy.Server.Infrastructure.DbServices.CategoryDbServices;
 using ResiBuy.Server.Infrastructure.DbServices.ProductDbServices;
+using ResiBuy.Server.Infrastructure.DbServices.ShipperDbServices;
+using ResiBuy.Server.Infrastructure.DbServices.StoreDbServices;
 using ResiBuy.Server.Services.MailServices;
 namespace ResiBuy.Server.Extensions
 {
@@ -26,6 +28,8 @@ namespace ResiBuy.Server.Extensions
 
             services.AddScoped<ICategoryDbService, CategoryDbService>();
             services.AddScoped<IProductDbService, ProductDbService>();
+            services.AddScoped<IShipperDbService, ShipperDbService>();
+            services.AddScoped<IStoreDbService, StoreDbService>();
             services.AddScoped<IMailService, MailService>();
             return services;
         }
