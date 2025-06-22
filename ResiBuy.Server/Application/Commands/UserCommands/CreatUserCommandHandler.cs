@@ -4,14 +4,12 @@
     public class CreatUserCommandHandler(
         IUserDbService userDbService,
         IRoomDbService roomDbService,
-        IUserRoomDbService userRoomDbService,
-        ICartDbService baseCartDbService,
         INotificationService notificationService) : IRequestHandler<CreatUserCommand, ResponseModel>
     {
         public async Task<ResponseModel> Handle(CreatUserCommand command, CancellationToken cancellationToken)
         {
             if (!command.RegisterDto.RoomIds.Any())
-                 throw new CustomException(ExceptionErrorCode.ValidationFailed,"Không thể tạo người dùng mà không có phòng");
+                throw new CustomException(ExceptionErrorCode.ValidationFailed, "Không thể tạo người dùng mà không có phòng");
             if (!command.RegisterDto.Roles.Any())
                 throw new CustomException(ExceptionErrorCode.ValidationFailed, "Không thể tạo người dùng mà không có vài trò");
             if (!command.RegisterDto.IdentityNumber.Any())
@@ -32,38 +30,29 @@
             if (user != null)
             {
                 var rooms = await roomDbService.GetBatchAsync(command.RegisterDto.RoomIds);
-                if(rooms.Any(r => r == null))
+                if (rooms.Any(r => r == null))
                     throw new CustomException(ExceptionErrorCode.ValidationFailed, "Một hoặc nhiều phòng không tồn tại");
                 if (rooms.Any(r => !r.IsActive))
                     throw new CustomException(ExceptionErrorCode.ValidationFailed, "Một hoặc nhiều phòng không còn hoạt động");
-                var userRoom = await userRoomDbService.CreateUserRoomsBatch([user.Id], command.RegisterDto.RoomIds);
+                    var userResult = new UserQueryResult(
+                        user.Id,
+                        user.Email,
+                        user.PhoneNumber,
+                        user.DateOfBirth,
+                        user.IsLocked,
+                        user.Roles,
+                        user.FullName,
+                        user.CreatedAt,
+                        user.UpdatedAt,
+                        user.Cart.Id,
+                        null,
+                        rooms.Select(r => new RoomQueryResult(r.Id, r.Name, r.Building.Name, r.Building.Area.Name)),
+                        [],
+                        []
+                    );
+                    notificationService.SendNotification("UserCreated", userResult, Constants.AdminHubGroup);
+                    return ResponseModel.SuccessResponse(userResult);
 
-                if (userRoom != null)
-                {
-                    var newCart = new Cart(user.Id);
-                    var cart = await baseCartDbService.CreateAsync(newCart);
-                    if (cart != null)
-                    {
-                        var userResult = new UserQueryResult(
-                            user.Id,
-                            user.Email,
-                            user.PhoneNumber,
-                            user.DateOfBirth,
-                            user.IsLocked,
-                            user.Roles,
-                            user.FullName,
-                            user.CreatedAt,
-                            user.UpdatedAt,
-                            cart.Id,
-                            null,
-                            rooms.Select(r => new RoomQueryResult(r.Id, r.Name, r.Building.Name, r.Building.Area.Name)),
-                            [],
-                            []
-                        );
-                        notificationService.SendNotification("UserCreated", userResult, Constants.AdminHubGroup);
-                        return ResponseModel.SuccessResponse(userResult);
-                    }
-                }
             }
             return ResponseModel.SuccessResponse(user);
         }

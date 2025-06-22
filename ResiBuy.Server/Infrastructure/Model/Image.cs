@@ -37,7 +37,6 @@ namespace ResiBuy.Server.Infrastructure.Model
             Name = name;
         }
 
-
         public void UpdateImage(Image src)
         {
             Url = src.Url;

@@ -11,7 +11,9 @@ namespace ResiBuy.Server.Application.Commands.ProductCommands
             try
             {
                 var dto = command.ProductDto;
+
                 var product = new Product( dto.Name, dto.Describe, dto.Discount, dto.StoreId, dto.CategoryId);
+
 
                 var detailDataSets = new List<HashSet<string>>();
 
@@ -66,6 +68,7 @@ namespace ResiBuy.Server.Application.Commands.ProductCommands
                         detail.Image = image;
 
                     }
+
 
                     product.ProductDetails.Add(detail);
                 }

@@ -92,7 +92,6 @@ namespace ResiBuy.Server.Application.Commands.ProductCommands
                         detail.AdditionalData.RemoveAll(a => a.Id != 0 && !dtoAddIds.Contains(a.Id));
                     }
 
-
                     if (string.IsNullOrEmpty(detailDto.Image?.Id))
                     {
 
@@ -126,7 +125,6 @@ namespace ResiBuy.Server.Application.Commands.ProductCommands
                             detail.Image.UpdateImage(detailDto.Image.Url, detailDto.Image.ThumbUrl, detailDto.Image.Name);
                         }
                     }
-
                 }
 
                 var dtoDetailIds = dto.ProductDetails.Select(d => d.Id).ToHashSet();

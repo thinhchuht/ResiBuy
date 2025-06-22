@@ -14,9 +14,13 @@ import Unauthorized from "../components/Unauthorized";
 import Forbidden from "../components/Forbidden";
 import CheckoutSuccess from "../pages/CheckoutSuccess/CheckoutSuccess";
 import CheckoutFailed from "../pages/CheckoutFailed/CheckoutFailed";
+import AdminLayout from "../layouts/AdminLayout";
+import Dashboard from "../pages/Admin/dashboard/Dashboard";
+import StoresPage from "../pages/Admin/Store/page";
+import CategoriesPage from "../pages/Admin/Category/page";
+import ShippersPage from "../pages/Admin/Shipper/page";
 import Orders from "../pages/Order/Orders";
 import Profile from "../pages/Profile/Profile";
-
 const AppRoutes: React.FC = () => {
   const { user } = useAuth();
 
@@ -95,15 +99,39 @@ const AppRoutes: React.FC = () => {
             </ProtectedRoute>
           }
         />
+        <Route
+          path="/test-hub"
+          element={
+            <ProtectedRoute>
+              <TestHub />
+            </ProtectedRoute>
+          }
+        />
+        {/* <Route
+
         <Route path="/test-hub" element={<TestHub />} />
         <Route
+
           path="/admin/*"
           element={
             <ProtectedRoute allowedRoles={["ADMIN"]}>
               <div>Admin Dashboard</div>
             </ProtectedRoute>
           }
-        />
+        /> */
+          <Route
+              path="/admin"
+              element={
+               
+                  <AdminLayout />
+              
+              }
+            >
+              <Route path="dashboard" element={<Dashboard />} />
+               <Route path="Shipper" element={<ShippersPage />} />
+           <Route path="Category" element={<CategoriesPage />} />
+            <Route path="Store" element={<StoresPage />} />
+            </Route>}
         <Route
           path="/seller/*"
           element={

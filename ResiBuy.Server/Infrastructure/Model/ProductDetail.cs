@@ -15,6 +15,7 @@
         public List<AdditionalData> AdditionalData { get; set; } = new List<AdditionalData>();
 
         public ProductDetail(decimal price, WeightCategory weight, bool isOutOfStock = false)
+
         {
             Price = price;
             Weight = weight;

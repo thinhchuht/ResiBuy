@@ -2,12 +2,12 @@
 {
     public class Order
     {
-        public Order(Guid id, decimal totalPrice, PaymentMethod paymentMethod, string note, Guid shippingAddressId, string userId, Guid storeId)
+        public Order(Guid id, decimal totalPrice, PaymentMethod paymentMethod, string note, Guid shippingAddressId, string userId, Guid storeId, IEnumerable<OrderItem> items)
         {
             Id = id;
             TotalPrice = totalPrice;
             Status = OrderStatus.Pending;
-            PaymentStatus = PaymentStatus.Pending;
+            PaymentStatus = paymentMethod == PaymentMethod.COD ?  PaymentStatus.Pending : PaymentStatus.Paid;
             PaymentMethod = paymentMethod;
             CreateAt = DateTime.Now;
             UpdateAt = DateTime.Now;
@@ -15,6 +15,12 @@
             ShippingAddressId = shippingAddressId;
             UserId = userId;
             StoreId = storeId;
+            Items = items;
+        }
+
+        public Order()
+        {
+            
         }
 
         public Guid Id { get; set; }

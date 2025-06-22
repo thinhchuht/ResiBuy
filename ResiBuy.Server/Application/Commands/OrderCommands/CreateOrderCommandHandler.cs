@@ -28,13 +28,12 @@ namespace ResiBuy.Server.Application.Commands.OrderCommands
                 throw new CustomException(ExceptionErrorCode.ValidationFailed, "Giỏ hàng không có sản phẩm nào.");
             var cart = await cartDbService.GetByIdAsync(user.Cart.Id);
             if(!cart.CartItems.Any()) throw new CustomException(ExceptionErrorCode.ValidationFailed, "Giỏ hàng không có sản phẩm nào.");
-            var orders = dto.Orders.Select(o => new Order(o.Id, o.TotalPrice, dto.PaymentMethod, o.Note, dto.AddressId, dto.UserId, o.StoreId));
+            var orders = dto.Orders.Select(o => new Order(o.Id, o.TotalPrice, dto.PaymentMethod, o.Note, dto.AddressId, dto.UserId, o.StoreId, o.Items.Select(i => new OrderItem(i.Quantity, i.Price, o.Id, i.ProductDetailId)).ToList()));
             var createdOrders = await orderDbService.CreateBatchAsync(orders);
             if(createdOrders == null || !createdOrders.Any()) throw new CustomException(ExceptionErrorCode.CreateFailed, "Không thể tạo đơn hàng");
-            var orderItems = dto.Orders.SelectMany((o) => o.Items.Select(i => new OrderItem(i.Quantity,i.Price,o.Id, i.ProductDetailId)));
-            var createdOrderItems = await orderItemDbService.CreateBatchAsync(orderItems);
-            if (!createdOrderItems.Any()) throw new CustomException(ExceptionErrorCode.CreateFailed, "Không tạo được sản phẩm trong đơn hàng");
-             await cartItemDbService.DeleteBatchByProductDetailIdAsync(cart.Id ,createdOrderItems.Select(ci => ci.ProductDetailId));
+             await cartItemDbService.DeleteBatchByProductDetailIdAsync(cart.Id , createdOrders.SelectMany(o => o.Items).Select(ci => ci.ProductDetailId));
+            var notiUserIds = createdOrders.Select(o => o.StoreId.ToString()).Append(user.Id).Distinct().ToList();
+            notificationService.SendNotification("OrderCreated", createdOrders, "", notiUserIds);
             //mailBaseService.SendEmailAsync(user.Email, "Hóa đơn thanh toán đơn hà ResiBuy",);
             return ResponseModel.SuccessResponse();
         }

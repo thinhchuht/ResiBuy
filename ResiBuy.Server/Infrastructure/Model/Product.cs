@@ -23,6 +23,7 @@
            Guid storeId,
            Guid categoryId,
            bool isOutOfStock = false)
+
         {
             Name = name;
             Describe = describe;
@@ -49,6 +50,7 @@
             CategoryId = categoryId;
             IsOutOfStock = isOutOfStock;
             UpdatedAt = DateTime.UtcNow;
+
         }
     }
 

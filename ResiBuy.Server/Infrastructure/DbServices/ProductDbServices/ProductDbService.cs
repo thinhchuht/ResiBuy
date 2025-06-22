@@ -42,6 +42,7 @@
         {
             try
             {
+
                 var product = await _context.Products
                     .Include(p => p.ProductDetails)
                         .ThenInclude(pd => pd.Image)
@@ -56,8 +57,6 @@
                 throw new CustomException(ExceptionErrorCode.RepositoryError, ex.Message);
             }
         }
-
-
 
     }
 }
