@@ -3,5 +3,7 @@
     public interface IImageDbService : IBaseDbService<Image>
     {
         Task<Image> GetImageByIdAsync(string id);
+
+        Task DeleteAsync(Image image);
     }
 }

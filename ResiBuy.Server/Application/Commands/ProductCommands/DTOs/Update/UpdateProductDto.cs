@@ -8,7 +8,6 @@ namespace ResiBuy.Server.Application.Commands.ProductCommands.DTOs.Update
         public string Name { get; set; }
         public string Describe { get; set; }
         public int Discount { get; set; }
-        public Guid StoreId { get; set; }
         public Guid CategoryId { get; set; }
         public bool IsOutOfStock { get; set; }
         public List<UpdateProductDetailDto> ProductDetails { get; set; }
