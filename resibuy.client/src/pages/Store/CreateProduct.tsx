@@ -1,101 +1,83 @@
-// components/CreateProduct.tsx
 import React, { useState } from 'react';
-import {
-  Paper,
-  TextField,
-  Button,
-  Typography,
-  FormControlLabel,
-  Switch,
-  Box,
-  MenuItem,
-  Select,
-  InputLabel,
-  FormControl,
-} from '@mui/material';
-import { useNavigate } from 'react-router-dom';
-import CostDataEditor from './CostDataEditor';
+import { Card, CardContent, TextField, Typography, Button, Box } from '@mui/material';
+import { Add as AddIcon } from '@mui/icons-material';
 
-const CreateProduct: React.FC = () => {
-  const navigate = useNavigate();
+interface ProductOption {
+  key: string;
+  values: string[];
+}
 
-  const [form, setForm] = useState({
-    name: '',
-    describe: '',
-    weight: '',
-    discount: '',
-    isOutOfStock: false,
-    isActive: true,
-    storeId: '',
-    categoryId: '',
-  });
+interface ProductDetail {
+  id: number;
+  options: ProductOption[];
+}
 
-  const [costData, setCostData] = useState([]);
+interface AdditionalDataItem {
+  id: number;
+  key: string;
+  values: string[];
+}
 
-  const stores = [
-    { id: 'store-1', name: 'Cửa hàng A' },
-    { id: 'store-2', name: 'Cửa hàng B' },
-  ];
+const ProductDetailUI: React.FC = () => {
+  const [productDetails, setProductDetails] = useState<ProductDetail[]>([{
+    id: Date.now(),
+    options: [{ key: 'Ram', values: ['2GB', '4GB'] }]
+  }]);
 
-  const categories = [
-    { id: 'category-1', name: 'Điện tử' },
-    { id: 'category-2', name: 'Thời trang' },
-  ];
+  const [additionalData, setAdditionalData] = useState<AdditionalDataItem[]>([{
+    id: Date.now(),
+    key: 'Màu sắc',
+    values: ['Cam', 'Vàng'],
+  }]);
 
-  const handleChange = (e: React.ChangeEvent<HTMLInputElement | { name?: string; value: unknown }>) => {
-    const { name, value } = e.target;
-    setForm(prev => ({ ...prev, [name as string]: value }));
+  const addProductDetailOption = () => {
+    setProductDetails([...productDetails, { id: Date.now(), options: [] }]);
   };
 
-  const handleToggle = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const { name, checked } = e.target;
-    setForm(prev => ({ ...prev, [name]: checked }));
-  };
-
-  const handleSubmit = (e: React.FormEvent) => {
-    e.preventDefault();
-    const payload = {
-      ...form,
-      weight: parseFloat(form.weight),
-      discount: parseInt(form.discount),
-      costData,
-    };
-    console.log('Đã tạo sản phẩm:', payload);
-    navigate('/products');
+  const addAdditionalData = () => {
+    setAdditionalData([...additionalData, { id: Date.now(), key: '', values: [''] }]);
   };
 
   return (
-    <Paper sx={{ padding: 4 }}>
-      <Typography variant="h5" gutterBottom>Tạo sản phẩm mới</Typography>
-      <Box component="form" onSubmit={handleSubmit} display="flex" flexDirection="column" gap={2}>
-        <TextField label="Tên sản phẩm" name="name" value={form.name} onChange={handleChange} required />
-        <TextField label="Mô tả" name="describe" value={form.describe} onChange={handleChange} multiline />
-        <TextField label="Trọng lượng (kg)" name="weight" type="number" value={form.weight} onChange={handleChange} required />
-        <TextField label="Giảm giá (%)" name="discount" type="number" value={form.discount} onChange={handleChange} />
-        <FormControl fullWidth>
-          <InputLabel>Cửa hàng</InputLabel>
-          <Select name="storeId" value={form.storeId} label="Cửa hàng" onChange={handleChange} required>
-            {stores.map(store => <MenuItem key={store.id} value={store.id}>{store.name}</MenuItem>)}
-          </Select>
-        </FormControl>
-        <FormControl fullWidth>
-          <InputLabel>Danh mục</InputLabel>
-          <Select name="categoryId" value={form.categoryId} label="Danh mục" onChange={handleChange} required>
-            {categories.map(cat => <MenuItem key={cat.id} value={cat.id}>{cat.name}</MenuItem>)}
-          </Select>
-        </FormControl>
-        <FormControlLabel control={<Switch checked={form.isOutOfStock} onChange={handleToggle} name="isOutOfStock" />} label="Hết hàng" />
-        <FormControlLabel control={<Switch checked={form.isActive} onChange={handleToggle} name="isActive" />} label="Kích hoạt sản phẩm" />
-
-        <CostDataEditor costData={costData} setCostData={setCostData} />
-
-        <Box display="flex" justifyContent="flex-end" gap={2}>
-          <Button variant="outlined" onClick={() => navigate('/products')}>Hủy</Button>
-          <Button type="submit" variant="contained" color="primary">Tạo</Button>
-        </Box>
+    <Box p={2}>
+      <Box mb={3}>
+        <Typography variant="h6">Product Details (Phân loại 1)</Typography>
+        {productDetails.map((detail, index) => (
+          <Card key={detail.id} variant="outlined" sx={{ mb: 2 }}>
+            <CardContent>
+              <Typography>Phân loại 1 - {index + 1}</Typography>
+              {detail.options.map((option, optIndex) => (
+                <Box key={optIndex} display="flex" gap={2} mb={2}>
+                  <TextField label="Key" value={option.key} fullWidth />
+                  <TextField label="Values" value={option.values.join(', ')} fullWidth />
+                </Box>
+              ))}
+            </CardContent>
+          </Card>
+        ))}
+        <Button onClick={addProductDetailOption} variant="contained" startIcon={<AddIcon />}>
+          Thêm chi tiết sản phẩm
+        </Button>
       </Box>
-    </Paper>
+
+      <Box mb={3}>
+        <Typography variant="h6">Additional Data (Phân loại 2)</Typography>
+        {additionalData.map((data) => (
+          <Card key={data.id} variant="outlined" sx={{ mb: 2 }}>
+            <CardContent>
+              <Box display="flex" gap={2}>
+                <TextField label="Key" value={data.key} fullWidth />
+                <TextField label="Values" value={data.values.join(', ')} fullWidth />
+              </Box>
+            </CardContent>
+          </Card>
+        ))}
+        <Button onClick={addAdditionalData} variant="contained" startIcon={<AddIcon />}>
+          Thêm phân loại
+        </Button>
+      </Box>
+    </Box>
   );
 };
 
-export default CreateProduct;
+export default ProductDetailUI;

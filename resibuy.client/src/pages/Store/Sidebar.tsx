@@ -1,42 +1,28 @@
-// components/Sidebar.tsx
-import React from 'react';
-import { Drawer, List, ListItemButton, ListItemIcon, ListItemText } from '@mui/material';
-import StoreIcon from '@mui/icons-material/Store';
-import AddBoxIcon from '@mui/icons-material/AddBox';
-import ListAltIcon from '@mui/icons-material/ListAlt';
-import { useNavigate } from 'react-router-dom';
+// Sidebar.tsx
+import { List, ListItemButton, ListItemText } from "@mui/material";
+import { Link, useLocation } from "react-router-dom";
+import type { MenuItem } from "./menuItems";
 
-const Sidebar: React.FC = () => {
-  const navigate = useNavigate();
+interface SidebarProps {
+  menuItems: MenuItem[];
+}
 
-  const menuItems = [
-    { text: 'Danh sách sản phẩm', icon: <ListAltIcon />, path: '/products' },
-    { text: 'Thêm sản phẩm', icon: <AddBoxIcon />, path: '/products/create' },
-  ];
+const Sidebar: React.FC<SidebarProps> = ({ menuItems }) => {
+  const location = useLocation();
 
   return (
-    <Drawer
-      variant="permanent"
-      anchor="left"
-      sx={{
-        width: 240,
-        flexShrink: 0,
-        [`& .MuiDrawer-paper`]: { width: 240, boxSizing: 'border-box' },
-      }}
-    >
-      <List>
-        <ListItemButton onClick={() => navigate('/')}> 
-          <ListItemIcon><StoreIcon /></ListItemIcon>
-          <ListItemText primary="Trang chủ" />
+    <List sx={{ width: 240, backgroundColor: "#f5f5f5", height: "100vh" }}>
+      {menuItems.map((item) => (
+        <ListItemButton
+          key={item.path}
+          component={Link}
+          to={item.path}
+          selected={location.pathname === item.path}
+        >
+          <ListItemText primary={item.name} />
         </ListItemButton>
-        {menuItems.map((item, index) => (
-          <ListItemButton key={index} onClick={() => navigate(item.path)}>
-            <ListItemIcon>{item.icon}</ListItemIcon>
-            <ListItemText primary={item.text} />
-          </ListItemButton>
-        ))}
-      </List>
-    </Drawer>
+      ))}
+    </List>
   );
 };
 
