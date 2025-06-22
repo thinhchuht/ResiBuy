@@ -1,6 +1,5 @@
-﻿using ResiBuy.Server.Infrastructure.DbServices.CategoryDbServices;
-using ResiBuy.Server.Infrastructure.DbServices.ProductDbServices;
-using ResiBuy.Server.Services.MailServices;
+﻿using ResiBuy.Server.Infrastructure.DbServices.CartItemDbService;
+
 namespace ResiBuy.Server.Extensions
 {
     public static class ServiceCollectionExtensions
@@ -23,10 +22,12 @@ namespace ResiBuy.Server.Extensions
             services.AddScoped<IBuildingDbService, BuildingDbService>();
             services.AddScoped<IRoomDbService, RoomDbService>();
             services.AddScoped<ICartDbService, CartDbService>();
-
+            services.AddScoped<IImageDbService, ImageDbService>();
             services.AddScoped<ICategoryDbService, CategoryDbService>();
             services.AddScoped<IProductDbService, ProductDbService>();
-            services.AddScoped<IMailService, MailService>();
+            services.AddScoped<IMailBaseService, MailBaseService>();
+            services.AddScoped<ICartDbService, CartDbService>();
+            services.AddScoped<ICartItemDbService, CartItemDbService>();
             return services;
         }
 
@@ -39,7 +40,7 @@ namespace ResiBuy.Server.Extensions
 
         public static IServiceCollection AddKafka(this IServiceCollection services, IConfiguration configuration)
         {
-            services.Configure<KafkaSettings>(configuration.GetSection("Kafka"));
+            services.Configure<KafkaSetting>(configuration.GetSection("Kafka"));
             return services;
         }
 
@@ -64,6 +65,13 @@ namespace ResiBuy.Server.Extensions
                     RoleClaimType = ClaimTypes.Role
                 };
             });
+            return services;
+        }
+
+        public static IServiceCollection AddCloudinary(this IServiceCollection services, IConfiguration configuration)
+        {
+            services.AddSingleton(configuration.GetSection("Cloudinary").Get<CloudinarySetting>());
+            services.AddScoped<ICloudinaryService, CloudinaryService>();
             return services;
         }
     }

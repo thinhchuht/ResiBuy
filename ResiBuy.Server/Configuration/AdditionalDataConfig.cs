@@ -5,10 +5,10 @@ namespace ResiBuy.Server.Configuration
     {
         public void Configure(EntityTypeBuilder<AdditionalData> builder)
         {
-            builder.HasOne(ad2 => ad2.AdditionalData1) // Specify the navigation property explicitly
-                   .WithMany(ad1 => ad1.AdditionalData2)
-                   .HasForeignKey(ad2 => ad2.AdditionalData1Id)
-                   .OnDelete(DeleteBehavior.Cascade); // Xóa AdditionalData1 sẽ xóa AdditionalData2
+            builder.HasOne(cd => cd.ProductDetail) // Specify the navigation property explicitly  
+                            .WithMany(p => p.AdditionalData)
+                            .HasForeignKey(cd => cd.ProductDetailId)
+                            .OnDelete(DeleteBehavior.Cascade); // Xóa Product sẽ xóa AdditionalData1  
         }
     }
 }

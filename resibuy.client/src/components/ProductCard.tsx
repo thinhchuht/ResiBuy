@@ -2,18 +2,70 @@ import { Box, Typography, Card } from "@mui/material";
 import { Link } from "react-router-dom";
 import { Star } from "@mui/icons-material";
 import type { Product } from "../types/models";
+import { formatPrice } from "../utils/priceUtils";
+
+export interface SelectedProduct extends Omit<Product, "costData"> {
+  costData: {
+    id: string;
+    key: string;
+    value: string;
+    price: number;
+    uncostData: Array<{
+      id: string;
+      key: string;
+      value: string;
+    }>;
+  };
+}
 
 interface ProductCardProps {
   product: Product;
   productActions: {
     icon: React.ReactNode;
-    onClick: (product: Product) => void;
+    onClick: (selectedProduct: SelectedProduct) => void;
     label: string;
   }[];
 }
 
 const ProductCard = ({ product, productActions }: ProductCardProps) => {
-  const discountedPrice = product.price * (1 - product.discount / 100);
+  // Get costData with minimum price
+  const defaultCostData = product.costData.reduce((min, current) => (current.price < min.price ? current : min), product.costData[0]);
+
+  const basePrice = defaultCostData.price;
+  const discountedPrice = basePrice * (1 - product.discount / 100);
+  // Get first image's thumbUrl
+  const thumbUrl = product.productImgs[0]?.thumbUrl;
+
+  const handleActionClick = (e: React.MouseEvent, action: ProductCardProps["productActions"][0]) => {
+    e.preventDefault();
+    if (!defaultCostData) return;
+
+    // Filter out duplicate uncostData keys, keeping only the first occurrence
+    const uniqueUncostData =
+      defaultCostData.uncostData?.reduce((acc, current) => {
+        if (!acc.find((item) => item.key === current.key)) {
+          acc.push(current);
+        }
+        return acc;
+      }, [] as typeof defaultCostData.uncostData) || [];
+
+    const selectedProduct: SelectedProduct = {
+      ...product,
+      costData: {
+        id: defaultCostData.id,
+        key: defaultCostData.key,
+        value: defaultCostData.value,
+        price: defaultCostData.price,
+        uncostData: uniqueUncostData.map((uncost) => ({
+          id: uncost.id,
+          key: uncost.key,
+          value: uncost.value,
+        })),
+      },
+    };
+
+    action.onClick(selectedProduct);
+  };
 
   return (
     <Card
@@ -34,7 +86,7 @@ const ProductCard = ({ product, productActions }: ProductCardProps) => {
           boxShadow: "0 12px 28px 0 rgba(36, 33, 33, 0.08)",
         },
         background: "#fff",
-        minHeight: 320,
+        minHeight: 500,
       }}>
       {product.discount > 0 && (
         <Box
@@ -76,7 +128,7 @@ const ProductCard = ({ product, productActions }: ProductCardProps) => {
             },
           }}>
           <img
-            src={product.imageUrl}
+            src={thumbUrl}
             alt={product.name}
             style={{
               width: "90%",
@@ -120,10 +172,7 @@ const ProductCard = ({ product, productActions }: ProductCardProps) => {
                     transform: "scale(1.1)",
                   },
                 }}
-                onClick={(e) => {
-                  e.preventDefault();
-                  action.onClick(product);
-                }}
+                onClick={(e) => handleActionClick(e, action)}
                 aria-label={action.label}>
                 {action.icon}
               </Box>
@@ -165,7 +214,7 @@ const ProductCard = ({ product, productActions }: ProductCardProps) => {
         Lượt mua: {product.sold}
       </Box>
       <Box sx={{ display: "flex", alignItems: "center", gap: 0.8, justifyContent: "center", mb: 0.2 }}>
-        <Typography sx={{ color: "#FF6B6B", fontWeight: 600, fontSize: "1.05rem" }}>{discountedPrice.toFixed(2)}đ</Typography>
+        <Typography sx={{ color: "#FF6B6B", fontWeight: 600, fontSize: "1.05rem" }}>{formatPrice(discountedPrice)}</Typography>
         {product.discount > 0 && (
           <Typography
             variant="body2"
@@ -175,7 +224,7 @@ const ProductCard = ({ product, productActions }: ProductCardProps) => {
               fontWeight: 400,
               fontSize: 13,
             }}>
-            ${product.price.toFixed(2)}
+            {formatPrice(basePrice)}
           </Typography>
         )}
       </Box>

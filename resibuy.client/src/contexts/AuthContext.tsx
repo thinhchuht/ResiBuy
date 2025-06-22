@@ -1,57 +1,43 @@
 import React, { createContext, useContext, useState, useEffect } from "react";
 import axios from "axios";
 import authApi from "../api/auth.api";
-
-interface User {
-  id: string;
-  email: string;
-  fullName: string;
-  rooms: [
-    {
-      roomId: string;
-      roomName: string;
-      buildingName: string;
-      areaName: string;
-    }
-  ];
-  phoneNumber: string;
-  roles: string[];
-}
+import userApi from "../api/user.api";
+import type { User } from "../types/models";
 
 interface AuthContextType {
   user: User | null;
   token: string | null;
   refreshToken: string | null;
-  login: (
-    phoneNumber: string,
-    password: string
-  ) => Promise<{ success: boolean; error?: { message: string } }>;
+  setUser: (user: User | null) => void;
+  login: (phoneNumber: string, password: string) => Promise<{ success: boolean; error?: { message: string } }>;
   logout: () => Promise<void>;
   isAuthenticated: boolean;
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
-export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
-  children,
-}) => {
-  const [user, setUser] = useState<User | null>(() => {
-    try {
-      const savedUser = localStorage.getItem("user");
-      return savedUser ? JSON.parse(savedUser) : null;
-    } catch (error) {
-      console.error("Error parsing user from localStorage:", error);
-      localStorage.removeItem("user"); // Clean up invalid data
-      return null;
-    }
-  });
-  const [token, setToken] = useState<string | null>(
-    localStorage.getItem("token")
-  );
-  const [refreshToken, setRefreshToken] = useState<string | null>(
-    localStorage.getItem("refreshToken")
-  );
-  // Set up axios default headers
+export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
+  const [user, setUser] = useState<User | null>(null);
+  const [token, setToken] = useState<string | null>(localStorage.getItem("token"));
+  const [refreshToken, setRefreshToken] = useState<string | null>(localStorage.getItem("refreshToken"));
+  const [userId, setUserId] = useState<string | null>(localStorage.getItem("userId"));
+
+  useEffect(() => {
+    const fetchUser = async () => {
+      if (token && userId) {
+        try {
+          const response = await userApi.getById(userId);
+          if (response.data) {
+            setUser(response.data);
+          }
+        } catch (error) {
+          console.error("Error fetching user data:", error);
+        }
+      }
+    };
+    fetchUser();
+  }, [token, userId]);
+
   useEffect(() => {
     if (token) {
       axios.defaults.headers.common["Authorization"] = `Bearer ${token}`;
@@ -63,16 +49,14 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
   const login = async (phoneNumber: string, password: string) => {
     try {
       const response = await authApi.login(phoneNumber, password);
-      console.log(response);
       if (response.success) {
-        console.log("fdasfasdfas");
-        const { token, user, refreshToken } = response.data;
+        const { token, refreshToken, user } = response.data;
         localStorage.setItem("token", token);
         localStorage.setItem("refreshToken", refreshToken);
-        localStorage.setItem("user", JSON.stringify(user));
+        localStorage.setItem("userId", user.id);
         setToken(token);
         setRefreshToken(refreshToken);
-        setUser(user);
+        setUserId(user.id);
       }
       return response;
     } catch (error) {
@@ -89,21 +73,20 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
   const logout = async () => {
     try {
       const refreshToken = localStorage.getItem("refreshToken");
-      console.log("logout", refreshToken);
-
       if (refreshToken) {
         const response = await authApi.logout(refreshToken);
         if (response.success) {
           localStorage.removeItem("token");
           localStorage.removeItem("refreshToken");
-          localStorage.removeItem("user");
+          localStorage.removeItem("userId");
           setToken(null);
           setRefreshToken(null);
+          setUserId(null);
           setUser(null);
         }
       }
     } catch (error) {
-      console.error("Logout failed:", error);
+      console.error("Logout failed with error:", error);
     }
   };
 
@@ -113,11 +96,11 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
         user,
         token,
         refreshToken,
+        setUser,
         login,
         logout,
         isAuthenticated: !!token,
-      }}
-    >
+      }}>
       {children}
     </AuthContext.Provider>
   );

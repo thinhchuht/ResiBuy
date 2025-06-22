@@ -1,20 +1,8 @@
 import React, { useState } from "react";
-import {
-  Modal,
-  Box,
-  Typography,
-  IconButton,
-  Rating,
-  TextField,
-  Button,
-  Select,
-  MenuItem,
-  FormControl,
-  InputLabel,
-  Avatar,
-} from "@mui/material";
+import { Modal, Box, Typography, IconButton, Rating, TextField, Button, Select, MenuItem, FormControl, InputLabel, Avatar } from "@mui/material";
 import CloseIcon from "@mui/icons-material/Close";
 import type { Product } from "../../../types/models";
+import { formatPrice, getMinPrice } from "../../../utils/priceUtils";
 
 interface ReviewFormModalProps {
   open: boolean;
@@ -29,7 +17,6 @@ const ReviewFormModal: React.FC<ReviewFormModalProps> = ({ open, onClose, produc
   const [nameDisplayFormat, setNameDisplayFormat] = useState("anonymous");
 
   const handleSubmit = () => {
-    // Handle review submission logic here
     console.log({
       rating,
       reviewTitle,
@@ -54,8 +41,7 @@ const ReviewFormModal: React.FC<ReviewFormModalProps> = ({ open, onClose, produc
           outline: "none",
           maxHeight: "90vh",
           overflowY: "auto",
-        }}
-      >
+        }}>
         <IconButton
           aria-label="close"
           onClick={onClose}
@@ -64,17 +50,20 @@ const ReviewFormModal: React.FC<ReviewFormModalProps> = ({ open, onClose, produc
             right: 2,
             top: 8,
             color: (theme) => theme.palette.grey[500],
-          }}
-        >
+          }}>
           <CloseIcon />
         </IconButton>
 
         {product && (
           <Box display="flex" alignItems="center" gap={2} mb={3} border={1} borderColor="grey.300" p={2} borderRadius={1}>
-            <Avatar variant="square" src={product.imageUrl} alt={product.name} sx={{ width: 60, height: 60 }} />
+            <Avatar variant="square" src={product.productImgs [0]?.thumbUrl} alt={product.name} sx={{ width: 60, height: 60 }} />
             <Box>
-              <Typography variant="subtitle1" fontWeight="bold">{product.name}</Typography>
-              <Typography variant="body2" color="text.secondary">${product.price.toFixed(2)}</Typography>
+              <Typography variant="subtitle1" fontWeight="bold">
+                {product.name}
+              </Typography>
+              <Typography variant="body2" color="text.secondary">
+                {formatPrice(getMinPrice(product))}
+              </Typography>
             </Box>
           </Box>
         )}
@@ -92,11 +81,13 @@ const ReviewFormModal: React.FC<ReviewFormModalProps> = ({ open, onClose, produc
               setRating(newValue);
             }}
             size="large"
-            sx={{ '& .MuiRating-iconEmpty': { color: (theme) => theme.palette.grey[400] } }}
+            sx={{ "& .MuiRating-iconEmpty": { color: (theme) => theme.palette.grey[400] } }}
           />
         </Box>
 
-        <Typography variant="subtitle1" mb={1}>Tiêu đề đánh giá</Typography>
+        <Typography variant="subtitle1" mb={1}>
+          Tiêu đề đánh giá
+        </Typography>
         <TextField
           fullWidth
           variant="outlined"
@@ -110,7 +101,9 @@ const ReviewFormModal: React.FC<ReviewFormModalProps> = ({ open, onClose, produc
           {reviewTitle.length}/100
         </Typography>
 
-        <Typography variant="subtitle1" mb={1}>Bình luận sản phẩm</Typography>
+        <Typography variant="subtitle1" mb={1}>
+          Bình luận sản phẩm
+        </Typography>
         <TextField
           fullWidth
           multiline
@@ -127,15 +120,11 @@ const ReviewFormModal: React.FC<ReviewFormModalProps> = ({ open, onClose, produc
         </Typography>
 
         <FormControl fullWidth variant="outlined" sx={{ mb: 2 }}>
-            <InputLabel>Tên hiển thị</InputLabel>
-            <Select
-                value={nameDisplayFormat}
-                onChange={(e) => setNameDisplayFormat(e.target.value as string)}
-                label="Tên hiển thị"
-            >
-                <MenuItem value="username">Tên thật</MenuItem>
-                <MenuItem value="anonymous">Ẩn danh</MenuItem>
-            </Select>
+          <InputLabel>Tên hiển thị</InputLabel>
+          <Select value={nameDisplayFormat} onChange={(e) => setNameDisplayFormat(e.target.value as string)} label="Tên hiển thị">
+            <MenuItem value="username">Tên thật</MenuItem>
+            <MenuItem value="anonymous">Ẩn danh</MenuItem>
+          </Select>
         </FormControl>
 
         <Button
@@ -151,8 +140,7 @@ const ReviewFormModal: React.FC<ReviewFormModalProps> = ({ open, onClose, produc
               backgroundColor: "#333",
             },
           }}
-          onClick={handleSubmit}
-        >
+          onClick={handleSubmit}>
           Gửi đánh giá
         </Button>
       </Box>
@@ -160,4 +148,4 @@ const ReviewFormModal: React.FC<ReviewFormModalProps> = ({ open, onClose, produc
   );
 };
 
-export default ReviewFormModal; 
+export default ReviewFormModal;

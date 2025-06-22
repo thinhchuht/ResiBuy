@@ -1,7 +1,8 @@
-import { Box, Typography, IconButton, Checkbox, Table, TableBody, TableCell, TableContainer, TableHead, TableRow, TablePagination } from "@mui/material";
+import { Box, Typography, IconButton, Checkbox, Table, TableBody, TableCell, TableContainer, TableHead, TableRow, TablePagination, TextField } from "@mui/material";
 import { Add, Remove, Delete } from "@mui/icons-material";
 import { useNavigate } from "react-router-dom";
 import type { CartItem as CartItemType } from "../../types/models";
+import { formatPrice, getMinPrice } from "../../utils/priceUtils";
 
 interface CartItemSectionProps {
   items: CartItemType[];
@@ -34,14 +35,27 @@ const CartItemSection = ({
 }: CartItemSectionProps) => {
   const navigate = useNavigate();
 
+  const getCartItemPrice = (item: CartItemType) => getMinPrice(item.product);
+
   const calculateItemTotal = (item: CartItemType): string => {
-    return (item.product.price * item.quantity).toFixed(2);
+    return formatPrice(getCartItemPrice(item) * item.quantity);
   };
 
   const tableCellStyle = {
     wordBreak: "break-word" as const,
     whiteSpace: "normal" as const,
     maxWidth: "200px",
+  };
+
+  const handleQuantityInputChange = (itemId: string, event: React.ChangeEvent<HTMLInputElement>) => {
+    let value = parseInt(event.target.value);
+    if (isNaN(value) || value < 1) {
+      value = 1; // Mặc định về 1 nếu không hợp lệ
+    }
+    if (value > 10) {
+      value = 10; // Giới hạn tối đa là 10
+    }
+    onQuantityChange(itemId, value);
   };
 
   return (
@@ -93,8 +107,8 @@ const CartItemSection = ({
                 <TableCell sx={{ ...tableCellStyle, minWidth: "300px" }}>
                   <Box sx={{ display: "flex", alignItems: "center", gap: 2 }}>
                     <img
-                      src={product.imageUrl}
-                      alt={product.name}
+                      src={product.productImgs[0]?.thumbUrl}
+                      alt={product.productImgs[0].name}
                       style={{
                         width: "80px",
                         height: "80px",
@@ -123,8 +137,16 @@ const CartItemSection = ({
                         {product.name}
                       </Typography>
                       <Typography variant="body2" color="text.secondary">
-                        Giá: {product.price.toFixed(2)}đ
+                        Giá: {formatPrice(getCartItemPrice(item))}
                       </Typography>
+                      <Typography variant="body2" color="text.secondary">
+                        Phân loại: {item.costData.key} - {item.costData.value}
+                      </Typography>
+                      {item.cartItemUncosts && item.cartItemUncosts.length > 0 && (
+                        <Typography variant="body2" color="text.secondary">
+                          Tùy chọn: {item.cartItemUncosts.map((uncost) => `${uncost.uncostData.key}: ${uncost.uncostData.value}`).join(", ")}
+                        </Typography>
+                      )}
                     </Box>
                   </Box>
                 </TableCell>
@@ -133,8 +155,31 @@ const CartItemSection = ({
                     <IconButton size="small" onClick={() => onQuantityChange(item.id, item.quantity - 1)} disabled={item.quantity <= 1}>
                       <Remove fontSize="small" />
                     </IconButton>
-                    <Typography variant="body1">{item.quantity}</Typography>
-                    <IconButton size="small" onClick={() => onQuantityChange(item.id, item.quantity + 1)}>
+                    <TextField
+                      value={item.quantity}
+                      onChange={(e: React.ChangeEvent<HTMLInputElement>) => handleQuantityInputChange(item.id, e)}
+                      variant="standard"
+                      size="small"
+                      sx={{
+                        width: 30,
+                        "& .MuiInput-root": {
+                          fontWeight: 500,
+                          "&:before": { borderBottom: "none" },
+                          "&:after": { borderBottom: "none" },
+                          "&:hover:not(.Mui-disabled):before": { borderBottom: "none" },
+                        },
+                        "& .MuiInput-input": {
+                          textAlign: "center",
+                          padding: "8px 4px",
+                        },
+                      }}
+                      inputProps={{
+                        min: 1,
+                        max: 10,
+                        style: { textAlign: "center" },
+                      }}
+                    />
+                    <IconButton size="small" onClick={() => onQuantityChange(item.id, item.quantity + 1)} disabled={item.quantity >= 10}>
                       <Add fontSize="small" />
                     </IconButton>
                     <IconButton size="small" color="error" onClick={() => onRemove(item.id)}>
@@ -147,7 +192,7 @@ const CartItemSection = ({
                 </TableCell>
                 <TableCell align="right" sx={{ ...tableCellStyle, minWidth: "150px" }}>
                   <Typography variant="h6" color="red">
-                    {calculateItemTotal(item)}đ
+                    {calculateItemTotal(item)}
                   </Typography>
                 </TableCell>
               </TableRow>

@@ -16,7 +16,7 @@ import {
   Popover,
   Badge,
 } from "@mui/material";
-import { Login, Logout, Person, Settings, Home, ShoppingCart, Receipt, KeyboardArrowDown, Category, History, Notifications, Dashboard } from "@mui/icons-material";
+import { Login, Logout, Person, Settings, Home, ShoppingCart, Receipt, KeyboardArrowDown, Category, Notifications, Dashboard, Store, LocalShipping, Storefront } from "@mui/icons-material";
 import { Link, useNavigate } from "react-router-dom";
 import { useAuth } from "../../contexts/AuthContext";
 import SearchBase from "../../components/SearchBase";
@@ -27,7 +27,6 @@ const AppBar: React.FC = () => {
   const { user } = useAuth();
   const [anchorEl, setAnchorEl] = useState<null | HTMLElement>(null);
   const [homeAnchorEl, setHomeAnchorEl] = useState<null | HTMLElement>(null);
-  const [ordersAnchorEl, setOrdersAnchorEl] = useState<null | HTMLElement>(null);
   const navigate = useNavigate();
   const [searchValue, setSearchValue] = useState("");
   const [notificationAnchorEl, setNotificationAnchorEl] = useState<null | HTMLElement>(null);
@@ -65,14 +64,6 @@ const AppBar: React.FC = () => {
 
   const handleHomeMenuClose = () => {
     setHomeAnchorEl(null);
-  };
-
-  const handleOrdersMenuOpen = (event: React.MouseEvent<HTMLElement>) => {
-    setOrdersAnchorEl(event.currentTarget);
-  };
-
-  const handleOrdersMenuClose = () => {
-    setOrdersAnchorEl(null);
   };
 
   const handleNavigation = (path: string, closeMenu: () => void) => {
@@ -139,8 +130,10 @@ const AppBar: React.FC = () => {
                 borderRadius: 2,
                 transition: "all 0.2s ease-in-out",
               }}>
-              <Home sx={{ mr: 1 }} />
-              Trang chủ
+              <Link to="/" style={{ textDecoration: "none", color: "inherit", display: "flex", alignItems: "center" }}>
+                <Home sx={{ mr: 1 }} />
+                <span>Trang chủ</span>
+              </Link>
             </Button>
             <Popover
               open={Boolean(homeAnchorEl)}
@@ -158,6 +151,17 @@ const AppBar: React.FC = () => {
                   mt: 1,
                   borderRadius: 2,
                   boxShadow: "0 4px 20px rgba(0,0,0,0.1)",
+                  minWidth: 200,
+                  overflow: "hidden",
+                  "&::before": {
+                    content: '""',
+                    position: "absolute",
+                    top: 0,
+                    left: 0,
+                    right: 0,
+                    height: "4px",
+                    background: "linear-gradient(90deg, #EB5C60 0%, #FF8E8E 100%)",
+                  },
                 },
               }}
               onClose={handleHomeMenuClose}
@@ -170,13 +174,22 @@ const AppBar: React.FC = () => {
                   pointerEvents: "auto",
                 },
               }}>
+              <Box sx={{ p: 1.5, borderBottom: "1px solid rgba(0,0,0,0.08)" }}>
+                <Typography variant="subtitle2" sx={{ color: "text.secondary", fontWeight: 500 }}>
+                  Điều hướng nhanh
+                </Typography>
+              </Box>
               <MenuItem
                 onClick={() => handleNavigation("/", handleHomeMenuClose)}
                 sx={{
+                  py: 1.5,
+                  px: 2,
+                  gap: 1.5,
                   "&:hover": {
                     backgroundColor: "rgba(235, 92, 96, 0.08)",
                     "& .MuiListItemIcon-root": {
                       color: "#EB5C60",
+                      transform: "scale(1.1)",
                     },
                     "& .MuiListItemText-primary": {
                       color: "#EB5C60",
@@ -184,18 +197,28 @@ const AppBar: React.FC = () => {
                   },
                   transition: "all 0.2s ease-in-out",
                 }}>
-                <ListItemIcon>
-                  <Home fontSize="small" />
+                <ListItemIcon sx={{ minWidth: 40 }}>
+                  <Home fontSize="small" sx={{ transition: "all 0.2s ease-in-out" }} />
                 </ListItemIcon>
-                <ListItemText>Trang chủ</ListItemText>
+                <ListItemText
+                  primary="Trang chủ"
+                  primaryTypographyProps={{
+                    variant: "body2",
+                    fontWeight: 500,
+                  }}
+                />
               </MenuItem>
               <MenuItem
                 onClick={() => handleNavigation("/products", handleHomeMenuClose)}
                 sx={{
+                  py: 1.5,
+                  px: 2,
+                  gap: 1.5,
                   "&:hover": {
                     backgroundColor: "rgba(235, 92, 96, 0.08)",
                     "& .MuiListItemIcon-root": {
                       color: "#EB5C60",
+                      transform: "scale(1.1)",
                     },
                     "& .MuiListItemText-primary": {
                       color: "#EB5C60",
@@ -203,10 +226,16 @@ const AppBar: React.FC = () => {
                   },
                   transition: "all 0.2s ease-in-out",
                 }}>
-                <ListItemIcon>
-                  <Category fontSize="small" />
+                <ListItemIcon sx={{ minWidth: 40 }}>
+                  <Category fontSize="small" sx={{ transition: "all 0.2s ease-in-out" }} />
                 </ListItemIcon>
-                <ListItemText>Sản phẩm</ListItemText>
+                <ListItemText
+                  primary="Sản phẩm"
+                  primaryTypographyProps={{
+                    variant: "body2",
+                    fontWeight: 500,
+                  }}
+                />
               </MenuItem>
             </Popover>
           </Box>
@@ -254,92 +283,23 @@ const AppBar: React.FC = () => {
                 <span style={{ marginLeft: 4 }}>Giỏ hàng</span>
               </Button>
 
-              <Box onMouseEnter={handleOrdersMenuOpen} onMouseLeave={handleOrdersMenuClose} sx={{ position: "relative" }}>
-                <Button
-                  color="inherit"
-                  endIcon={<KeyboardArrowDown />}
-                  sx={{
-                    "&:hover": {
-                      backgroundColor: "rgba(0,0,0,0.04)",
+              <Button
+                color="inherit"
+                onClick={() => navigate("/orders")}
+                sx={{
+                  "&:hover": {
+                    backgroundColor: "rgba(0,0,0,0.04)",
+                    color: "#EB5C60",
+                    "& .MuiSvgIcon-root": {
                       color: "#EB5C60",
-                      "& .MuiSvgIcon-root": {
-                        color: "#EB5C60",
-                      },
                     },
-                    borderRadius: 2,
-                    transition: "all 0.2s ease-in-out",
-                  }}>
-                  <Receipt sx={{ mr: 1 }} />
-                  Đơn hàng
-                </Button>
-                <Popover
-                  open={Boolean(ordersAnchorEl)}
-                  anchorEl={ordersAnchorEl}
-                  anchorOrigin={{
-                    vertical: "bottom",
-                    horizontal: "left",
-                  }}
-                  transformOrigin={{
-                    vertical: "top",
-                    horizontal: "left",
-                  }}
-                  PaperProps={{
-                    sx: {
-                      mt: 1,
-                      borderRadius: 2,
-                      boxShadow: "0 4px 20px rgba(0,0,0,0.1)",
-                    },
-                  }}
-                  onClose={handleOrdersMenuClose}
-                  disableRestoreFocus
-                  disableEnforceFocus
-                  disableAutoFocus
-                  sx={{
-                    pointerEvents: "none",
-                    "& .MuiPopover-paper": {
-                      pointerEvents: "auto",
-                    },
-                  }}>
-                  <MenuItem
-                    onClick={() => handleNavigation("/orders", handleOrdersMenuClose)}
-                    sx={{
-                      "&:hover": {
-                        backgroundColor: "rgba(235, 92, 96, 0.08)",
-                        "& .MuiListItemIcon-root": {
-                          color: "#EB5C60",
-                        },
-                        "& .MuiListItemText-primary": {
-                          color: "#EB5C60",
-                        },
-                      },
-                      transition: "all 0.2s ease-in-out",
-                    }}>
-                    <ListItemIcon>
-                      <Receipt fontSize="small" />
-                    </ListItemIcon>
-                    <ListItemText>Tất cả đơn hàng</ListItemText>
-                  </MenuItem>
-                  <MenuItem
-                    onClick={() => handleNavigation("/orders/history", handleOrdersMenuClose)}
-                    sx={{
-                      "&:hover": {
-                        backgroundColor: "rgba(235, 92, 96, 0.08)",
-                        "& .MuiListItemIcon-root": {
-                          color: "#EB5C60",
-                        },
-                        "& .MuiListItemText-primary": {
-                          color: "#EB5C60",
-                        },
-                      },
-                      transition: "all 0.2s ease-in-out",
-                    }}>
-                    <ListItemIcon>
-                      <History fontSize="small" />
-                    </ListItemIcon>
-                    <ListItemText>Lịch sử đơn hàng</ListItemText>
-                  </MenuItem>
-                </Popover>
-              </Box>
+                  },
+                  borderRadius: 2,
+                  transition: "all 0.2s ease-in-out",
+                }}>
+                <Receipt sx={{ mr: 1 }} />
+                Đơn hàng
+              </Button>
             </>
           )}
         </Box>
@@ -447,7 +407,7 @@ const AppBar: React.FC = () => {
               }}>
               <Dashboard fontSize="small" sx={{ transition: "all 0.2s ease-in-out" }} />
               <Typography variant="body2" sx={{ fontWeight: 500 }}>
-                Quản trị viên
+                Trang quản trị
               </Typography>
             </MenuItem>
           )}
@@ -470,9 +430,9 @@ const AppBar: React.FC = () => {
                 },
                 transition: "all 0.2s ease-in-out",
               }}>
-              <Dashboard fontSize="small" sx={{ transition: "all 0.2s ease-in-out" }} />
+              <Store fontSize="small" sx={{ transition: "all 0.2s ease-in-out" }} />
               <Typography variant="body2" sx={{ fontWeight: 500 }}>
-                Người bán
+                Cửa hàng của bạn
               </Typography>
             </MenuItem>
           )}
@@ -495,9 +455,9 @@ const AppBar: React.FC = () => {
                 },
                 transition: "all 0.2s ease-in-out",
               }}>
-              <Dashboard fontSize="small" sx={{ transition: "all 0.2s ease-in-out" }} />
+              <LocalShipping fontSize="small" sx={{ transition: "all 0.2s ease-in-out" }} />
               <Typography variant="body2" sx={{ fontWeight: 500 }}>
-                Người giao hàng
+                Trang giao hàng
               </Typography>
             </MenuItem>
           )}
@@ -520,9 +480,9 @@ const AppBar: React.FC = () => {
                 },
                 transition: "all 0.2s ease-in-out",
               }}>
-              <Dashboard fontSize="small" sx={{ transition: "all 0.2s ease-in-out" }} />
+              <Storefront fontSize="small" sx={{ transition: "all 0.2s ease-in-out" }} />
               <Typography variant="body2" sx={{ fontWeight: 500 }}>
-                Khách hàng
+                Trang chủ
               </Typography>
             </MenuItem>
           )}
@@ -606,12 +566,12 @@ const AppBar: React.FC = () => {
           anchorEl={notificationAnchorEl}
           onClose={handleNotificationClose}
           anchorOrigin={{
-            vertical: 'bottom',
-            horizontal: 'right',
+            vertical: "bottom",
+            horizontal: "right",
           }}
           transformOrigin={{
-            vertical: 'top',
-            horizontal: 'right',
+            vertical: "top",
+            horizontal: "right",
           }}
           PaperProps={{
             sx: {

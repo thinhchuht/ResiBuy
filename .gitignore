@@ -361,3 +361,6 @@ MigrationBackup/
 
 # Fody - auto-generated XML schema
 FodyWeavers.xsd
+/ResiBuy.Server/Infrastructure/Migrations/ResiBuyContextModelSnapshot.cs
+/ResiBuy.Server/appsettings.json
+/ResiBuy.Server/Infrastructure/Migrations

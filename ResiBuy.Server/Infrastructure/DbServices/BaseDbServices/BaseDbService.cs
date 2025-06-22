@@ -14,7 +14,7 @@
             }
             catch (Exception ex)
             {
-                throw new CustomException(ExceptionErrorCode.CreateFailed,ex.Message);
+                throw new CustomException(ExceptionErrorCode.RepositoryError, ex.Message);
             }
         }
 
@@ -28,7 +28,7 @@
             }
             catch (Exception ex)
             {
-                throw new CustomException(ExceptionErrorCode.CreateFailed,ex.Message);
+                throw new CustomException(ExceptionErrorCode.RepositoryError, ex.Message);
             }
         }
 
@@ -42,7 +42,7 @@
             }
             catch (Exception ex)
             {
-                throw new CustomException(ExceptionErrorCode.UpdateFailed,ex.Message);
+                throw new CustomException(ExceptionErrorCode.RepositoryError,ex.Message);
             }
         }
 
@@ -61,7 +61,7 @@
             }
             catch (Exception ex)
             {
-                throw new CustomException(ExceptionErrorCode.DeleteFailed, ex.Message);
+                throw new CustomException(ExceptionErrorCode.RepositoryError, ex.Message);
             }
         }
 
@@ -76,7 +76,7 @@
             }
             catch (Exception ex)
             {
-                throw new CustomException(ExceptionErrorCode.RepositoryError,ex.Message);
+                throw new CustomException(ExceptionErrorCode.RepositoryError, ex.Message);
             }
         }
     }

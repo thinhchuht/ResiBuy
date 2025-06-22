@@ -11,11 +11,13 @@
         public bool IsLocked { get; set; }
         public List<string> Roles { get; set; }
         public string FullName { get; set; }
+        public string AvatarId { get; set; }
         public DateTime CreatedAt { get; set; }
         public DateTime UpdatedAt { get; set; }
         public bool EmailConfirmed { get; set; }
         public bool PhoneNumberConfirmed { get; set; }
         public Cart Cart { get; set; }
+        public Image Avatar { get; set; }
         public IEnumerable<UserRoom> UserRooms { get; set; } = new List<UserRoom>();
         public IEnumerable<UserVoucher> UserVouchers { get; set; } = new List<UserVoucher>();
         public IEnumerable<Report> Reports { get; set; } = new List<Report>();
@@ -59,5 +61,11 @@
                 UpdatedAt = DateTime.Now
             };
         }
+
+        public void UpdateIsLock()
+        {
+            IsLocked = !IsLocked;
+        }
+
     }
 }
