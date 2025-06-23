@@ -11,18 +11,19 @@
         public DateTime               CreatedAt    { get; set; }
         public DateTime               UpdatedAt    { get; set; }
         public Guid                   StoreId      { get; set; }
-        public Guid                   CategoryId   { get; set; }
+        public Guid                 CategoryId   { get; set; }
         public Store                  Store        { get; set; }
         public Category               Category     { get; set; }
         public List<ProductDetail> ProductDetails { get; set; }
 
         public Product(
-       string name,
-       string describe,
-       int discount,
-       Guid storeId,
-       Guid categoryId,
-       bool isOutOfStock = false)
+           string name,
+           string describe,
+           int discount,
+           Guid storeId,
+           Guid categoryId,
+           bool isOutOfStock = false)
+
         {
             Name = name;
             Describe = describe;

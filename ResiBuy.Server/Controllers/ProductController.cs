@@ -39,8 +39,8 @@ namespace ResiBuy.Server.Controllers
 
 
 
-        [HttpGet("get-product-by-id")]
-        public async Task<IActionResult> GetProductById([FromQuery] int id)
+        [HttpGet("{id}")]
+        public async Task<IActionResult> GetProductById(int id)
         {
             try
             {
@@ -53,21 +53,7 @@ namespace ResiBuy.Server.Controllers
             }
         }
 
-        [HttpGet("get-product-by-id-with-store")]
-        public async Task<IActionResult> GetProductByIdWithStore([FromQuery] int id)
-        {
-            try
-            {
-                var result = await mediator.Send(new GetProductByIdWithStoreAsync(id));
-                return Ok(result);
-            }
-            catch (Exception ex)
-            {
-                return BadRequest(ResponseModel.ExceptionResponse(ex.ToString()));
-            }
-        }
-
-        [HttpGet("get-all-products")]
+        [HttpGet("products")]
         public async Task<IActionResult> GetAllAsync([FromQuery] int pageNumber, [FromQuery] int pageSize)
         {
             try
