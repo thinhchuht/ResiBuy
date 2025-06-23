@@ -18,6 +18,20 @@
             }
         }
 
+        [HttpGet("area/{id}")]
+        public async Task<IActionResult> GetByAreaIdAsync(Guid id)
+        {
+            try
+            {
+                var result = await mediator.Send(new GetByAreaIdQuery(id));
+                return Ok(result);
+            }
+            catch (Exception ex)
+            {
+                return BadRequest(ResponseModel.ExceptionResponse(ex.ToString()));
+            }
+        }
+
         [HttpPost("create")]
         public async Task<IActionResult> CreateAsync([FromBody] CreateBuildingCommand command)
         {

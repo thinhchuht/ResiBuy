@@ -1,9 +1,10 @@
 import { Box, Container, Typography, Paper, Tabs, Tab, Pagination } from "@mui/material";
-import { useState } from "react";
+import { useState, useEffect, useMemo } from "react";
 import { styled } from "@mui/material/styles";
-import OrderCard from "./OrderCard";
-import { fakeOrders } from "../../fakeData/fakeOrderData";
-import { OrderStatus } from "../../types/models";
+import OrderCard, { type OrderApiResult } from "./OrderCard";
+import { OrderStatus, PaymentMethod, PaymentStatus } from "../../types/models";
+import orderApi from "../../api/order.api";
+import { useAuth } from "../../contexts/AuthContext";
 
 const StyledTabs = styled(Tabs)({
   borderBottom: "1px solid #e8e8e8",
@@ -27,7 +28,37 @@ const StyledTab = styled(Tab)({
 const Orders = () => {
   const [currentTab, setCurrentTab] = useState(0);
   const [page, setPage] = useState(1);
+  const [orders, setOrders] = useState<OrderApiResult[]>([]);
+  const [totalPages, setTotalPages] = useState(1);
   const ordersPerPage = 5;
+  const { user } = useAuth();
+
+  useEffect(() => {
+    const fetchOrders = async () => {
+      if (!user?.id) return;
+      try {
+        const data = await orderApi.getAll(
+          currentTab === 0 ? OrderStatus.None :
+          currentTab === 1 ? OrderStatus.Pending :
+          currentTab === 2 ? OrderStatus.Processing :
+          currentTab === 3 ? OrderStatus.Shipped :
+          currentTab === 4 ? OrderStatus.Delivered :
+          currentTab === 5 ? OrderStatus.Cancelled : OrderStatus.None,
+          PaymentMethod.None,
+          PaymentStatus.None,
+          user.id,
+          page,
+          ordersPerPage
+        );
+        setOrders(data.items || []);
+        setTotalPages(data.totalPages || 1);
+      } catch {
+        setOrders([]);
+        setTotalPages(1);
+      }
+    };
+    fetchOrders();
+  }, [user?.id, page, currentTab]);
 
   const handleTabChange = (event: React.SyntheticEvent, newValue: number) => {
     setCurrentTab(newValue);
@@ -38,28 +69,26 @@ const Orders = () => {
     setPage(value);
   };
 
-  const getFilteredOrders = () => {
-    switch (currentTab) {
-      case 0:
-        return fakeOrders;
-      case 1:
-        return fakeOrders.filter((order) => order.status === OrderStatus.Pending);
-      case 2:
-        return fakeOrders.filter((order) => order.status === OrderStatus.Processing);
-      case 3:
-        return fakeOrders.filter((order) => order.status === OrderStatus.Shipped);
-      case 4:
-        return fakeOrders.filter((order) => order.status === OrderStatus.Delivered);
-      case 5:
-        return fakeOrders.filter((order) => order.status === OrderStatus.Cancelled);
-      default:
-        return fakeOrders;
-    }
+  const handleOrderAddressChange = (orderId: string, area: string, building: string, room: string, roomId: string) => {
+    setOrders((prevOrders) => prevOrders.map(order =>
+      order.id === orderId
+        ? {
+            ...order,
+            roomQueryResult: {
+              ...order.roomQueryResult,
+              areaName: area,
+              buildingName: building,
+              name: room,
+              id: roomId
+            }
+          }
+        : order
+    ));
   };
 
-  const filteredOrders = getFilteredOrders();
-  const totalPages = Math.ceil(filteredOrders.length / ordersPerPage);
-  const currentOrders = filteredOrders.slice((page - 1) * ordersPerPage, page * ordersPerPage);
+  const filteredOrders = useMemo(() => {
+    return orders;
+  }, [orders]);
 
   return (
     <Container maxWidth="lg" sx={{ py: 4 }}>
@@ -91,10 +120,10 @@ const Orders = () => {
         </StyledTabs>
 
         <Box sx={{ p: 3 }}>
-          {currentOrders.length > 0 ? (
+          {filteredOrders.length > 0 ? (
             <>
-              {currentOrders.map((order) => (
-                <OrderCard key={order.id} order={order} />
+              {filteredOrders.map((order) => (
+                <OrderCard key={order.id} order={order} onUpdate={() => setPage(1)} onAddressChange={handleOrderAddressChange} />
               ))}
               <Box
                 sx={{

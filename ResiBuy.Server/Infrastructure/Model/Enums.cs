@@ -1,6 +1,7 @@
 ﻿[JsonConverter(typeof(JsonStringEnumConverter))]
 public enum OrderStatus
 {
+    None,
     Pending,
     Processing,
     Shipped,
@@ -11,6 +12,7 @@ public enum OrderStatus
 [JsonConverter(typeof(JsonStringEnumConverter))]
 public enum PaymentMethod
 {
+    None,
     COD,
     BankTransfer
 }
@@ -18,7 +20,9 @@ public enum PaymentMethod
 [JsonConverter(typeof(JsonStringEnumConverter))]
 public enum PaymentStatus
 {
-    Success,
-    Fail,
-    UnPaid
+    None,
+    Pending ,
+    Paid,
+    Failed,
+    Refunded,
 }
