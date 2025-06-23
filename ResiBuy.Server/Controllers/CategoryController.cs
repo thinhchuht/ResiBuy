@@ -1,5 +1,8 @@
-﻿using ResiBuy.Server.Application.Commands.CategoryCommands;
+﻿
+using ResiBuy.Server.Application.Commands.CategoryCommands;
+using ResiBuy.Server.Application.Commands.CategoryCommands.DTOs;
 using ResiBuy.Server.Application.Queries.CategoryQueries;
+
 
 namespace ResiBuy.Server.Controllers
 {
@@ -8,12 +11,12 @@ namespace ResiBuy.Server.Controllers
     public class CategoryController(IMediator mediator, ResiBuyContext context) : ControllerBase
     {
 
-        [HttpPost("create")]
-        public async Task<IActionResult> CreateAsync([FromBody] CreateCategoryCommand command)
+        [HttpPost]
+        public async Task<IActionResult> CreateAsync([FromBody] CreateCategoryDto dto)
         {
             try
             {
-                var result = await mediator.Send(command);
+                var result = await mediator.Send(new CreateCategoryCommand(dto));
                 return Ok(result);
             }
             catch (Exception ex)
@@ -22,13 +25,12 @@ namespace ResiBuy.Server.Controllers
             }
         }
 
-        [HttpGet()]
-        public async Task<IActionResult> GetAllAsync()
+        [HttpPut]
+        public async Task<IActionResult> UpdateAsync([FromBody] UpdateCategoryDto dto)
         {
             try
             {
-                
-                var result = await context.Categories.Include(c => c.Image).ToListAsync();
+                var result = await mediator.Send(new UpdateCategoryCommand(dto));
                 return Ok(result);
             }
             catch (Exception ex)
@@ -37,12 +39,13 @@ namespace ResiBuy.Server.Controllers
             }
         }
 
-        [HttpGet("get-category-with-products")]
-        public async Task<IActionResult> GetAllAsync([FromQuery] Guid categoryId, [FromQuery] int pageNumber, [FromQuery] int pageSize)
+
+        [HttpGet("{id}")]
+        public async Task<IActionResult> GetProductById(Guid id)
         {
             try
             {
-                var result = await mediator.Send(new GetPagedProductsByCategoryIdAsync(categoryId, pageNumber, pageSize));
+                var result = await mediator.Send(new GetCategoieByIdQuery(id));
                 return Ok(result);
             }
             catch (Exception ex)
@@ -50,5 +53,20 @@ namespace ResiBuy.Server.Controllers
                 return BadRequest(ResponseModel.ExceptionResponse(ex.ToString()));
             }
         }
+
+        [HttpGet("categories")]
+        public async Task<IActionResult> GetAllCategory()
+        {
+            try
+            {
+                var result = await mediator.Send(new GetAllCategoriesQuery());
+                return Ok(result);
+            }
+            catch (Exception ex)
+            {
+                return BadRequest(ResponseModel.ExceptionResponse(ex.ToString()));
+            }
+        }
+
     }
 }

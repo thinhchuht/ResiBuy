@@ -13,5 +13,11 @@ namespace ResiBuy.Server.Infrastructure.DbServices.ImageServices
         {
             return await _context.Images.FindAsync(id);
         }
+
+        public async Task DeleteAsync(Image image)
+        {
+            _context.Images.Remove(image);
+            await _context.SaveChangesAsync();
+        }
     }
 }

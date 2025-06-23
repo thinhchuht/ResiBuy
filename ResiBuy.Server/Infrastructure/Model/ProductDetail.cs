@@ -4,7 +4,7 @@
     {
         public int Id { get; set; }
         public bool IsOutOfStock { get; set; }
-        public int ProductId { get; set; }
+        public int  ProductId { get; set; }
         public Product Product { get; set; }
         public int Sold { get; set; }
         public decimal Price { get; set; }
@@ -14,7 +14,8 @@
         public IEnumerable<OrderItem> OrderItems { get; set; }
         public List<AdditionalData> AdditionalData { get; set; } = new List<AdditionalData>();
 
-        public ProductDetail( decimal price, WeightCategory weight, bool isOutOfStock = false)
+        public ProductDetail(decimal price, WeightCategory weight, bool isOutOfStock = false)
+
         {
             Price = price;
             Weight = weight;
