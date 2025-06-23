@@ -6,9 +6,6 @@ public class NotificationService(IHubContext<NotificationHub> hubContext, ILogge
     {
         if (string.IsNullOrEmpty(hubGroup) && (userIds == null || !userIds.Any()))
             throw new ArgumentException("Either hubGroup or userIds must be provided");
-
-        Console.WriteLine($"SendNotification to userIds: {string.Join(",", userIds)}");
-
         _ = Task.Run(async () =>
         {
             try

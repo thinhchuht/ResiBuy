@@ -20,6 +20,7 @@ namespace ResiBuy.Server.Application.Commands.CartCommands
                 var existingItems = (await cartItemDbService.GetMatchingCartItemsAsync(command.Id, [command.AddToCartDto.ProductDetailId]));
                 if (existingItems.Any())
                 {
+                    if(cart.IsCheckingOut) throw new CustomException(ExceptionErrorCode.ValidationFailed, "Không thể thêm sản phẩm đã có khi đang trong quá trình thanh toán.");
                     var existingItem = existingItems.FirstOrDefault();
                     existingItem.Quantity = command.AddToCartDto.IsAdd ? existingItem.Quantity + command.AddToCartDto.Quantity : command.AddToCartDto.Quantity;
                     if (existingItem.Quantity > 10)

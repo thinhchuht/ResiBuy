@@ -12,17 +12,6 @@ namespace ResiBuy.Server.Application.Commands.OrderCommands
             var order = await orderDbService.GetByIdBaseAsync(dto.OrderId) ?? throw new CustomException(ExceptionErrorCode.ValidationFailed, "Không tìm thấy Order");
             if (order.UserId != dto.UserId && dto.UserId != order.StoreId.ToString() && dto.UserId != order.ShipperId.ToString())
                 throw new CustomException(ExceptionErrorCode.ValidationFailed, "Người dùng không có quyền sửa đơn hàng này.");
-            if (dto.OrderStatus.HasValue)
-            {
-                if (order.Status == OrderStatus.None)
-                    throw new CustomException(ExceptionErrorCode.ValidationFailed, "Trạng thái  đơn hàng không tồn tại.");
-                if (order.Status == OrderStatus.Cancelled)
-                    throw new CustomException(ExceptionErrorCode.ValidationFailed, "Đơn hàng đã bị hủy trước đó.");
-                if (order.Status != OrderStatus.Pending && dto.OrderStatus == OrderStatus.Cancelled)
-                    throw new CustomException(ExceptionErrorCode.ValidationFailed, "Chỉ được hủy đơn hàng khi chưa được xử lý.");
-                if (dto.OrderStatus != order.Status + 1 && order.Status != OrderStatus.Pending && dto.OrderStatus != OrderStatus.Cancelled) throw new CustomException(ExceptionErrorCode.ValidationFailed, "Có vẻ bạn đã bỏ quả bước nào đó trong quá trình đổi trạng thái đơn hàng.");
-                order.Status = dto.OrderStatus.Value;
-            }
 
             if (dto.PaymentStatus.HasValue) 
             {

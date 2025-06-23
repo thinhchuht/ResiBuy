@@ -11,15 +11,12 @@ namespace ResiBuy.Server.Controllers
         [HttpPost("create-payment")]
         public IActionResult CreatePayment([FromBody] CheckoutDto dto)
         {
-            var user = dbContext.Users.Include(u => u.Cart).FirstOrDefault(u => u.Id == dto.UserId);
-            var cart = dbContext.Carts.FirstOrDefault(c => c.Id == user.Cart.Id);
-            if (cart == null)
-                return NotFound();
-
+            var user = dbContext.Users.Include(u => u.Cart).FirstOrDefault(u => u.Id == dto.UserId) ?? throw new CustomException(ExceptionErrorCode.NotFound, "Không tồn tại người dùng"); ;
+            var cart = dbContext.Carts.FirstOrDefault(c => c.Id == user.Cart.Id) ?? throw new CustomException(ExceptionErrorCode.NotFound,"Không tồn tại giỏ hàng");
             if (cart.IsCheckingOut)
                 throw new CustomException(ExceptionErrorCode.ValidationFailed, "Giỏ hàng đang được thanh toán ở nơi khác. Thử lại sau ít phút.");
             cart.IsCheckingOut = true;
-            cart.ExpiredCheckOutTime = DateTime.UtcNow.AddMinutes(15);
+            cart.ExpiredCheckOutTime = DateTime.Now.AddSeconds(15);
             try
             {
                 dbContext.SaveChanges();
@@ -42,7 +39,7 @@ namespace ResiBuy.Server.Controllers
             if (!vnPayService.ValidatePayment(responseData))
             {
                 var token = GenerateToken();
-                _paymentTokens[token] = DateTime.UtcNow.AddMinutes(5);
+                _paymentTokens[token] = DateTime.Now.AddMinutes(5);
                 return Redirect($"http://localhost:5001/checkout-failed?token={token}");
             }
 
@@ -59,26 +56,26 @@ namespace ResiBuy.Server.Controllers
                         // producer.ProduceMessageAsync("checkout", message, "checkout-topic");
                         //checkoutSessionService.RemoveCheckoutSession(sessionId);
                         var token = GenerateToken();
-                        _paymentTokens[token] = DateTime.UtcNow.AddMinutes(5);
+                        _paymentTokens[token] = DateTime.Now.AddMinutes(5);
                         return Redirect($"http://localhost:5001/checkout-success?token={token}");
                     }
                     catch (Exception)
                     {
                         var token = GenerateToken();
-                        _paymentTokens[token] = DateTime.UtcNow.AddMinutes(5);
+                        _paymentTokens[token] = DateTime.Now.AddMinutes(5);
                         return Redirect($"http://localhost:5001/checkout-failed?token={token}");
                     }
                 }
                 else
                 {
                     var token = GenerateToken();
-                    _paymentTokens[token] = DateTime.UtcNow.AddMinutes(5);
+                    _paymentTokens[token] = DateTime.Now.AddMinutes(5);
                     return Redirect($"http://localhost:5001/checkout-failed?token={token}");
                 }
             }
 
             var failedToken = GenerateToken();
-            _paymentTokens[failedToken] = DateTime.UtcNow.AddMinutes(5);
+            _paymentTokens[failedToken] = DateTime.Now.AddMinutes(5);
             return Redirect($"http://localhost:5001/checkout-failed?token={failedToken}");
         }
 
@@ -87,7 +84,7 @@ namespace ResiBuy.Server.Controllers
         {
             if (_paymentTokens.TryGetValue(token, out var expiryTime))
             {
-                if (DateTime.UtcNow <= expiryTime)
+                if (DateTime.Now <= expiryTime)
                 {
                     return Ok(new { isValid = true });
                 }

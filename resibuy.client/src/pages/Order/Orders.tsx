@@ -1,10 +1,12 @@
 import { Box, Container, Typography, Paper, Tabs, Tab, Pagination } from "@mui/material";
-import { useState, useEffect, useMemo } from "react";
+import { useState, useEffect, useMemo, useCallback } from "react";
 import { styled } from "@mui/material/styles";
 import OrderCard, { type OrderApiResult } from "./OrderCard";
 import { OrderStatus, PaymentMethod, PaymentStatus } from "../../types/models";
 import orderApi from "../../api/order.api";
 import { useAuth } from "../../contexts/AuthContext";
+import { HubEventType, useEventHub } from "../../hooks/useEventHub";
+import { statusStringToEnum } from "@/utils/statusUtils";
 
 const StyledTabs = styled(Tabs)({
   borderBottom: "1px solid #e8e8e8",
@@ -33,32 +35,40 @@ const Orders = () => {
   const ordersPerPage = 5;
   const { user } = useAuth();
 
-  useEffect(() => {
-    const fetchOrders = async () => {
-      if (!user?.id) return;
-      try {
-        const data = await orderApi.getAll(
-          currentTab === 0 ? OrderStatus.None :
-          currentTab === 1 ? OrderStatus.Pending :
-          currentTab === 2 ? OrderStatus.Processing :
-          currentTab === 3 ? OrderStatus.Shipped :
-          currentTab === 4 ? OrderStatus.Delivered :
-          currentTab === 5 ? OrderStatus.Cancelled : OrderStatus.None,
-          PaymentMethod.None,
-          PaymentStatus.None,
-          user.id,
-          page,
-          ordersPerPage
-        );
-        setOrders(data.items || []);
-        setTotalPages(data.totalPages || 1);
-      } catch {
-        setOrders([]);
-        setTotalPages(1);
-      }
-    };
-    fetchOrders();
+  const fetchOrders = useCallback(async () => {
+    if (!user?.id) return;
+    try {
+      const data = await orderApi.getAll(
+        currentTab === 0
+          ? OrderStatus.None
+          : currentTab === 1
+          ? OrderStatus.Pending
+          : currentTab === 2
+          ? OrderStatus.Processing
+          : currentTab === 3
+          ? OrderStatus.Shipped
+          : currentTab === 4
+          ? OrderStatus.Delivered
+          : currentTab === 5
+          ? OrderStatus.Cancelled
+          : OrderStatus.None,
+        PaymentMethod.None,
+        PaymentStatus.None,
+        user.id,
+        page,
+        ordersPerPage
+      );
+      setOrders(data.items || []);
+      setTotalPages(data.totalPages || 1);
+    } catch {
+      setOrders([]);
+      setTotalPages(1);
+    }
   }, [user?.id, page, currentTab]);
+
+  useEffect(() => {
+    fetchOrders();
+  }, [fetchOrders]);
 
   const handleTabChange = (event: React.SyntheticEvent, newValue: number) => {
     setCurrentTab(newValue);
@@ -70,25 +80,50 @@ const Orders = () => {
   };
 
   const handleOrderAddressChange = (orderId: string, area: string, building: string, room: string, roomId: string) => {
-    setOrders((prevOrders) => prevOrders.map(order =>
-      order.id === orderId
-        ? {
-            ...order,
-            roomQueryResult: {
-              ...order.roomQueryResult,
-              areaName: area,
-              buildingName: building,
-              name: room,
-              id: roomId
+    setOrders((prevOrders) =>
+      prevOrders.map((order) =>
+        order.id === orderId
+          ? {
+              ...order,
+              roomQueryResult: {
+                ...order.roomQueryResult,
+                areaName: area,
+                buildingName: building,
+                name: room,
+                id: roomId,
+              },
             }
-          }
-        : order
-    ));
+          : order
+      )
+    );
   };
 
   const filteredOrders = useMemo(() => {
     return orders;
   }, [orders]);
+
+  const handleOrderStatusChanged = useCallback(
+    (data: any) => {
+      const oldStatusEnum = statusStringToEnum(data.oldStatus);
+      const newStatusEnum = statusStringToEnum(data.order.status);
+      console.log(currentTab === oldStatusEnum);
+      console.log("oldStatusEnum", oldStatusEnum);
+      if (currentTab === oldStatusEnum) {
+        setOrders((prevOrders) => prevOrders.filter((order) => order.id !== data.order.id));
+      } else if (currentTab === newStatusEnum) {
+        fetchOrders();
+      }
+    },
+    [currentTab, fetchOrders]
+  );
+
+  const eventHandlers = useMemo(
+    () => ({
+      [HubEventType.OrderStatusChanged]: handleOrderStatusChanged,
+    }),
+    [handleOrderStatusChanged]
+  );
+  useEventHub(eventHandlers);
 
   return (
     <Container maxWidth="lg" sx={{ py: 4 }}>

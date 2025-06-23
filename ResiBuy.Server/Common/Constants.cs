@@ -31,6 +31,7 @@
         public const string CartItemAdded = "CartItemAdded";
         public const string OrderCreated = "OrderCreated";
         public const string CartItemDeleted = "CartItemDeleted";
+        public const string OrderStatusChanged = "OrderStatusChanged";
 
         //regex pattern
         public const string EmailPattern = @"^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$";

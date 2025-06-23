@@ -16,7 +16,7 @@ namespace ResiBuy.Server.Infrastructure.DbServices.CartDbService
 
         public async Task<List<Cart>> GetCheckingOutCartsAsync()
         {
-            return await _context.Carts.Include(c => c.CartItems).Where(c => c.IsCheckingOut && c.ExpiredCheckOutTime < DateTime.UtcNow).ToListAsync();
+            return await _context.Carts.Include(c => c.CartItems).Where(c => c.IsCheckingOut && c.ExpiredCheckOutTime < DateTime.Now).ToListAsync();
         }
 
         public async Task<ResponseModel> ResetStatus(List<Guid> ids)
