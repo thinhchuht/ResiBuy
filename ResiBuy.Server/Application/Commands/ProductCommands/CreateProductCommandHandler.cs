@@ -11,7 +11,9 @@ namespace ResiBuy.Server.Application.Commands.ProductCommands
             try
             {
                 var dto = command.ProductDto;
-                var product = new Product(dto.Name, dto.Describe, dto.Discount, dto.StoreId, dto.CategoryId);
+
+                var product = new Product( dto.Name, dto.Describe, dto.Discount, dto.StoreId, dto.CategoryId);
+
 
                 var detailDataSets = new List<HashSet<string>>();
 
@@ -53,10 +55,26 @@ namespace ResiBuy.Server.Application.Commands.ProductCommands
                     if (dataSet.Count > 0)
                         detailDataSets.Add(dataSet);
 
+                    if (detailDto.Image != null && !string.IsNullOrEmpty(detailDto.Image.Id))
+                    {
+                        var image = new Image();
+                        image.CreateImage(
+                            detailDto.Image.Id,
+                            detailDto.Image.Url,
+                            detailDto.Image.ThumbUrl,
+                            detailDto.Image.Name
+                        );
+
+                        detail.Image = image;
+
+                    }
+
+
                     product.ProductDetails.Add(detail);
                 }
 
                 var result = await productDbService.CreateAsync(product);
+
                 return ResponseModel.SuccessResponse(result);
             }
             catch (Exception ex)

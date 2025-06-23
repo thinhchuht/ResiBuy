@@ -4,7 +4,7 @@ namespace ResiBuy.Server.Application.Commands.ProductCommands
 {
     public record UpdateProductCommand(UpdateProductDto ProductDto) : IRequest<ResponseModel>;
 
-    public class UpdateProductCommandHandler(IProductDbService productDbService) : IRequestHandler<UpdateProductCommand, ResponseModel>
+    public class UpdateProductCommandHandler(IProductDbService productDbService, IImageDbService imageDbService) : IRequestHandler<UpdateProductCommand, ResponseModel>
     {
 
         public async Task<ResponseModel> Handle(UpdateProductCommand command, CancellationToken cancellationToken)
@@ -90,6 +90,40 @@ namespace ResiBuy.Server.Application.Commands.ProductCommands
 
                         var dtoAddIds = detailDto.AdditionalData.Select(a => a.Id).ToHashSet();
                         detail.AdditionalData.RemoveAll(a => a.Id != 0 && !dtoAddIds.Contains(a.Id));
+                    }
+
+                    if (string.IsNullOrEmpty(detailDto.Image?.Id))
+                    {
+
+                        if (detail.Image != null)
+                        {
+                            await imageDbService.DeleteAsync(detail.Image);
+                            detail.Image = null;
+                        }
+                    }
+                    else
+                    {
+
+                        if (detail.Image == null || detail.Image.Id != detailDto.Image.Id)
+                        {
+                            if (detail.Image != null)
+                            {
+                                await imageDbService.DeleteAsync(detail.Image);
+                            }
+
+                            var newImage = new Image();
+                            newImage.CreateImage(
+                                detailDto.Image.Id,
+                                detailDto.Image.Url,
+                                detailDto.Image.ThumbUrl,
+                                detailDto.Image.Name
+                            );
+                            detail.Image = newImage;
+                        }
+                        else
+                        {
+                            detail.Image.UpdateImage(detailDto.Image.Url, detailDto.Image.ThumbUrl, detailDto.Image.Name);
+                        }
                     }
                 }
 

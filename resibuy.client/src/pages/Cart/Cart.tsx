@@ -10,7 +10,7 @@ import { toast } from "react-toastify";
 
 const Cart = () => {
   const [cartItems, setCartItems] = useState<CartItem[]>([]);
-  const [selectedItems, setSelectedCartItems] = useState<string[]>([]);
+  const [selectedItems, setSelectedCartItems] = useState<CartItem[]>([]);
   const [page, setPage] = useState(0);
   const [rowsPerPage, setRowsPerPage] = useState(5);
   const [totalItems, setTotalItems] = useState(0);
@@ -43,6 +43,7 @@ const Cart = () => {
       if (user) {
         await cartApi.addToCart(user?.cartId, productDetailId, newQuantity, false);
         setCartItems((prevItems) => prevItems.map((item) => (item.productDetailId === productDetailId ? { ...item, quantity: newQuantity } : item)));
+        setSelectedCartItems((prevSelected) => prevSelected.map((item) => (item.productDetailId === productDetailId ? { ...item, quantity: newQuantity } : item)));
       }
     } catch (error) {
       console.error("Error updating quantity:", error);
@@ -51,9 +52,9 @@ const Cart = () => {
 
   const handleRemoveItem = async (itemId: string) => {
     try {
-      await cartApi.removeFromCart( [itemId]);
+      await cartApi.removeFromCart([itemId]);
       setCartItems((prevItems) => prevItems.filter((item) => item.id !== itemId));
-      setSelectedCartItems((prev) => prev.filter((id) => id !== itemId));
+      setSelectedCartItems((prev) => prev.filter((item) => item.id !== itemId));
       toast.success("Xóa sản phẩm khỏi giỏ hàng thành công!");
     } catch (error) {
       toast.error("Không thể xóa sản phẩm khỏi giỏ hàng!");
@@ -61,21 +62,31 @@ const Cart = () => {
     }
   };
 
-  const handleSelectItem = (itemId: string) => {
-    setSelectedCartItems((prev) => (prev.includes(itemId) ? prev.filter((id) => id !== itemId) : [...prev, itemId]));
+  const handleSelectItem = (item: CartItem) => {
+    setSelectedCartItems((prev) => {
+      const isSelected = prev.some((i) => i.id === item.id);
+      if (isSelected) {
+        return prev.filter((i) => i.id !== item.id);
+      } else {
+        return [...prev, item];
+      }
+    });
   };
 
   const handleSelectAllItems = (event: React.ChangeEvent<HTMLInputElement>) => {
     if (event.target.checked) {
-      const allItemIds = cartItems.map((item) => item.id);
-      setSelectedCartItems(allItemIds);
+      setSelectedCartItems((prev) => {
+        const newItems = cartItems.filter((cartItem) => !prev.some((selectedItem) => selectedItem.id === cartItem.id));
+        return [...prev, ...newItems];
+      });
     } else {
-      setSelectedCartItems([]);
+      const currentItemIds = cartItems.map((item) => item.id);
+      setSelectedCartItems((prev) => prev.filter((item) => !currentItemIds.includes(item.id)));
     }
   };
 
   const handleCheckout = () => {
-    const selectedItemsWithDiscount = selectedCartItems.map((item) => {
+    const selectedItemsWithDiscount = selectedItems.map((item) => {
       const discount = item.productDetail.product.discount || 0;
       const discountedPrice = item.productDetail.price * (1 - discount / 100);
       return {
@@ -97,11 +108,9 @@ const Cart = () => {
 
   const handleChangeRowsPerPage = (event: React.ChangeEvent<HTMLInputElement>) => {
     setRowsPerPage(parseInt(event.target.value, 10));
-    setPage(0);
   };
 
-  const selectedCartItems = cartItems.filter((item) => selectedItems.includes(item.id));
-  const allSelected = selectedItems.length === cartItems.length && cartItems.length > 0;
+  const allSelected = cartItems.length > 0 && cartItems.every((item) => selectedItems.some((sel) => sel.id === item.id));
 
   return (
     <Container maxWidth="xl" sx={{ py: 4 }}>
@@ -138,7 +147,7 @@ const Cart = () => {
           </Paper>
         </Box>
 
-        <CartSummarySection selectedItems={selectedCartItems} onCheckout={handleCheckout} />
+        <CartSummarySection selectedItems={selectedItems} onCheckout={handleCheckout} />
       </Box>
     </Container>
   );
