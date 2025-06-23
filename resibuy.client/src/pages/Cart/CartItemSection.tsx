@@ -94,6 +94,38 @@ const CartItemSection = ({
     maxWidth: "200px",
   };
 
+  if (items.length === 0) {
+    return (
+      <Box sx={{ textAlign: 'center', py: 8 }}>
+        <Typography variant="h6" color="text.secondary" sx={{ mb: 2 }}>
+          Chưa có sản phẩm nào trong giỏ hàng
+        </Typography>
+        <a href="/" style={{ textDecoration: 'none' }}>
+          <Box
+            sx={{
+              display: 'inline-block',
+              px: 4,
+              py: 1.5,
+              bgcolor: '#EB5C60',
+              color: '#fff',
+              borderRadius: 2,
+              fontWeight: 600,
+              fontSize: 16,
+              boxShadow: '0 2px 8px rgba(235, 92, 96, 0.15)',
+              transition: 'all 0.2s',
+              '&:hover': {
+                bgcolor: '#d94a52',
+                boxShadow: '0 4px 16px rgba(235, 92, 96, 0.25)',
+              },
+            }}
+          >
+            Mua sắm
+          </Box>
+        </a>
+      </Box>
+    );
+  }
+
   return (
     <TableContainer>
       <Table>

@@ -4,13 +4,31 @@ namespace ResiBuy.Server.Controllers
 {
     [ApiController]
     [Route("api/[controller]")]
-    public class VNPayController(IVNPayService vnPayService, ICheckoutSessionService checkoutSessionService, IKafkaProducerService producer) : ControllerBase
+    public class VNPayController(IVNPayService vnPayService, ICheckoutSessionService checkoutSessionService, IKafkaProducerService producer, ResiBuyContext dbContext) : ControllerBase
     {
         private static readonly Dictionary<string, DateTime> _paymentTokens = new();
 
         [HttpPost("create-payment")]
         public IActionResult CreatePayment([FromBody] CheckoutDto dto)
         {
+            var user = dbContext.Users.Include(u => u.Cart).FirstOrDefault(u => u.Id == dto.UserId);
+            var cart = dbContext.Carts.FirstOrDefault(c => c.Id == user.Cart.Id);
+            if (cart == null)
+                return NotFound();
+
+            if (cart.IsCheckingOut)
+                throw new CustomException(ExceptionErrorCode.ValidationFailed, "Giỏ hàng đang được thanh toán ở nơi khác. Thử lại sau ít phút.");
+            cart.IsCheckingOut = true;
+            cart.ExpiredCheckOutTime = DateTime.UtcNow.AddMinutes(15);
+            try
+            {
+                dbContext.SaveChanges();
+            }
+            catch (DbUpdateConcurrencyException)
+            {
+                throw new CustomException(ExceptionErrorCode.ValidationFailed, "Có người khác đang thao tác với giỏ hàng này. Vui lòng thử lại.");
+            }
+
             var paymentId = Guid.NewGuid();
             checkoutSessionService.StoreCheckoutSession(paymentId, dto);
             var paymentUrl = vnPayService.CreatePaymentUrl(dto.GrandTotal, paymentId, $"ResiBuy");

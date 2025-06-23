@@ -69,15 +69,6 @@ const Products = () => {
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
-  useEffect(() => {
-    console.log('Products re-rendered, scrollY:', window.scrollY);
-  });
-
-  useEffect(() => {
-    console.log('Products mounted');
-    return () => console.log('Products unmounted');
-  }, []);
-
   const handleQuickView = (product: Product) => {
     navigate(`/products?id=${product.id}`);
   };

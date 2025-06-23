@@ -7,6 +7,8 @@ export enum HubEventType {
   UserCreated = 'UserCreated',
   OrderStatusChanged = 'OrderStatusChanged',
   PaymentReceived = 'PaymentReceived',
+  CartItemAdded = 'CartItemAdded',
+  CartItemDeleted = 'CartItemDeleted',
 }
 
 
@@ -57,7 +59,17 @@ class HubEventsManager {
         console.log('PaymentReceived event received:', data);
         this.lastEventData[HubEventType.PaymentReceived] = data;
         this.notifyHandlers(HubEventType.PaymentReceived, data);
-      }
+      },
+      [HubEventType.CartItemAdded]: (data: HubEventData) => {
+        console.log('CartItemAdded event received:', data);
+        this.lastEventData[HubEventType.CartItemAdded] = data;
+        this.notifyHandlers(HubEventType.CartItemAdded, data);
+      },
+      [HubEventType.CartItemDeleted]: (data: HubEventData) => {
+        console.log('CartItemDeleted event received:', data);
+        this.lastEventData[HubEventType.CartItemDeleted] = data;
+        this.notifyHandlers(HubEventType.CartItemDeleted, data);
+      },
     };
   }
 

@@ -1,8 +1,4 @@
-﻿using ResiBuy.BackgroundTask.Model;
-using System.Net;
-using System.Net.Http.Json;
-
-namespace ResiBuy.BackgroundTask.Services.HttpService
+﻿namespace ResiBuy.BackgroundTask.Services.HttpServices
 {
     public class CheckoutService(HttpClient httpClient, ILogger<CheckoutService> logger) : ICheckoutService
     {

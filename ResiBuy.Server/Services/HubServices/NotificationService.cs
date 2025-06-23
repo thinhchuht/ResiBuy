@@ -7,6 +7,8 @@ public class NotificationService(IHubContext<NotificationHub> hubContext, ILogge
         if (string.IsNullOrEmpty(hubGroup) && (userIds == null || !userIds.Any()))
             throw new ArgumentException("Either hubGroup or userIds must be provided");
 
+        Console.WriteLine($"SendNotification to userIds: {string.Join(",", userIds)}");
+
         _ = Task.Run(async () =>
         {
             try
@@ -14,7 +16,11 @@ public class NotificationService(IHubContext<NotificationHub> hubContext, ILogge
                 using var cts = new CancellationTokenSource(TimeSpan.FromSeconds(30));
                 if (userIds != null && userIds.Any())
                 {
-                    await hubContext.Clients.Users(userIds).SendAsync(eventName, data, cts.Token);
+                    foreach (var userId in userIds)
+                    {
+                        await hubContext.Clients.Group(userId).SendAsync(eventName, data, cts.Token);
+                    }
+                    //await hubContext.Clients.Users(userIds).SendAsync(eventName, data, cts.Token);
                 }
                 else
                 {

@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useEffect, useMemo, useState, useCallback } from "react";
 import {
   AppBar as MuiAppBar,
   Toolbar,
@@ -16,25 +16,71 @@ import {
   Popover,
   Badge,
 } from "@mui/material";
-import { Login, Logout, Person, Settings, Home, ShoppingCart, Receipt, KeyboardArrowDown, Category, Notifications, Dashboard, Store, LocalShipping, Storefront } from "@mui/icons-material";
+import {
+  Login,
+  Logout,
+  Person,
+  Settings,
+  Home,
+  ShoppingCart,
+  Receipt,
+  KeyboardArrowDown,
+  Category,
+  Notifications,
+  Dashboard,
+  Store,
+  LocalShipping,
+  Storefront,
+} from "@mui/icons-material";
 import { Link, useNavigate } from "react-router-dom";
 import { useAuth } from "../../contexts/AuthContext";
 import SearchBase from "../../components/SearchBase";
 import logo from "../../assets/Images/Logo.png";
+import cartApi from "../../api/cart.api";
+import { HubEventType, useEventHub } from "../../hooks/useEventHub";
 
 const AppBar: React.FC = () => {
   const { logout } = useAuth();
   const { user } = useAuth();
+  const [cartItems, setCartItems] = useState(0);
   const [anchorEl, setAnchorEl] = useState<null | HTMLElement>(null);
   const [homeAnchorEl, setHomeAnchorEl] = useState<null | HTMLElement>(null);
   const navigate = useNavigate();
   const [searchValue, setSearchValue] = useState("");
-  const [notificationAnchorEl, setNotificationAnchorEl] = useState<null | HTMLElement>(null);
+  const [notificationAnchorEl, setNotificationAnchorEl] =
+    useState<null | HTMLElement>(null);
   const [notifications] = useState([
-    { id: 1, title: "Đơn hàng mới", message: "Đơn hàng #12345 đã được xác nhận" },
+    {
+      id: 1,
+      title: "Đơn hàng mới",
+      message: "Đơn hàng #12345 đã được xác nhận",
+    },
     { id: 2, title: "Khuyến mãi", message: "Giảm giá 20% cho tất cả sản phẩm" },
   ]);
-  const [cartItems] = useState(3);
+
+  const fetchItemCount = useCallback(async () => {
+    if (user) {
+      const response = await cartApi.countItems(user?.cartId);
+      setCartItems(response.data.data);
+    }
+  }, [user]);
+
+  useEffect(() => {
+    fetchItemCount();
+  }, [fetchItemCount]);
+
+  const handleCartItemAdded = useCallback(() => {
+    fetchItemCount();
+  }, [fetchItemCount]);
+
+  const eventHandlers = useMemo(
+    () => ({
+      [HubEventType.CartItemAdded]: handleCartItemAdded,
+    }),
+    [handleCartItemAdded]
+  );
+
+  useEventHub(eventHandlers);
 
   const handleSearchChange = (event: React.ChangeEvent<HTMLInputElement>) => {
     setSearchValue(event.target.value);
@@ -99,11 +145,16 @@ const AppBar: React.FC = () => {
         borderBottom: "1px solid rgba(0,0,0,0.1)",
         borderBottomLeftRadius: 50,
         borderBottomRightRadius: 50,
-      }}>
+      }}
+    >
       <Toolbar sx={{ justifyContent: "space-between" }}>
         <Box sx={{ display: "flex", alignItems: "center" }}>
           <Link to={"/"}>
-            <img src={logo} alt="ResiBuy" style={{ width: "65px", height: "60px" }} />
+            <img
+              src={logo}
+              alt="ResiBuy"
+              style={{ width: "65px", height: "60px" }}
+            />
           </Link>
         </Box>
 
@@ -114,8 +165,13 @@ const AppBar: React.FC = () => {
             position: "absolute",
             left: "50%",
             transform: "translateX(-50%)",
-          }}>
-          <Box onMouseEnter={handleHomeMenuOpen} onMouseLeave={handleHomeMenuClose} sx={{ position: "relative" }}>
+          }}
+        >
+          <Box
+            onMouseEnter={handleHomeMenuOpen}
+            onMouseLeave={handleHomeMenuClose}
+            sx={{ position: "relative" }}
+          >
             <Button
               color="inherit"
               endIcon={<KeyboardArrowDown />}
@@ -129,8 +185,17 @@ const AppBar: React.FC = () => {
                 },
                 borderRadius: 2,
                 transition: "all 0.2s ease-in-out",
-              }}>
-              <Link to="/" style={{ textDecoration: "none", color: "inherit", display: "flex", alignItems: "center" }}>
+              }}
+            >
+              <Link
+                to="/"
+                style={{
+                  textDecoration: "none",
+                  color: "inherit",
+                  display: "flex",
+                  alignItems: "center",
+                }}
+              >
                 <Home sx={{ mr: 1 }} />
                 <span>Trang chủ</span>
               </Link>
@@ -160,7 +225,8 @@ const AppBar: React.FC = () => {
                     left: 0,
                     right: 0,
                     height: "4px",
-                    background: "linear-gradient(90deg, #EB5C60 0%, #FF8E8E 100%)",
+                    background:
+                      "linear-gradient(90deg, #EB5C60 0%, #FF8E8E 100%)",
                   },
                 },
               }}
@@ -173,9 +239,13 @@ const AppBar: React.FC = () => {
                 "& .MuiPopover-paper": {
                   pointerEvents: "auto",
                 },
-              }}>
+              }}
+            >
               <Box sx={{ p: 1.5, borderBottom: "1px solid rgba(0,0,0,0.08)" }}>
-                <Typography variant="subtitle2" sx={{ color: "text.secondary", fontWeight: 500 }}>
+                <Typography
+                  variant="subtitle2"
+                  sx={{ color: "text.secondary", fontWeight: 500 }}
+                >
                   Điều hướng nhanh
                 </Typography>
               </Box>
@@ -196,9 +266,13 @@ const AppBar: React.FC = () => {
                     },
                   },
                   transition: "all 0.2s ease-in-out",
-                }}>
+                }}
+              >
                 <ListItemIcon sx={{ minWidth: 40 }}>
-                  <Home fontSize="small" sx={{ transition: "all 0.2s ease-in-out" }} />
+                  <Home
+                    fontSize="small"
+                    sx={{ transition: "all 0.2s ease-in-out" }}
+                  />
                 </ListItemIcon>
                 <ListItemText
                   primary="Trang chủ"
@@ -209,7 +283,9 @@ const AppBar: React.FC = () => {
                 />
               </MenuItem>
               <MenuItem
-                onClick={() => handleNavigation("/products", handleHomeMenuClose)}
+                onClick={() =>
+                  handleNavigation("/products", handleHomeMenuClose)
+                }
                 sx={{
                   py: 1.5,
                   px: 2,
@@ -225,9 +301,13 @@ const AppBar: React.FC = () => {
                     },
                   },
                   transition: "all 0.2s ease-in-out",
-                }}>
+                }}
+              >
                 <ListItemIcon sx={{ minWidth: 40 }}>
-                  <Category fontSize="small" sx={{ transition: "all 0.2s ease-in-out" }} />
+                  <Category
+                    fontSize="small"
+                    sx={{ transition: "all 0.2s ease-in-out" }}
+                  />
                 </ListItemIcon>
                 <ListItemText
                   primary="Sản phẩm"
@@ -259,8 +339,15 @@ const AppBar: React.FC = () => {
                   display: "flex",
                   alignItems: "center",
                   gap: 1,
-                }}>
-                <Box sx={{ position: "relative", display: "flex", alignItems: "center" }}>
+                }}
+              >
+                <Box
+                  sx={{
+                    position: "relative",
+                    display: "flex",
+                    alignItems: "center",
+                  }}
+                >
                   <Badge
                     badgeContent={cartItems}
                     color="error"
@@ -276,7 +363,8 @@ const AppBar: React.FC = () => {
                         top: 2,
                         right: 2,
                       },
-                    }}>
+                    }}
+                  >
                     <ShoppingCart sx={{ mr: 0 }} />
                   </Badge>
                 </Box>
@@ -296,7 +384,8 @@ const AppBar: React.FC = () => {
                   },
                   borderRadius: 2,
                   transition: "all 0.2s ease-in-out",
-                }}>
+                }}
+              >
                 <Receipt sx={{ mr: 1 }} />
                 Đơn hàng
               </Button>
@@ -305,7 +394,13 @@ const AppBar: React.FC = () => {
         </Box>
 
         <Box sx={{ display: "flex", alignItems: "center", gap: 2 }}>
-          <SearchBase value={searchValue} onChange={handleSearchChange} onSearch={handleSearch} sx={{ width: "300px" }} inputSx={{ width: "100%" }} />
+          <SearchBase
+            value={searchValue}
+            onChange={handleSearchChange}
+            onSearch={handleSearch}
+            sx={{ width: "300px" }}
+            inputSx={{ width: "100%" }}
+          />
           {user && (
             <Tooltip title="Thông báo">
               <IconButton
@@ -320,7 +415,8 @@ const AppBar: React.FC = () => {
                       color: "#EB5C60",
                     },
                   },
-                }}>
+                }}
+              >
                 <Badge badgeContent={notifications.length} color="error">
                   <Notifications />
                 </Badge>
@@ -344,7 +440,8 @@ const AppBar: React.FC = () => {
                     boxShadow: "0 2px 8px rgba(235, 92, 96, 0.3)",
                   },
                 }}
-                onClick={handleProfileMenuOpen}>
+                onClick={handleProfileMenuOpen}
+              >
                 <Person />
               </Avatar>
             </Tooltip>
@@ -359,7 +456,8 @@ const AppBar: React.FC = () => {
                     backgroundColor: "rgba(235, 92, 96, 0.08)",
                     transform: "scale(1.05)",
                   },
-                }}>
+                }}
+              >
                 <Login sx={{ color: "red" }} />
               </IconButton>
             </Tooltip>
@@ -380,9 +478,13 @@ const AppBar: React.FC = () => {
               minWidth: 200,
               overflow: "hidden",
             },
-          }}>
+          }}
+        >
           <Box sx={{ p: 1.5, borderBottom: "1px solid rgba(0,0,0,0.08)" }}>
-            <Typography variant="subtitle2" sx={{ color: "text.secondary", fontWeight: 500 }}>
+            <Typography
+              variant="subtitle2"
+              sx={{ color: "text.secondary", fontWeight: 500 }}
+            >
               {user?.email}
             </Typography>
           </Box>
@@ -404,8 +506,12 @@ const AppBar: React.FC = () => {
                   },
                 },
                 transition: "all 0.2s ease-in-out",
-              }}>
-              <Dashboard fontSize="small" sx={{ transition: "all 0.2s ease-in-out" }} />
+              }}
+            >
+              <Dashboard
+                fontSize="small"
+                sx={{ transition: "all 0.2s ease-in-out" }}
+              />
               <Typography variant="body2" sx={{ fontWeight: 500 }}>
                 Trang quản trị
               </Typography>
@@ -413,7 +519,9 @@ const AppBar: React.FC = () => {
           )}
           {user?.roles?.includes("SELLER") && (
             <MenuItem
-              onClick={() => handleNavigation("/seller", handleProfileMenuClose)}
+              onClick={() =>
+                handleNavigation("/seller", handleProfileMenuClose)
+              }
               sx={{
                 py: 1.5,
                 px: 2,
@@ -429,8 +537,12 @@ const AppBar: React.FC = () => {
                   },
                 },
                 transition: "all 0.2s ease-in-out",
-              }}>
-              <Store fontSize="small" sx={{ transition: "all 0.2s ease-in-out" }} />
+              }}
+            >
+              <Store
+                fontSize="small"
+                sx={{ transition: "all 0.2s ease-in-out" }}
+              />
               <Typography variant="body2" sx={{ fontWeight: 500 }}>
                 Cửa hàng của bạn
               </Typography>
@@ -438,7 +550,9 @@ const AppBar: React.FC = () => {
           )}
           {user?.roles?.includes("SHIPPER") && (
             <MenuItem
-              onClick={() => handleNavigation("/shipper", handleProfileMenuClose)}
+              onClick={() =>
+                handleNavigation("/shipper", handleProfileMenuClose)
+              }
               sx={{
                 py: 1.5,
                 px: 2,
@@ -454,8 +568,12 @@ const AppBar: React.FC = () => {
                   },
                 },
                 transition: "all 0.2s ease-in-out",
-              }}>
-              <LocalShipping fontSize="small" sx={{ transition: "all 0.2s ease-in-out" }} />
+              }}
+            >
+              <LocalShipping
+                fontSize="small"
+                sx={{ transition: "all 0.2s ease-in-out" }}
+              />
               <Typography variant="body2" sx={{ fontWeight: 500 }}>
                 Trang giao hàng
               </Typography>
@@ -463,7 +581,9 @@ const AppBar: React.FC = () => {
           )}
           {user?.roles?.includes("CUSTOMER") && (
             <MenuItem
-              onClick={() => handleNavigation("/customer", handleProfileMenuClose)}
+              onClick={() =>
+                handleNavigation("/customer", handleProfileMenuClose)
+              }
               sx={{
                 py: 1.5,
                 px: 2,
@@ -479,16 +599,21 @@ const AppBar: React.FC = () => {
                   },
                 },
                 transition: "all 0.2s ease-in-out",
-              }}>
-              <Storefront fontSize="small" sx={{ transition: "all 0.2s ease-in-out" }} />
+              }}
+            >
+              <Storefront
+                fontSize="small"
+                sx={{ transition: "all 0.2s ease-in-out" }}
+              />
               <Typography variant="body2" sx={{ fontWeight: 500 }}>
                 Trang chủ
               </Typography>
             </MenuItem>
           )}
-          {(user?.roles?.includes("ADMIN") || user?.roles?.includes("SELLER") || user?.roles?.includes("SHIPPER") || user?.roles?.includes("CUSTOMER")) && (
-            <Divider sx={{ my: 0.5 }} />
-          )}
+          {(user?.roles?.includes("ADMIN") ||
+            user?.roles?.includes("SELLER") ||
+            user?.roles?.includes("SHIPPER") ||
+            user?.roles?.includes("CUSTOMER")) && <Divider sx={{ my: 0.5 }} />}
           <MenuItem
             onClick={() => handleNavigation("/profile", handleProfileMenuClose)}
             sx={{
@@ -506,14 +631,20 @@ const AppBar: React.FC = () => {
                 },
               },
               transition: "all 0.2s ease-in-out",
-            }}>
-            <Person fontSize="small" sx={{ transition: "all 0.2s ease-in-out" }} />
+            }}
+          >
+            <Person
+              fontSize="small"
+              sx={{ transition: "all 0.2s ease-in-out" }}
+            />
             <Typography variant="body2" sx={{ fontWeight: 500 }}>
               Hồ sơ
             </Typography>
           </MenuItem>
           <MenuItem
-            onClick={() => handleNavigation("/settings", handleProfileMenuClose)}
+            onClick={() =>
+              handleNavigation("/settings", handleProfileMenuClose)
+            }
             sx={{
               py: 1.5,
               px: 2,
@@ -529,8 +660,12 @@ const AppBar: React.FC = () => {
                 },
               },
               transition: "all 0.2s ease-in-out",
-            }}>
-            <Settings fontSize="small" sx={{ transition: "all 0.2s ease-in-out" }} />
+            }}
+          >
+            <Settings
+              fontSize="small"
+              sx={{ transition: "all 0.2s ease-in-out" }}
+            />
             <Typography variant="body2" sx={{ fontWeight: 500 }}>
               Cài đặt
             </Typography>
@@ -553,8 +688,12 @@ const AppBar: React.FC = () => {
                 },
               },
               transition: "all 0.2s ease-in-out",
-            }}>
-            <Logout fontSize="small" sx={{ transition: "all 0.2s ease-in-out" }} />
+            }}
+          >
+            <Logout
+              fontSize="small"
+              sx={{ transition: "all 0.2s ease-in-out" }}
+            />
             <Typography variant="body2" sx={{ fontWeight: 500 }}>
               Đăng xuất
             </Typography>
@@ -581,7 +720,8 @@ const AppBar: React.FC = () => {
               width: 320,
               maxHeight: 400,
             },
-          }}>
+          }}
+        >
           <Box sx={{ p: 2, borderBottom: "1px solid rgba(0,0,0,0.1)" }}>
             <Typography variant="h6" sx={{ fontWeight: 600 }}>
               Thông báo
@@ -599,9 +739,13 @@ const AppBar: React.FC = () => {
                     backgroundColor: "rgba(235, 92, 96, 0.08)",
                   },
                   transition: "all 0.2s ease-in-out",
-                }}>
+                }}
+              >
                 <Box>
-                  <Typography variant="subtitle2" sx={{ fontWeight: 600, mb: 0.5 }}>
+                  <Typography
+                    variant="subtitle2"
+                    sx={{ fontWeight: 600, mb: 0.5 }}
+                  >
                     {notification.title}
                   </Typography>
                   <Typography variant="body2" color="text.secondary">
