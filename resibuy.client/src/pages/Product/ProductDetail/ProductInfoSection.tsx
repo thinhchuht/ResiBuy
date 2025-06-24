@@ -87,10 +87,28 @@ const ProductInfoSection: React.FC<ProductInfoSectionProps> = ({ product, quanti
   };
 
   const handleBuy = (product: Product) => {
+    if (!selectedDetail) {
+      toast.error("Vui lòng chọn phân loại sản phẩm");
+      return;
+    }
     if (user) {
-      toast.success(`Đã thêm ${product.name} vào giỏ hàng!`);
+      navigate("/checkout", {
+        state: {
+          selectedItems: [
+            {
+              id: "temp-id", // hoặc tạo id tạm nếu cần
+              cartId: user.cartId,
+              productDetail: {
+                ...selectedDetail,
+                product,
+              },
+              quantity,
+            },
+          ],
+        },
+      });
     } else {
-      toast.error("Vui lòng đăng nhập để thêm sản phẩm vào giỏ hàng");
+      toast.error("Vui lòng đăng nhập để mua hàng");
       navigate("/login");
     }
   };
