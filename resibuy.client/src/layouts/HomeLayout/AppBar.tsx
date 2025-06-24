@@ -433,12 +433,13 @@ const AppBar: React.FC = () => {
           {user ? (
             <Tooltip title="Tài khoản">
               <Avatar
+                src={user?.avatar?.thumbUrl || undefined}
                 sx={{
                   width: 36,
                   height: 36,
                   cursor: "pointer",
-                  bgcolor: "#EB5C60",
-                  color: "#fff",
+                  bgcolor: user?.avatar?.thumbUrl ? undefined : "#EB5C60",
+                  color: user?.avatar?.thumbUrl ? undefined : "#fff",
                   fontWeight: 600,
                   transition: "all 0.2s ease-in-out",
                   "&:hover": {
@@ -446,8 +447,9 @@ const AppBar: React.FC = () => {
                     boxShadow: "0 2px 8px rgba(235, 92, 96, 0.3)",
                   },
                 }}
-                onClick={handleProfileMenuOpen}>
-                <Person />
+                onClick={handleProfileMenuOpen}
+              >
+                {!user?.avatar?.thumbUrl && <Person />}
               </Avatar>
             </Tooltip>
           ) : (
@@ -485,7 +487,7 @@ const AppBar: React.FC = () => {
           }}>
           <Box sx={{ p: 1.5, borderBottom: "1px solid rgba(0,0,0,0.08)" }}>
             <Typography variant="subtitle2" sx={{ color: "text.secondary", fontWeight: 500 }}>
-              {user?.email}
+              {user?.fullName}
             </Typography>
           </Box>
           {user?.roles?.includes("ADMIN") && (
@@ -565,7 +567,7 @@ const AppBar: React.FC = () => {
           )}
           {user?.roles?.includes("CUSTOMER") && (
             <MenuItem
-              onClick={() => handleNavigation("/customer", handleProfileMenuClose)}
+              onClick={() => handleNavigation("/", handleProfileMenuClose)}
               sx={{
                 py: 1.5,
                 px: 2,
@@ -748,3 +750,4 @@ const AppBar: React.FC = () => {
 };
 
 export default AppBar;
+

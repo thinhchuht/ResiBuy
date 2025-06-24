@@ -35,6 +35,7 @@ namespace ResiBuy.Server.Application.Commands.OrderCommands
                 if (dto.OrderStatus == OrderStatus.Cancelled) order.PaymentStatus = PaymentStatus.Failed;
                 order.Status = dto.OrderStatus.Value;
             }
+            order.UpdateAt = DateTime.Now;
             await orderDbService.UpdateAsync(order);
             var userIds = new List<string>();
             if (dto.OrderStatus == OrderStatus.Processing) userIds.Add(order.UserId);
