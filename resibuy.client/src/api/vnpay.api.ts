@@ -7,6 +7,7 @@ export interface CheckoutRequest {
   addressId : string;
   paymentMethod: string;
   orders: OrderRequest[];
+  isInstance? : boolean
 }
 
 export interface OrderRequest {
