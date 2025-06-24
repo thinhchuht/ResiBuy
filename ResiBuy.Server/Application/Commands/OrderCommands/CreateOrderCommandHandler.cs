@@ -1,6 +1,7 @@
 ﻿using ResiBuy.Server.Infrastructure.DbServices.CartItemDbService;
 using ResiBuy.Server.Infrastructure.DbServices.OrderDbServices;
 using ResiBuy.Server.Infrastructure.DbServices.OrderItemDbServices;
+using ResiBuy.Server.Infrastructure.Model.EventDataDto;
 
 namespace ResiBuy.Server.Application.Commands.OrderCommands
 {
@@ -18,7 +19,7 @@ namespace ResiBuy.Server.Application.Commands.OrderCommands
             if (dto.Orders == null || !dto.Orders.Any()) throw new CustomException(ExceptionErrorCode.ValidationFailed, "Không có đơn hàng nào để tạo");
             if (dto.Orders.Any(o => o.TotalPrice < 0))
                 throw new CustomException(ExceptionErrorCode.ValidationFailed, "Tổng tiền của đơn hàng không được nhỏ hơn 0");
-            if (dto.Orders.Any(o => !o.Items.Any()) || dto.Orders.Any(o => o.Items.Any(i => i.Quantity <= 0 || i.Price < 0)))
+            if (dto.Orders.Any(o => !o.Items.Any()) || dto.Orders.Any(o => o.Items.Any(i => i.Quantity <= 0 || i.Price < -10000)))
                 throw new CustomException(ExceptionErrorCode.ValidationFailed, "Đơn hàng phải có sản phẩm và số lượng phải lớn hơn 0");
             var room = await roomDbService.GetByIdBaseAsync(dto.AddressId) ?? throw new CustomException(ExceptionErrorCode.ValidationFailed, "Phòng không tồn tại");
             var user = await userDbService.GetUserById(dto.UserId);
@@ -44,8 +45,11 @@ namespace ResiBuy.Server.Application.Commands.OrderCommands
             if(createdOrders == null || !createdOrders.Any()) throw new CustomException(ExceptionErrorCode.CreateFailed, "Không thể tạo đơn hàng");
             if(!dto.IsInstance)
              await cartItemDbService.DeleteBatchByProductDetailIdAsync(cart.Id , createdOrders.SelectMany(o => o.Items).Select(ci => ci.ProductDetailId));
-            var notiUserIds = createdOrders.Select(o => o.StoreId.ToString()).Append(user.Id).Distinct().ToList();
-            notificationService.SendNotification("OrderCreated", createdOrders, "", notiUserIds);
+            foreach (var order in createdOrders)
+            {
+                var notiUserIds = new List<string> { order.StoreId.ToString(), user.Id };
+                notificationService.SendNotification("OrderCreated",  new OrderStatusChangedDto(order.Id, order.Status, order.Status, order.PaymentStatus, order.CreateAt), "", notiUserIds);
+            }
             //mailBaseService.SendEmailAsync(user.Email, "Hóa đơn thanh toán đơn hà ResiBuy",);
             return ResponseModel.SuccessResponse();
         }

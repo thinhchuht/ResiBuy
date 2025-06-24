@@ -5,7 +5,8 @@
         public Order(Guid id, decimal totalPrice, PaymentMethod paymentMethod, string note, Guid shippingAddressId, string userId, Guid storeId, IEnumerable<OrderItem> items)
         {
             Id = id;
-            TotalPrice = totalPrice > 0 ? totalPrice : throw new CustomException(ExceptionErrorCode.ValidationFailed, "Đơn hàng phải có giá trị tối thiểu 5000Đ.") ;
+            TotalPrice = totalPrice >-1000 ? totalPrice : totalPrice;
+                //throw new CustomException(ExceptionErrorCode.ValidationFailed, "Đơn hàng phải có giá trị tối thiểu 5000Đ.") ;
             Status = OrderStatus.Pending;
             PaymentStatus = paymentMethod == PaymentMethod.COD ?  PaymentStatus.Pending : PaymentStatus.Paid;
             PaymentMethod = paymentMethod;

@@ -37,12 +37,14 @@ import { useAuth } from "../../contexts/AuthContext";
 import SearchBase from "../../components/SearchBase";
 import logo from "../../assets/Images/Logo.png";
 import cartApi from "../../api/cart.api";
-import { HubEventType, useEventHub } from "../../hooks/useEventHub";
+import { HubEventType, useEventHub, type HubEventHandler } from "../../hooks/useEventHub";
+import type { OrderStatusChangedData } from "../../types/hubData";
 
 interface Notification {
   id: string | number;
   title: string;
   message: string;
+  time?: string;
 }
 
 const AppBar: React.FC = () => {
@@ -72,34 +74,43 @@ const AppBar: React.FC = () => {
   }, [fetchItemCount]);
 
   const handleOrderCreated = useCallback(
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    (data: any) => {
+    (data: OrderStatusChangedData) => {
+      console.log('hihehah súuus')
       fetchItemCount();
-      const newNotifications = data.map((item: { id: string | number }) => ({
-        id: item.id,
+      const formattedTime = new Date(data.createdAt).toLocaleTimeString('vi-VN', { hour: '2-digit', minute: '2-digit' });
+      const formattedDate = new Date(data.createdAt).toLocaleDateString('vi-VN');
+      console.log(formattedDate , formattedTime)
+      const newNotifications ={
+        id: data.id,
         title: "Đơn hàng mới",
-        message: `Đơn hàng #${item.id} đã được tạo`,
-      }));
-      setNotifications((prev) => [...newNotifications, ...prev]);
+        message: `Đơn hàng #${data.id} đã được tạo`,
+        time: `${formattedTime} ${formattedDate}`
+      };
+      console.log('hhihi')
+      console.log(newNotifications)
+      setNotifications((prev) => [newNotifications, ...prev]);
     },
     [setNotifications, fetchItemCount]
   );
 
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  const handleOrderStatusChanged = useCallback((data: any) => {
+  const handleOrderStatusChanged = useCallback((data: OrderStatusChangedData) => {
+    console.log('hihehah')
+    const formattedTime = new Date(data.createdAt).toLocaleTimeString('vi-VN', { hour: '2-digit', minute: '2-digit' });
+    const formattedDate = new Date(data.createdAt).toLocaleDateString('vi-VN');
     const newNotifications = {
-      id: `order-${data.order.id}-${data.order.status}`,
+      id: `order-${data.id}-${data.orderStatus}`,
       title:
-        data.order.status === "Processing"
+        data.orderStatus === "Processing"
           ? "Đơn hàng đã được xử lý"
-          : data.order.status === "Shipped"
+          : data.orderStatus === "Shipped"
           ? "Đơn hàng đang được giao"
-          : data.order.status === "Delivered"
-          ? "Đơn hàng đãđược giao"
+          : data.orderStatus === "Delivered"
+          ? "Đơn hàng đã được giao"
           : "Đơn hàng đã bị hủy",
-      message: `Đơn hàng #${data.order.id} ${
-        data.order.status === "Processing" ? "đã được xử lý" : data.order.status === "Shipped" ? "đang được giao" : data.order.status === "Delivered" ? "đã được giao" : "đã bị hủy"
+      message: `Đơn hàng #${data.id} ${
+        data.orderStatus === "Processing" ? "đã được xử lý" : data.orderStatus === "Shipped" ? "đang được giao" : data.orderStatus === "Delivered" ? "đã được giao" : "đã bị hủy"
       }`,
+      time: `${formattedTime} ${formattedDate}`
     };
     setNotifications((prev) => [newNotifications, ...prev]);
   }, []);
@@ -113,7 +124,7 @@ const AppBar: React.FC = () => {
     [handleCartItemAdded, handleOrderCreated, handleOrderStatusChanged]
   );
 
-  useEventHub(eventHandlers);
+  useEventHub(eventHandlers as Partial<Record<HubEventType, HubEventHandler>>);
 
   const handleSearchChange = (event: React.ChangeEvent<HTMLInputElement>) => {
     setSearchValue(event.target.value);
@@ -693,9 +704,30 @@ const AppBar: React.FC = () => {
                   transition: "all 0.2s ease-in-out",
                 }}>
                 <Box>
-                  <Typography variant="subtitle2" sx={{ fontWeight: 600, mb: 0.5, wordBreak: "break-word" }}>
-                    {notification.title}
-                  </Typography>
+                  <Box sx={{
+                    display: 'flex',
+                    justifyContent: 'space-between',
+                    alignItems: 'flex-end',
+                    mb: 0.5,
+                    gap: 2,
+                  }}>
+                    <Typography variant="subtitle2" sx={{ fontWeight: 600, wordBreak: "break-word" }}>
+                      {notification.title}
+                    </Typography>
+                    {notification.time && (
+                      <Typography
+                        variant="caption"
+                        sx={{
+                          fontStyle: 'italic',
+                          color: 'text.secondary',
+                          whiteSpace: 'nowrap',
+                          fontWeight: 600
+                        }}
+                      >
+                        {notification.time}
+                      </Typography>
+                    )}
+                  </Box>
                   <Typography variant="body2" color="text.secondary" sx={{ wordBreak: "break-word", whiteSpace: "break-spaces" }}>
                     {notification.message}
                   </Typography>

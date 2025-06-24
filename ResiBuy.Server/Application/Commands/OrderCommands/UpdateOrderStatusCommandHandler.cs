@@ -1,5 +1,6 @@
 ﻿using ResiBuy.Server.Infrastructure.DbServices.OrderDbServices;
 using ResiBuy.Server.Infrastructure.Model.DTOs.OrderDtos;
+using ResiBuy.Server.Infrastructure.Model.EventDataDto;
 
 namespace ResiBuy.Server.Application.Commands.OrderCommands
 {
@@ -40,7 +41,7 @@ namespace ResiBuy.Server.Application.Commands.OrderCommands
             if (dto.OrderStatus == OrderStatus.Shipped) userIds.AddRange([order.UserId,order.StoreId.ToString()]);
             if (dto.OrderStatus == OrderStatus.Delivered) userIds.AddRange([order.UserId, order.StoreId.ToString()]);
             if (dto.OrderStatus == OrderStatus.Cancelled) userIds.AddRange([order.UserId, order.StoreId.ToString()]);
-            notificationService.SendNotification(Constants.OrderStatusChanged, new { order, OldStatus = oldStatus }, "", userIds);
+            notificationService.SendNotification(Constants.OrderStatusChanged, new OrderStatusChangedDto(order.Id, order.Status, oldStatus, order.PaymentStatus, order.CreateAt), "", userIds);
             return ResponseModel.SuccessResponse();
         }
     }

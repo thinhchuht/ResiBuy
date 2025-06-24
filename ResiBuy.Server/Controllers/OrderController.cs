@@ -9,12 +9,10 @@ namespace ResiBuy.Server.Controllers
     public class OrderController(IMediator mediator) : ControllerBase
     {
         [HttpGet]
-        public async Task<IActionResult> GetAll(OrderStatus orderStatus, PaymentMethod paymentMethod, PaymentStatus paymentStatus, string userId = null, int pageNumber = 1, int pageSize = 10)
+        public async Task<IActionResult> GetAll(OrderStatus orderStatus, PaymentMethod paymentMethod, PaymentStatus paymentStatus, string userId = null, int pageNumber = 1, int pageSize = 10, DateTime? startDate = null, DateTime? endDate = null)
         {
-
-            var result = await mediator.Send(new GetAllOrdersQuery(orderStatus, paymentMethod, paymentStatus, userId, pageNumber, pageSize));
+            var result = await mediator.Send(new GetAllOrdersQuery(orderStatus, paymentMethod, paymentStatus, userId, pageNumber, pageSize, startDate, endDate));
             return Ok(result);
-
         }
 
         [HttpPost]
