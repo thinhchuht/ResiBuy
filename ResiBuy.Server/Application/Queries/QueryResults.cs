@@ -3,7 +3,7 @@
     public class QueryResults
     {
         //User query result
-        public record UserQueryResult(string Id, string Email, string PhoneNumber, DateTime DateOfBirth, bool IsLocked, IEnumerable<string> Roles,
+        public record UserQueryResult(string Id, string IdentityNumber, string Email, string PhoneNumber, DateTime DateOfBirth, bool IsLocked, IEnumerable<string> Roles,
             string FullName, DateTime CreatedAt, DateTime UpdatedAt, Guid? CartId, AvatarQueryResult? Avatar, IEnumerable<RoomQueryResult>? Rooms, IEnumerable<Guid> VoucherIds, IEnumerable<Report> Reports);
 
         public record AvatarQueryResult(string Id, string Name, string Url, string ThumbUrl);
