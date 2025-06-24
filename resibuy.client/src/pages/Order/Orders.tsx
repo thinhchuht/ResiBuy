@@ -1,10 +1,23 @@
-import { Box, Container, Typography, Paper, Tabs, Tab, Pagination } from "@mui/material";
-import { useState, useEffect, useMemo } from "react";
+import {
+  Box,
+  Container,
+  Typography,
+  Paper,
+  Tabs,
+  Tab,
+  Pagination,
+} from "@mui/material";
+import { useState, useEffect, useMemo, useCallback } from "react";
 import { styled } from "@mui/material/styles";
 import OrderCard, { type OrderApiResult } from "./OrderCard";
 import { OrderStatus, PaymentMethod, PaymentStatus } from "../../types/models";
 import orderApi from "../../api/order.api";
 import { useAuth } from "../../contexts/AuthContext";
+import { HubEventType, useEventHub } from "../../hooks/useEventHub";
+import { Link } from "react-router-dom";
+import Breadcrumbs from '@mui/material/Breadcrumbs';
+import HomeIcon from '@mui/icons-material/Home';
+import NavigateNextIcon from '@mui/icons-material/NavigateNext';
 
 const StyledTabs = styled(Tabs)({
   borderBottom: "1px solid #e8e8e8",
@@ -25,6 +38,15 @@ const StyledTab = styled(Tab)({
   },
 });
 
+const orderStatusTabs = [
+  OrderStatus.None,
+  OrderStatus.Pending,
+  OrderStatus.Processing,
+  OrderStatus.Shipped,
+  OrderStatus.Delivered,
+  OrderStatus.Cancelled,
+];
+
 const Orders = () => {
   const [currentTab, setCurrentTab] = useState(0);
   const [page, setPage] = useState(1);
@@ -33,75 +55,134 @@ const Orders = () => {
   const ordersPerPage = 5;
   const { user } = useAuth();
 
-  useEffect(() => {
-    const fetchOrders = async () => {
-      if (!user?.id) return;
-      try {
-        const data = await orderApi.getAll(
-          currentTab === 0 ? OrderStatus.None :
-          currentTab === 1 ? OrderStatus.Pending :
-          currentTab === 2 ? OrderStatus.Processing :
-          currentTab === 3 ? OrderStatus.Shipped :
-          currentTab === 4 ? OrderStatus.Delivered :
-          currentTab === 5 ? OrderStatus.Cancelled : OrderStatus.None,
-          PaymentMethod.None,
-          PaymentStatus.None,
-          user.id,
-          page,
-          ordersPerPage
-        );
-        setOrders(data.items || []);
-        setTotalPages(data.totalPages || 1);
-      } catch {
-        setOrders([]);
-        setTotalPages(1);
-      }
-    };
-    fetchOrders();
+  const fetchOrders = useCallback(async () => {
+    if (!user?.id) return;
+    try {
+      const data = await orderApi.getAll(
+        orderStatusTabs[currentTab],
+        PaymentMethod.None,
+        PaymentStatus.None,
+        user.id,
+        page,
+        ordersPerPage
+      );
+      setOrders(data.items || []);
+      setTotalPages(data.totalPages || 1);
+    } catch {
+      setOrders([]);
+      setTotalPages(1);
+    }
   }, [user?.id, page, currentTab]);
 
-  const handleTabChange = (event: React.SyntheticEvent, newValue: number) => {
+  useEffect(() => {
+    fetchOrders();
+  }, [fetchOrders]);
+
+  const handleTabChange = (_event: React.SyntheticEvent, newValue: number) => {
     setCurrentTab(newValue);
     setPage(1);
   };
 
-  const handlePageChange = (event: React.ChangeEvent<unknown>, value: number) => {
+  const handlePageChange = (
+    _event: React.ChangeEvent<unknown>,
+    value: number
+  ) => {
     setPage(value);
   };
 
-  const handleOrderAddressChange = (orderId: string, area: string, building: string, room: string, roomId: string) => {
-    setOrders((prevOrders) => prevOrders.map(order =>
-      order.id === orderId
-        ? {
-            ...order,
-            roomQueryResult: {
-              ...order.roomQueryResult,
-              areaName: area,
-              buildingName: building,
-              name: room,
-              id: roomId
+  const handleOrderAddressChange = (
+    orderId: string,
+    area: string,
+    building: string,
+    room: string,
+    roomId: string
+  ) => {
+    setOrders((prevOrders) =>
+      prevOrders.map((order) =>
+        order.id === orderId
+          ? {
+              ...order,
+              roomQueryResult: {
+                ...order.roomQueryResult,
+                areaName: area,
+                buildingName: building,
+                name: room,
+                id: roomId,
+              },
             }
-          }
-        : order
-    ));
+          : order
+      )
+    );
   };
 
   const filteredOrders = useMemo(() => {
     return orders;
   }, [orders]);
 
+  const handleOrderStatusChanged = useCallback(
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    (data: any) => {
+      if (currentTab === 0) {
+        setOrders((prevOrders) =>
+          prevOrders.map((order) =>
+            order.id === data.order.id
+              ? {
+                  ...order,
+                  status: data.order.status as OrderStatus,
+                  paymentStatus: data.order.paymentStatus as PaymentStatus,
+                }
+              : order
+          )
+        );
+      } else if (orderStatusTabs[currentTab] === data.oldStatus) {
+        setOrders((prevOrders) =>
+          prevOrders.filter((order) => order.id !== data.order.id)
+        );
+      } else if (orderStatusTabs[currentTab] === data.order.status) {
+        fetchOrders();
+      }
+    },
+    [currentTab, fetchOrders]
+  );
+
+  const eventHandlers = useMemo(
+    () => ({
+      [HubEventType.OrderStatusChanged]: handleOrderStatusChanged,
+    }),
+    [handleOrderStatusChanged]
+  );
+  useEventHub(eventHandlers);
+
   return (
     <Container maxWidth="lg" sx={{ py: 4 }}>
-      <Typography
-        variant="h4"
+      <Breadcrumbs
+        separator={<NavigateNextIcon fontSize="small" />}
+        aria-label="breadcrumb"
         sx={{
-          fontWeight: 700,
+          mb: 3,
+          fontSize: 20,
           color: "#2c3e50",
-          mb: 4,
-          textAlign: "center",
-        }}>
-        Tất cả đơn hàng
-      </Typography>
+          fontWeight: 500,
+          '& .MuiBreadcrumbs-separator': { color: '#bdbdbd' }
+        }}
+      >
+        <Link
+          to="/"
+          style={{
+            display: 'flex',
+            alignItems: 'center',
+            textDecoration: 'none',
+            color: '#1976d2',
+            fontWeight: 600
+          }}
+        >
+          <HomeIcon sx={{ mr: 0.5 }} fontSize="inherit" />
+          Trang chủ
+        </Link>
+        <Typography color="#2c3e50" fontWeight={700}>
+          Đơn hàng của bạn
+        </Typography>
+      </Breadcrumbs>
 
       <Paper
         elevation={0}
@@ -109,8 +190,14 @@ const Orders = () => {
           borderRadius: 2,
           overflow: "hidden",
           border: "1px solid #e8e8e8",
-        }}>
-        <StyledTabs value={currentTab} onChange={handleTabChange} variant="scrollable" scrollButtons="auto">
+        }}
+      >
+        <StyledTabs
+          value={currentTab}
+          onChange={handleTabChange}
+          variant="scrollable"
+          scrollButtons="auto"
+        >
           <StyledTab label="Tất cả" />
           <StyledTab label="Chờ xác nhận" />
           <StyledTab label="Đang xử lý" />
@@ -123,14 +210,20 @@ const Orders = () => {
           {filteredOrders.length > 0 ? (
             <>
               {filteredOrders.map((order) => (
-                <OrderCard key={order.id} order={order} onUpdate={() => setPage(1)} onAddressChange={handleOrderAddressChange} />
+                <OrderCard
+                  key={order.id}
+                  order={order}
+                  onUpdate={() => setPage(1)}
+                  onAddressChange={handleOrderAddressChange}
+                />
               ))}
               <Box
                 sx={{
                   display: "flex",
                   justifyContent: "center",
                   mt: 4,
-                }}>
+                }}
+              >
                 <Pagination
                   count={totalPages}
                   page={page}
@@ -156,7 +249,8 @@ const Orders = () => {
                 flexDirection: "column",
                 alignItems: "center",
                 py: 8,
-              }}>
+              }}
+            >
               <Typography variant="h6" sx={{ color: "#666", mb: 2 }}>
                 Không có đơn hàng nào
               </Typography>

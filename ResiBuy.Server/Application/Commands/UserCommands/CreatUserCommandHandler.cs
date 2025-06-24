@@ -50,7 +50,7 @@
                         [],
                         []
                     );
-                    notificationService.SendNotification("UserCreated", userResult, Constants.AdminHubGroup);
+                    //notificationService.SendNotification("UserCreated", userResult, Constants.AdminHubGroup);
                     return ResponseModel.SuccessResponse(userResult);
 
             }

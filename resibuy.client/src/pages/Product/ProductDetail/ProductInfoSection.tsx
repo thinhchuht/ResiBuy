@@ -82,9 +82,7 @@ const ProductInfoSection: React.FC<ProductInfoSectionProps> = ({ product, quanti
 
   const handleAddToCart = () => {
     if (!selectedDetail || !user) return;
-    console.log(selectedDetail.id);
-    console.log(quantity);
-    cartApi.addToCart(user?.cartId, quantity, selectedDetail.id);
+    cartApi.addToCart(user?.cartId, selectedDetail.id, quantity);
     toast.success(`Đã thêm sản phẩm vào giỏ hàng!`);
   };
 

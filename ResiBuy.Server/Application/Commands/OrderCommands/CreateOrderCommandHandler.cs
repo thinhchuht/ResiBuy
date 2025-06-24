@@ -28,6 +28,17 @@ namespace ResiBuy.Server.Application.Commands.OrderCommands
                 throw new CustomException(ExceptionErrorCode.ValidationFailed, "Giỏ hàng không có sản phẩm nào.");
             var cart = await cartDbService.GetByIdAsync(user.Cart.Id);
             if(!cart.CartItems.Any()) throw new CustomException(ExceptionErrorCode.ValidationFailed, "Giỏ hàng không có sản phẩm nào.");
+            if (!cart.IsCheckingOut)
+                throw new CustomException(ExceptionErrorCode.ValidationFailed, "Giỏ hàng chưa ở trạng thái thanh toán.");
+            cart.IsCheckingOut = false;
+            try
+            {
+                await cartDbService.UpdateAsync(cart);
+            }
+            catch (DbUpdateConcurrencyException)
+            {
+                throw new CustomException(ExceptionErrorCode.CreateFailed, "Có người khác đang thao tác với giỏ hàng này. Vui lòng thử lại.");
+            }
             var orders = dto.Orders.Select(o => new Order(o.Id, o.TotalPrice, dto.PaymentMethod, o.Note, dto.AddressId, dto.UserId, o.StoreId, o.Items.Select(i => new OrderItem(i.Quantity, i.Price, o.Id, i.ProductDetailId)).ToList()));
             var createdOrders = await orderDbService.CreateBatchAsync(orders);
             if(createdOrders == null || !createdOrders.Any()) throw new CustomException(ExceptionErrorCode.CreateFailed, "Không thể tạo đơn hàng");

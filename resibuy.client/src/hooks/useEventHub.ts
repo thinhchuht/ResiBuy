@@ -1,15 +1,16 @@
-import { useCallback, useEffect, useRef } from 'react';
-import { useHub } from '../contexts/HubContext';
-import type { OrderData, PaymentData, UserCreatedData } from '../types/hubData';
+import { useCallback, useEffect, useRef } from "react";
+import { useHub } from "../contexts/HubContext";
+import type { OrderData, PaymentData, UserCreatedData } from "../types/hubData";
 
 // Define event types
 export enum HubEventType {
-  UserCreated = 'UserCreated',
-  OrderStatusChanged = 'OrderStatusChanged',
-  PaymentReceived = 'PaymentReceived',
+  UserCreated = "UserCreated",
+  OrderStatusChanged = "OrderStatusChanged",
+  PaymentReceived = "PaymentReceived",
+  CartItemAdded = "CartItemAdded",
+  CartItemDeleted = "CartItemDeleted",
+  OrderCreated = "OrderCreated",
 }
-
-
 
 export type HubEventData = UserCreatedData | OrderData | PaymentData;
 export type HubEventHandler = (data: HubEventData) => void;
@@ -44,20 +45,35 @@ class HubEventsManager {
     // Create event handlers
     this.eventHandlers = {
       [HubEventType.UserCreated]: (data: HubEventData) => {
-        console.log('UserCreated event received:', data);
+        console.log("UserCreated event received:", data);
         this.lastEventData[HubEventType.UserCreated] = data;
         this.notifyHandlers(HubEventType.UserCreated, data);
       },
       [HubEventType.OrderStatusChanged]: (data: HubEventData) => {
-        console.log('OrderStatusChanged event received:', data);
+        console.log("OrderStatusChanged event received:", data);
         this.lastEventData[HubEventType.OrderStatusChanged] = data;
         this.notifyHandlers(HubEventType.OrderStatusChanged, data);
       },
       [HubEventType.PaymentReceived]: (data: HubEventData) => {
-        console.log('PaymentReceived event received:', data);
+        console.log("PaymentReceived event received:", data);
         this.lastEventData[HubEventType.PaymentReceived] = data;
         this.notifyHandlers(HubEventType.PaymentReceived, data);
-      }
+      },
+      [HubEventType.CartItemAdded]: (data: HubEventData) => {
+        console.log("CartItemAdded event received:", data);
+        this.lastEventData[HubEventType.CartItemAdded] = data;
+        this.notifyHandlers(HubEventType.CartItemAdded, data);
+      },
+      [HubEventType.CartItemDeleted]: (data: HubEventData) => {
+        console.log("CartItemDeleted event received:", data);
+        this.lastEventData[HubEventType.CartItemDeleted] = data;
+        this.notifyHandlers(HubEventType.CartItemDeleted, data);
+      },
+      [HubEventType.OrderCreated]: (data: HubEventData) => {
+        console.log("OrderCreated event received:", data);
+        this.lastEventData[HubEventType.OrderCreated] = data;
+        this.notifyHandlers(HubEventType.OrderCreated, data);
+      },
     };
   }
 
@@ -74,7 +90,7 @@ class HubEventsManager {
 
   setHub(hub: IHub) {
     if (this.hub !== hub) {
-      console.log('Setting up hub connection...');
+      console.log("Setting up hub connection...");
       this.hub = hub;
       this.setupSubscriptions();
     }
@@ -83,18 +99,18 @@ class HubEventsManager {
   private setupSubscriptions() {
     if (!this.hub || this.isSubscribed) return;
 
-    console.log('Setting up event subscriptions...');
+    console.log("Setting up event subscriptions...");
     Object.entries(this.eventHandlers).forEach(([event, handler]) => {
       console.log(`Subscribing to ${event} event...`);
       this.hub?.subscribe(event, handler);
     });
 
     this.isSubscribed = true;
-    console.log('Event subscriptions setup complete');
+    console.log("Event subscriptions setup complete");
   }
 
   addHandlers(handlers: HubEventHandlers) {
-    console.log('Adding event handlers...');
+    console.log("Adding event handlers...");
     Object.entries(handlers).forEach(([event, handler]) => {
       if (handler) {
         this.handlers[event as HubEventType].add(handler);
@@ -104,7 +120,7 @@ class HubEventsManager {
   }
 
   removeHandlers(handlers: HubEventHandlers) {
-    console.log('Removing event handlers...');
+    console.log("Removing event handlers...");
     Object.entries(handlers).forEach(([event, handler]) => {
       if (handler) {
         this.handlers[event as HubEventType].delete(handler);
@@ -127,13 +143,13 @@ class HubEventsManager {
     const hasNoHandlers = Object.values(this.handlers).every((set) => set.size === 0);
 
     if (hasNoHandlers && this.isSubscribed && this.hub) {
-      console.log('No handlers left, cleaning up event subscriptions...');
+      console.log("No handlers left, cleaning up event subscriptions...");
       Object.values(HubEventType).forEach((event) => {
         console.log(`Unsubscribing from ${event} event...`);
         this.hub?.unsubscribe(event);
       });
       this.isSubscribed = false;
-      console.log('Event subscriptions cleanup complete');
+      console.log("Event subscriptions cleanup complete");
     }
   }
 }
@@ -155,7 +171,7 @@ export const useEventHub = (eventTypeOrHandlers: HubEventType | HubEventHandlers
   const { connection } = useHub();
   const manager = HubEventsManager.getInstance();
   const handlersRef = useRef<HubEventHandlers | null>(null);
-  const isHandlers = typeof eventTypeOrHandlers !== 'string';
+  const isHandlers = typeof eventTypeOrHandlers !== "string";
 
   const setupHub = useCallback(() => {
     if (!connection || !isHandlers) {
@@ -164,10 +180,10 @@ export const useEventHub = (eventTypeOrHandlers: HubEventType | HubEventHandlers
 
     // Only set up hub if it hasn't been set up yet
     if (!manager.getIsSubscribed()) {
-      console.log('Setting up hub in useEventHub...');
+      console.log("Setting up hub in useEventHub...");
       manager.setHub({
         subscribe: (event, handler) => connection.on(event, handler),
-        unsubscribe: (event) => connection.off(event)
+        unsubscribe: (event) => connection.off(event),
       });
     }
 
@@ -176,7 +192,7 @@ export const useEventHub = (eventTypeOrHandlers: HubEventType | HubEventHandlers
     return () => {
       manager.removeHandlers(handlersRef.current!);
     };
-  // eslint-disable-next-line react-hooks/exhaustive-deps
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [connection, isHandlers]);
 
   useEffect(() => {
@@ -191,4 +207,4 @@ export const useEventHub = (eventTypeOrHandlers: HubEventType | HubEventHandlers
   }
 
   return null;
-}; 
+};

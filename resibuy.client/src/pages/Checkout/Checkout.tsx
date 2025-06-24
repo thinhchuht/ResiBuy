@@ -202,7 +202,6 @@ const Checkout: React.FC = () => {
             window.history.replaceState({}, "");
             window.location.href = response.data.paymentUrl;
           } else {
-            toast.error("Lỗi khi tạo thanh toán, thử lại sau.");
             console.error("Payment creation failed:", response.error);
           }
         } else if (info.paymentMethod === "COD") {
