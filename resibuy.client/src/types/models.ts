@@ -112,7 +112,8 @@ export interface Store {
 export interface Category {
   id: string;
   name: string;
-  products: Product[];
+  status: string;
+  image : Image
 }
 
 export interface Cart {

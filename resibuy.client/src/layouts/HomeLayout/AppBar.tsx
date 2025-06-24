@@ -74,6 +74,7 @@ const AppBar: React.FC = () => {
   const handleOrderCreated = useCallback(
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     (data: any) => {
+      fetchItemCount();
       const newNotifications = data.map((item: { id: string | number }) => ({
         id: item.id,
         title: "Đơn hàng mới",
@@ -81,7 +82,7 @@ const AppBar: React.FC = () => {
       }));
       setNotifications((prev) => [...newNotifications, ...prev]);
     },
-    [setNotifications]
+    [setNotifications, fetchItemCount]
   );
 
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -93,11 +94,11 @@ const AppBar: React.FC = () => {
           ? "Đơn hàng đã được xử lý"
           : data.order.status === "Shipped"
           ? "Đơn hàng đang được giao"
-          : data.order.status === "Cancelled"
-          ? "Đơn hàng đã bị hủy"
-          : "Đơn hàng đã được giao",
-      message: `Đơn hàng #${data.order.id}  ${
-        data.order.status === "Processing" ? "đã được xử lý" : data.status === "Shipped" ? "đang được giao" : data.status === "Cancelled" ? "đã bị hủy" : "đã được giao"
+          : data.order.status === "Delivered"
+          ? "Đơn hàng đãđược giao"
+          : "Đơn hàng đã bị hủy",
+      message: `Đơn hàng #${data.order.id} ${
+        data.order.status === "Processing" ? "đã được xử lý" : data.order.status === "Shipped" ? "đang được giao" : data.order.status === "Delivered" ? "đã được giao" : "đã bị hủy"
       }`,
     };
     setNotifications((prev) => [newNotifications, ...prev]);

@@ -501,7 +501,7 @@ class App {
     // Duplicate items to create a seamless loop
     const duplicatedItems = [...items, ...items, ...items];
     this.medias = duplicatedItems.map((category, index) => {
-      const image = category.products[0]?.imageUrl || "https://via.placeholder.com/800x600?text=No+Image";
+      const image = category.image?.url || category.image?.thumbUrl || "https://via.placeholder.com/800x600?text=No+Image";
       return new Media({
         geometry: this.planeGeometry,
         gl: this.gl,

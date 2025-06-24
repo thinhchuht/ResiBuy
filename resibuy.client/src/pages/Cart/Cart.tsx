@@ -1,5 +1,5 @@
 import { useState, useEffect, useCallback, useMemo } from "react";
-import { Box, Typography, Container, Paper } from "@mui/material";
+import { Box, Typography, Container, Paper, Breadcrumbs } from "@mui/material";
 import { Link, useNavigate } from "react-router-dom";
 import type { CartItem } from "../../types/models";
 import CartItemSection from "./CartItemSection";
@@ -8,6 +8,8 @@ import cartApi from "../../api/cart.api";
 import { useAuth } from "../../contexts/AuthContext";
 import { toast } from "react-toastify";
 import { HubEventType, useEventHub } from "../../hooks/useEventHub";
+import HomeIcon from '@mui/icons-material/Home';
+import NavigateNextIcon from '@mui/icons-material/NavigateNext';
 
 const Cart = () => {
   const [cartItems, setCartItems] = useState<CartItem[]>([]);
@@ -193,17 +195,33 @@ const Cart = () => {
 
   return (
     <Container maxWidth="xl" sx={{ py: 4 }}>
-      <Typography
-        variant="body2"
-        color="text.secondary"
-        sx={{ mb: 3, fontSize: 24 }}
+      <Breadcrumbs
+        separator={<NavigateNextIcon fontSize="small" />}
+        aria-label="breadcrumb"
+        sx={{
+          mb: 3,
+          fontSize: 20,
+          fontWeight: 500,
+          '& .MuiBreadcrumbs-separator': { color: '#bdbdbd' }
+        }}
       >
-        <Link to="/" style={{ textDecoration: "none", color: "inherit" }}>
+        <Link
+          to="/"
+          style={{
+            display: 'flex',
+            alignItems: 'center',
+            textDecoration: 'none',
+            color: '#1976d2',
+            fontWeight: 600
+          }}
+        >
+          <HomeIcon sx={{ mr: 0.5 }} fontSize="inherit" />
           Trang chủ
-        </Link>{" "}
-        / Giỏ hàng của bạn
-      </Typography>
-
+        </Link>
+        <Typography color="#2c3e50" fontWeight={700}>
+         Giỏ hàng của bạn
+        </Typography>
+      </Breadcrumbs>
       <Box sx={{ display: "flex", gap: 4 }}>
         <Box sx={{ flex: 1 }}>
           <Paper

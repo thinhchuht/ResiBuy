@@ -3,7 +3,7 @@ import { useEffect, useState } from "react";
 import { Visibility, Store } from "@mui/icons-material";
 import { useToastify } from "../../hooks/useToastify";
 import { useNavigate, useSearchParams } from "react-router-dom";
-import type { Product, Category } from "../../types/models";
+import type { Product } from "../../types/models";
 import Carousel from "../../animations/Carousel";
 import { fakeEventData } from "../../fakeData/fakeEventData";
 import ProductDetail from "./ProductDetail/ProductDetail";
@@ -12,10 +12,8 @@ import SortBarSection from "./SortBarSection";
 import ProductGridSection from "./ProductGridSection";
 import ProductFilterSection from "./ProductFilterSection";
 import productApi from "../../api/product.api";
-import categoryApi from "../../api/category.api";
 import Pagination from '@mui/material/Pagination';
 
-// Helper to get min price from productDetails
 const getProductMinPrice = (product: Product) => {
   if (!product.productDetails || product.productDetails.length === 0) return 0;
   return Math.min(...product.productDetails.map(pd => pd.price));
@@ -35,7 +33,6 @@ const Products = () => {
   const [page, setPage] = useState(1);
   const [pageSize] = useState(6);
   const [total, setTotal] = useState(0);
-  const [categories, setCategories] = useState<Category[]>([]);
 
   useEffect(() => {
     const fetchProducts = async () => {
@@ -55,19 +52,6 @@ const Products = () => {
     fetchProducts();
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [page, pageSize, selectedCategory]);
-
-  useEffect(() => {
-    const fetchCategories = async () => {
-      try {
-        const res = await categoryApi.getAll();
-        setCategories(res || []);
-      } catch {
-        toast.error("Không thể tải danh mục");
-      }
-    };
-    fetchCategories();
-  // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
 
   const handleQuickView = (product: Product) => {
     navigate(`/products?id=${product.id}`);
@@ -128,12 +112,11 @@ const Products = () => {
               setSelectedCategory={handleCategoryChange}
               priceRange={priceRange}
               setPriceRange={setPriceRange}
-              fakeCategories={categories}
               storeId={storeId || undefined}
             />
           </Box>
           <Box sx={{ flex: 1 }}>
-            <SortBarSection selectedCategory={selectedCategory} sortBy={sortBy} setSortBy={setSortBy} fakeCategories={categories} />
+            <SortBarSection selectedCategory={selectedCategory} sortBy={sortBy} setSortBy={setSortBy} />
             {filteredProducts.length > 0 ? (
               <ProductGridSection filteredProducts={filteredProducts} productActions={productActions} />
             ) : (
