@@ -41,7 +41,6 @@ namespace ResiBuy.Server.Application.Queries.ProductQueries
                 Id = p.Id,
                 Name = p.Name,
                 Describe = p.Describe,
-                Weight = p.Weight,
                 IsOutOfStock = p.IsOutOfStock,
                 Discount = p.Discount,
                 StoreId = p.StoreId,
