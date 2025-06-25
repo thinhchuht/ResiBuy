@@ -1,27 +1,18 @@
 import axiosClient from "./base.api";
-import type { ProductDto } from "../types/models";
+import type { ProductDto, ProductFilter } from "../types/models";
 
 const productUrl = "/api/product";
 
 const productApi = {
-  getAll: async (pageNumber: number, pageSize: number) => {
-    const response = await axiosClient.get(`${productUrl}`, {
-      params: {
-        pageNumber,
-        pageSize,
-      },
+  getAll: async (filter: ProductFilter) => {
+    const response = await axiosClient.get(`${productUrl}/products`, {
+      params: filter,
     });
     return response.data;
   },
-  getById: (id: string) => {
-    return axiosClient.get(`${productUrl}/get-product-by-id`, {
-      params: { id },
-    });
-  },
-  getByIdWithStore: (id: string) => {
-    return axiosClient.get(`${productUrl}/get-product-by-id-with-store`, {
-      params: { id },
-    });
+  getById: async (id: string) => {
+    const response = await axiosClient.get(`${productUrl}/${id}`);
+    return response.data;
   },
   getByCategoryId: async (id: string, pageNumber: number, pageSize: number) => {
     const response = await axiosClient.get(`${productUrl}/get-product-by-category-id`, {

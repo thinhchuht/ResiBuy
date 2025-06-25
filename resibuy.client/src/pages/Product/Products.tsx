@@ -12,11 +12,11 @@ import SortBarSection from "./SortBarSection";
 import ProductGridSection from "./ProductGridSection";
 import ProductFilterSection from "./ProductFilterSection";
 import productApi from "../../api/product.api";
-import Pagination from '@mui/material/Pagination';
+import Pagination from "@mui/material/Pagination";
 
 const getProductMinPrice = (product: Product) => {
   if (!product.productDetails || product.productDetails.length === 0) return 0;
-  return Math.min(...product.productDetails.map(pd => pd.price));
+  return Math.min(...product.productDetails.map((pd) => pd.price));
 };
 
 const Products = () => {
@@ -37,21 +37,25 @@ const Products = () => {
   useEffect(() => {
     const fetchProducts = async () => {
       try {
-        let res;
-        if (selectedCategory) {
-          res = await productApi.getByCategoryId(selectedCategory, page, pageSize);
-        } else {
-          res = await productApi.getAll(page, pageSize);
-        }
+        const res = await productApi.getAll({
+          pageNumber: page,
+          pageSize,
+          categoryId: selectedCategory || undefined,
+          minPrice: priceRange[0],
+          maxPrice: priceRange[1],
+          storeId: storeId || undefined,
+          sortBy: sortBy === "price_asc" ? "price" : sortBy === "price_desc" ? "price" : sortBy === "popular" ? "sold" : "createdAt",
+          sortDirection: sortBy === "price_asc" ? "asc" : sortBy === "price_desc" ? "desc" : sortBy === "popular" ? "desc" : "desc",
+        });
         setProducts(res.items || []);
         setTotal(res.totalCount || 0);
       } catch {
         toast.error("Không thể tải sản phẩm");
-      } 
+      }
     };
     fetchProducts();
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [page, pageSize, selectedCategory]);
+  }, [page, pageSize, selectedCategory, priceRange, storeId, sortBy]);
 
   const handleQuickView = (product: Product) => {
     navigate(`/products?id=${product.id}`);
@@ -117,11 +121,7 @@ const Products = () => {
           </Box>
           <Box sx={{ flex: 1 }}>
             <SortBarSection selectedCategory={selectedCategory} sortBy={sortBy} setSortBy={setSortBy} />
-            {filteredProducts.length > 0 ? (
-              <ProductGridSection filteredProducts={filteredProducts} productActions={productActions} />
-            ) : (
-              <ProductEmptySection />
-            )}
+            {filteredProducts.length > 0 ? <ProductGridSection filteredProducts={filteredProducts} productActions={productActions} /> : <ProductEmptySection />}
             <Box sx={{ display: "flex", justifyContent: "center", mt: 3 }}>
               <Pagination
                 count={Math.ceil(total / pageSize)}
