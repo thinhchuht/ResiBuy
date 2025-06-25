@@ -12,13 +12,13 @@
                 var room = await roomDbService.GetByIdAsync(request.Id);
 
                 if (room == null)
-                    return ResponseModel.FailureResponse($"Không tìm thấy phòng với Id: {request.Id}");
+                    throw new CustomException(ExceptionErrorCode.NotFound, $"Không tìm thấy phòng với Id: {request.Id}");
 
                 return ResponseModel.SuccessResponse(room);
             }
             catch (Exception ex)
             {
-                return ResponseModel.ExceptionResponse(ex.ToString());
+                throw new CustomException(ExceptionErrorCode.RepositoryError, ex.Message);
             }
         }
     }

@@ -15,11 +15,11 @@ namespace ResiBuy.Server.Application.Commands.AreaCommands
             try
             {
                 if (command.Id == Guid.Empty)
-                    return ResponseModel.FailureResponse("Id không hợp lệ");
+                    throw new CustomException(ExceptionErrorCode.ValidationFailed, "Id không hợp lệ");
 
                 var existingArea = await areaDbService.GetByIdAsync(command.Id);
                 if (existingArea == null)
-                    return ResponseModel.FailureResponse($"Không tìm thấy Area với Id: {command.Id}");
+                    throw new CustomException(ExceptionErrorCode.NotFound, $"Không tìm thấy Area với Id: {command.Id}");
 
                 existingArea.IsActive = !existingArea.IsActive;
 
@@ -33,7 +33,7 @@ namespace ResiBuy.Server.Application.Commands.AreaCommands
             }
             catch (Exception ex)
             {
-                return ResponseModel.ExceptionResponse(ex.ToString());
+                throw new CustomException(ExceptionErrorCode.RepositoryError, ex.Message);
             }
         }
     }

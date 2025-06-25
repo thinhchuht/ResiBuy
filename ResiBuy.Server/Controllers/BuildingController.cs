@@ -14,7 +14,7 @@
             }
             catch (Exception ex)
             {
-                return BadRequest(ResponseModel.ExceptionResponse(ex.ToString()));
+                throw new CustomException(ExceptionErrorCode.RepositoryError, ex.Message);
             }
         }
 
@@ -28,7 +28,7 @@
             }
             catch (Exception ex)
             {
-                return BadRequest(ResponseModel.ExceptionResponse(ex.ToString()));
+                throw new CustomException(ExceptionErrorCode.RepositoryError, ex.Message);
             }
         }
         [HttpGet("count")]
@@ -41,7 +41,7 @@
             }
             catch (Exception ex)
             {
-                return BadRequest(ResponseModel.ExceptionResponse(ex.ToString()));
+                throw new CustomException(ExceptionErrorCode.RepositoryError, ex.Message);
             }
         }
 
@@ -56,10 +56,10 @@
             }
             catch (Exception ex)
             {
-                return BadRequest(ResponseModel.ExceptionResponse(ex.ToString()));
+                throw new CustomException(ExceptionErrorCode.RepositoryError, ex.Message);
             }
         }
-        [HttpPut("update")]
+        [HttpPut]
         public async Task<IActionResult> UpdateAsync([FromBody] UpdateBuildingCommand command)
         {
             try
@@ -69,7 +69,7 @@
             }
             catch (Exception ex)
             {
-                return BadRequest(ResponseModel.ExceptionResponse(ex.ToString()));
+                throw new CustomException(ExceptionErrorCode.RepositoryError, ex.Message);
             }
         }
         [HttpPut("updatestatus")]
@@ -82,7 +82,7 @@
             }
             catch (Exception ex)
             {
-                return BadRequest(ResponseModel.ExceptionResponse(ex.ToString()));
+                throw new CustomException(ExceptionErrorCode.RepositoryError, ex.Message);
             }
         }
 

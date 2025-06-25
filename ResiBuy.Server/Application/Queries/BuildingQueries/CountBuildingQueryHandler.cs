@@ -15,7 +15,7 @@ namespace ResiBuy.Server.Application.Queries.BuildingQueries
             }
             catch (Exception ex)
             {
-                return ResponseModel.ExceptionResponse(ex.ToString());
+                throw new CustomException(ExceptionErrorCode.RepositoryError, ex.Message);
             }
         }
     }

@@ -19,7 +19,7 @@ namespace ResiBuy.Server.Application.Commands.BuildingCommands
                 var room = await buildingDbService.GetByIdAsync(command.BuildingId);
 
                 if (room == null)
-                    return ResponseModel.FailureResponse($"Không tìm thấy phòng với Id: {command.BuildingId}");
+                    throw new CustomException(ExceptionErrorCode.NotFound, $"Không tìm thấy phòng với Id: {command.BuildingId}");
 
                 room.UpdateStatus();
 
@@ -27,13 +27,10 @@ namespace ResiBuy.Server.Application.Commands.BuildingCommands
 
                 return ResponseModel.SuccessResponse(updatedRoom);
             }
-            catch (CustomException ex)
-            {
-                return ResponseModel.FailureResponse(ex.Message);
-            }
+         
             catch (Exception ex)
             {
-                return ResponseModel.ExceptionResponse(ex.ToString());
+                throw new CustomException(ExceptionErrorCode.RepositoryError, ex.Message);
             }
         }
     }

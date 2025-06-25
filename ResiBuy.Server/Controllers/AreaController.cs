@@ -17,14 +17,21 @@ namespace ResiBuy.Server.Controllers
             }
             catch (Exception ex)
             {
-                return BadRequest(ResponseModel.ExceptionResponse(ex.ToString()));
+                throw new CustomException(ExceptionErrorCode.RepositoryError, ex.Message);
             }
         }
         [HttpGet("count")]
         public async Task<IActionResult> Count()
         {
-            var result = await mediator.Send(new CountAreaQuery());
-            return Ok(result);
+            try
+            {
+                var result = await mediator.Send(new CountAreaQuery());
+                return Ok(result);
+            }
+            catch (Exception ex)
+            {
+                throw new CustomException(ExceptionErrorCode.RepositoryError, ex.Message);
+            }
         }
 
 
@@ -38,10 +45,10 @@ namespace ResiBuy.Server.Controllers
             }
             catch (Exception ex)
             {
-                return BadRequest(ResponseModel.ExceptionResponse(ex.ToString()));
+                throw new CustomException(ExceptionErrorCode.RepositoryError, ex.Message);
             }
         }
-        [HttpPut("update")]
+        [HttpPut]
         public async Task<IActionResult> UpdateAreaAsync([FromBody] UpdateAreaDto dto)
         {
             try
@@ -51,7 +58,7 @@ namespace ResiBuy.Server.Controllers
             }
             catch (Exception ex)
             {
-                return BadRequest(ResponseModel.ExceptionResponse(ex.ToString()));
+                throw new CustomException(ExceptionErrorCode.RepositoryError, ex.Message);
             }
         }
         [HttpPut("updatestatus")]
@@ -64,7 +71,7 @@ namespace ResiBuy.Server.Controllers
             }
             catch (Exception ex)
             {
-                return BadRequest(ResponseModel.ExceptionResponse(ex.ToString()));
+                throw new CustomException(ExceptionErrorCode.RepositoryError, ex.Message);
             }
         }
     }

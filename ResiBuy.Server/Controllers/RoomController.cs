@@ -5,32 +5,30 @@
     public class RoomController(IMediator mediator) : ControllerBase
     {
         [HttpGet]
-        public async Task<IActionResult> GetAllAsync()
+        public async Task<IActionResult> GetAllAsync([FromQuery] int pageNumber = 1, [FromQuery] int pageSize = 10)
         {
             try
             {
-                var result = await mediator.Send(new GetAllRoomsQuery());
+                var result = await mediator.Send(new GetPagedRoomsQuery(pageNumber, pageSize));
                 return Ok(result);
+            }
+            catch (CustomException ex)
+            {
+                return StatusCode(ex.HttpStatus, ResponseModel.FailureResponse(ex.Message));
             }
             catch (Exception ex)
             {
-                return BadRequest(ResponseModel.ExceptionResponse(ex.ToString()));
+                throw new CustomException(ExceptionErrorCode.RepositoryError, ex.Message);
             }
         }
 
         [HttpGet("building/{id}")]
-        public async Task<IActionResult> GetByBuildingIdAsync(Guid id)
+        public async Task<IActionResult> GetByBuildingPaged(Guid id, [FromQuery] int pageNumber = 1, [FromQuery] int pageSize = 10)
         {
-            try
-            {
-                var result = await mediator.Send(new GetByBuildingIdQuery(id));
-                return Ok(result);
-            }
-            catch (Exception ex)
-            {
-                return BadRequest(ResponseModel.ExceptionResponse(ex.ToString()));
-            }
+            var result = await mediator.Send(new GetRoomsByBuildingIdPagedQuery(id, pageNumber, pageSize));
+            return Ok(result);
         }
+
 
         [HttpPost("create")]
         public async Task<IActionResult> CreateAsync([FromBody] CreateRoomCommand command)
@@ -42,10 +40,10 @@
             }
             catch (Exception ex)
             {
-                return BadRequest(ResponseModel.ExceptionResponse(ex.ToString()));
+                throw new CustomException(ExceptionErrorCode.RepositoryError, ex.Message);
             }
         }
-        [HttpGet("{id}")]
+        [HttpGet("detail/{id}")]
         public async Task<IActionResult> GetById(Guid id)
         {
             try
@@ -55,10 +53,10 @@
             }
             catch (Exception ex)
             {
-                return BadRequest(ResponseModel.ExceptionResponse(ex.ToString()));
+                throw new CustomException(ExceptionErrorCode.RepositoryError, ex.Message);
             }
         }
-        [HttpPut("update")]
+        [HttpPut]
         public async Task<IActionResult> UpdateAsync([FromBody] UpdateRoomCommand command)
         {
             try
@@ -68,7 +66,7 @@
             }
             catch (Exception ex)
             {
-                return BadRequest(ResponseModel.ExceptionResponse(ex.ToString()));
+                throw new CustomException(ExceptionErrorCode.RepositoryError, ex.Message);
             }
         }
         [HttpPut("updateStatus")]
@@ -81,7 +79,7 @@
             }
             catch (Exception ex)
             {
-                return BadRequest(ResponseModel.ExceptionResponse(ex.ToString()));
+                throw new CustomException(ExceptionErrorCode.RepositoryError, ex.Message);
             }
         }
         [HttpGet("count")]
@@ -94,7 +92,7 @@
             }
             catch (Exception ex)
             {
-                return BadRequest(ResponseModel.ExceptionResponse(ex.ToString()));
+                throw new CustomException(ExceptionErrorCode.RepositoryError, ex.Message);
             }
         }
 
@@ -108,7 +106,7 @@
             }
             catch (Exception ex)
             {
-                return BadRequest(ResponseModel.ExceptionResponse(ex.ToString()));
+                throw new CustomException(ExceptionErrorCode.RepositoryError, ex.Message);
             }
         }
 

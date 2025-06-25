@@ -11,7 +11,7 @@
                 var room = await roomDbService.GetByIdAsync(command.RoomId);
 
                 if (room == null)
-                    return ResponseModel.FailureResponse($"Không tìm thấy phòng với Id: {command.RoomId}");
+                    throw new CustomException(ExceptionErrorCode.NotFound, $"Không tìm thấy phòng với Id: {command.RoomId}");
 
                 room.UpdateStatus();
 
@@ -21,7 +21,7 @@
             }
             catch (Exception ex)
             {
-                return ResponseModel.ExceptionResponse(ex.ToString());
+                throw new CustomException(ExceptionErrorCode.RepositoryError, ex.Message);
             }
         }
     }

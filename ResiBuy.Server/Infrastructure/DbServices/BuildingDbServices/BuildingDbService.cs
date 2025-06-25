@@ -25,6 +25,7 @@
                 {
                     Name   = name,
                     AreaId = areaId,
+                    IsActive = true,
                 };
                 await context.Buildings.AddAsync(building);
                 await context.SaveChangesAsync();

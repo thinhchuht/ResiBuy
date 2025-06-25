@@ -3,8 +3,10 @@
     public interface IRoomDbService: IBaseDbService<Room>
     {
         Task<Room> GetByIdAsync(Guid id);
-        Task<IEnumerable<Room>> GetAllRoomsAsync();
-        Task<IEnumerable<Room>> GetByBuildingIdAsync(Guid id);
+        Task<PagedResult<Room>> GetAllRoomsAsync(int pageNumber, int pageSize);
+
+        Task<PagedResult<Room>> GetRoomsByBuildingIdPagedAsync(Guid buildingId, int pageNumber, int pageSize);
+
         Task<IEnumerable<Room>> GetBatchAsync(IEnumerable<Guid> Ids);
         Task<Room> CreateAsync(Guid buildingId, string name);
         Task<Room> GetByRoomNameAndBuildingIdAsync(Guid buildingId, string name);

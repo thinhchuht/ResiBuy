@@ -14,18 +14,18 @@ namespace ResiBuy.Server.Application.Commands.RoomCommands
                 var dto = command.RoomDto;
 
                 if (dto == null)
-                    return ResponseModel.FailureResponse("Dữ liệu cập nhật không được để trống.");
+                    throw new CustomException(ExceptionErrorCode.ValidationFailed, "Dữ liệu cập nhật không được để trống.");
 
                 if (dto.Id == Guid.Empty)
-                    return ResponseModel.FailureResponse("Id phòng không hợp lệ.");
+                    throw new CustomException(ExceptionErrorCode.ValidationFailed, "Id phòng không hợp lệ.");
 
                 if (string.IsNullOrWhiteSpace(dto.Name))
-                    return ResponseModel.FailureResponse("Tên phòng là bắt buộc.");
+                    throw new CustomException(ExceptionErrorCode.ValidationFailed, "Tên phòng là bắt buộc.");
 
                 var existingRoom = await roomDbService.GetByIdAsync(dto.Id);
 
                 if (existingRoom == null)
-                    return ResponseModel.FailureResponse($"Không tìm thấy phòng có Id: {dto.Id}");
+                    throw new CustomException(ExceptionErrorCode.NotFound, $"Không tìm thấy phòng có Id: {dto.Id}");
                 existingRoom.UpdateRoom(dto.Name, dto.IsActive);
 
                 var result = await roomDbService.UpdateAsync(existingRoom);
@@ -34,7 +34,7 @@ namespace ResiBuy.Server.Application.Commands.RoomCommands
             }
             catch (Exception ex)
             {
-                return ResponseModel.ExceptionResponse(ex.ToString());
+                throw new CustomException(ExceptionErrorCode.RepositoryError, ex.Message);
             }
         }
     }

@@ -12,13 +12,13 @@ namespace ResiBuy.Server.Application.Commands.BuildingCommands
             {
                 var dto = command.BuildingDto;
                 if (dto == null)
-                    return ResponseModel.FailureResponse("Dữ liệu cập nhật là bắt buộc");
+                    throw new CustomException(ExceptionErrorCode.ValidationFailed, "Dữ liệu cập nhật là bắt buộc");
 
                 if (dto.Id == Guid.Empty)
-                    return ResponseModel.FailureResponse("Id là bắt buộc");
+                    throw new CustomException(ExceptionErrorCode.ValidationFailed, "Id là bắt buộc");
 
                 if (string.IsNullOrWhiteSpace(dto.Name))
-                    return ResponseModel.FailureResponse("Tên là bắt buộc");
+                    throw new CustomException(ExceptionErrorCode.ValidationFailed, "Tên là bắt buộc");
 
                 if (dto.AreaId == Guid.Empty)
                     throw new CustomException(ExceptionErrorCode.ValidationFailed, "Cần Id khu vực");
@@ -36,13 +36,10 @@ namespace ResiBuy.Server.Application.Commands.BuildingCommands
                 var updatedBuilding = await buildingDbService.UpdateAsync(existingBuilding);
                 return ResponseModel.SuccessResponse(dto);
             }
-            catch (CustomException ex)
-            {
-                return ResponseModel.FailureResponse(ex.Message);
-            }
+           
             catch (Exception ex)
             {
-                return ResponseModel.ExceptionResponse(ex.ToString());
+                throw new CustomException(ExceptionErrorCode.RepositoryError, ex.Message);
             }
         }
     }

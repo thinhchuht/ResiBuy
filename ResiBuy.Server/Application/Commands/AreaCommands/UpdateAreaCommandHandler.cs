@@ -13,26 +13,22 @@ namespace ResiBuy.Server.Application.Commands.AreaCommands
                 var dto = command.UpdateAreaDto;
 
                 if (dto == null)
-                    return ResponseModel.FailureResponse("Update data is required");
-
+                    throw new CustomException(ExceptionErrorCode.ValidationFailed, "Dũ liệu không để trônhs");
                 if (dto.Id == Guid.Empty)
-                    return ResponseModel.FailureResponse("Id is required");
-
+                       throw new CustomException(ExceptionErrorCode.ValidationFailed,"Id là bắt buộc");
                 if (string.IsNullOrWhiteSpace(dto.Name))
-                    return ResponseModel.FailureResponse("Name is required");
-
-                var existingArea = await areaDbService.GetByIdAsync(dto.Id);
+                    throw new CustomException(ExceptionErrorCode.ValidationFailed, "Name là bắt buộc"); var existingArea = await areaDbService.GetByIdAsync(dto.Id);
                 if (existingArea == null)
-                    return ResponseModel.FailureResponse($"Area {dto.Id} không tồn tại");
+                    throw new CustomException(ExceptionErrorCode.NotFound, $"Area {dto.Id} không tồn tại");
 
                 existingArea.UpdateArea(dto.Name, dto.IsActive);
                 var updateAreaResponse = await areaDbService.UpdateAsync(existingArea);
 
                 return ResponseModel.SuccessResponse(dto);
             }
-            catch (Exception e)
+            catch (Exception ex)
             {
-                return ResponseModel.ExceptionResponse(e.ToString());
+                throw new CustomException(ExceptionErrorCode.RepositoryError, ex.Message);
             }
         }
 
