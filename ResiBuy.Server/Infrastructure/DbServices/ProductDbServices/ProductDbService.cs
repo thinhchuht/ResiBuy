@@ -42,29 +42,15 @@
         {
             try
             {
-                var product = await _context.Products.FirstOrDefaultAsync(a => a.Id == id);
-                if (product == null)
-                {
-                    return null;
-                }
-                return product;
-            }
-            catch (Exception ex)
-            {
-                throw new CustomException(ExceptionErrorCode.RepositoryError, ex.Message);
-            }
-        }
 
-        public async Task<Product> GetProductByIdWithStoreAsync(int id)
-        {
-            try
-            {
-                var product = await _context.Products.Include(p => p.Store).FirstOrDefaultAsync(a => a.Id == id);
-                if (product == null)
-                {
-                    return null;
-                }
-                return product;
+                var product = await _context.Products
+                    .Include(p => p.ProductDetails)
+                        .ThenInclude(pd => pd.Image)
+                    .Include(p => p.ProductDetails)
+                        .ThenInclude(pd => pd.AdditionalData)
+                    .FirstOrDefaultAsync(p => p.Id == id);
+
+                return product; 
             }
             catch (Exception ex)
             {

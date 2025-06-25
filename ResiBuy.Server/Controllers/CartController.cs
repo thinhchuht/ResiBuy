@@ -22,6 +22,34 @@ namespace ResiBuy.Server.Controllers
             }
         }
 
+        [HttpGet("{id}/status")]
+        public async Task<IActionResult> GetStatusById(Guid id)
+        {
+            try
+            {
+                var result = await mediator.Send(new GetCartStatusByIdQuery(id));
+                return Ok(result);
+            }
+            catch (Exception ex)
+            {
+                return BadRequest(ResponseModel.ExceptionResponse(ex.ToString()));
+            }
+        }
+
+        [HttpGet("checking-out")]
+        public async Task<IActionResult> GetCheckingOutCarts()
+        {
+            try
+            {
+                var result = await mediator.Send(new GetChekingOutCartsQuery());
+                return Ok(result.Data);
+            }
+            catch (Exception ex)
+            {
+                return BadRequest(ResponseModel.ExceptionResponse(ex.ToString()));
+            }
+        }
+
         [HttpPost("{id}/items")]
         public async Task<IActionResult> AddToCart(Guid id, [FromBody] AddToCartDto addToCartDto)
         {
@@ -36,12 +64,40 @@ namespace ResiBuy.Server.Controllers
             }
         }
 
+        [HttpPost("reset-status")]
+        public async Task<IActionResult> ResetStatus( [FromBody] List<Guid> ids)
+        {
+            try
+            {
+                var result = await mediator.Send(new ResetStatusCommand(ids));
+                return Ok(result);
+            }
+            catch (Exception ex)
+            {
+                return BadRequest(ResponseModel.ExceptionResponse(ex.ToString()));
+            }
+        }
+
         [HttpDelete("items")]
         public async Task<IActionResult> DeleteCartItems([FromBody] DeleteCartItemsDto deleteCartItemsDto)
         {
             try
             {
                 var result = await mediator.Send(new DeleteCartItemsCommand( deleteCartItemsDto));
+                return Ok(result);
+            }
+            catch (Exception ex)
+            {
+                return BadRequest(ResponseModel.ExceptionResponse(ex.ToString()));
+            }
+        }
+
+        [HttpGet("{cartId}/items/count")]
+        public async Task<IActionResult> CountCartItems(Guid cartId)
+        {
+            try
+            {
+                var result = await mediator.Send(new GetCartItemsCountQuery(cartId));
                 return Ok(result);
             }
             catch (Exception ex)

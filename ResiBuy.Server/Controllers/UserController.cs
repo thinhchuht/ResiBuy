@@ -14,7 +14,7 @@
             }
             catch (Exception ex)
             {
-                return BadRequest(ResponseModel.ExceptionResponse(ex.ToString()));
+                throw new CustomException(ExceptionErrorCode.RepositoryError, ex.Message);
             }
         }
 
@@ -29,7 +29,7 @@
             }
             catch (Exception ex)
             {
-                return BadRequest(ResponseModel.ExceptionResponse(ex.ToString()));
+                throw new CustomException(ExceptionErrorCode.RepositoryError, ex.Message);
             }
         }
 
@@ -45,12 +45,12 @@
             }
             catch (Exception ex)
             {
-                return BadRequest(ResponseModel.ExceptionResponse(ex.ToString()));
+                throw new CustomException(ExceptionErrorCode.RepositoryError, ex.Message);
             }
         }
 
         //[Authorize(Roles = Constants.AdminRole)]
-        [HttpPost("create")]
+        [HttpPost]
         public async Task<IActionResult> CreateAsync([FromBody] RegisterDto dto)
         {
             try
@@ -61,7 +61,7 @@
             }
             catch (Exception ex)
             {
-                return BadRequest(ResponseModel.ExceptionResponse(ex.ToString()));
+                throw new CustomException(ExceptionErrorCode.RepositoryError, ex.Message);
             }
         }
 
@@ -77,7 +77,7 @@
             }
             catch (Exception ex)
             {
-                return BadRequest(ResponseModel.ExceptionResponse(ex.ToString()));
+                throw new CustomException(ExceptionErrorCode.RepositoryError, ex.Message);
             }
         }
 
@@ -92,7 +92,7 @@
             }
             catch (Exception ex)
             {
-                return BadRequest(ResponseModel.ExceptionResponse(ex.ToString()));
+                throw new CustomException(ExceptionErrorCode.RepositoryError, ex.Message);
             }
         }
 
@@ -108,7 +108,7 @@
             }
             catch (Exception ex)
             {
-                return BadRequest(ResponseModel.ExceptionResponse(ex.ToString()));
+                throw new CustomException(ExceptionErrorCode.RepositoryError, ex.Message);
             }
         }
 
@@ -123,7 +123,7 @@
             }
             catch (Exception ex)
             {
-                return BadRequest(ResponseModel.ExceptionResponse(ex.ToString()));
+                throw new CustomException(ExceptionErrorCode.RepositoryError, ex.Message);
             }
         }
 
@@ -139,7 +139,7 @@
             }
             catch (Exception ex)
             {
-                return BadRequest(ResponseModel.ExceptionResponse(ex.ToString()));
+                throw new CustomException(ExceptionErrorCode.RepositoryError, ex.Message);
             }
         }
 
@@ -155,7 +155,7 @@
             }
             catch (Exception ex)
             {
-                return BadRequest(ResponseModel.ExceptionResponse(ex.ToString()));
+                throw new CustomException(ExceptionErrorCode.RepositoryError, ex.Message);
             }
         }
     }

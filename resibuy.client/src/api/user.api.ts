@@ -52,7 +52,7 @@ const userApi = {
 
   createUser: async (userData: creatUserPayload) => {
     try {
-      const response = await axiosClient.post(userUrl + "/create", userData);
+      const response = await axiosClient.post(userUrl , userData);
       return  response.data ;
     } catch (error: any) {
       console.error("Create user failed:", error);
@@ -80,7 +80,7 @@ const userApi = {
 
   updateUser: async (id: string, userData: FormData) => {
     try {
-      const response = await axiosClient.put(userUrl + `/${id}/update`, userData, {
+      const response = await axiosClient.put(userUrl + `/${id}`, userData, {
         headers: {
           'Content-Type': 'multipart/form-data',
         },

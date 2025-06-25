@@ -12,8 +12,8 @@ using ResiBuy.Server.Infrastructure;
 namespace ResiBuy.Server.Infrastructure.Migrations
 {
     [DbContext(typeof(ResiBuyContext))]
-    [Migration("20250617184757_1")]
-    partial class _1
+    [Migration("20250623103054_update")]
+    partial class update
     {
         /// <inheritdoc />
         protected override void BuildTargetModel(ModelBuilder modelBuilder)
@@ -94,6 +94,15 @@ namespace ResiBuy.Server.Infrastructure.Migrations
                         .ValueGeneratedOnAdd()
                         .HasColumnType("uniqueidentifier");
 
+                    b.Property<DateTime>("ExpiredCheckOutTime")
+                        .HasColumnType("datetime2");
+
+                    b.Property<bool>("IsCheckingOut")
+                        .HasColumnType("bit");
+
+                    b.Property<byte[]>("RowVersion")
+                        .HasColumnType("varbinary(max)");
+
                     b.Property<string>("UserId")
                         .HasColumnType("nvarchar(450)");
 
@@ -152,7 +161,7 @@ namespace ResiBuy.Server.Infrastructure.Migrations
                     b.Property<string>("Id")
                         .HasColumnType("nvarchar(450)");
 
-                    b.Property<Guid>("CategoryId")
+                    b.Property<Guid?>("CategoryId")
                         .HasColumnType("uniqueidentifier");
 
                     b.Property<string>("Name")
@@ -173,7 +182,8 @@ namespace ResiBuy.Server.Infrastructure.Migrations
                     b.HasKey("Id");
 
                     b.HasIndex("CategoryId")
-                        .IsUnique();
+                        .IsUnique()
+                        .HasFilter("[CategoryId] IS NOT NULL");
 
                     b.HasIndex("ProductDetailId")
                         .IsUnique()
@@ -296,9 +306,6 @@ namespace ResiBuy.Server.Infrastructure.Migrations
                     b.Property<string>("Name")
                         .HasColumnType("nvarchar(max)");
 
-                    b.Property<int>("Sold")
-                        .HasColumnType("int");
-
                     b.Property<Guid>("StoreId")
                         .HasColumnType("uniqueidentifier");
 
@@ -335,6 +342,9 @@ namespace ResiBuy.Server.Infrastructure.Migrations
                         .HasColumnType("int");
 
                     b.Property<int>("Sold")
+                        .HasColumnType("int");
+
+                    b.Property<int>("Weight")
                         .HasColumnType("int");
 
                     b.HasKey("Id");
@@ -555,18 +565,18 @@ namespace ResiBuy.Server.Infrastructure.Migrations
                         new
                         {
                             Id = "adm_df",
-                            CreatedAt = new DateTime(2025, 6, 18, 1, 47, 56, 583, DateTimeKind.Local).AddTicks(6426),
+                            CreatedAt = new DateTime(2025, 6, 23, 17, 30, 54, 497, DateTimeKind.Local).AddTicks(6133),
                             DateOfBirth = new DateTime(1990, 1, 1, 0, 0, 0, 0, DateTimeKind.Unspecified),
                             Email = "admin@123",
                             EmailConfirmed = true,
                             FullName = "Administrator",
                             IdentityNumber = "admin",
                             IsLocked = false,
-                            PasswordHash = "$2a$11$IitenmplatJ2Xr8kiEHc.OFsvlHhK17E.QliY7vHpsxJI0zceCEV2",
+                            PasswordHash = "$2a$11$2ARaYCN6HPMuWeWQ0R48yu1hWQAtvDBfe0OynMgZq8QlkoVE2KHf2",
                             PhoneNumber = "admin",
                             PhoneNumberConfirmed = true,
                             Roles = "[\"ADMIN\"]",
-                            UpdatedAt = new DateTime(2025, 6, 18, 1, 47, 56, 583, DateTimeKind.Local).AddTicks(6450)
+                            UpdatedAt = new DateTime(2025, 6, 23, 17, 30, 54, 497, DateTimeKind.Local).AddTicks(6145)
                         });
                 });
 
@@ -696,8 +706,7 @@ namespace ResiBuy.Server.Infrastructure.Migrations
                     b.HasOne("ResiBuy.Server.Infrastructure.Model.Category", "Category")
                         .WithOne("Image")
                         .HasForeignKey("ResiBuy.Server.Infrastructure.Model.Image", "CategoryId")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired();
+                        .OnDelete(DeleteBehavior.Cascade);
 
                     b.HasOne("ResiBuy.Server.Infrastructure.Model.ProductDetail", "ProductDetail")
                         .WithOne("Image")
@@ -725,7 +734,7 @@ namespace ResiBuy.Server.Infrastructure.Migrations
                     b.HasOne("ResiBuy.Server.Infrastructure.Model.Room", "ShippingAddress")
                         .WithMany("Orders")
                         .HasForeignKey("ShippingAddressId")
-                        .OnDelete(DeleteBehavior.Restrict)
+                        .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
 
                     b.HasOne("ResiBuy.Server.Infrastructure.Model.Store", "Store")

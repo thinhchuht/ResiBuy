@@ -27,6 +27,12 @@
         public const string CustomerHubGroup = "customer";
         public const string ShipperHubGroup = "shipper";
 
+        //Hub events
+        public const string CartItemAdded = "CartItemAdded";
+        public const string OrderCreated = "OrderCreated";
+        public const string CartItemDeleted = "CartItemDeleted";
+        public const string OrderStatusChanged = "OrderStatusChanged";
+
         //regex pattern
         public const string EmailPattern = @"^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$";
         public const string PhoneNumberPattern = @"^(0\d{9}|\+84\d{9})$";

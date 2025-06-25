@@ -4,7 +4,7 @@ const categoryUrl = "/api/category";
 
 const categoryApi = {
   getAll: async () => {
-    const response = await axiosClient.get(`${categoryUrl}`);
+    const response = await axiosClient.get(`${categoryUrl}/categories`);
     return response.data;
   }
 

@@ -6,6 +6,5 @@ namespace ResiBuy.Server.Infrastructure.DbServices.CategoryDbServices
     {
         Task<Category> GetByIdAsync(Guid id);
         Task<IEnumerable<Category>> GetAllCategoryAsync();
-        Task<PagedResult<Product>> GetPagedProductsByCategoryIdAsync(Guid categoryId, int pageNumber, int pageSize);
     }
 }

@@ -1,4 +1,6 @@
 ﻿using ResiBuy.Server.Application.Commands.OrderCommands;
+using ResiBuy.Server.Application.Queries.OrderQueries;
+using ResiBuy.Server.Infrastructure.Model.DTOs.OrderDtos;
 
 namespace ResiBuy.Server.Controllers
 {
@@ -6,25 +8,34 @@ namespace ResiBuy.Server.Controllers
     [ApiController]
     public class OrderController(IMediator mediator) : ControllerBase
     {
+        [HttpGet]
+        public async Task<IActionResult> GetAll(OrderStatus orderStatus, PaymentMethod paymentMethod, PaymentStatus paymentStatus, string userId = null, int pageNumber = 1, int pageSize = 10, DateTime? startDate = null, DateTime? endDate = null)
+        {
+            var result = await mediator.Send(new GetAllOrdersQuery(orderStatus, paymentMethod, paymentStatus, userId, pageNumber, pageSize, startDate, endDate));
+            return Ok(result);
+        }
+
         [HttpPost]
         public async Task<IActionResult> CreateOrder([FromBody] CheckoutDto checkoutDto)
         {
-            try
-            {
-                try
-                {
-                    var result = await mediator.Send(new CreateOrderCommand(checkoutDto));
-                    return Ok(result);
-                }
-                catch (Exception ex)
-                {
-                    return BadRequest(ResponseModel.ExceptionResponse(ex.ToString()));
-                }
-            }
-            catch (Exception ex)
-            {
-                return BadRequest(ResponseModel.ExceptionResponse(ex.ToString()));
-            }
+
+            var result = await mediator.Send(new CreateOrderCommand(checkoutDto));
+            return Ok(result);
+
+        }
+
+        [HttpPut]
+        public async Task<IActionResult> UpdateOrder([FromBody] UpdateOrderDto dto)
+        {
+            var result = await mediator.Send(new UpdateOrderCommand(dto));
+            return Ok(result);
+        }
+
+        [HttpPut("order-status")]
+        public async Task<IActionResult> UpdateOrderStatus([FromBody] UpdateOrderStatusDto dto)
+        {
+            var result = await mediator.Send(new UpdateOrderStatusCommand(dto));
+            return Ok(result);
         }
     }
 }

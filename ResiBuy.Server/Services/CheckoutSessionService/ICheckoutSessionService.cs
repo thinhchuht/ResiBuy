@@ -6,4 +6,5 @@ public interface ICheckoutSessionService
     CheckoutDto GetCheckoutSession(string sessionId);
     void RemoveCheckoutSession(string sessionId);
     bool IsSessionValid(string sessionId);
+    Task CleanupExpiredSessionsAsync();
 }

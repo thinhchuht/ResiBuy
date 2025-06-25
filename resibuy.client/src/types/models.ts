@@ -1,22 +1,25 @@
 // Enums
 export enum OrderStatus {
-  Pending = 0,
-  Processing = 1,
-  Shipped = 2,
-  Delivered = 3,
-  Cancelled = 4,
+  None = "None",
+  Pending = "Pending",
+  Processing = "Processing",
+  Shipped = "Shipped",
+  Delivered = "Delivered",
+  Cancelled = "Cancelled",
 }
 
 export enum PaymentStatus {
-  Pending = 0,
-  Paid = 1,
-  Failed = 2,
-  Refunded = 3,
+  None = "None",
+  Pending = "Pending",
+  Paid = "Paid",
+  Failed = "Failed",
+  Refunded = "Refunded",
 }
 
 export enum PaymentMethod {
-  COD = 0,
-  BankTransfer = 1,
+  None = "None",
+  COD = "COD",
+  BankTransfer = "BankTransfer",
 }
 
 export enum UserRole {
@@ -109,7 +112,8 @@ export interface Store {
 export interface Category {
   id: string;
   name: string;
-  products: Product[];
+  status: string;
+  image : Image
 }
 
 export interface Cart {
@@ -165,7 +169,11 @@ export interface Shipper {
   userId: string;
   isAvailable: boolean;
   orders: Order[];
+  startWorkTime: string;  
+  endWorkTime: string;    
+  reportCount: number;
 }
+
 
 export interface Voucher {
   id: string;
@@ -248,6 +256,23 @@ export interface EventItem {
   description?: string;
   storeId: string;
 }
+export interface TooltipProps {
+  active?: boolean;
+  payload?: {
+    payload: {
+      name: string;
+      revenue: number;
+      hasData: boolean;
+    };
+  }[];
+  label?: string;
+}
+
+export interface StatisticsSectionProps {
+    activeTab: string;
+    setActiveTab: (value: string) => void;
+}
+
 
 export interface Image {
   id: string;
