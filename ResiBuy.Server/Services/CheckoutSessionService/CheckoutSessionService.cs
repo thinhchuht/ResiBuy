@@ -125,33 +125,12 @@ public class CheckoutSessionService : ICheckoutSessionService
     }
 
     // Trigger cleanup if interval has passed
-    private void TriggerCleanupIfNeeded()
+    private void TriggerCleanupIfNeeded()   
     {
         if (DateTime.UtcNow - _lastCleanup > _cleanupInterval)
         {
             _ = Task.Run(async () => await CleanupExpiredSessionsAsync());
         }
-    }
-
-    // Get session statistics for monitoring
-    public SessionStatistics GetSessionStatistics()
-    {
-        var now = DateTime.UtcNow;
-        var totalSessions = _sessions.Count;
-        var activeSessions = _sessions.Count(kvp => now <= kvp.Value.ExpiryTime);
-        var expiredSessions = totalSessions - activeSessions;
-        var oldestSession = _sessions.Values.Min(v => v.CreatedAt);
-        var newestSession = _sessions.Values.Max(v => v.CreatedAt);
-
-        return new SessionStatistics
-        {
-            TotalSessions = totalSessions,
-            ActiveSessions = activeSessions,
-            ExpiredSessions = expiredSessions,
-            OldestSessionAge = now - oldestSession,
-            NewestSessionAge = now - newestSession,
-            MemoryUsageEstimate = totalSessions * 2000 // ~2KB per session
-        };
     }
 
     // Optimized session ID generation
@@ -170,13 +149,3 @@ public class CheckoutSessionService : ICheckoutSessionService
     }
 }
 
-// Session statistics for monitoring
-public class SessionStatistics
-{
-    public int TotalSessions { get; set; }
-    public int ActiveSessions { get; set; }
-    public int ExpiredSessions { get; set; }
-    public TimeSpan OldestSessionAge { get; set; }
-    public TimeSpan NewestSessionAge { get; set; }
-    public long MemoryUsageEstimate { get; set; } // in bytes
-}

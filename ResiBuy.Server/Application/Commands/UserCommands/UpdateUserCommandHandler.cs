@@ -51,6 +51,7 @@
 
             var userResult = new UserQueryResult(
                 updatedUser.Id,
+                updatedUser.IdentityNumber,
                 updatedUser.Email,
                 updatedUser.PhoneNumber,
                 updatedUser.DateOfBirth,

@@ -91,6 +91,15 @@ namespace ResiBuy.Server.Infrastructure.Migrations
                         .ValueGeneratedOnAdd()
                         .HasColumnType("uniqueidentifier");
 
+                    b.Property<DateTime>("ExpiredCheckOutTime")
+                        .HasColumnType("datetime2");
+
+                    b.Property<bool>("IsCheckingOut")
+                        .HasColumnType("bit");
+
+                    b.Property<byte[]>("RowVersion")
+                        .HasColumnType("varbinary(max)");
+
                     b.Property<string>("UserId")
                         .HasColumnType("nvarchar(450)");
 
@@ -553,18 +562,18 @@ namespace ResiBuy.Server.Infrastructure.Migrations
                         new
                         {
                             Id = "adm_df",
-                            CreatedAt = new DateTime(2025, 6, 20, 18, 47, 38, 860, DateTimeKind.Local).AddTicks(7558),
+                            CreatedAt = new DateTime(2025, 6, 23, 17, 30, 54, 497, DateTimeKind.Local).AddTicks(6133),
                             DateOfBirth = new DateTime(1990, 1, 1, 0, 0, 0, 0, DateTimeKind.Unspecified),
                             Email = "admin@123",
                             EmailConfirmed = true,
                             FullName = "Administrator",
                             IdentityNumber = "admin",
                             IsLocked = false,
-                            PasswordHash = "$2a$11$i1UtG5WAPDxkcmSXeVtHTubtwQXwX/YS3M4cMas.JqRiD7HG7VQM6",
+                            PasswordHash = "$2a$11$2ARaYCN6HPMuWeWQ0R48yu1hWQAtvDBfe0OynMgZq8QlkoVE2KHf2",
                             PhoneNumber = "admin",
                             PhoneNumberConfirmed = true,
                             Roles = "[\"ADMIN\"]",
-                            UpdatedAt = new DateTime(2025, 6, 20, 18, 47, 38, 860, DateTimeKind.Local).AddTicks(7582)
+                            UpdatedAt = new DateTime(2025, 6, 23, 17, 30, 54, 497, DateTimeKind.Local).AddTicks(6145)
                         });
                 });
 

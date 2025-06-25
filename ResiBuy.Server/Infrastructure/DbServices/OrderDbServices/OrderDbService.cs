@@ -7,7 +7,7 @@ public class OrderDbService : BaseDbService<Order>, IOrderDbService
     {
         this._context = context;
     }
-    public async Task<PagedResult<Order>> GetAllAsync(OrderStatus orderStatus, PaymentMethod paymentMethod, PaymentStatus paymentStatus, string userId = null, int pageNumber = 1, int pageSize = 10)
+    public async Task<PagedResult<Order>> GetAllAsync(OrderStatus orderStatus, PaymentMethod paymentMethod, PaymentStatus paymentStatus, string userId = null, int pageNumber = 1, int pageSize = 10, DateTime? startDate = null, DateTime? endDate = null)
     {
         try
         {
@@ -36,10 +36,20 @@ public class OrderDbService : BaseDbService<Order>, IOrderDbService
                 query = query.Where(o => o.PaymentStatus == paymentStatus);
             }
 
+            if (startDate.HasValue)
+            {
+                query = query.Where(o => o.UpdateAt >= startDate.Value);
+            }
+            if (endDate.HasValue)
+            {
+                var end = endDate.Value.Date.AddDays(1);
+                query = query.Where(o => o.UpdateAt < end);
+            }
+
             var totalCount = await query.CountAsync();
 
             var orders = await query
-                .OrderBy(o => o.CreateAt)
+                .OrderBy(o => o.UpdateAt)
                 .Include(o => o.ShippingAddress).ThenInclude(sa => sa.Building).ThenInclude(b => b.Area)
                 .Include(o => o.Store)
                 .Include(o => o.Items).ThenInclude(oi => oi.ProductDetail).ThenInclude(pd => pd.Image)

@@ -61,6 +61,7 @@ namespace ResiBuy.Server.Infrastructure.DbServices.CartItemDbService
                     .AsQueryable();
 
                 var totalCount = await query.CountAsync();
+
                 var items = await query
                     .OrderBy(ci => ci.Id)
                     .Skip((pageNumber - 1) * pageSize)
@@ -91,6 +92,14 @@ namespace ResiBuy.Server.Infrastructure.DbServices.CartItemDbService
             {
                 throw new CustomException(ExceptionErrorCode.RepositoryError, ex.ToString());
             }
+        }
+
+        public Task<int> GetCartItemsCountAsync(Guid cartId)
+        {
+            var count = _context.CartItems
+                 .Where(ci => ci.CartId == cartId)
+                 .CountAsync();
+            return count;
         }
     }
 }
