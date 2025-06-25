@@ -1,0 +1,13 @@
+﻿namespace ResiBuy.Server.Application.Queries.ProductQueries.DTOs
+{
+    public class ProductQueriesDto
+    {   
+        public int Id { get; set; }
+        public string Name { get; set; }
+        public string Describe { get; set; }
+        public float Weight { get; set; }
+        public bool IsOutOfStock { get; set; }
+        public int Discount { get; set; }
+        public List<ProductDetailQueriesDto> ProductDetails { get; set; }
+    }
+}
