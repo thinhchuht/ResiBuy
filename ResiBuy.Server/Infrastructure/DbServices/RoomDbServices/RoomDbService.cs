@@ -67,7 +67,17 @@
                 throw new CustomException(ExceptionErrorCode.RepositoryError, ex.Message);
             }
         }
-
+        public async Task<Room> GetByIdAsync(Guid id)
+        {
+            try
+            {
+                return await _context.Rooms.Include(a => a.UserRooms).FirstOrDefaultAsync();
+            }
+            catch (Exception ex)
+            {
+                throw new CustomException(ExceptionErrorCode.RepositoryError, ex.Message);
+            }
+        }
         public async Task<IEnumerable<Room>> GetBatchAsync(IEnumerable<Guid> ids)
         {
             try
@@ -99,6 +109,32 @@
             try
             {
                 return await _context.Rooms.Where(r => r.BuildingId == id).ToListAsync();
+            }
+            catch (Exception ex)
+            {
+                throw new CustomException(ExceptionErrorCode.RepositoryError, ex.Message);
+            }
+        }
+        public async Task<int> CountAllAsync()
+        {
+            try
+            {
+                return await _context.Rooms.CountAsync();
+            }
+            catch (Exception ex)
+            {
+                throw new CustomException(ExceptionErrorCode.RepositoryError, ex.Message);
+            }
+        }
+
+        public async Task<int> CountByBuildingIdAsync(Guid buildingId)
+        {
+            try
+            {
+                if (buildingId == Guid.Empty)
+                    throw new CustomException(ExceptionErrorCode.ValidationFailed, "Id tòa nhà không hợp lệ");
+
+                return await _context.Rooms.CountAsync(r => r.BuildingId == buildingId);
             }
             catch (Exception ex)
             {

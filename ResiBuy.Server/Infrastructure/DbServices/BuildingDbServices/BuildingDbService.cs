@@ -78,5 +78,16 @@
                 throw new CustomException(ExceptionErrorCode.RepositoryError, ex.Message);
             }
         }
+        public async Task<int> CountAsync()
+        {
+            try
+            {
+                return await context.Buildings.CountAsync();
+            }
+            catch (Exception ex)
+            {
+                throw new CustomException(ExceptionErrorCode.RepositoryError, ex.Message);
+            }
+        }
     }
 }
