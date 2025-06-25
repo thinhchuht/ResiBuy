@@ -26,6 +26,9 @@ namespace ResiBuy.Server.Application.Queries.ProductQueries
             if (filter.StoreId.HasValue)
                 query = query.Where(p => p.StoreId == filter.StoreId.Value);
 
+            if (filter.CategoryId.HasValue)
+                query = query.Where(p => p.CategoryId == filter.CategoryId.Value);
+
             if (filter.MinPrice.HasValue)
                 query = query.Where(p => p.ProductDetails.Any(d => d.Price >= filter.MinPrice.Value));
 
