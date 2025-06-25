@@ -36,6 +36,7 @@
                     throw new CustomException(ExceptionErrorCode.ValidationFailed, "Một hoặc nhiều phòng không còn hoạt động");
                     var userResult = new UserQueryResult(
                         user.Id,
+                        user.IdentityNumber,
                         user.Email,
                         user.PhoneNumber,
                         user.DateOfBirth,
@@ -50,7 +51,7 @@
                         [],
                         []
                     );
-                    notificationService.SendNotification("UserCreated", userResult, Constants.AdminHubGroup);
+                    //notificationService.SendNotification("UserCreated", userResult, Constants.AdminHubGroup);
                     return ResponseModel.SuccessResponse(userResult);
 
             }

@@ -158,14 +158,6 @@ const AppRoutes: React.FC = () => {
             </ProtectedRoute>
           }
         />
-        <Route
-          path="/customer/*"
-          element={
-            <ProtectedRoute allowedRoles={["CUSTOMER"]}>
-              <div>Customer Dashboard</div>
-            </ProtectedRoute>
-          }
-        />
         <Route path="/unauthorized" element={<Unauthorized />} />
         <Route path="/forbidden" element={<Forbidden />} />
         <Route path="*" element={<Navigate to="/" replace />} />

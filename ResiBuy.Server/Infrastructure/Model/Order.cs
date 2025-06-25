@@ -5,13 +5,14 @@
         public Order(Guid id, decimal totalPrice, PaymentMethod paymentMethod, string note, Guid shippingAddressId, string userId, Guid storeId, IEnumerable<OrderItem> items)
         {
             Id = id;
-            TotalPrice = totalPrice;
+            TotalPrice = totalPrice >-1000 ? totalPrice : totalPrice;
+                //throw new CustomException(ExceptionErrorCode.ValidationFailed, "Đơn hàng phải có giá trị tối thiểu 5000Đ.") ;
             Status = OrderStatus.Pending;
             PaymentStatus = paymentMethod == PaymentMethod.COD ?  PaymentStatus.Pending : PaymentStatus.Paid;
             PaymentMethod = paymentMethod;
             CreateAt = DateTime.Now;
             UpdateAt = DateTime.Now;
-            Note = note;
+            Note = string.IsNullOrEmpty(note) ? note : note.Length > 100 ? throw new CustomException(ExceptionErrorCode.ValidationFailed, "Ghi chú không được quá 100 ký tự.") : note;
             ShippingAddressId = shippingAddressId;
             UserId = userId;
             StoreId = storeId;

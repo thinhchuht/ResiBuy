@@ -14,6 +14,7 @@
             }
             var items = pagedResult.Items.Select(user => new UserQueryResult(
                 user.Id,
+                user.IdentityNumber,
                 user.Email,
                 user.PhoneNumber,
                 user.DateOfBirth,

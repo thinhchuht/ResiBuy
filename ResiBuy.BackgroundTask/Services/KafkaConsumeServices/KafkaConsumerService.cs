@@ -1,10 +1,4 @@
-using Confluent.Kafka;
-using Microsoft.Extensions.Options;
-using ResiBuy.BackgroundTask.Model;
-using ResiBuy.BackgroundTask.Services.HttpService;
-using System.Text.Json;
-
-namespace ResiBuy.BackgroundTask;
+namespace ResiBuy.BackgroundTask.Services.KafkaConsumeServices;
 
 public class KafkaConsumerService : IKafkaConsumerService, IDisposable
 {
@@ -36,9 +30,7 @@ public class KafkaConsumerService : IKafkaConsumerService, IDisposable
         try
         {
             _logger.LogInformation("Starting Kafka consumer for topics: {Topics}", string.Join(", ", _kafkaSettings.Topics));
-
             _consumer.Subscribe(_kafkaSettings.Topics);
-
             while (!cancellationToken.IsCancellationRequested)
             {
                 try
@@ -83,10 +75,6 @@ public class KafkaConsumerService : IKafkaConsumerService, IDisposable
         {
             _logger.LogInformation("Received message from topic {Topic}, partition {Partition}, offset {Offset}",
                 consumeResult.Topic, consumeResult.Partition, consumeResult.Offset);
-
-            _logger.LogInformation("Message Key: {Key}", consumeResult.Message.Key);
-            _logger.LogInformation("Message Value: {Value}", consumeResult.Message.Value);
-
             switch (consumeResult.Topic)
             {
                 case "checkout-topic":
@@ -116,7 +104,7 @@ public class KafkaConsumerService : IKafkaConsumerService, IDisposable
             {
                 _logger.LogInformation("Processing checkout for user");
                 await checkoutService.Checkout(checkoutData);
-                await Task.Delay(100); 
+                await Task.Delay(100);
             }
             else
             {

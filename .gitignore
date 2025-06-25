@@ -364,3 +364,5 @@ FodyWeavers.xsd
 /ResiBuy.Server/Infrastructure/Migrations/ResiBuyContextModelSnapshot.cs
 /ResiBuy.Server/appsettings.json
 /ResiBuy.Server/Infrastructure/Migrations
+/resibuy.client/package-lock.json
+/resibuy.client/package.json

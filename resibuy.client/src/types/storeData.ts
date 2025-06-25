@@ -84,9 +84,9 @@ export interface Store {
 export interface Category {
   id: string;             // Guid → string
   name: string;
-  status: string;
-  image: Image;
-  products: Product[];
+  status?: string;
+  image?: Image;
+  products?: Product[];
 }
 
 export interface CartItem {

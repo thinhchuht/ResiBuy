@@ -13,7 +13,7 @@ public class CheckoutData
 
     public List<Order> Orders { get; set; } = new();
 
-
+    public bool IsInstance { get; set; }
 }
 
 public class Order

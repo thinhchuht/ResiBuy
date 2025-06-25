@@ -22,6 +22,7 @@
             var updatedUser = await userDbService.UpdateAsync(existingUser);
             return ResponseModel.SuccessResponse(new UserQueryResult(
                 updatedUser.Id,
+                updatedUser.IdentityNumber,
                 updatedUser.Email,
                 updatedUser.PhoneNumber,
                 updatedUser.DateOfBirth,
