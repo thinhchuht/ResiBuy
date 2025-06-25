@@ -62,7 +62,7 @@ namespace ResiBuy.Server.Application.Commands.CategoryCommands
                 }
                 var result = await CategoryDbService.UpdateAsync(category);
                 if (result == null)
-                    throw new CustomException(ExceptionErrorCode.ValidationFailed, "Không thể cập nhật Category. Vui lòng kiểm tra lại dữ liệu.");
+                    throw new CustomException(ExceptionErrorCode.UpdateFailed, "Không thể cập nhật Category. Vui lòng kiểm tra lại dữ liệu.");
                 return ResponseModel.SuccessResponse(result);
             }
             catch (Exception ex)

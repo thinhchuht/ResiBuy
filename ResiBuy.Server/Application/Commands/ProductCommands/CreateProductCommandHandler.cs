@@ -77,7 +77,7 @@ namespace ResiBuy.Server.Application.Commands.ProductCommands
                 var result = await productDbService.CreateAsync(product);
 
                 if (result == null) 
-                    throw new CustomException(ExceptionErrorCode.ValidationFailed, "Không thể tạo sản phẩm mới. Vui lòng kiểm tra lại dữ liệu.");
+                    throw new CustomException(ExceptionErrorCode.CreateFailed, "Không thể tạo sản phẩm mới. Vui lòng kiểm tra lại dữ liệu.");
 
                 return ResponseModel.SuccessResponse(result);
             }

@@ -141,7 +141,7 @@ namespace ResiBuy.Server.Application.Commands.ProductCommands
 
                 var result = await productDbService.UpdateAsync(product);
                 if (result == null)
-                    throw new CustomException(ExceptionErrorCode.ValidationFailed, "Không thể cập nhật sản phẩm. Vui lòng kiểm tra lại dữ liệu.");
+                    throw new CustomException(ExceptionErrorCode.UpdateFailed, "Không thể cập nhật sản phẩm. Vui lòng kiểm tra lại dữ liệu.");
 
                 return ResponseModel.SuccessResponse(result);
             }

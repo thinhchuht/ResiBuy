@@ -31,7 +31,7 @@ namespace ResiBuy.Server.Application.Commands.CategoryCommands
                 var createCategory = await CategoryDbService.CreateAsync(category);
 
                 if (createCategory == null)
-                    throw new CustomException(ExceptionErrorCode.ValidationFailed, "Không thể tạo Category mới. Vui lòng kiểm tra lại dữ liệu.");
+                    throw new CustomException(ExceptionErrorCode.CreateFailed, "Không thể tạo Category mới. Vui lòng kiểm tra lại dữ liệu.");
 
                 return ResponseModel.SuccessResponse(createCategory);
             }
