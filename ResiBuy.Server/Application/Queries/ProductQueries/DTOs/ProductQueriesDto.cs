@@ -8,6 +8,7 @@
         public float Weight { get; set; }
         public bool IsOutOfStock { get; set; }
         public int Discount { get; set; }
+        public int Sold { get; set; }
         public Guid StoreId { get; set; }
         public Guid CategoryId { get; set; }
         public List<ProductDetailQueriesDto> ProductDetails { get; set; }

@@ -46,6 +46,7 @@ namespace ResiBuy.Server.Application.Queries.ProductQueries
                 Discount = p.Discount,
                 StoreId = p.StoreId,
                 CategoryId = p.CategoryId,
+                Sold = p.ProductDetails.Sum(d => d.Sold),
                 ProductDetails = p.ProductDetails.Select(d => new ProductDetailQueriesDto
                 {
                     Id = d.Id,
