@@ -5,6 +5,6 @@ namespace ResiBuy.Server.Infrastructure.DbServices.ProductDbServices
     public interface IProductDbService : IBaseDbService<Product>
     {
         Task<Product> GetByIdAsync(int id);
-        Task<PagedResult<Product>> GetAllProducts(int pageNumber, int pageSize);
+        IQueryable<Product> GetAllProductsQuery();
     }
 }
