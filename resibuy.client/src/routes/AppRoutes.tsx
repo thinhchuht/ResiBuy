@@ -21,8 +21,6 @@ import CategoriesPage from "../pages/Admin/Category/page";
 import ShippersPage from "../pages/Admin/Shipper/page";
 import Orders from "../pages/Order/Orders";
 import Profile from "../pages/Profile/Profile";
-import Store from "../pages/Store/StorePage";
-
 const AppRoutes: React.FC = () => {
   const { user } = useAuth();
 
@@ -52,14 +50,6 @@ const AppRoutes: React.FC = () => {
           element={
             <HomeLayout>
               <Orders />
-            </HomeLayout>
-          }
-        />
-        <Route
-          path="/store/*"
-          element={
-            <HomeLayout>
-              <Store />
             </HomeLayout>
           }
         />
