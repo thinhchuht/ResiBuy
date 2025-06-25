@@ -10,11 +10,11 @@ namespace ResiBuy.Server.Application.Queries.CategoryQueries
         public async Task<ResponseModel> Handle(GetCategoieByIdQuery query, CancellationToken cancellationToken)
         {
             if (query.Id == Guid.Empty)
-                return ResponseModel.FailureResponse("CategoryId is required");
+                throw new CustomException(ExceptionErrorCode.ValidationFailed, "Không được bỏ trống Id Category");
 
             var category = await CategoryDbService.GetByIdAsync(query.Id);
             if (category == null)
-                return ResponseModel.FailureResponse("Category not found");
+                throw new CustomException(ExceptionErrorCode.ValidationFailed, "Không tìm thấy Category");
 
             return ResponseModel.SuccessResponse(category);
         }
