@@ -44,6 +44,8 @@ namespace ResiBuy.Server.Application.Queries.ProductQueries
                 Weight = p.Weight,
                 IsOutOfStock = p.IsOutOfStock,
                 Discount = p.Discount,
+                StoreId = p.StoreId,
+                CategoryId = p.CategoryId,
                 ProductDetails = p.ProductDetails.Select(d => new ProductDetailQueriesDto
                 {
                     Id = d.Id,
