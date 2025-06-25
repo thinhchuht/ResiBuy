@@ -359,10 +359,3 @@ MigrationBackup/
 # Ionide (cross platform F# VS Code tools) working folder
 .ionide/
 
-# Fody - auto-generated XML schema
-FodyWeavers.xsd
-/ResiBuy.Server/Infrastructure/Migrations/ResiBuyContextModelSnapshot.cs
-/ResiBuy.Server/appsettings.json
-/ResiBuy.Server/Infrastructure/Migrations
-/resibuy.client/package-lock.json
-/resibuy.client/package.json
