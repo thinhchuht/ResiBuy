@@ -20,4 +20,11 @@ export interface UserCreatedData {
     status: string;
   }
 
+  export interface OrderStatusChangedData {
+    id: string
+    orderStatus : string
+    oldOrderStatus : string
+    paymentStatus : string
+    createdAt : string
+  }
 

@@ -6,5 +6,6 @@ namespace ResiBuy.Server.Infrastructure.DbServices.CartItemDbService
         Task<ResponseModel> DeleteBatchAsync(IEnumerable<Guid> cartItemIds);
         Task<ResponseModel> DeleteBatchByProductDetailIdAsync(Guid cartId, IEnumerable<int> productDetailIds);
         Task<PagedResult<CartItem>> GetCartItemsByCartIdAsync(Guid cartId, int pageNumber, int pageSize);
+        Task<int> GetCartItemsCountAsync(Guid cartId);
     }
 }

@@ -173,9 +173,22 @@ const Checkout: React.FC = () => {
             price: item.productDetail.price,
             productDetailId: item.productDetail.id,
           })),
-
           note: notes[groupedItems[idx].storeId],
         }));
+
+        // Check if any selectedItem has id === 'temp-id'
+        const hasInstance = groupedItems.some(group => group.items.some(item => item.id === 'temp-id'));
+
+        const checkoutData = {
+          userId: user?.id,
+          addressId : info.deliveryType === "my-room"
+            ? info.selectedRoom
+            : info.selectedOtherRoom,
+          grandTotal: Math.round(grandTotal),
+          paymentMethod: info.paymentMethod,
+          orders : allOrders,
+          ...(hasInstance ? { isInstance: true } : {})
+        };
 
         console.log("Checkout data:", {
           userId: user?.id,
@@ -186,15 +199,6 @@ const Checkout: React.FC = () => {
           grandTotal: Math.round(grandTotal),
           orders: allOrders,
         });
-        const checkoutData = {
-          userId: user?.id,
-          addressId : info.deliveryType === "my-room"
-          ? info.selectedRoom
-          : info.selectedOtherRoom,
-          grandTotal: Math.round(grandTotal),
-          paymentMethod: info.paymentMethod,
-          orders : allOrders
-        }
         if (info.paymentMethod === "BankTransfer") {
           const response = await vnPayApi.getPaymentUrl(checkoutData);
 
@@ -202,7 +206,6 @@ const Checkout: React.FC = () => {
             window.history.replaceState({}, "");
             window.location.href = response.data.paymentUrl;
           } else {
-            toast.error("Lỗi khi tạo thanh toán, thử lại sau.");
             console.error("Payment creation failed:", response.error);
           }
         } else if (info.paymentMethod === "COD") {

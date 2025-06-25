@@ -4,35 +4,44 @@ public class NotificationHub(IUserDbService userDbService) : Hub
 {
     public override async Task OnConnectedAsync()
     {
-        var userId = Context.GetHttpContext()?.Request.Query["userId"].ToString();
-        if (!string.IsNullOrEmpty(userId))
+        try
         {
-            await Groups.AddToGroupAsync(Context.ConnectionId, userId);
-            
-            var user = await userDbService.GetUserById(userId);
-            if (user != null)
+            var userId = Context.GetHttpContext()?.Request.Query["userId"].ToString();
+            Console.WriteLine($"Client connected with userId: {userId}");
+            if (!string.IsNullOrEmpty(userId))
             {
-                if (user.Roles.Contains(Constants.AdminRole))
+                await Groups.AddToGroupAsync(Context.ConnectionId, userId);
+
+                var user = await userDbService.GetUserById(userId);
+                if (user != null)
                 {
-                    await Groups.AddToGroupAsync(Context.ConnectionId, Constants.AdminHubGroup);
-                }
-                if (user.Roles.Contains(Constants.SellerRole))
-                {
-                    await Groups.AddToGroupAsync(Context.ConnectionId, Constants.SellerHubGroup);
-                }
-                if (user.Roles.Contains(Constants.CustomerRole))
-                {
-                    await Groups.AddToGroupAsync(Context.ConnectionId, Constants.CustomerHubGroup);
-                }
-                if (user.Roles.Contains(Constants.ShipperRole))
-                {
-                    await Groups.AddToGroupAsync(Context.ConnectionId, Constants.ShipperHubGroup);
+                    if (user.Roles.Contains(Constants.AdminRole))
+                    {
+                        await Groups.AddToGroupAsync(Context.ConnectionId, Constants.AdminHubGroup);
+                    }
+                    if (user.Roles.Contains(Constants.SellerRole))
+                    {
+                        await Groups.AddToGroupAsync(Context.ConnectionId, Constants.SellerHubGroup);
+                    }
+                    if (user.Roles.Contains(Constants.CustomerRole))
+                    {
+                        await Groups.AddToGroupAsync(Context.ConnectionId, Constants.CustomerHubGroup);
+                    }
+                    if (user.Roles.Contains(Constants.ShipperRole))
+                    {
+                        await Groups.AddToGroupAsync(Context.ConnectionId, Constants.ShipperHubGroup);
+                    }
                 }
             }
+
+            await Groups.AddToGroupAsync(Context.ConnectionId, Constants.AllHubGroup);
+            await base.OnConnectedAsync();
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"Error in OnConnectedAsync: {ex.Message}");
         }
 
-        await Groups.AddToGroupAsync(Context.ConnectionId, Constants.AllHubGroup);
-        await base.OnConnectedAsync();
     }
 
     public override async Task OnDisconnectedAsync(Exception? exception)
@@ -66,4 +75,4 @@ public class NotificationHub(IUserDbService userDbService) : Hub
         await Groups.RemoveFromGroupAsync(Context.ConnectionId, Constants.AllHubGroup);
         await base.OnDisconnectedAsync(exception);
     }
-} 
+}

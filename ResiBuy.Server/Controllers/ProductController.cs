@@ -54,11 +54,11 @@ namespace ResiBuy.Server.Controllers
         }
 
         [HttpGet("products")]
-        public async Task<IActionResult> GetAllAsync([FromQuery] int pageNumber, [FromQuery] int pageSize)
+        public async Task<IActionResult> GetAllProducts([FromQuery] ProductFilter filter)
         {
             try
             {
-                var result = await mediator.Send(new GetPagedProductsAsync(pageNumber, pageSize));
+                var result = await mediator.Send(new GetAllProductsQuery(filter));
                 return Ok(result);
             }
             catch (Exception ex)

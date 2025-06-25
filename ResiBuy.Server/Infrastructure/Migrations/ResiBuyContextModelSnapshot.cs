@@ -91,6 +91,15 @@ namespace ResiBuy.Server.Infrastructure.Migrations
                         .ValueGeneratedOnAdd()
                         .HasColumnType("uniqueidentifier");
 
+                    b.Property<DateTime>("ExpiredCheckOutTime")
+                        .HasColumnType("datetime2");
+
+                    b.Property<bool>("IsCheckingOut")
+                        .HasColumnType("bit");
+
+                    b.Property<byte[]>("RowVersion")
+                        .HasColumnType("varbinary(max)");
+
                     b.Property<string>("UserId")
                         .HasColumnType("nvarchar(450)");
 
@@ -299,9 +308,6 @@ namespace ResiBuy.Server.Infrastructure.Migrations
 
                     b.Property<DateTime>("UpdatedAt")
                         .HasColumnType("datetime2");
-
-                    b.Property<float>("Weight")
-                        .HasColumnType("real");
 
                     b.HasKey("Id");
 
@@ -553,18 +559,18 @@ namespace ResiBuy.Server.Infrastructure.Migrations
                         new
                         {
                             Id = "adm_df",
-                            CreatedAt = new DateTime(2025, 6, 20, 18, 47, 38, 860, DateTimeKind.Local).AddTicks(7558),
+                            CreatedAt = new DateTime(2025, 6, 25, 20, 39, 32, 298, DateTimeKind.Local).AddTicks(9580),
                             DateOfBirth = new DateTime(1990, 1, 1, 0, 0, 0, 0, DateTimeKind.Unspecified),
                             Email = "admin@123",
                             EmailConfirmed = true,
                             FullName = "Administrator",
                             IdentityNumber = "admin",
                             IsLocked = false,
-                            PasswordHash = "$2a$11$i1UtG5WAPDxkcmSXeVtHTubtwQXwX/YS3M4cMas.JqRiD7HG7VQM6",
+                            PasswordHash = "$2a$11$1099ozw2lL0v4cKTUl6VPuku4wKNWgxJ0.AB7TgBWEIKVYKcyoE72",
                             PhoneNumber = "admin",
                             PhoneNumberConfirmed = true,
                             Roles = "[\"ADMIN\"]",
-                            UpdatedAt = new DateTime(2025, 6, 20, 18, 47, 38, 860, DateTimeKind.Local).AddTicks(7582)
+                            UpdatedAt = new DateTime(2025, 6, 25, 20, 39, 32, 298, DateTimeKind.Local).AddTicks(9599)
                         });
                 });
 

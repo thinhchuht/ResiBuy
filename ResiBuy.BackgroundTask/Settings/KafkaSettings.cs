@@ -1,4 +1,4 @@
-namespace ResiBuy.BackgroundTask;
+namespace ResiBuy.BackgroundTask.Settings;
 
 public class KafkaSettings
 {

@@ -50,7 +50,7 @@
         }
 
         //[Authorize(Roles = Constants.AdminRole)]
-        [HttpPost("create")]
+        [HttpPost]
         public async Task<IActionResult> CreateAsync([FromBody] RegisterDto dto)
         {
             try

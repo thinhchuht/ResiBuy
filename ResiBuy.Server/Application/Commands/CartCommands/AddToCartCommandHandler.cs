@@ -5,7 +5,7 @@ namespace ResiBuy.Server.Application.Commands.CartCommands
 {
     public record AddToCartCommand(Guid Id, AddToCartDto AddToCartDto) : IRequest<ResponseModel>;
     public class AddToCartCommandHandler(ICartItemDbService cartItemDbService, ICartDbService cartDbService,
-        IBaseDbService<ProductDetail> baseProductDbService
+        IBaseDbService<ProductDetail> baseProductDbService, INotificationService notificationService
         ) : IRequestHandler<AddToCartCommand, ResponseModel>
     {
         public async Task<ResponseModel> Handle(AddToCartCommand command, CancellationToken cancellationToken)
@@ -20,6 +20,7 @@ namespace ResiBuy.Server.Application.Commands.CartCommands
                 var existingItems = (await cartItemDbService.GetMatchingCartItemsAsync(command.Id, [command.AddToCartDto.ProductDetailId]));
                 if (existingItems.Any())
                 {
+                    if(cart.IsCheckingOut) throw new CustomException(ExceptionErrorCode.ValidationFailed, "Không thể thêm sản phẩm đã có khi đang trong quá trình thanh toán.");
                     var existingItem = existingItems.FirstOrDefault();
                     existingItem.Quantity = command.AddToCartDto.IsAdd ? existingItem.Quantity + command.AddToCartDto.Quantity : command.AddToCartDto.Quantity;
                     if (existingItem.Quantity > 10)
@@ -27,11 +28,14 @@ namespace ResiBuy.Server.Application.Commands.CartCommands
                         throw new CustomException(ExceptionErrorCode.ValidationFailed, "Chỉ được đặt tối đa 10 sản phẩm cùng 1 mặt hàng");
                     }
                     await cartItemDbService.UpdateAsync(existingItem);
+                    notificationService.SendNotification(Constants.CartItemAdded, new { Id = existingItem.Id, existingItem.Quantity, CartId = cart.Id,  command.AddToCartDto.ProductDetailId }, "", [cart.UserId]);
                     return ResponseModel.SuccessResponse(existingItem);
                 }
 
                 var cartItem = new CartItem(command.AddToCartDto.Quantity, command.Id, command.AddToCartDto.ProductDetailId);
                 await cartItemDbService.CreateAsync(cartItem);
+                notificationService.SendNotification(Constants.CartItemAdded, new { Id = cartItem.Id, cartItem.Quantity, CartId = cart.Id, command.AddToCartDto.ProductDetailId }, "", [cart.UserId]);
+
                 return ResponseModel.SuccessResponse();
             }
             catch (Exception ex)

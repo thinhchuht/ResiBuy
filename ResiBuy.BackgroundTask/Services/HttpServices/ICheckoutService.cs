@@ -1,6 +1,4 @@
-﻿using ResiBuy.BackgroundTask.Model;
-
-namespace ResiBuy.BackgroundTask.Services.HttpService
+﻿namespace ResiBuy.BackgroundTask.Services.HttpService
 {
     public interface ICheckoutService
     {

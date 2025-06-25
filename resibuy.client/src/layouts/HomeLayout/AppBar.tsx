@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useEffect, useMemo, useState, useCallback } from "react";
 import {
   AppBar as MuiAppBar,
   Toolbar,
@@ -16,25 +16,115 @@ import {
   Popover,
   Badge,
 } from "@mui/material";
-import { Login, Logout, Person, Settings, Home, ShoppingCart, Receipt, KeyboardArrowDown, Category, Notifications, Dashboard, Store, LocalShipping, Storefront } from "@mui/icons-material";
+import {
+  Login,
+  Logout,
+  Person,
+  Settings,
+  Home,
+  ShoppingCart,
+  Receipt,
+  KeyboardArrowDown,
+  Category,
+  Notifications,
+  Dashboard,
+  Store,
+  LocalShipping,
+  Storefront,
+} from "@mui/icons-material";
 import { Link, useNavigate } from "react-router-dom";
 import { useAuth } from "../../contexts/AuthContext";
 import SearchBase from "../../components/SearchBase";
 import logo from "../../assets/Images/Logo.png";
+import cartApi from "../../api/cart.api";
+import { HubEventType, useEventHub, type HubEventHandler } from "../../hooks/useEventHub";
+import type { OrderStatusChangedData } from "../../types/hubData";
+
+interface Notification {
+  id: string | number;
+  title: string;
+  message: string;
+  time?: string;
+}
 
 const AppBar: React.FC = () => {
   const { logout } = useAuth();
   const { user } = useAuth();
+  const [cartItems, setCartItems] = useState(0);
   const [anchorEl, setAnchorEl] = useState<null | HTMLElement>(null);
   const [homeAnchorEl, setHomeAnchorEl] = useState<null | HTMLElement>(null);
   const navigate = useNavigate();
   const [searchValue, setSearchValue] = useState("");
   const [notificationAnchorEl, setNotificationAnchorEl] = useState<null | HTMLElement>(null);
-  const [notifications] = useState([
-    { id: 1, title: "Đơn hàng mới", message: "Đơn hàng #12345 đã được xác nhận" },
-    { id: 2, title: "Khuyến mãi", message: "Giảm giá 20% cho tất cả sản phẩm" },
-  ]);
-  const [cartItems] = useState(3);
+  const [notifications, setNotifications] = useState<Notification[]>([]);
+
+  const fetchItemCount = useCallback(async () => {
+    if (user) {
+      const response = await cartApi.countItems(user?.cartId);
+      setCartItems(response.data.data);
+    }
+  }, [user]);
+
+  useEffect(() => {
+    fetchItemCount();
+  }, [fetchItemCount]);
+
+  const handleCartItemAdded = useCallback(() => {
+    fetchItemCount();
+  }, [fetchItemCount]);
+
+  const handleOrderCreated = useCallback(
+    (data: OrderStatusChangedData) => {
+      console.log('hihehah súuus')
+      fetchItemCount();
+      const formattedTime = new Date(data.createdAt).toLocaleTimeString('vi-VN', { hour: '2-digit', minute: '2-digit' });
+      const formattedDate = new Date(data.createdAt).toLocaleDateString('vi-VN');
+      console.log(formattedDate , formattedTime)
+      const newNotifications ={
+        id: data.id,
+        title: "Đơn hàng mới",
+        message: `Đơn hàng #${data.id} đã được tạo`,
+        time: `${formattedTime} ${formattedDate}`
+      };
+      console.log('hhihi')
+      console.log(newNotifications)
+      setNotifications((prev) => [newNotifications, ...prev]);
+    },
+    [setNotifications, fetchItemCount]
+  );
+
+  const handleOrderStatusChanged = useCallback((data: OrderStatusChangedData) => {
+    console.log('hihehah')
+    const formattedTime = new Date(data.createdAt).toLocaleTimeString('vi-VN', { hour: '2-digit', minute: '2-digit' });
+    const formattedDate = new Date(data.createdAt).toLocaleDateString('vi-VN');
+    const newNotifications = {
+      id: `order-${data.id}-${data.orderStatus}`,
+      title:
+        data.orderStatus === "Processing"
+          ? "Đơn hàng đã được xử lý"
+          : data.orderStatus === "Shipped"
+          ? "Đơn hàng đang được giao"
+          : data.orderStatus === "Delivered"
+          ? "Đơn hàng đã được giao"
+          : "Đơn hàng đã bị hủy",
+      message: `Đơn hàng #${data.id} ${
+        data.orderStatus === "Processing" ? "đã được xử lý" : data.orderStatus === "Shipped" ? "đang được giao" : data.orderStatus === "Delivered" ? "đã được giao" : "đã bị hủy"
+      }`,
+      time: `${formattedTime} ${formattedDate}`
+    };
+    setNotifications((prev) => [newNotifications, ...prev]);
+  }, []);
+
+  const eventHandlers = useMemo(
+    () => ({
+      [HubEventType.CartItemAdded]: handleCartItemAdded,
+      [HubEventType.OrderCreated]: handleOrderCreated,
+      [HubEventType.OrderStatusChanged]: handleOrderStatusChanged,
+    }),
+    [handleCartItemAdded, handleOrderCreated, handleOrderStatusChanged]
+  );
+
+  useEventHub(eventHandlers as Partial<Record<HubEventType, HubEventHandler>>);
 
   const handleSearchChange = (event: React.ChangeEvent<HTMLInputElement>) => {
     setSearchValue(event.target.value);
@@ -130,7 +220,14 @@ const AppBar: React.FC = () => {
                 borderRadius: 2,
                 transition: "all 0.2s ease-in-out",
               }}>
-              <Link to="/" style={{ textDecoration: "none", color: "inherit", display: "flex", alignItems: "center" }}>
+              <Link
+                to="/"
+                style={{
+                  textDecoration: "none",
+                  color: "inherit",
+                  display: "flex",
+                  alignItems: "center",
+                }}>
                 <Home sx={{ mr: 1 }} />
                 <span>Trang chủ</span>
               </Link>
@@ -260,7 +357,12 @@ const AppBar: React.FC = () => {
                   alignItems: "center",
                   gap: 1,
                 }}>
-                <Box sx={{ position: "relative", display: "flex", alignItems: "center" }}>
+                <Box
+                  sx={{
+                    position: "relative",
+                    display: "flex",
+                    alignItems: "center",
+                  }}>
                   <Badge
                     badgeContent={cartItems}
                     color="error"
@@ -331,12 +433,13 @@ const AppBar: React.FC = () => {
           {user ? (
             <Tooltip title="Tài khoản">
               <Avatar
+                src={user?.avatar?.thumbUrl || undefined}
                 sx={{
                   width: 36,
                   height: 36,
                   cursor: "pointer",
-                  bgcolor: "#EB5C60",
-                  color: "#fff",
+                  bgcolor: user?.avatar?.thumbUrl ? undefined : "#EB5C60",
+                  color: user?.avatar?.thumbUrl ? undefined : "#fff",
                   fontWeight: 600,
                   transition: "all 0.2s ease-in-out",
                   "&:hover": {
@@ -344,8 +447,9 @@ const AppBar: React.FC = () => {
                     boxShadow: "0 2px 8px rgba(235, 92, 96, 0.3)",
                   },
                 }}
-                onClick={handleProfileMenuOpen}>
-                <Person />
+                onClick={handleProfileMenuOpen}
+              >
+                {!user?.avatar?.thumbUrl && <Person />}
               </Avatar>
             </Tooltip>
           ) : (
@@ -383,7 +487,7 @@ const AppBar: React.FC = () => {
           }}>
           <Box sx={{ p: 1.5, borderBottom: "1px solid rgba(0,0,0,0.08)" }}>
             <Typography variant="subtitle2" sx={{ color: "text.secondary", fontWeight: 500 }}>
-              {user?.email}
+              {user?.fullName}
             </Typography>
           </Box>
           {user?.roles?.includes("ADMIN") && (
@@ -463,7 +567,7 @@ const AppBar: React.FC = () => {
           )}
           {user?.roles?.includes("CUSTOMER") && (
             <MenuItem
-              onClick={() => handleNavigation("/customer", handleProfileMenuClose)}
+              onClick={() => handleNavigation("/", handleProfileMenuClose)}
               sx={{
                 py: 1.5,
                 px: 2,
@@ -579,7 +683,8 @@ const AppBar: React.FC = () => {
               borderRadius: 2,
               boxShadow: "0 4px 20px rgba(0,0,0,0.1)",
               width: 320,
-              maxHeight: 400,
+              maxHeight: 320,
+              overflowY: "auto",
             },
           }}>
           <Box sx={{ p: 2, borderBottom: "1px solid rgba(0,0,0,0.1)" }}>
@@ -601,10 +706,31 @@ const AppBar: React.FC = () => {
                   transition: "all 0.2s ease-in-out",
                 }}>
                 <Box>
-                  <Typography variant="subtitle2" sx={{ fontWeight: 600, mb: 0.5 }}>
-                    {notification.title}
-                  </Typography>
-                  <Typography variant="body2" color="text.secondary">
+                  <Box sx={{
+                    display: 'flex',
+                    justifyContent: 'space-between',
+                    alignItems: 'flex-end',
+                    mb: 0.5,
+                    gap: 2,
+                  }}>
+                    <Typography variant="subtitle2" sx={{ fontWeight: 600, wordBreak: "break-word" }}>
+                      {notification.title}
+                    </Typography>
+                    {notification.time && (
+                      <Typography
+                        variant="caption"
+                        sx={{
+                          fontStyle: 'italic',
+                          color: 'text.secondary',
+                          whiteSpace: 'nowrap',
+                          fontWeight: 600
+                        }}
+                      >
+                        {notification.time}
+                      </Typography>
+                    )}
+                  </Box>
+                  <Typography variant="body2" color="text.secondary" sx={{ wordBreak: "break-word", whiteSpace: "break-spaces" }}>
                     {notification.message}
                   </Typography>
                 </Box>
@@ -624,3 +750,4 @@ const AppBar: React.FC = () => {
 };
 
 export default AppBar;
+
