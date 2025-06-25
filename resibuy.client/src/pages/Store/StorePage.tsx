@@ -7,6 +7,7 @@ import Dashboard from "./Dashboard";
 import Products from "./Products";
 import Orders from "./Orders";
 import CreateProduct from "./CreateProduct";
+import UpdateProduct from "./UpdateProduct";
 
 const StorePage: React.FC = () => {
   return (
@@ -20,6 +21,7 @@ const StorePage: React.FC = () => {
           <Route path="products" element={<Products />} />
           <Route path="orders" element={<Orders />} />
           <Route path="create" element={<CreateProduct />} />
+          <Route path="update/:id" element={<UpdateProduct />} />
         </Routes>
       </Box>
     </Box>

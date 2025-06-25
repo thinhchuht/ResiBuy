@@ -22,7 +22,8 @@ export interface ProductDetail {
   productId: number;
   product: Product;             // tham chiếu lại interface Product đã khai báo trước
   sold: number;
-  price: number;                // decimal → number
+  price: number;      
+  weight: number;
   image: Image;
   cartItems: CartItem[];
   orderItems: OrderItem[];
