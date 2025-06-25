@@ -9,11 +9,14 @@ namespace ResiBuy.Server.Application.Queries.ProductQueries
     {
         public async Task<ResponseModel> Handle(GetProductByIdQuery query, CancellationToken cancellationToken)
         {
-            //if (query.id == Guid.Empty)
-            //    return ResponseModel.FailureResponse("Product is required");
-
+            if (query.id <= 0)
+                return ResponseModel.FailureResponse("Product id must be greater than zero");
             var product = await ProductDbService.GetByIdAsync(query.id);
+            if (product == null)
+                return ResponseModel.FailureResponse("Product not found");
+         
             return ResponseModel.SuccessResponse(product);
+
         }
     }
 }
