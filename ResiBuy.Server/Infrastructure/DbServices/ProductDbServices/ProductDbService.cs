@@ -8,35 +8,22 @@
             this._context = context;
         }
 
-        public async Task<PagedResult<Product>> GetAllProducts(int pageNumber, int pageSize)
+        public IQueryable<Product> GetAllProductsQuery()
         {
-            try
-            {
-                //var query = _context.Products.AsQueryable();
-
-                //var totalCount = await query.CountAsync();
-                //var items = await query
-                //    .OrderBy(p => p.Id)
-                //    .Include(p => p.ProductImgs)
-                //    .Include(p => p.CostData).ThenInclude(cd => cd.UncostData)
-                //    .Include(p => p.Store)
-                //    .Skip((pageNumber - 1) * pageSize)
-                //    .Take(pageSize)
-                //    .ToListAsync();
-
-                return new PagedResult<Product>
-                {
-                    //Items = items,
-                    //TotalCount = totalCount,
-                    //PageNumber = pageNumber,
-                    //PageSize = pageSize
-                };
+            try {    
+                return _context.Products
+                    .Include(p => p.ProductDetails)
+                        .ThenInclude(pd => pd.Image)
+                    .Include(p => p.ProductDetails)
+                        .ThenInclude(pd => pd.AdditionalData)
+                    .AsQueryable();
             }
             catch (Exception ex)
             {
                 throw new CustomException(ExceptionErrorCode.RepositoryError, ex.Message);
             }
         }
+
 
         public async Task<Product> GetByIdAsync(int id)
         {
