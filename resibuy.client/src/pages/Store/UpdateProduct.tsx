@@ -51,7 +51,7 @@ interface ProductInput {
 
 // Main component
 export default function CreateProduct() {
-  const id = useParams();
+  const { id } = useParams<{ id: string }>();
   useEffect(() => {
     // lấy category
     axiosClient
@@ -76,7 +76,7 @@ export default function CreateProduct() {
       .get(`api/Product/${id}`)
       .then((res) => {
         if (res.status === 200) {
-          const productData = res.data;
+          const productData = res.data.data;
           setProduct(productData);
 
           const tempProductDetails: ProductDetailInput[] =
@@ -205,7 +205,6 @@ export default function CreateProduct() {
                 {classify.map((key) => (
                   <TableCell>{key}</TableCell>
                 ))}
-                <TableCell>Phân loại</TableCell>
                 <TableCell>Giá</TableCell>
                 <TableCell>Cân nặng</TableCell>
                 <TableCell>Hết hàng</TableCell>
