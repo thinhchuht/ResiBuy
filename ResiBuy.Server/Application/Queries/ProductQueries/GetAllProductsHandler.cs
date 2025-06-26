@@ -88,7 +88,12 @@ namespace ResiBuy.Server.Application.Queries.ProductQueries
                 .Take(filter.PageSize)
                 .ToListAsync(cancellationToken);
 
-            return new PagedResult<ProductQueriesDto>(pagedItems, totalCount, filter.PageNumber, filter.PageSize);
+            if (pagedItems == null || !pagedItems.Any())
+            {
+                throw new CustomException(ExceptionErrorCode.ValidationFailed, "Không tìm thấy Products");
+            }
+
+                return new PagedResult<ProductQueriesDto>(pagedItems, totalCount, filter.PageNumber, filter.PageSize);
         }
     }
 

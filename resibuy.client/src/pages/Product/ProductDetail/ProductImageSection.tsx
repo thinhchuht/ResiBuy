@@ -10,11 +10,11 @@ interface ProductImageSectionProps {
 
 const ProductImageSection: React.FC<ProductImageSectionProps> = ({ product }) => {
   // Map images from all productDetails
-  const productImages = product.productDetails
-    .filter(detail => detail.image) // Filter out details without images
-    .map((detail, idx) => ({ 
-      id: idx, 
-      img: detail.image.thumbUrl || detail.image.url 
+  const productImages = (product.productDetails ?? [])
+    .filter((detail) => detail.image)
+    .map((detail, idx) => ({
+      id: idx,
+      img: detail.image.url || detail.image.thumbUrl,
     }));
 
   return (
@@ -41,12 +41,7 @@ const ProductImageSection: React.FC<ProductImageSectionProps> = ({ product }) =>
           justifyContent: "center",
           alignItems: "center",
         }}>
-        <StackCard
-          cardDimensions={{ width: 400, height: 400 }}
-          cardsData={productImages}
-          randomRotation={true}
-          sensitivity={100}
-        />
+        <StackCard cardDimensions={{ width: 400, height: 400 }} cardsData={productImages} randomRotation={true} sensitivity={100} />
       </Paper>
     </Box>
   );
