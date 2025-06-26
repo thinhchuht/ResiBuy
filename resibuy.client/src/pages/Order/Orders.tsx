@@ -11,7 +11,7 @@ import {
   InputAdornment,
   Button,
 } from "@mui/material";
-import { useState, useEffect, useMemo, useCallback } from "react";
+import { useState, useEffect, useMemo, useCallback, useRef } from "react";
 import { styled } from "@mui/material/styles";
 import OrderCard, { type OrderApiResult } from "./OrderCard";
 import { OrderStatus, PaymentMethod, PaymentStatus } from "../../types/models";
@@ -63,6 +63,11 @@ const Orders = () => {
 
   const [startDate, setStartDate] = useState<string>("");
   const [endDate, setEndDate] = useState<string>("");
+
+  const currentTabRef = useRef(currentTab);
+  useEffect(() => {
+    currentTabRef.current = currentTab;
+  }, [currentTab]);
 
   const fetchOrders = useCallback(async () => {
     if (!user?.id) return;
@@ -128,8 +133,7 @@ const Orders = () => {
 
   const handleOrderStatusChanged = useCallback(
     (data: OrderStatusChangedData) => {
-      console.log('hihea')
-      if (currentTab === 0) {
+      if (currentTabRef.current === 0) {
         setOrders((prevOrders) =>
           prevOrders.map((order) =>
             order.id === data.id
@@ -141,16 +145,15 @@ const Orders = () => {
               : order
           )
         );
-      } else if (orderStatusTabs[currentTab] === data.oldOrderStatus) {
-        console.log('abc')
+      } else if (orderStatusTabs[currentTabRef.current] === data.oldOrderStatus) {
         setOrders((prevOrders) =>
           prevOrders.filter((order) => order.id !== data.id)
         );
-      } else if (orderStatusTabs[currentTab] === data.orderStatus) {
+      } else if (orderStatusTabs[currentTabRef.current] === data.orderStatus) {
         fetchOrders();
       }
     },
-    [currentTab, fetchOrders]
+    [fetchOrders]
   );
 
   const eventHandlers = useMemo(

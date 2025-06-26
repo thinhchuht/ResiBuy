@@ -1,5 +1,4 @@
 ﻿using ResiBuy.Server.Application.Commands.CategoryCommands.DTOs;
-using ResiBuy.Server.Infrastructure.DbServices.CategoryDbServices;
 
 namespace ResiBuy.Server.Application.Commands.CategoryCommands
 {
@@ -13,7 +12,7 @@ namespace ResiBuy.Server.Application.Commands.CategoryCommands
             {
                 var dto = command.CategoryDto;
              
-                if (dto.Name.IsNullOrEmpty()) throw new CustomException(ExceptionErrorCode.ValidationFailed, $"CategoryName là bắt buộc");
+                if (string.IsNullOrEmpty(dto.Name)) throw new CustomException(ExceptionErrorCode.ValidationFailed, $"CategoryName là bắt buộc");
                 var category = new Category(dto.Name, dto.Status);
                 if (dto.Image != null && !string.IsNullOrEmpty(dto.Image.Id))
                 {

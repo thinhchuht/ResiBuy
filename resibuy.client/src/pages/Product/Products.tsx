@@ -26,6 +26,7 @@ const Products = () => {
   const productId = searchParams.get("id");
   const categoryId = searchParams.get("categoryId");
   const storeId = searchParams.get("storeId");
+  const searchKeyword = searchParams.get("search") || "";
   const [selectedCategory, setSelectedCategory] = useState(categoryId || null);
   const [sortBy, setSortBy] = useState("newest");
   const [priceRange, setPriceRange] = useState([0, 50000000]);
@@ -46,6 +47,7 @@ const Products = () => {
           storeId: storeId || undefined,
           sortBy: sortBy === "price_asc" ? "price" : sortBy === "price_desc" ? "price" : sortBy === "popular" ? "sold" : "createdAt",
           sortDirection: sortBy === "price_asc" ? "asc" : sortBy === "price_desc" ? "desc" : sortBy === "popular" ? "desc" : "desc",
+          search: searchKeyword || undefined,
         });
         setProducts(res.items || []);
         setTotal(res.totalCount || 0);
@@ -55,9 +57,19 @@ const Products = () => {
     };
     fetchProducts();
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [page, pageSize, selectedCategory, priceRange, storeId, sortBy]);
+  }, [page, pageSize, selectedCategory, priceRange, storeId, sortBy, searchKeyword]);
+
+  useEffect(() => {
+    setSelectedCategory(categoryId || null);
+  }, [categoryId]);
 
   const handleQuickView = (product: Product) => {
+    setSelectedCategory(null);
+    setSortBy("newest");
+    setPriceRange([0, 50000000]);
+    setPage(1);
+    setTotal(0);
+    setProducts([]);
     navigate(`/products?id=${product.id}`);
   };
 
@@ -101,6 +113,15 @@ const Products = () => {
       filteredProducts.sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
   }
 
+  const handleResetState = () => {
+    setSelectedCategory(null);
+    setSortBy("newest");
+    setPriceRange([0, 50000000]);
+    setPage(1);
+    setTotal(0);
+    setProducts([]);
+  };
+
   if (productId) {
     return <ProductDetail />;
   }
@@ -121,7 +142,7 @@ const Products = () => {
           </Box>
           <Box sx={{ flex: 1 }}>
             <SortBarSection selectedCategory={selectedCategory} sortBy={sortBy} setSortBy={setSortBy} />
-            {filteredProducts.length > 0 ? <ProductGridSection filteredProducts={filteredProducts} productActions={productActions} /> : <ProductEmptySection />}
+            {filteredProducts.length > 0 ? <ProductGridSection filteredProducts={filteredProducts} productActions={productActions} onResetState={handleResetState} /> : <ProductEmptySection />}
             <Box sx={{ display: "flex", justifyContent: "center", mt: 3 }}>
               <Pagination
                 count={Math.ceil(total / pageSize)}
