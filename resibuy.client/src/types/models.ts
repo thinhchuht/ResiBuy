@@ -279,7 +279,7 @@ export interface Image {
   name: string;
   productDetailId?: number;
   userId?: string;
-  categoryId: string;
+  categoryId?: string;
 }
 
 export interface AdditionalData {

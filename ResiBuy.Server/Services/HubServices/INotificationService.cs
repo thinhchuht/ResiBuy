@@ -2,5 +2,5 @@
 
 public interface INotificationService
 {
-    void SendNotification(string eventName, object data, string hubGroup = Constants.AllHubGroup, List<string> userIds = null);
+    void SendNotification(string eventName, object data, string hubGroup = null, List<string> userIds = null);
 }
