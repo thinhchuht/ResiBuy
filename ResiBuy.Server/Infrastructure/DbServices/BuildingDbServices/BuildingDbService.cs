@@ -25,6 +25,7 @@
                 {
                     Name   = name,
                     AreaId = areaId,
+                    IsActive = true,
                 };
                 await context.Buildings.AddAsync(building);
                 await context.SaveChangesAsync();
@@ -72,6 +73,17 @@
             try
             {
                 return await context.Buildings.Include(a => a.Rooms).FirstOrDefaultAsync();
+            }
+            catch (Exception ex)
+            {
+                throw new CustomException(ExceptionErrorCode.RepositoryError, ex.Message);
+            }
+        }
+        public async Task<int> CountAsync()
+        {
+            try
+            {
+                return await context.Buildings.CountAsync();
             }
             catch (Exception ex)
             {
