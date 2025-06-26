@@ -347,6 +347,8 @@ const Orders = () => {
                   onChange={handlePageChange}
                   color="primary"
                   size="large"
+                  siblingCount={1}
+                  boundaryCount={1}
                   sx={{
                     "& .MuiPaginationItem-root": {
                       fontSize: "1rem",
