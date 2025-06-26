@@ -43,6 +43,7 @@
                 }
                 var userResult = new UserQueryResult(
                     user.Id,
+                    user.IdentityNumber,
                     user.Email,
                     user.PhoneNumber,
                     user.DateOfBirth,

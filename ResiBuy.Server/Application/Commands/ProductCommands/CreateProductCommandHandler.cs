@@ -1,4 +1,5 @@
-﻿using ResiBuy.Server.Application.Commands.ProductCommands.DTOs.Create;
+﻿using Confluent.Kafka;
+using ResiBuy.Server.Application.Commands.ProductCommands.DTOs.Create;
 
 namespace ResiBuy.Server.Application.Commands.ProductCommands
 {
@@ -34,7 +35,7 @@ namespace ResiBuy.Server.Application.Commands.ProductCommands
                         if (duplicatesInSame.Any())
                         {
                             var message = string.Join(", ", duplicatesInSame);
-                            return ResponseModel.ExceptionResponse($"Dữ liệu AdditionalData bị trùng trong 1 sản phẩm chi tiết: {message}");
+                            throw new CustomException(ExceptionErrorCode.ValidationFailed, $"Dữ liệu AdditionalData bị trùng trong 1 sản phẩm chi tiết: {message}");
                         }
 
                         dataSet = detailDto.AdditionalData
@@ -44,7 +45,7 @@ namespace ResiBuy.Server.Application.Commands.ProductCommands
                         if (detailDataSets.Any(existing => existing.SetEquals(dataSet)))
                         {
                             var formatted = string.Join(", ", dataSet);
-                            return ResponseModel.ExceptionResponse($"Dữ liệu AdditionalData bị trùng hoàn toàn giữa các sản phẩm chi tiết: {formatted}");
+                            throw new CustomException(ExceptionErrorCode.ValidationFailed, $"Dữ liệu AdditionalData bị trùng hoàn toàn giữa các sản phẩm chi tiết: {formatted}");
                         }
 
                         detail.AdditionalData = detailDto.AdditionalData
@@ -74,6 +75,9 @@ namespace ResiBuy.Server.Application.Commands.ProductCommands
                 }
 
                 var result = await productDbService.CreateAsync(product);
+
+                if (result == null) 
+                    throw new CustomException(ExceptionErrorCode.CreateFailed, "Không thể tạo sản phẩm mới. Vui lòng kiểm tra lại dữ liệu.");
 
                 return ResponseModel.SuccessResponse(result);
             }

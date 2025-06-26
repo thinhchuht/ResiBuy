@@ -42,6 +42,7 @@ import DialogTitle from '@mui/material/DialogTitle';
 import DialogContent from '@mui/material/DialogContent';
 import DialogActions from '@mui/material/DialogActions';
 import WarningAmberIcon from '@mui/icons-material/WarningAmber';
+import cartApi from "../../api/cart.api";
 
 // Define types matching API result
 interface RoomQueryResult {
@@ -189,9 +190,18 @@ const OrderCard = ({
     }
   };
 
-  const handleBuyAgain = () => {
-    if (order.orderItems.length > 0) {
-      navigate(`/product?id=${order.orderItems[0].productId}`);
+  const handleBuyAgain = async () => {
+    if (order.orderItems.length > 0 && user?.cartId) {
+      try {
+        for (const item of order.orderItems) {
+          await cartApi.addToCart(user.cartId, item.productDetailId, item.quantity, false);
+        }
+        const selectedProductDetailIds = order.orderItems.map(item => item.productDetailId);
+        navigate('/cart', { state: { selectedProductDetailIds } });
+      } catch (error) {
+        console.error(error);
+        toast.error('Không thể thêm lại sản phẩm vào giỏ hàng!');
+      }
     }
   };
 

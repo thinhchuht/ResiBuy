@@ -12,29 +12,15 @@ namespace ResiBuy.Server.Controllers
         [HttpPost]
         public async Task<IActionResult> CreateAsync([FromBody] CreateProductDto dto)
         {
-            try
-            {
                 var result = await mediator.Send(new CreateProductCommand(dto));
                 return Ok(result);
-            }
-            catch (Exception ex)
-            {
-                return BadRequest(ResponseModel.ExceptionResponse(ex.ToString()));
-            }
         }
 
         [HttpPut]
         public async Task<IActionResult> UpdateAsync([FromBody] UpdateProductDto dto)
         {
-            try
-            {
                 var result = await mediator.Send(new UpdateProductCommand(dto));
                 return Ok(result);
-            }
-            catch (Exception ex)
-            {
-                return BadRequest(ResponseModel.ExceptionResponse(ex.ToString()));
-            }
         }
 
 
@@ -42,29 +28,15 @@ namespace ResiBuy.Server.Controllers
         [HttpGet("{id}")]
         public async Task<IActionResult> GetProductById(int id)
         {
-            try
-            {
                 var result = await mediator.Send(new GetProductByIdQuery(id));
                 return Ok(result);
-            }
-            catch (Exception ex)
-            {
-                return BadRequest(ResponseModel.ExceptionResponse(ex.ToString()));
-            }
         }
 
         [HttpGet("products")]
-        public async Task<IActionResult> GetAllAsync([FromQuery] int pageNumber, [FromQuery] int pageSize)
+        public async Task<IActionResult> GetAllProducts([FromQuery] ProductFilter filter)
         {
-            try
-            {
-                var result = await mediator.Send(new GetPagedProductsAsync(pageNumber, pageSize));
+                var result = await mediator.Send(new GetAllProductsQuery(filter));
                 return Ok(result);
-            }
-            catch (Exception ex)
-            {
-                return BadRequest(ResponseModel.ExceptionResponse(ex.ToString()));
-            }
         }
     }
 }

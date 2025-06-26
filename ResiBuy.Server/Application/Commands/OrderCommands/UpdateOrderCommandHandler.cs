@@ -41,6 +41,7 @@ namespace ResiBuy.Server.Application.Commands.OrderCommands
                     throw new CustomException(ExceptionErrorCode.ValidationFailed, "Ghi chú không được quá 100 ký tự.");
                 order.Note = dto.Note;
             }
+            order.UpdateAt = DateTime.Now;
             await orderDbService.UpdateAsync(order);
             return ResponseModel.SuccessResponse();
         }

@@ -2,12 +2,31 @@
 
 namespace ResiBuy.Server.Application.Queries.OrderQueries
 {
-    public record GetAllOrdersQuery(OrderStatus OrderStatus, PaymentMethod PaymentMethod, PaymentStatus PaymentStatus, string UserId = null, int PageNumber = 1, int PageSize = 10) : IRequest<ResponseModel>;
+    public record GetAllOrdersQuery(
+        OrderStatus OrderStatus,
+        PaymentMethod PaymentMethod,
+        PaymentStatus PaymentStatus,
+        string UserId = null,
+        int PageNumber = 1,
+        int PageSize = 10,
+        DateTime? StartDate = null,
+        DateTime? EndDate = null
+    ) : IRequest<ResponseModel>;
+
     public class GetAllOrdersQueryHandler(IOrderDbService orderDbService) : IRequestHandler<GetAllOrdersQuery, ResponseModel>
     {
         public async Task<ResponseModel> Handle(GetAllOrdersQuery request, CancellationToken cancellationToken)
         {
-            var result = await orderDbService.GetAllAsync(request.OrderStatus, request.PaymentMethod, request.PaymentStatus, request.UserId, request.PageNumber, request.PageSize);
+            var result = await orderDbService.GetAllAsync(
+                request.OrderStatus,
+                request.PaymentMethod,
+                request.PaymentStatus,
+                request.UserId,
+                request.PageNumber,
+                request.PageSize,
+                request.StartDate,
+                request.EndDate
+            );
             if (result.Items == null || !result.Items.Any())
                 return ResponseModel.SuccessResponse(new PagedResult<OrderQueryResult>(new List<OrderQueryResult>(), 0, 1, 0));
             var items = result.Items.Select(item => new OrderQueryResult(

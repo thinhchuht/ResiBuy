@@ -8,13 +8,13 @@
         public Product Product { get; set; }
         public int Sold { get; set; }
         public decimal Price { get; set; }
-        public WeightCategory Weight { get; set; }
+        public float Weight { get; set; }
         public Image Image { get; set; }
         public IEnumerable<CartItem> CartItems { get; set; }
         public IEnumerable<OrderItem> OrderItems { get; set; }
         public List<AdditionalData> AdditionalData { get; set; } = new List<AdditionalData>();
 
-        public ProductDetail(decimal price, WeightCategory weight, bool isOutOfStock = false)
+        public ProductDetail(decimal price, float weight, bool isOutOfStock = false)
 
         {
             Price = price;
@@ -23,7 +23,7 @@
             Sold = 0;
         }
 
-        public void UpdateProductDetail(decimal price, WeightCategory weight, bool isOutOfStock)
+        public void UpdateProductDetail(decimal price, float weight, bool isOutOfStock)
         {
             Price = price;
             Weight = weight;

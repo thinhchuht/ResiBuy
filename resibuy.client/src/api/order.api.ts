@@ -9,9 +9,11 @@ const orderApi = {
     paymentStatus = "None",
     userId?: string,
     pageNumber = 1,
-    pageSize = 10
+    pageSize = 10,
+    startDate?: string,
+    endDate?: string
   ) => {
-    const params = {
+    const params: Record<string, unknown> = {
       orderStatus,
       paymentMethod,
       paymentStatus,
@@ -19,6 +21,8 @@ const orderApi = {
       pageNumber,
       pageSize,
     };
+    if (startDate) params.startDate = startDate;
+    if (endDate) params.endDate = endDate;
     const response = await axiosClient.get(`${orderUrl}`, { params });
     return response.data.data;
   },

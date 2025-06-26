@@ -1,13 +1,13 @@
 import { useState, useEffect, useCallback, useMemo } from "react";
 import { Box, Typography, Container, Paper, Breadcrumbs } from "@mui/material";
-import { Link, useNavigate } from "react-router-dom";
+import { Link, useNavigate, useLocation } from "react-router-dom";
 import type { CartItem } from "../../types/models";
 import CartItemSection from "./CartItemSection";
 import CartSummarySection from "./CartSummarySection";
 import cartApi from "../../api/cart.api";
 import { useAuth } from "../../contexts/AuthContext";
 import { toast } from "react-toastify";
-import { HubEventType, useEventHub } from "../../hooks/useEventHub";
+import { HubEventType, useEventHub, type HubEventHandler } from "../../hooks/useEventHub";
 import HomeIcon from '@mui/icons-material/Home';
 import NavigateNextIcon from '@mui/icons-material/NavigateNext';
 
@@ -19,6 +19,8 @@ const Cart = () => {
   const [totalItems, setTotalItems] = useState(0);
   const { user } = useAuth();
   const navigate = useNavigate();
+  const location = useLocation();
+  const selectedProductDetailIds = location.state?.selectedProductDetailIds as number[] | undefined;
 
   const fetchCartItems = useCallback(async () => {
     try {
@@ -43,6 +45,14 @@ const Cart = () => {
     fetchCartItems();
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [page, rowsPerPage, user?.cartId]);
+
+  useEffect(() => {
+    if (selectedProductDetailIds && cartItems.length > 0) {
+      setSelectedCartItems(
+        cartItems.filter(item => selectedProductDetailIds.includes(item.productDetailId))
+      );
+    }
+  }, [cartItems, selectedProductDetailIds]);
 
   const handleCartItemAdded = useCallback(
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -83,7 +93,7 @@ const Cart = () => {
     [handleCartItemAdded, handleCartItemDeleted]
   );
 
-  useEventHub(eventHandlers);
+  useEventHub(eventHandlers as Partial<Record<HubEventType, HubEventHandler>>);
 
   const handleQuantityChange = async (
     productDetailId: number,
