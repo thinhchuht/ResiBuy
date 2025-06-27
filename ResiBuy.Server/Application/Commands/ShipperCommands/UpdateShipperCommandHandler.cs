@@ -27,7 +27,7 @@ namespace ResiBuy.Server.Application.Commands.ShipperCommands
             shipper.StartWorkTime = command.StartWorkTime;
             shipper.EndWorkTime = command.EndWorkTime;
 
-            await _shipperDbService.UpdateAsync(shipper);
+            await _shipperDbService.UpdateAsync(shipper); 
 
             return ResponseModel.SuccessResponse();
         }

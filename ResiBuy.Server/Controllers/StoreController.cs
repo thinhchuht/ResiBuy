@@ -40,9 +40,9 @@ namespace ResiBuy.Server.Controllers
         }
 
         [HttpGet]
-        public async Task<IActionResult> GetAllStores()
+        public async Task<IActionResult> GetAllStores([FromQuery] int pageSize = 5, [FromQuery] int pageNumber = 1)
         {
-            var result = await _mediator.Send(new GetAllStoresQuery());
+            var result = await _mediator.Send(new GetAllStoresQuery(pageSize, pageNumber));
             return Ok(result);
         }
 
@@ -54,9 +54,9 @@ namespace ResiBuy.Server.Controllers
         }
 
         [HttpGet("owner/{ownerId}")]
-        public async Task<IActionResult> GetStoreByOwnerId(string ownerId)
+        public async Task<IActionResult> GetStoreByOwnerId(string ownerId, [FromQuery] int pageSize = 5, [FromQuery] int pageNumber = 1)
         {
-            var result = await _mediator.Send(new GetStoreByOwnerIdQuery(ownerId));
+            var result = await _mediator.Send(new GetStoreByOwnerIdQuery(ownerId, pageSize, pageNumber));
             return Ok(result);
         }
     }

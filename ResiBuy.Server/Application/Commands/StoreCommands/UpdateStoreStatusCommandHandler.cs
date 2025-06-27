@@ -22,6 +22,6 @@ namespace ResiBuy.Server.Application.Commands.StoreCommands
         {
             await _storeDbService.UpdateStoreStatusAsync(command.StoreId, command.IsLocked, command.IsOpen);
             return ResponseModel.SuccessResponse();
-        }
+        } 
     }
 } 

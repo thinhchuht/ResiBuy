@@ -37,7 +37,7 @@ namespace ResiBuy.Server.Application.Commands.StoreCommands
 
             var store = new Store
             {
-                Id = Guid.NewGuid(),
+                Id = Guid.Parse(user.Id),
                 Name = command.Name,
                 Description = command.Description,
                 IsLocked = false,

@@ -59,7 +59,7 @@ namespace ResiBuy.Server.Application.Commands.ShipperCommands
             // 4. Tạo Shipper
             var shipper = new Shipper
             {
-                Id = Guid.NewGuid(),
+                Id = Guid.Parse(user.Id),
                 UserId = createdUser.Id,
                 IsOnline = false,
                 ReportCount = 0,

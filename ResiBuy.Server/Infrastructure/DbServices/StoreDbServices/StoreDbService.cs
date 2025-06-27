@@ -13,13 +13,15 @@ namespace ResiBuy.Server.Infrastructure.DbServices.StoreDbServices
             _context = context;
         }
 
-        public async Task<IEnumerable<Store>> GetAllStoresAsync()
+        public async Task<IEnumerable<Store>> GetAllStoresAsync(int pageNumber = 1,int pageSize = 5)
         {
             try
             {
                 var stores = await _context.Stores
                     .Include(s => s.Owner)
                     .Include(s => s.Room)
+                    .Skip((pageNumber-1)*pageSize)
+                    .Take(pageSize)
                     .ToListAsync();
                 return stores;
             }
@@ -45,14 +47,17 @@ namespace ResiBuy.Server.Infrastructure.DbServices.StoreDbServices
             }
         }
 
-        public async Task<Store> GetStoreByOwnerIdAsync(string ownerId)
+        public async Task<IEnumerable<Store>> GetStoreByOwnerIdAsync(string ownerId, int pageNumber = 1, int pageSize = 5)
         {
             try
             {
                 var store = await _context.Stores
                     .Include(s => s.Owner)
                     .Include(s => s.Room)
-                    .FirstOrDefaultAsync(s => s.OwnerId == ownerId);
+                    .Where(s => s.OwnerId == ownerId)
+                    .Skip((pageNumber - 1) * pageSize)
+                    .Take(pageSize)
+                    .ToListAsync();
                 return store;
             }
             catch (Exception ex)
@@ -67,7 +72,7 @@ namespace ResiBuy.Server.Infrastructure.DbServices.StoreDbServices
             {
                 var store = await _context.Stores.FindAsync(storeId);
                 if (store == null)
-                    throw new CustomException(ExceptionErrorCode.NotFound, "Store không tồn tại");
+                    throw new CustomException(ExceptionErrorCode.NotFound, "Cửa hàng không tồn tại");
 
                 store.IsLocked = isLocked;
                 store.IsOpen = isOpen;

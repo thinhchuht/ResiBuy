@@ -20,7 +20,7 @@ namespace ResiBuy.Server.Application.Commands.ShipperCommands
         public async Task<ResponseModel> Handle(UpdateShipperLocationCommand command, CancellationToken cancellationToken)
         {
             await _shipperDbService.UpdateShipperLocationAsync(command.ShipperId, command.LocationId);
-            return ResponseModel.SuccessResponse();
+            return ResponseModel.SuccessResponse(); 
         }
     }
 } 

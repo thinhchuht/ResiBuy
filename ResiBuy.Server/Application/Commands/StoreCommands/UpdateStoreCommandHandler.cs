@@ -22,7 +22,7 @@ namespace ResiBuy.Server.Application.Commands.StoreCommands
         {
             var store = await _storeDbService.GetStoreByIdAsync(command.Id);
             if (store == null)
-                throw new CustomException(ExceptionErrorCode.NotFound, "Store không tồn tại");
+                throw new CustomException(ExceptionErrorCode.NotFound, "Cửa hàng không tồn tại");
 
             store.Name = command.Name;
             store.Description = command.Description;

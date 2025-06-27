@@ -17,13 +17,13 @@ namespace ResiBuy.Server.Application.Queries.StoreQueries
         public async Task<ResponseModel> Handle(GetStoreByIdQuery query, CancellationToken cancellationToken)
         {
             if (query.Id == Guid.Empty)
-                return ResponseModel.FailureResponse("StoreId là bắt buộc");
+                throw new CustomException("StoreId là bắt buộc");
 
             var store = await _storeDbService.GetStoreByIdAsync(query.Id);
             if (store == null)
-                return ResponseModel.FailureResponse("Store không tồn tại");
+                throw new CustomException("Cửa hàng không tồn tại");
 
-            return ResponseModel.SuccessResponse(store);
+            return ResponseModel.SuccessResponse(store); 
         }
     }
 } 

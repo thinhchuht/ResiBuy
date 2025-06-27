@@ -20,7 +20,7 @@ namespace ResiBuy.Server.Application.Commands.ShipperCommands
         public async Task<ResponseModel> Handle(UpdateShipperStatusCommand command, CancellationToken cancellationToken)
         {
             await _shipperDbService.UpdateShipperStatusAsync(command.ShipperId, command.IsOnline);
-            return ResponseModel.SuccessResponse();
+            return ResponseModel.SuccessResponse(); 
         }
     }
 } 

@@ -3,7 +3,7 @@ using ResiBuy.Server.Infrastructure.DbServices.StoreDbServices;
 
 namespace ResiBuy.Server.Application.Queries.StoreQueries
 {
-    public record GetStoreByOwnerIdQuery(string OwnerId) : IRequest<ResponseModel>;
+    public record GetStoreByOwnerIdQuery(string OwnerId,int pageSize = 5, int pageNumber =1) : IRequest<ResponseModel>;
 
     public class GetStoreByOwnerIdQueryHandler : IRequestHandler<GetStoreByOwnerIdQuery, ResponseModel>
     {
@@ -17,13 +17,13 @@ namespace ResiBuy.Server.Application.Queries.StoreQueries
         public async Task<ResponseModel> Handle(GetStoreByOwnerIdQuery query, CancellationToken cancellationToken)
         {
             if (string.IsNullOrEmpty(query.OwnerId))
-                return ResponseModel.FailureResponse("OwnerId là bắt buộc");
+                throw new CustomException("OwnerId là bắt buộc");
 
-            var store = await _storeDbService.GetStoreByOwnerIdAsync(query.OwnerId);
-            if (store == null)
-                return ResponseModel.FailureResponse("Store không tồn tại");
+            var stores = await _storeDbService.GetStoreByOwnerIdAsync(query.OwnerId, query.pageSize, query.pageNumber);
+            if (stores == null)
+                throw new CustomException("Cửa hàng không tồn tại");
 
-            return ResponseModel.SuccessResponse(store);
+            return ResponseModel.SuccessResponse(stores);
         }
     }
 } 

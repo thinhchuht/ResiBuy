@@ -48,9 +48,9 @@ namespace ResiBuy.Server.Controllers
         }
 
         [HttpGet]
-        public async Task<IActionResult> GetAllShippers()
+        public async Task<IActionResult> GetAllShippers([FromQuery] int pageSize = 5, [FromQuery] int pageNumber = 1)
         {
-            var result = await _mediator.Send(new GetAllShippersQuery());
+            var result = await _mediator.Send(new GetAllShippersQuery(pageSize,pageNumber));
             return Ok(result);
         }
 

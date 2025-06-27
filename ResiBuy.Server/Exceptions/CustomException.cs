@@ -12,6 +12,10 @@
             HttpStatus = GetHttpStatus(code);
         }
 
+        public CustomException(string message) : base(message)
+        {
+        }
+
         private static string GetDefaultMessage(ExceptionErrorCode code) => code switch
         {
             ExceptionErrorCode.NotFound => "Resource not found.",

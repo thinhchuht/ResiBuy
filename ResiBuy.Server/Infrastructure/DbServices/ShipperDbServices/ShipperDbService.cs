@@ -13,13 +13,15 @@ namespace ResiBuy.Server.Infrastructure.DbServices.ShipperDbServices
             _context = context;
         }
 
-        public async Task<IEnumerable<Shipper>> GetAllShippersAsync()
+        public async Task<IEnumerable<Shipper>> GetAllShippersAsync(int pageNumber=1, int pageSize =5)
         {
             try
             {
                 var shippers = await _context.Shippers
                     .Include(s => s.User)
                     .Include(s => s.LastLocation)
+                    .Skip((pageNumber - 1) * pageSize)
+                    .Take(pageSize)
                     .ToListAsync();
                 return shippers;
             }
@@ -28,6 +30,8 @@ namespace ResiBuy.Server.Infrastructure.DbServices.ShipperDbServices
                 throw new CustomException(ExceptionErrorCode.RepositoryError, ex.Message);
             }
         }
+
+        
 
         public async Task<Shipper> GetShipperByIdAsync(Guid id)
         {
