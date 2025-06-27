@@ -1,13 +1,13 @@
 ﻿using ResiBuy.Server.Infrastructure.DbServices.CartItemDbService;
 using ResiBuy.Server.Infrastructure.DbServices.OrderDbServices;
-using ResiBuy.Server.Infrastructure.DbServices.OrderItemDbServices;
+using ResiBuy.Server.Infrastructure.DbServices.VoucherDbServices;
 using ResiBuy.Server.Infrastructure.Model.EventDataDto;
 
 namespace ResiBuy.Server.Application.Commands.OrderCommands
 {
     public record CreateOrderCommand(CheckoutDto CheckoutDto) : IRequest<ResponseModel>;
     public class CreateOrderCommandHandler(IUserDbService userDbService, IOrderDbService orderDbService, IRoomDbService roomDbService,
-        IOrderItemDbService orderItemDbService, ICartDbService cartDbService, ICartItemDbService cartItemDbService,
+        IVoucherDbService voucherDbService, ICartDbService cartDbService, ICartItemDbService cartItemDbService,
         IMailBaseService mailBaseService, INotificationService notificationService
         ) : IRequestHandler<CreateOrderCommand, ResponseModel>
     {
@@ -31,6 +31,9 @@ namespace ResiBuy.Server.Application.Commands.OrderCommands
             if(!cart.CartItems.Any() && !dto.IsInstance) throw new CustomException(ExceptionErrorCode.ValidationFailed, "Giỏ hàng không có sản phẩm nào.");
             if (!cart.IsCheckingOut)
                 throw new CustomException(ExceptionErrorCode.ValidationFailed, "Giỏ hàng chưa ở trạng thái thanh toán.");
+            var voucherIds = dto.Orders.Select(o => o.VoucherId);
+            var checkVoucherRs = await voucherDbService.CheckIsActiveVouchers(voucherIds);
+            if (!checkVoucherRs.IsSuccess())throw new CustomException(ExceptionErrorCode.ValidationFailed, checkVoucherRs.Message);
             cart.IsCheckingOut = false;
             try
             {
@@ -40,10 +43,11 @@ namespace ResiBuy.Server.Application.Commands.OrderCommands
             {
                 throw new CustomException(ExceptionErrorCode.CreateFailed, "Có người khác đang thao tác với giỏ hàng này. Vui lòng thử lại.");
             }
-            var orders = dto.Orders.Select(o => new Order(o.Id, o.TotalPrice, dto.PaymentMethod, o.Note, dto.AddressId, dto.UserId, o.StoreId, o.Items.Select(i => new OrderItem(i.Quantity, i.Price, o.Id, i.ProductDetailId)).ToList()));
+            var orders = dto.Orders.Select(o => new Order(o.Id, o.TotalPrice, dto.PaymentMethod, o.Note, dto.AddressId, dto.UserId, o.StoreId, o.Items.Select(i => new OrderItem(i.Quantity, i.Price, o.Id, i.ProductDetailId)).ToList(), o.VoucherId));
             var createdOrders = await orderDbService.CreateBatchAsync(orders);
             if(createdOrders == null || !createdOrders.Any()) throw new CustomException(ExceptionErrorCode.CreateFailed, "Không thể tạo đơn hàng");
-            if(!dto.IsInstance)
+            if(voucherIds.Any()) await voucherDbService.UpdateBatchAsync(voucherIds);
+            if (!dto.IsInstance)
              await cartItemDbService.DeleteBatchByProductDetailIdAsync(cart.Id , createdOrders.SelectMany(o => o.Items).Select(ci => ci.ProductDetailId));
             foreach (var order in createdOrders)
             {
