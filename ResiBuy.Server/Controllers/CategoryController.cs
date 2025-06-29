@@ -1,55 +1,44 @@
-﻿using ResiBuy.Server.Application.Commands.CategoryCommands;
+﻿
+using ResiBuy.Server.Application.Commands.CategoryCommands;
+using ResiBuy.Server.Application.Commands.CategoryCommands.DTOs;
 using ResiBuy.Server.Application.Queries.CategoryQueries;
-using ResiBuy.Server.Infrastructure.Filter;
-using static Microsoft.EntityFrameworkCore.DbLoggerCategory.Database;
+
 
 namespace ResiBuy.Server.Controllers
 {
     [Route("api/[controller]")]
     [ApiController]
-    public class CategoryController(IMediator mediator) : ControllerBase
+    public class CategoryController(IMediator mediator, ResiBuyContext context) : ControllerBase
     {
 
-        [HttpPost("create")]
-        public async Task<IActionResult> CreateAsync([FromBody] CreateCategoryCommand command)
+        [HttpPost]
+        public async Task<IActionResult> CreateAsync([FromBody] CreateCategoryDto dto)
         {
-            try
-            {
-                var result = await mediator.Send(command);
-                return Ok(result);
-            }
-            catch (Exception ex)
-            {
-                return BadRequest(ResponseModel.ExceptionResponse(ex.ToString()));
-            }
+            var result = await mediator.Send(new CreateCategoryCommand(dto));
+            return Ok(result);
         }
 
-        [HttpGet("get-all-category")]
-        public async Task<IActionResult> GetAllAsync()
+        [HttpPut]
+        public async Task<IActionResult> UpdateAsync([FromBody] UpdateCategoryDto dto)
         {
-            try
-            {
+                var result = await mediator.Send(new UpdateCategoryCommand(dto));
+                return Ok(result);
+        }
+
+
+        [HttpGet("{id}")]
+        public async Task<IActionResult> GetProductById(Guid id)
+        {
+                var result = await mediator.Send(new GetCategoieByIdQuery(id));
+                return Ok(result);
+        }
+
+        [HttpGet("categories")]
+        public async Task<IActionResult> GetAllCategory()
+        {
                 var result = await mediator.Send(new GetAllCategoriesQuery());
                 return Ok(result);
-            }
-            catch (Exception ex)
-            {
-                return BadRequest(ResponseModel.ExceptionResponse(ex.ToString()));
-            }
         }
 
-        [HttpGet("get-category-with-products")]
-        public async Task<IActionResult> GetAllAsync([FromQuery] Guid categoryId, [FromQuery] int pageNumber, [FromQuery] int pageSize)
-        {
-            try
-            {
-                var result = await mediator.Send(new GetPagedProductsByCategoryIdAsync(categoryId, pageNumber, pageSize));
-                return Ok(result);
-            }
-            catch (Exception ex)
-            {
-                return BadRequest(ResponseModel.ExceptionResponse(ex.ToString()));
-            }
-        }
     }
 }

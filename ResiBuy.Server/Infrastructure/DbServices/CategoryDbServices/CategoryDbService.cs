@@ -17,11 +17,7 @@ namespace ResiBuy.Server.Infrastructure.DbServices.CategoryDbServices
         {
             try
             {
-                var categories = await _context.Categories.ToListAsync();
-                if (categories == null)
-                {
-                    return null;
-                }
+                var categories = await _context.Categories.Include(c => c.Image).ToListAsync();
                 return categories;
             }
             catch (Exception ex)
@@ -34,11 +30,7 @@ namespace ResiBuy.Server.Infrastructure.DbServices.CategoryDbServices
         {
             try
             {
-                var category = await _context.Categories.FirstOrDefaultAsync(a => a.Id == id);
-                if (category == null)
-                {
-                    return null;
-                }
+                var category = await _context.Categories.Include(c => c.Image).FirstOrDefaultAsync(a => a.Id == id);
                 return category;
             }
             catch (Exception ex)
@@ -47,34 +39,5 @@ namespace ResiBuy.Server.Infrastructure.DbServices.CategoryDbServices
             }
         }
 
-        public async Task<PagedResult<Product>> GetPagedProductsByCategoryIdAsync(Guid categoryId, int pageNumber, int pageSize)
-        {
-            try
-            {
-                var query = _context.Products
-                    .Where(p => p.CategoryId == categoryId)
-                    .AsQueryable();
-
-                var totalCount = await query.CountAsync();
-
-                var items = await query
-                    .OrderBy(p => p.Id)
-                    .Skip((pageNumber - 1) * pageSize)
-                    .Take(pageSize)
-                    .ToListAsync();
-
-                return new PagedResult<Product>
-                {
-                    Items = items,
-                    TotalCount = totalCount,
-                    PageNumber = pageNumber,
-                    PageSize = pageSize
-                };
-            }
-            catch (Exception ex)
-            {
-                throw new CustomException(ExceptionErrorCode.RepositoryError, ex.Message);
-            }
-        }
     }
 }

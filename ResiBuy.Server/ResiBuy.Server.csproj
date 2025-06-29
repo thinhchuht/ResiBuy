@@ -9,15 +9,20 @@
   </PropertyGroup>
 
   <ItemGroup>
+    <Compile Remove="Application\Commands\NewFolder\**" />
     <Compile Remove="Infrastructure\Repositories\**" />
+    <Content Remove="Application\Commands\NewFolder\**" />
     <Content Remove="Infrastructure\Repositories\**" />
+    <EmbeddedResource Remove="Application\Commands\NewFolder\**" />
     <EmbeddedResource Remove="Infrastructure\Repositories\**" />
+    <None Remove="Application\Commands\NewFolder\**" />
     <None Remove="Infrastructure\Repositories\**" />
   </ItemGroup>
 
   <ItemGroup>
     <PackageReference Include="AutoMapper.Extensions.Microsoft.DependencyInjection" Version="12.0.1" />
     <PackageReference Include="BCrypt.Net-Next" Version="4.0.3" />
+    <PackageReference Include="CloudinaryDotNet" Version="1.27.5" />
     <PackageReference Include="Confluent.Kafka" Version="2.10.0" />
     <PackageReference Include="MailKit" Version="4.12.1" />
     <PackageReference Include="MediatR" Version="12.5.0" />
@@ -33,8 +38,8 @@
       <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
     </PackageReference>
     <PackageReference Include="MimeKit" Version="4.12.0" />
-    <PackageReference Include="Resend" Version="0.1.4" />
     <PackageReference Include="Swashbuckle.AspNetCore" Version="8.1.2" />
+    <PackageReference Include="Twilio" Version="7.11.3" />
   </ItemGroup>
 
   <ItemGroup>
@@ -44,11 +49,7 @@
   </ItemGroup>
 
   <ItemGroup>
-    <Folder Include="Application\Commands\CartCommands\" />
-    <Folder Include="Application\Queries\AreaQueries\" />
-    <Folder Include="Application\Queries\BuildingQueries\" />
-    <Folder Include="Application\Queries\RoomQueries\" />
+    <Folder Include="Application\Commands\CartitemCommands\" />
     <Folder Include="Services\HttpServices\" />
   </ItemGroup>
-
 </Project>

@@ -12,27 +12,30 @@
             HttpStatus = GetHttpStatus(code);
         }
 
-        public CustomException(string message) : base(message)
+        public override string ToString()
         {
+            return Message;
         }
 
         private static string GetDefaultMessage(ExceptionErrorCode code) => code switch
         {
-            ExceptionErrorCode.NotFound => "Resource not found.",
-            ExceptionErrorCode.ValidationFailed => "Validation failed.",
-            ExceptionErrorCode.Unauthorized => "Access denied.",
-            ExceptionErrorCode.CreateFailed => "Create operation failed.",
-            ExceptionErrorCode.UpdateFailed => "Update operation failed.",
-            ExceptionErrorCode.DeleteFailed => "Delete operation failed.",
-            ExceptionErrorCode.RepositoryError => "Repository error occurred.",
-            ExceptionErrorCode.DuplicateValue => "Duplicate value found.",
-            ExceptionErrorCode.InvalidInput => "Invalid input provided.",
-            _ => "Unknown error occurred."
+            ExceptionErrorCode.NotFound => "Không tìm thấy tài nguyên.",
+            ExceptionErrorCode.Forbidden => "Không được phép truy cập tài nguyên này.",
+            ExceptionErrorCode.ValidationFailed => "Dữ liệu không hợp lệ.",
+            ExceptionErrorCode.Unauthorized => "Truy cập bị từ chối.",
+            ExceptionErrorCode.CreateFailed => "Tạo mới thất bại.",
+            ExceptionErrorCode.UpdateFailed => "Cập nhật thất bại.",
+            ExceptionErrorCode.DeleteFailed => "Xóa thất bại.",
+            ExceptionErrorCode.RepositoryError => "Lỗi truy xuất dữ liệu.",
+            ExceptionErrorCode.DuplicateValue => "Dữ liệu đã tồn tại.",
+            ExceptionErrorCode.InvalidInput => "Dữ liệu đầu vào không hợp lệ.",
+            _ => "Đã xảy ra lỗi không xác định."
         };
 
         private static int GetHttpStatus(ExceptionErrorCode code) => code switch
         {
             ExceptionErrorCode.NotFound => StatusCodes.Status404NotFound,
+            ExceptionErrorCode.Forbidden => StatusCodes.Status403Forbidden,
             ExceptionErrorCode.ValidationFailed => StatusCodes.Status400BadRequest,
             ExceptionErrorCode.Unauthorized => StatusCodes.Status401Unauthorized,
             ExceptionErrorCode.CreateFailed => StatusCodes.Status400BadRequest,
@@ -44,5 +47,4 @@
             _ => StatusCodes.Status500InternalServerError
         };
     }
-
 }

@@ -14,6 +14,7 @@
         {
             try
             {
+                if (string.IsNullOrEmpty(name)) throw new CustomException(ExceptionErrorCode.ValidationFailed, "Tên tòa nhà là bắt buộc");
                 var existBuilding = await GetBuildingByNameAndAreaIdAssync(name, areaId);
                 if (existBuilding != null)
                 {
@@ -24,6 +25,7 @@
                 {
                     Name   = name,
                     AreaId = areaId,
+                    IsActive = true,
                 };
                 await context.Buildings.AddAsync(building);
                 await context.SaveChangesAsync();
@@ -53,11 +55,35 @@
             if (building == null) return null;
             return building;
         }
+
+        public async Task<IEnumerable<Building>> GetByAreaIdAsync(Guid id)
+        {
+            try
+            {
+                return await context.Buildings.Where(b => b.AreaId == id).ToListAsync();
+            }
+            catch (Exception ex)
+            {
+                throw new CustomException(ExceptionErrorCode.RepositoryError, ex.Message);
+            }
+        }
+
         public async Task<Building> GetByIdAsync(Guid id)
         {
             try
             {
                 return await context.Buildings.Include(a => a.Rooms).FirstOrDefaultAsync();
+            }
+            catch (Exception ex)
+            {
+                throw new CustomException(ExceptionErrorCode.RepositoryError, ex.Message);
+            }
+        }
+        public async Task<int> CountAsync()
+        {
+            try
+            {
+                return await context.Buildings.CountAsync();
             }
             catch (Exception ex)
             {

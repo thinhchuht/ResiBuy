@@ -10,6 +10,11 @@ namespace ResiBuy.Server.Configuration
                    .HasForeignKey<Cart>(c => c.UserId)
                    .OnDelete(DeleteBehavior.Cascade); // Xóa User, Cart sẽ bị xóa.
 
+            builder.HasOne(u => u.Avatar)
+       .WithOne(i => i.User)
+       .HasForeignKey<Image>(i => i.UserId)
+       .OnDelete(DeleteBehavior.NoAction); 
+
             builder.HasMany(u => u.UserRooms)
                    .WithOne(ur => ur.User)
                    .HasForeignKey(ur => ur.UserId)
@@ -26,4 +31,4 @@ namespace ResiBuy.Server.Configuration
                    .OnDelete(DeleteBehavior.Cascade); // Khi xóa User, tất cả Reports liên kết (có cùng CreatedById) sẽ tự động bị xóa. Xóa Report không ảnh hưởng đến User.
         }
     }
-} 
+}

@@ -1,43 +1,45 @@
-import {
-  Box,
-  Typography,
-  Link as MuiLink,
-  Divider,
-  Button,
-} from "@mui/material";
-import { useState } from "react";
+import { Box, Typography, Link as MuiLink, Divider, Button } from "@mui/material";
+import { useState, useEffect } from "react";
 import { Link, useNavigate } from "react-router-dom";
-import { fakeProducts } from "../../fakeData/fakeProductData";
-import { ShoppingCart, Visibility, Store } from "@mui/icons-material";
+import productApi from "../../api/product.api";
+import { Visibility, Store } from "@mui/icons-material";
 import type { Product } from "../../types/models";
 import { useToastify } from "../../hooks/useToastify";
 import ArrowRightIcon from "../../assets/icons/ArrowRightIcon";
-import { useAuth } from "../../contexts/AuthContext";
 import ProductCard from "../../components/ProductCard";
 
 const FeaturedProductSection = () => {
-  const { user } = useAuth();
   const navigate = useNavigate();
-  const [products] = useState(fakeProducts.slice(0, 12));
+  const [products, setProducts] = useState<Product[]>([]);
+  const [loading, setLoading] = useState(true);
   const toast = useToastify();
-  const handleAddToCart = (product: Product) => {
-    if (user) {
-      toast.success(`Đã thêm ${product.name} vào giỏ hàng!`);
-    } else {
-      toast.error("Vui lòng đăng nhập để thêm sản phẩm vào giỏ hàng");
-      navigate("/login");
-    }
-  };
+
+  useEffect(() => {
+    const fetchProducts = async () => {
+      try {
+        setLoading(true);
+        const response = await productApi.getAll({ pageNumber: 1, pageSize: 12, sortBy: "sold", sortDirection: "desc" });
+        console.log(response);
+        if (response) {
+          setProducts(response.items);
+        }
+      } catch (error) {
+        console.error("Error fetching featured products:", error);
+        toast.error("Không thể tải sản phẩm nổi bật.");
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchProducts();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
   const handleQuickView = (product: Product) => {
     navigate(`/products?id=${product.id}`);
   };
 
   const productActions = [
-    {
-      icon: <ShoppingCart sx={{ color: "#FF6B6B", fontSize: 22 }} />,
-      onClick: handleAddToCart,
-      label: "Thêm vào giỏ",
-    },
     {
       icon: <Visibility sx={{ color: "#FF6B6B", fontSize: 22 }} />,
       onClick: handleQuickView,
@@ -45,10 +47,29 @@ const FeaturedProductSection = () => {
     },
     {
       icon: <Store sx={{ color: "#FF6B6B", fontSize: 22 }} />,
-      onClick: (product: Product) => navigate(`/store/${product.storeId}`),
+      onClick: (product: Product) => navigate(`/products?storeId=${product.storeId}`),
       label: "Ghé thăm cửa hàng",
     },
   ];
+
+  if (loading) {
+    return (
+      <Box
+        sx={{
+          display: "flex",
+          justifyContent: "center",
+          alignItems: "center",
+          height: "200px",
+          width: "85%",
+          mx: "auto",
+          backgroundColor: "#fafafa",
+          borderRadius: 4,
+          boxShadow: "0 4px 20px 0 rgba(0,0,0,0.05)",
+        }}>
+        <Typography variant="h6">Đang tải sản phẩm...</Typography>
+      </Box>
+    );
+  }
 
   return (
     <Box
@@ -64,24 +85,21 @@ const FeaturedProductSection = () => {
         justifyContent: "center",
         borderRadius: 4,
         boxShadow: "0 4px 20px 0 rgba(0,0,0,0.05)",
-      }}
-    >
+      }}>
       <Box
         sx={{
           display: "flex",
           justifyContent: "space-between",
           alignItems: "center",
           margin: "30px 15px",
-        }}
-      >
+        }}>
         <Typography
           variant="h5"
           sx={{
             fontWeight: 600,
             color: "#2c3e50",
             letterSpacing: "0.5px",
-          }}
-        >
+          }}>
           SẢN PHẨM BÁN CHẠY
         </Typography>
         <MuiLink
@@ -102,8 +120,7 @@ const FeaturedProductSection = () => {
               textDecoration: "underline",
               transform: "translateY(-2px) scale(1.05)",
             },
-          }}
-        >
+          }}>
           <Button
             variant="outlined"
             sx={{
@@ -116,15 +133,12 @@ const FeaturedProductSection = () => {
                 borderColor: "#FF5C5C",
                 backgroundColor: "#FF6B6B1A",
               },
-            }}
-          >
-            Xem thêm <ArrowRightIcon stroke="#FF6B6B"/>
+            }}>
+            Xem thêm <ArrowRightIcon stroke="#FF6B6B" />
           </Button>
         </MuiLink>
       </Box>
-      <Divider
-        sx={{ backgroundColor: "#e04225", width: "80%", margin: "10px auto" }}
-      />
+      <Divider sx={{ backgroundColor: "#e04225", width: "80%", margin: "10px auto" }} />
       <Box
         sx={{
           display: "grid",
@@ -136,14 +150,9 @@ const FeaturedProductSection = () => {
           gap: 5,
           marginBottom: 5,
           marginTop: 5,
-        }}
-      >
+        }}>
         {products.map((product) => (
-          <ProductCard
-            key={product.id}
-            product={product}
-            productActions={productActions}
-          />
+          <ProductCard key={product.id} product={product} productActions={productActions} />
         ))}
       </Box>
     </Box>

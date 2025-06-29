@@ -1,11 +1,10 @@
-﻿using System.Globalization;
-using System.Net;
+﻿using ResiBuy.Server.Services.CheckoutSessionService;
 
 namespace ResiBuy.Server.Services.VNPayServices
 {
-    public class VNPayService(IConfiguration configuration) : IVNPayService
+    public class VNPayService(IConfiguration configuration, ICheckoutSessionService checkoutSessionService) : IVNPayService
     {
-        public string CreatePaymentUrl(decimal amount, string orderId, string orderInfo)
+        public string CreatePaymentUrl(decimal amount, Guid orderId, string orderInfo)
         {
             var vnpay = new SortedList<string, string>(new VnPayCompare());
             vnpay.Add("vnp_Amount", ((long)(amount * 100)).ToString());
@@ -18,7 +17,7 @@ namespace ResiBuy.Server.Services.VNPayServices
             vnpay.Add("vnp_OrderType", "other");
             vnpay.Add("vnp_ReturnUrl", configuration.GetValue<string>("VnPay:ReturnUrl"));
             vnpay.Add("vnp_TmnCode", configuration.GetValue<string>("VnPay:TmnCode"));
-            vnpay.Add("vnp_TxnRef", orderId);
+            vnpay.Add("vnp_TxnRef", orderId.ToString());
             vnpay.Add("vnp_Version", "2.1.0");
             var signData = new StringBuilder();
             foreach (var kv in vnpay)
@@ -51,7 +50,7 @@ namespace ResiBuy.Server.Services.VNPayServices
             vnpay.Remove("vnp_SecureHash");
 
             var signData = string.Join("&", vnpay.Select(kvp => $"{kvp.Key}={kvp.Value}"));
-            var hash = HmacSHA512(configuration.GetValue<string>("VnPay:HashSecret"), signData);
+            var hash = HmacSHA512(configuration.GetValue<string>("VnPay:HashSecret"), signData.ToString());
 
             return secureHash == hash;
         }

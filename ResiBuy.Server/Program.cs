@@ -1,4 +1,5 @@
-﻿using ResiBuy.Server.Services.VNPayServices;
+﻿using ResiBuy.Server.Infrastructure.DbServices.VoucherDbServices;
+using ResiBuy.Server.Services.SMSServices;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -8,8 +9,12 @@ services.AddSqlDb(builder.Configuration)
     .AddServices()
     .AddDbServices()
     .AddKafka(builder.Configuration)
+    .AddCloudinary(builder.Configuration)
     .AddAuthenJwtBase(builder.Configuration);
-
+services.AddScoped<ICodeGeneratorSerivce, CodeGeneratorSerivce>();
+services.AddScoped<ISMSService, SMSService>();
+services.AddScoped<IVoucherDbService, VoucherDbService>();
+services.AddMemoryCache();
 services.AddSignalR();
 services.AddMediatR(cfg => cfg.RegisterServicesFromAssemblyContaining(typeof(Program)));
 
@@ -59,6 +64,7 @@ services.AddSwaggerGen(
     }
 );
 services.AddScoped<IVNPayService, VNPayService>();
+
 
 var app = builder.Build();
 // Đặt middleware này TRƯỚC tất cả các middleware khác

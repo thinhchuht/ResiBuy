@@ -1,11 +1,23 @@
 import { Box, Typography } from "@mui/material";
-import { useState } from "react";
-import { fakeCategories } from "../../fakeData/fakeCategoryData";
+import { useState, useEffect } from "react";
 import CircularGallery from "../../animations/CircularGallery";
 import CategoryIcon from "../../assets/icons/Category";
+import categoryApi from "../../api/category.api";
 
 const CategorySection = () => {
-  const [categories] = useState(fakeCategories);
+  const [categories, setCategories] = useState([]);
+
+  useEffect(() => {
+    const fetchCategories = async () => {
+      try {
+        const res = await categoryApi.getAll();
+        setCategories(res.data || []);
+      } catch {
+        setCategories([]);
+      }
+    };
+    fetchCategories();
+  }, []);
 
   return (
     <Box

@@ -9,16 +9,28 @@ interface ProductGridProps {
     onClick: (product: Product) => void;
     label: string;
   }[];
+  onResetState?: () => void;
 }
 
-const ProductGridSection = ({ filteredProducts, productActions }: ProductGridProps) => (
-  <Box sx={{ display: "grid", gridTemplateColumns: { xs: "1fr", sm: "1fr 1fr", md: "1fr 1fr 1fr" }, gap: 3 }}>
-    {filteredProducts.map((product) => (
-      <Box key={product.id}>
-        <ProductCard product={product} productActions={productActions} />
-      </Box>
-    ))}
-  </Box>
-);
-
+const ProductGridSection = ({
+  filteredProducts,
+  productActions,
+  onResetState,
+}: ProductGridProps) => {
+  return (
+    <Box
+      sx={{
+        display: "grid",
+        gridTemplateColumns: { xs: "1fr", sm: "1fr 1fr", md: "1fr 1fr 1fr" },
+        gap: 3,
+      }}
+    >
+      {filteredProducts.map((product) => (
+        <Box key={product.id}>
+          <ProductCard product={product} productActions={productActions} onResetState={onResetState} />
+        </Box>
+      ))}
+    </Box>
+  );
+};
 export default ProductGridSection;

@@ -1,9 +1,6 @@
 import { Container, Box } from "@mui/material";
 import { useEffect, useState } from "react";
-import { fakeProducts } from "../../fakeData/fakeProductData";
-import { fakeCategories } from "../../fakeData/fakeCategoryData";
-import { ShoppingCart, Visibility, Store } from "@mui/icons-material";
-import { useAuth } from "../../contexts/AuthContext";
+import { Visibility, Store } from "@mui/icons-material";
 import { useToastify } from "../../hooks/useToastify";
 import { useNavigate, useSearchParams } from "react-router-dom";
 import type { Product } from "../../types/models";
@@ -14,42 +11,69 @@ import ProductEmptySection from "./ProductEmptySection";
 import SortBarSection from "./SortBarSection";
 import ProductGridSection from "./ProductGridSection";
 import ProductFilterSection from "./ProductFilterSection";
+import productApi from "../../api/product.api";
+import Pagination from "@mui/material/Pagination";
+
+const getProductMinPrice = (product: Product) => {
+  if (!product.productDetails || product.productDetails.length === 0) return 0;
+  return Math.min(...product.productDetails.map((pd) => pd.price));
+};
 
 const Products = () => {
-  const { user } = useAuth();
   const navigate = useNavigate();
   const toast = useToastify();
   const [searchParams] = useSearchParams();
-  const productId = searchParams.get('id');
-  const categoryId = searchParams.get('categoryId');
-  const [selectedCategory, setSelectedCategory] = useState(categoryId || "all");
+  const productId = searchParams.get("id");
+  const categoryId = searchParams.get("categoryId");
+  const storeId = searchParams.get("storeId");
+  const searchKeyword = searchParams.get("search") || "";
+  const [selectedCategory, setSelectedCategory] = useState(categoryId || null);
   const [sortBy, setSortBy] = useState("newest");
   const [priceRange, setPriceRange] = useState([0, 50000000]);
+  const [products, setProducts] = useState<Product[]>([]);
+  const [page, setPage] = useState(1);
+  const [pageSize] = useState(6);
+  const [total, setTotal] = useState(0);
 
   useEffect(() => {
-    setSelectedCategory(categoryId || "all");
+    const fetchProducts = async () => {
+      try {
+        const res = await productApi.getAll({
+          pageNumber: page,
+          pageSize,
+          categoryId: selectedCategory || undefined,
+          minPrice: priceRange[0],
+          maxPrice: priceRange[1],
+          storeId: storeId || undefined,
+          sortBy: sortBy === "price_asc" ? "price" : sortBy === "price_desc" ? "price" : sortBy === "popular" ? "sold" : "createdAt",
+          sortDirection: sortBy === "price_asc" ? "asc" : sortBy === "price_desc" ? "desc" : sortBy === "popular" ? "desc" : "desc",
+          search: searchKeyword || undefined,
+        });
+        setProducts(res.items || []);
+        setTotal(res.totalCount || 0);
+      } catch {
+        toast.error("Không thể tải sản phẩm");
+      }
+    };
+    fetchProducts();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [page, pageSize, selectedCategory, priceRange, storeId, sortBy, searchKeyword]);
+
+  useEffect(() => {
+    setSelectedCategory(categoryId || null);
   }, [categoryId]);
 
-  const handleAddToCart = (product: Product) => {
-    if (user) {
-      toast.success(`Đã thêm ${product.name} vào giỏ hàng!`);
-    } else {
-      toast.error("Vui lòng đăng nhập để thêm sản phẩm vào giỏ hàng");
-      navigate("/login");
-    }
-  };
-
   const handleQuickView = (product: Product) => {
+    setSelectedCategory(null);
+    setSortBy("newest");
+    setPriceRange([0, 50000000]);
+    setPage(1);
+    setTotal(0);
+    setProducts([]);
     navigate(`/products?id=${product.id}`);
   };
 
-
   const productActions = [
-    {
-      icon: <ShoppingCart sx={{ color: "#FF6B6B", fontSize: 22 }} />,
-      onClick: handleAddToCart,
-      label: "Thêm vào giỏ",
-    },
     {
       icon: <Visibility sx={{ color: "#FF6B6B", fontSize: 22 }} />,
       onClick: handleQuickView,
@@ -62,32 +86,41 @@ const Products = () => {
     },
   ];
 
-  let filteredProducts = [...fakeProducts];
-  if (selectedCategory !== "all") {
-    filteredProducts = filteredProducts.filter(
-      (product) => product.categoryId === selectedCategory
-    );
+  const handleCategoryChange = (catId: string | null) => {
+    setSelectedCategory(catId);
+    setPage(1);
+  };
+
+  let filteredProducts = [...products];
+  if (storeId) {
+    filteredProducts = filteredProducts.filter((product) => product.storeId === storeId);
   }
-  filteredProducts = filteredProducts.filter(
-    (product) =>
-      product.price >= priceRange[0] && product.price <= priceRange[1]
-  );
+  filteredProducts = filteredProducts.filter((product) => {
+    const minPrice = getProductMinPrice(product);
+    return minPrice >= priceRange[0] && minPrice <= priceRange[1];
+  });
   switch (sortBy) {
     case "price_asc":
-      filteredProducts.sort((a, b) => a.price - b.price);
+      filteredProducts.sort((a, b) => getProductMinPrice(a) - getProductMinPrice(b));
       break;
     case "price_desc":
-      filteredProducts.sort((a, b) => b.price - a.price);
+      filteredProducts.sort((a, b) => getProductMinPrice(b) - getProductMinPrice(a));
       break;
     case "popular":
       filteredProducts.sort((a, b) => b.sold - a.sold);
       break;
     default:
-      filteredProducts.sort(
-        (a, b) =>
-          new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()
-      );
+      filteredProducts.sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
   }
+
+  const handleResetState = () => {
+    setSelectedCategory(null);
+    setSortBy("newest");
+    setPriceRange([0, 50000000]);
+    setPage(1);
+    setTotal(0);
+    setProducts([]);
+  };
 
   if (productId) {
     return <ProductDetail />;
@@ -101,27 +134,26 @@ const Products = () => {
           <Box sx={{ width: { xs: "100%", md: "25%" } }}>
             <ProductFilterSection
               selectedCategory={selectedCategory}
-              setSelectedCategory={setSelectedCategory}
+              setSelectedCategory={handleCategoryChange}
               priceRange={priceRange}
               setPriceRange={setPriceRange}
-              fakeCategories={fakeCategories}
+              storeId={storeId || undefined}
             />
           </Box>
           <Box sx={{ flex: 1 }}>
-            <SortBarSection
-              selectedCategory={selectedCategory}
-              sortBy={sortBy}
-              setSortBy={setSortBy}
-              fakeCategories={fakeCategories}
-            />
-            {filteredProducts.length > 0 ? (
-              <ProductGridSection
-                filteredProducts={filteredProducts}
-                productActions={productActions}
+            <SortBarSection selectedCategory={selectedCategory} sortBy={sortBy} setSortBy={setSortBy} />
+            {filteredProducts.length > 0 ? <ProductGridSection filteredProducts={filteredProducts} productActions={productActions} onResetState={handleResetState} /> : <ProductEmptySection />}
+            <Box sx={{ display: "flex", justifyContent: "center", mt: 3 }}>
+              <Pagination
+                count={Math.ceil(total / pageSize)}
+                page={page}
+                onChange={(_, value) => setPage(value)}
+                siblingCount={1}
+                boundaryCount={1}
+                shape="rounded"
+                color="primary"
               />
-            ) : (
-              <ProductEmptySection />
-            )}
+            </Box>
           </Box>
         </Box>
       </Container>

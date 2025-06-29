@@ -4,6 +4,11 @@
     {
         public void Configure(EntityTypeBuilder<Room> builder)
         {
+            // Mối quan hệ
+            builder.HasMany(r => r.Orders)
+                   .WithOne(o => o.ShippingAddress)
+                   .HasForeignKey(r => r.ShippingAddressId)
+                   .OnDelete(DeleteBehavior.Cascade);
         }
     }
 }

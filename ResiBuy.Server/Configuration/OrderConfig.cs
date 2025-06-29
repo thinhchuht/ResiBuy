@@ -8,12 +8,17 @@
             builder.HasOne(o => o.User)
                    .WithMany()
                    .HasForeignKey(o => o.UserId)
-                   .OnDelete(DeleteBehavior.Cascade); 
+                   .OnDelete(DeleteBehavior.Cascade);
 
             builder.HasOne(o => o.Store)
-                   .WithMany(s => s.Orders) 
+                   .WithMany(s => s.Orders)
                    .HasForeignKey(o => o.StoreId)
                    .OnDelete(DeleteBehavior.Restrict);
+
+            builder.HasOne(o => o.ShippingAddress)
+       .WithMany(s => s.Orders)
+       .HasForeignKey(o => o.ShippingAddressId)
+       .OnDelete(DeleteBehavior.Restrict);
 
             builder.HasOne(o => o.Shipper)
                    .WithMany()

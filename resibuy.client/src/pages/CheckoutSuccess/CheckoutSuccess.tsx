@@ -4,7 +4,6 @@ import {
   Container,
   Typography,
   Paper,
-  Button,
   Stack,
   CircularProgress,
 } from "@mui/material";
@@ -171,10 +170,13 @@ const CheckoutSuccess: React.FC = () => {
                   background: "rgba(255, 255, 255, 0.9)",
                   backdropFilter: "blur(10px)",
                   transition: "transform 0.2s",
+                  cursor: "pointer",
                   "&:hover": {
                     transform: "translateY(-5px)",
+                    boxShadow: "0 8px 24px rgba(33, 150, 243, 0.15)",
                   },
                 }}
+                onClick={handleViewOrders}
               >
                 <LocalShippingIcon
                   sx={{ fontSize: 40, color: "#2196F3", mb: 1 }}
@@ -197,10 +199,13 @@ const CheckoutSuccess: React.FC = () => {
                   background: "rgba(255, 255, 255, 0.9)",
                   backdropFilter: "blur(10px)",
                   transition: "transform 0.2s",
+                  cursor: "pointer",
                   "&:hover": {
                     transform: "translateY(-5px)",
+                    boxShadow: "0 8px 24px rgba(255, 152, 0, 0.15)",
                   },
                 }}
+                onClick={handleContinueShopping}
               >
                 <ShoppingBagIcon
                   sx={{ fontSize: 40, color: "#FF9800", mb: 1 }}
@@ -213,49 +218,6 @@ const CheckoutSuccess: React.FC = () => {
                 </Typography>
               </Paper>
             </Box>
-
-            <Stack direction="row" spacing={2} sx={{ mt: 2 }}>
-              <Button
-                variant="contained"
-                color="primary"
-                size="large"
-                onClick={handleViewOrders}
-                sx={{
-                  borderRadius: 2,
-                  px: 4,
-                  py: 1.5,
-                  textTransform: "none",
-                  fontWeight: "bold",
-                  boxShadow: "0 4px 12px rgba(33, 150, 243, 0.3)",
-                  "&:hover": {
-                    transform: "translateY(-2px)",
-                    boxShadow: "0 6px 16px rgba(33, 150, 243, 0.4)",
-                  },
-                }}
-              >
-                Xem đơn hàng
-              </Button>
-              <Button
-                variant="outlined"
-                color="primary"
-                size="large"
-                onClick={handleContinueShopping}
-                sx={{
-                  borderRadius: 2,
-                  px: 4,
-                  py: 1.5,
-                  textTransform: "none",
-                  fontWeight: "bold",
-                  borderWidth: 2,
-                  "&:hover": {
-                    borderWidth: 2,
-                    transform: "translateY(-2px)",
-                  },
-                }}
-              >
-                Về trang chủ
-              </Button>
-            </Stack>
           </Stack>
         </Paper>
       </motion.div>

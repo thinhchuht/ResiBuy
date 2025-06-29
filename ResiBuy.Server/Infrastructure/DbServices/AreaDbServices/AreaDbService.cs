@@ -15,7 +15,7 @@
             {
                 IEnumerable<Area> areas = await _context.Areas
                     .Include(a => a.Buildings)
-                    .Include(a => a.Shippers)
+                    .ThenInclude(b => b.Rooms)
                     .ToListAsync();
                 return areas;
             }
@@ -38,6 +38,18 @@
                     return null;
                 }
                 return area;
+            }
+            catch (Exception ex)
+            {
+                throw new CustomException(ExceptionErrorCode.RepositoryError, ex.Message);
+            }
+
+        }
+        public async Task<int> CountAsync()
+        {
+            try
+            {
+                return await _context.Areas.CountAsync();
             }
             catch (Exception ex)
             {
