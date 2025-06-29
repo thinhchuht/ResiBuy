@@ -15,6 +15,13 @@ namespace ResiBuy.Server.Controllers
             return Ok(result);
         }
 
+        [HttpGet("{id}")]
+        public async Task<IActionResult> GetAllAsync(Guid id)
+        {
+            var result = await mediator.Send(new GetVoucherByIdQuery(id));
+            return Ok(result);
+        }
+
         [HttpPost]
         public async Task<IActionResult> CreateAsync([FromBody] CreateVoucherDto dto)
         {
@@ -32,7 +39,7 @@ namespace ResiBuy.Server.Controllers
         [HttpPut("active")]
         public async Task<IActionResult> ActiveAsync([FromBody] ActiveVoucherDto dto)
         {
-            var result = await mediator.Send(new UpdateQuantityCommand(dto));
+            var result = await mediator.Send(new ActiveVoucherCommand(dto));
             return Ok(result);
         }
     }
