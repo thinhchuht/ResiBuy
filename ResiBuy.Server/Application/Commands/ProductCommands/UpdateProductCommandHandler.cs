@@ -1,4 +1,4 @@
-﻿using Confluent.Kafka;
+﻿
 using ResiBuy.Server.Application.Commands.ProductCommands.DTOs.Update;
 
 namespace ResiBuy.Server.Application.Commands.ProductCommands

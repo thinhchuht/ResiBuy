@@ -1,6 +1,7 @@
 ﻿using ResiBuy.Server.Infrastructure.DbServices.CartItemDbService;
 using ResiBuy.Server.Infrastructure.DbServices.OrderDbServices;
 using ResiBuy.Server.Infrastructure.DbServices.OrderItemDbServices;
+using ResiBuy.Server.Infrastructure.DbServices.ProductDetailDbServices;
 using ResiBuy.Server.Services.CheckoutSessionService;
 
 namespace ResiBuy.Server.Extensions
@@ -33,7 +34,7 @@ namespace ResiBuy.Server.Extensions
             services.AddScoped<ICartItemDbService, CartItemDbService>();
             services.AddScoped<IOrderDbService, OrderDbService>();
             services.AddScoped<IOrderItemDbService, OrderItemDbService>();
-
+            services.AddScoped<IProductDetailDbService, ProductDetailDbService>();
             return services;
         }
 

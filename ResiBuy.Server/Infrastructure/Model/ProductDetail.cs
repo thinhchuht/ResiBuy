@@ -29,6 +29,11 @@
             Weight = weight;
             IsOutOfStock = isOutOfStock;
         }
+
+        public void UpdateStatusProductDetail(bool isOutOfStock)
+        {
+            IsOutOfStock = isOutOfStock;
+        }
     }
 
     public enum WeightCategory

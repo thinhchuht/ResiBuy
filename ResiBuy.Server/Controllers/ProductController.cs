@@ -32,11 +32,18 @@ namespace ResiBuy.Server.Controllers
                 return Ok(result);
         }
 
-        [HttpGet("products")]
+        [HttpGet]
         public async Task<IActionResult> GetAllProducts([FromQuery] ProductFilter filter)
         {
                 var result = await mediator.Send(new GetAllProductsQuery(filter));
                 return Ok(result);
+        }
+
+        [HttpPatch("{id}/{status}/edit")]
+        public async Task<IActionResult> UpdateStatusProduct(int id, bool status)
+        {
+            var result = await mediator.Send(new UpdateStatusProductCommand(id, status));
+            return Ok(result);
         }
     }
 }
