@@ -1,37 +1,37 @@
 ﻿namespace ResiBuy.Server.Application.Commands.UserCommands
 {
-    public record UpdateUserCommand(UpdateUserDto UpdateUserDto, string Id) : IRequest<ResponseModel>;
+    public record UpdateUserCommand(string Code, string Id) : IRequest<ResponseModel>;
     public class UpdateUserCommandHandler(
         IUserDbService userDbService,
-        ICloudinaryService cloudinaryService,
         IImageDbService imageDbService,
-        INotificationService notificationService) : IRequestHandler<UpdateUserCommand, ResponseModel>
+        INotificationService notificationService,
+         ICodeGeneratorSerivce codeGeneratorSerivce) : IRequestHandler<UpdateUserCommand, ResponseModel>
     {
         public async Task<ResponseModel> Handle(UpdateUserCommand command, CancellationToken cancellationToken)
         {
+            var rs = codeGeneratorSerivce.TryGetCachedData<UpdateUserDto>(command.Code, out var updateUserDto);
+            if (!rs) throw new CustomException(ExceptionErrorCode.ValidationFailed, "Mã xác nhận đã hết hạn");
             // Get existing user
-            var existingUser = await userDbService.GetUserById(command.Id);
-            if (existingUser == null)
-                return ResponseModel.FailureResponse("Không tìm thấy người dùng");
+            var existingUser = await userDbService.GetUserById(command.Id) ?? throw new CustomException(ExceptionErrorCode.NotFound, "Không tìm thấy người dùng");
 
-            if (command.UpdateUserDto.Avatar == null && string.IsNullOrEmpty(command.UpdateUserDto.Email))
+            if (updateUserDto.Avatar == null && string.IsNullOrEmpty(updateUserDto.Email))
                 throw new CustomException(ExceptionErrorCode.ValidationFailed, "Không có thông tin nào mới để cập nhật");
-            if (command.UpdateUserDto.Email != null)
+            if (updateUserDto.Email != null)
             {
-                await userDbService.CheckUniqueField(null, command.UpdateUserDto.Email);
-                if(!Regex.IsMatch(command.UpdateUserDto.Email, Constants.EmailPattern)) throw new CustomException(ExceptionErrorCode.ValidationFailed, "Email không hợp lệ");
-                existingUser.Email = command.UpdateUserDto.Email;
-                //await mailService.SendEmailAsync(command.UpdateUserDto.Email, "Thêm Mail vào tài khoản", "<a>Click vào link để hoàn tất thêm mail vào tài khoản Resibuy </a>", true);
+                await userDbService.CheckUniqueField(existingUser.Id, null, updateUserDto.Email);
+                if(!Regex.IsMatch(updateUserDto.Email, Constants.EmailPattern)) throw new CustomException(ExceptionErrorCode.ValidationFailed, "Email không hợp lệ");
+                existingUser.Email = updateUserDto.Email;
+                //await mailService.SendEmailAsync(updateUserDto.Email, "Thêm Mail vào tài khoản", "<a>Click vào link để hoàn tất thêm mail vào tài khoản Resibuy </a>", true);
             }
             var imgResult = new Image();
-            if (command.UpdateUserDto.Avatar != null)
+            if (updateUserDto.Avatar != null)
             {
-                var uploadResult = await cloudinaryService.UploadFileAsync(command.UpdateUserDto.Avatar, command.UpdateUserDto.AvatarId);
+                var uploadResult = updateUserDto.Avatar;
                 imgResult = new Image
                 {
                     Id       = uploadResult.Id,
-                    Url   = uploadResult.Url,
-                    ThumbUrl = uploadResult.ThumbnailUrl,
+                    Url       = uploadResult.Url,
+                    ThumbUrl = uploadResult.ThumbUrl,
                     Name     = uploadResult.Name,
                     UserId   = existingUser.Id
                 };
@@ -61,7 +61,7 @@
                 updatedUser.CreatedAt,
                 updatedUser.UpdatedAt,
                 updatedUser.Cart.Id,
-                new AvatarQueryResult(imgResult.Id, imgResult.Name, imgResult.Url, imgResult.ThumbUrl),
+                new AvatarQueryResult(updatedUser.Avatar.Id, updatedUser.Avatar.Name, updatedUser.Avatar.Url, updatedUser.Avatar.ThumbUrl),
                 updatedUser.UserRooms.Select(ur => new RoomQueryResult(
                     ur.Room.Id,
                     ur.Room.Name,

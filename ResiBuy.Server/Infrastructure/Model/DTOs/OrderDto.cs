@@ -8,5 +8,6 @@
         public string Note { get; set; }
         public decimal TotalPrice { get; set; }
         public IEnumerable<OrderItemDto> Items { get; set; }
+
     }
 }
