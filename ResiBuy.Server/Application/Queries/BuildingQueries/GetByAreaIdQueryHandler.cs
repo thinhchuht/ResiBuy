@@ -5,8 +5,18 @@
     {
         public async Task<ResponseModel> Handle(GetByAreaIdQuery query, CancellationToken cancellationToken)
         {
-            var buildings = await BuildingDbService.GetByAreaIdAsync(query.Id);
-            return ResponseModel.SuccessResponse(buildings);
+            try
+            {
+
+
+
+                var buildings = await BuildingDbService.GetByAreaIdAsync(query.Id);
+                return ResponseModel.SuccessResponse(buildings);
+            }
+            catch (Exception e)
+            {
+                throw new CustomException(ExceptionErrorCode.RepositoryError, e.Message);
+            }
         }
     }
 }
