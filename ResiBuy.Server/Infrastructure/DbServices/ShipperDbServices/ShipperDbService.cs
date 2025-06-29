@@ -1,6 +1,7 @@
 using Microsoft.EntityFrameworkCore;
 using ResiBuy.Server.Exceptions;
 using ResiBuy.Server.Infrastructure.DbServices.BaseDbServices;
+using ResiBuy.Server.Infrastructure.Filter;
 
 namespace ResiBuy.Server.Infrastructure.DbServices.ShipperDbServices
 {
@@ -13,17 +14,27 @@ namespace ResiBuy.Server.Infrastructure.DbServices.ShipperDbServices
             _context = context;
         }
 
-        public async Task<IEnumerable<Shipper>> GetAllShippersAsync(int pageNumber=1, int pageSize =5)
+        public async Task<PagedResult<Shipper>> GetAllShippersAsync(int pageNumber = 1, int pageSize = 5)
         {
             try
             {
-                var shippers = await _context.Shippers
+                var query = _context.Shippers.AsQueryable();
+
+                var totalCount = await query.CountAsync();
+                var items = await query
+                    .OrderBy(s => s.Id)
                     .Include(s => s.User)
                     .Include(s => s.LastLocation)
                     .Skip((pageNumber - 1) * pageSize)
                     .Take(pageSize)
                     .ToListAsync();
-                return shippers;
+                return new PagedResult<Shipper>
+                {
+                    Items = items,
+                    TotalCount = totalCount,
+                    PageNumber = pageNumber,
+                    PageSize = pageSize
+                }; ;
             }
             catch (Exception ex)
             {
@@ -31,7 +42,7 @@ namespace ResiBuy.Server.Infrastructure.DbServices.ShipperDbServices
             }
         }
 
-        
+
 
         public async Task<Shipper> GetShipperByIdAsync(Guid id)
         {
@@ -108,5 +119,7 @@ namespace ResiBuy.Server.Infrastructure.DbServices.ShipperDbServices
                 throw new CustomException(ExceptionErrorCode.UpdateFailed, ex.Message);
             }
         }
+
+
     }
-} 
+}
