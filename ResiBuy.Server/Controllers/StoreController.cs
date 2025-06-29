@@ -42,7 +42,7 @@ namespace ResiBuy.Server.Controllers
         [HttpGet]
         public async Task<IActionResult> GetAllStores([FromQuery] int pageSize = 5, [FromQuery] int pageNumber = 1)
         {
-            var result = await _mediator.Send(new GetAllStoresQuery(pageSize, pageNumber));
+            var result = await _mediator.Send(new GetAllStoresQuery(pageNumber, pageSize));
             return Ok(result);
         }
 
@@ -60,4 +60,4 @@ namespace ResiBuy.Server.Controllers
             return Ok(result);
         }
     }
-} 
+}

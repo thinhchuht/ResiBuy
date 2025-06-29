@@ -17,11 +17,11 @@ namespace ResiBuy.Server.Application.Queries.ShipperQueries
         public async Task<ResponseModel> Handle(GetShipperByIdQuery query, CancellationToken cancellationToken)
         {
             if (query.Id == Guid.Empty)
-                throw new CustomException("ShipperId là bắt buộc");
+                throw new CustomException(ExceptionErrorCode.ValidationFailed, "ShipperId là bắt buộc");
 
             var shipper = await _shipperDbService.GetShipperByIdAsync(query.Id);
             if (shipper == null)
-                throw new CustomException("Shipper không tồn tại");
+                throw new CustomException(ExceptionErrorCode.ValidationFailed, "Shipper không tồn tại");
 
             return ResponseModel.SuccessResponse(shipper);
         }

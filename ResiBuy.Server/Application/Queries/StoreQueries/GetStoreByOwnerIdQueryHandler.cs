@@ -17,11 +17,11 @@ namespace ResiBuy.Server.Application.Queries.StoreQueries
         public async Task<ResponseModel> Handle(GetStoreByOwnerIdQuery query, CancellationToken cancellationToken)
         {
             if (string.IsNullOrEmpty(query.OwnerId))
-                throw new CustomException("OwnerId là bắt buộc");
+                throw new CustomException(ExceptionErrorCode.ValidationFailed, "Id người dùng là bắt buộc");
 
             var stores = await _storeDbService.GetStoreByOwnerIdAsync(query.OwnerId, query.pageSize, query.pageNumber);
             if (stores == null)
-                throw new CustomException("Cửa hàng không tồn tại");
+                throw new CustomException(ExceptionErrorCode.ValidationFailed,"Cửa hàng không tồn tại");
 
             return ResponseModel.SuccessResponse(stores);
         }

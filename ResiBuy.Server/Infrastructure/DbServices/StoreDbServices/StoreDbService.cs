@@ -1,6 +1,7 @@
 using Microsoft.EntityFrameworkCore;
 using ResiBuy.Server.Exceptions;
 using ResiBuy.Server.Infrastructure.DbServices.BaseDbServices;
+using ResiBuy.Server.Infrastructure.Filter;
 
 namespace ResiBuy.Server.Infrastructure.DbServices.StoreDbServices
 {
@@ -13,17 +14,25 @@ namespace ResiBuy.Server.Infrastructure.DbServices.StoreDbServices
             _context = context;
         }
 
-        public async Task<IEnumerable<Store>> GetAllStoresAsync(int pageNumber = 1,int pageSize = 5)
+        public async Task<PagedResult<Store>> GetAllStoresAsync(int pageNumber = 1, int pageSize = 5)
         {
             try
             {
-                var stores = await _context.Stores
-                    .Include(s => s.Owner)
-                    .Include(s => s.Room)
+                var query = _context.Stores.AsQueryable();
+
+                var totalCount = await query.CountAsync();
+                var items = await query
+                    .OrderBy(s => s.Id)
                     .Skip((pageNumber-1)*pageSize)
                     .Take(pageSize)
                     .ToListAsync();
-                return stores;
+                return new PagedResult<Store>
+                {
+                    Items = items,
+                    TotalCount = totalCount,
+                    PageNumber = pageNumber,
+                    PageSize = pageSize
+                };
             }
             catch (Exception ex)
             {
@@ -36,8 +45,6 @@ namespace ResiBuy.Server.Infrastructure.DbServices.StoreDbServices
             try
             {
                 var store = await _context.Stores
-                    .Include(s => s.Owner)
-                    .Include(s => s.Room)
                     .FirstOrDefaultAsync(s => s.Id == id);
                 return store;
             }
@@ -52,8 +59,6 @@ namespace ResiBuy.Server.Infrastructure.DbServices.StoreDbServices
             try
             {
                 var store = await _context.Stores
-                    .Include(s => s.Owner)
-                    .Include(s => s.Room)
                     .Where(s => s.OwnerId == ownerId)
                     .Skip((pageNumber - 1) * pageSize)
                     .Take(pageSize)
@@ -88,5 +93,7 @@ namespace ResiBuy.Server.Infrastructure.DbServices.StoreDbServices
                 throw new CustomException(ExceptionErrorCode.UpdateFailed, ex.Message);
             }
         }
+
+
     }
-} 
+}
