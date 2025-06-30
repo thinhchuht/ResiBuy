@@ -1,11 +1,11 @@
 export interface MenuItem {
-  name: string;
+  label: string;
   path: string;
 }
 
-export const menuItems: MenuItem[] = [
-  { name: "Dashboard", path: "/store" },
-  { name: "Products", path: "/store/products" },
-  { name: "Orders", path: "/store/orders" },
-  { name: "CreateProduct", path: "/store/create" },
+export const menuItems = (storeId: string) => [
+  { label: "Dashboard", path: `/store/${storeId}` },
+  { label: "ProductPage", path: `/store/${storeId}/productPage` },
+  { label: "Orders", path: `/store/${storeId}/orders` },
+  { label: "Create Product", path: `/store/${storeId}/create` },
 ];

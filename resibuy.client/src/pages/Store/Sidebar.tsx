@@ -19,7 +19,7 @@ const Sidebar: React.FC<SidebarProps> = ({ menuItems }) => {
           to={item.path}
           selected={location.pathname === item.path}
         >
-          <ListItemText primary={item.name} />
+          <ListItemText primary={item.label} />
         </ListItemButton>
       ))}
     </List>

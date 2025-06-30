@@ -1,5 +1,10 @@
 import React from "react";
-import { BrowserRouter as Router, Routes, Route, Navigate } from "react-router-dom";
+import {
+  BrowserRouter as Router,
+  Routes,
+  Route,
+  Navigate,
+} from "react-router-dom";
 import { useAuth } from "../contexts/AuthContext";
 import Login from "../components/auth/Login";
 import ProtectedRoute from "../components/auth/ProtectedRoute";
@@ -56,7 +61,7 @@ const AppRoutes: React.FC = () => {
           }
         />
         <Route
-          path="/store/*"
+          path="/store/:storeId/*"
           element={
             <HomeLayout>
               <Store />
@@ -117,7 +122,8 @@ const AppRoutes: React.FC = () => {
             </ProtectedRoute>
           }
         />
-        {/* <Route
+        {
+          /* <Route
 
         <Route path="/test-hub" element={<TestHub />} />
         <Route
@@ -129,19 +135,13 @@ const AppRoutes: React.FC = () => {
             </ProtectedRoute>
           }
         /> */
-          <Route
-              path="/admin"
-              element={
-               
-                  <AdminLayout />
-              
-              }
-            >
-              <Route path="dashboard" element={<Dashboard />} />
-               <Route path="Shipper" element={<ShippersPage />} />
-           <Route path="Category" element={<CategoriesPage />} />
+          <Route path="/admin" element={<AdminLayout />}>
+            <Route path="dashboard" element={<Dashboard />} />
+            <Route path="Shipper" element={<ShippersPage />} />
+            <Route path="Category" element={<CategoriesPage />} />
             <Route path="Store" element={<StoresPage />} />
-            </Route>}
+          </Route>
+        }
         <Route
           path="/seller/*"
           element={
