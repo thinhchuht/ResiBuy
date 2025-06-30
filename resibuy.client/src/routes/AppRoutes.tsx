@@ -1,5 +1,10 @@
 import React from "react";
-import { BrowserRouter as Router, Routes, Route, Navigate } from "react-router-dom";
+import {
+  BrowserRouter as Router,
+  Routes,
+  Route,
+  Navigate,
+} from "react-router-dom";
 import { useAuth } from "../contexts/AuthContext";
 import Login from "../components/auth/Login";
 import ProtectedRoute from "../components/auth/ProtectedRoute";
@@ -50,9 +55,11 @@ const AppRoutes: React.FC = () => {
         <Route
           path="/orders"
           element={
-            <HomeLayout>
-              <Orders />
-            </HomeLayout>
+            <ProtectedRoute allowedRoles={["CUSTOMER"]}>
+              <HomeLayout>
+                <Orders />
+              </HomeLayout>
+            </ProtectedRoute>
           }
         />
         <Route
@@ -66,7 +73,7 @@ const AppRoutes: React.FC = () => {
         <Route
           path="/profile"
           element={
-            <ProtectedRoute>
+            <ProtectedRoute allowedRoles={["CUSTOMER"]}>
               <HomeLayout>
                 <Profile />
               </HomeLayout>
@@ -76,23 +83,27 @@ const AppRoutes: React.FC = () => {
         <Route
           path="/checkout-success"
           element={
-            <HomeLayout>
-              <CheckoutSuccess />
-            </HomeLayout>
+            <ProtectedRoute allowedRoles={["CUSTOMER"]}>
+              <HomeLayout>
+                <CheckoutSuccess />
+              </HomeLayout>
+            </ProtectedRoute>
           }
         />
         <Route
           path="/checkout-failed"
           element={
-            <HomeLayout>
-              <CheckoutFailed />
-            </HomeLayout>
+            <ProtectedRoute allowedRoles={["CUSTOMER"]}>
+              <HomeLayout>
+                <CheckoutFailed />
+              </HomeLayout>
+            </ProtectedRoute>
           }
         />
         <Route
           path="/cart"
           element={
-            <ProtectedRoute>
+            <ProtectedRoute allowedRoles={["CUSTOMER"]}>
               <HomeLayout>
                 <Cart />
               </HomeLayout>
@@ -102,7 +113,7 @@ const AppRoutes: React.FC = () => {
         <Route
           path="/checkout"
           element={
-            <ProtectedRoute>
+            <ProtectedRoute allowedRoles={["CUSTOMER"]}>
               <HomeLayout>
                 <Checkout />
               </HomeLayout>
@@ -117,7 +128,8 @@ const AppRoutes: React.FC = () => {
             </ProtectedRoute>
           }
         />
-        {/* <Route
+        {
+          /* <Route
 
         <Route path="/test-hub" element={<TestHub />} />
         <Route
@@ -129,19 +141,13 @@ const AppRoutes: React.FC = () => {
             </ProtectedRoute>
           }
         /> */
-          <Route
-              path="/admin"
-              element={
-               
-                  <AdminLayout />
-              
-              }
-            >
-              <Route path="dashboard" element={<Dashboard />} />
-               <Route path="Shipper" element={<ShippersPage />} />
-           <Route path="Category" element={<CategoriesPage />} />
+          <Route path="/admin" element={<AdminLayout />}>
+            <Route path="dashboard" element={<Dashboard />} />
+            <Route path="Shipper" element={<ShippersPage />} />
+            <Route path="Category" element={<CategoriesPage />} />
             <Route path="Store" element={<StoresPage />} />
-            </Route>}
+          </Route>
+        }
         <Route
           path="/seller/*"
           element={

@@ -6,7 +6,6 @@ import type { CartItem, Voucher } from "../../types/models";
 import { VoucherType } from "../../types/models";
 import VoucherSelectionModal from "../../components/VoucherSelectionModal";
 import { useAuth } from "../../contexts/AuthContext";
-import { fakeVouchers } from "../../fakeData/fakeVoucherData";
 import ProductTableSection from "./ProductTableSection";
 import CheckoutVoucherSection from "./CheckoutVoucherSection";
 import NoteSection from "./NoteSection";
@@ -16,6 +15,7 @@ import { useToastify } from "../../hooks/useToastify";
 import { formatPrice } from "../../utils/priceUtils";
 import vnPayApi from "../../api/vnpay.api";
 import checkoutApi from "../../api/checkout.api";
+import voucherApi from "../../api/voucher.api";
 
 interface GroupedItems {
   storeId: string;
@@ -54,6 +54,9 @@ const Checkout: React.FC = () => {
   >({});
   const [notes, setNotes] = useState<Record<string, string>>({});
   const [isLoading, setIsLoading] = useState(false);
+  const [userVouchers, setUserVouchers] = useState<Voucher[]>([]);
+  const [shopVouchers, setShopVouchers] = useState<Voucher[]>([]);
+  const [voucherLoading, setVoucherLoading] = useState(false);
 
   const handleNoteSubmit = (storeId: string, note: string) => {
     setNotes((prev) => ({
@@ -105,9 +108,23 @@ const Checkout: React.FC = () => {
     return subtotal;
   };
 
-  const handleOpenVoucherModal = (storeId: string) => {
+  const handleOpenVoucherModal = async (storeId: string) => {
     setSelectedStoreId(storeId);
-    setOpenVoucherModal(true);
+    setVoucherLoading(true);
+    try {
+      const group = groupedItems.find(g => g.storeId === storeId);
+      const subtotal = group ? group.items.reduce((total, item) => total + item.productDetail.price * item.quantity, 0) : 0;
+      const userRes = await voucherApi.getAll({ userId: user?.id, isActive: true, minOrderPrice: subtotal });
+      setUserVouchers(userRes.data.items || []);
+      const shopRes = await voucherApi.getAll({ storeId, isActive: true, minOrderPrice: subtotal });
+      setShopVouchers(shopRes.data.items || []);
+    } catch {
+      setUserVouchers([]);
+      setShopVouchers([]);
+    } finally {
+      setVoucherLoading(false);
+      setOpenVoucherModal(true);
+    }
   };
 
   const handleCloseVoucherModal = () => {
@@ -121,6 +138,24 @@ const Checkout: React.FC = () => {
         ...prev,
         [selectedStoreId]: voucher,
       }));
+      const group = groupedItems.find(g => g.storeId === selectedStoreId);
+      if (group) {
+        const subtotal = group.items.reduce(
+          (total, item) => total + item.productDetail.price * item.quantity,
+          0
+        );
+        let discount = 0;
+        console.log(voucher.type)
+        if (voucher.type === VoucherType.Amount) {
+          discount = voucher.discountAmount;
+        } else if (voucher.type === VoucherType.Percentage) {
+          console.log('hfdasihfid')
+          discount = (subtotal * voucher.discountAmount) / 100;
+        }
+        console.log('discount', discount)
+        discount = Math.min(discount, voucher.maxDiscountPrice);
+        console.log(`Voucher storeId=${selectedStoreId}: Được giảm ${discount} trên tổng ${subtotal}`);
+      }
       handleCloseVoucherModal();
     }
   };
@@ -139,6 +174,7 @@ const Checkout: React.FC = () => {
         discount = (subtotal * selectedVoucher.discountAmount) / 100;
       }
       discount = Math.min(discount, selectedVoucher.maxDiscountPrice);
+      console.log(`Render order storeId=${group.storeId}: Được giảm ${discount} trên tổng ${subtotal}`);
     }
     const totalAfterDiscount = Math.max(subtotal - discount, 0);
     const itemCount = group.items.reduce(
@@ -217,7 +253,6 @@ const Checkout: React.FC = () => {
         }
       } catch (error) {
         console.error("Checkout error:", error);
-        toast.error("Có lỗi xảy ra, vui lòng thử lại.");
       } finally {
         setIsLoading(false);
       }
@@ -308,10 +343,9 @@ const Checkout: React.FC = () => {
       <VoucherSelectionModal
         open={openVoucherModal}
         onClose={handleCloseVoucherModal}
-        userVouchers={fakeVouchers.filter((v) =>
-          v.userVouchers.some((uv) => uv.userId === user?.id)
-        )}
-        shopVouchers={fakeVouchers.filter((v) => v.storeId === selectedStoreId)}
+        userVouchers={userVouchers}
+        shopVouchers={shopVouchers}
+        loading={voucherLoading}
         onSelectVoucher={handleSelectVoucher}
         selectedVoucherId={
           selectedStoreId ? selectedVouchers[selectedStoreId]?.id : undefined

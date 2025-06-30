@@ -6,6 +6,9 @@ builder.Services.AddHttpClient<ICheckoutService, CheckoutService>(c => c.BaseAdd
 builder.Services.AddSingleton<ICartService, CartService>();
 builder.Services.AddHostedService<ResetCartStatusBackgroundService>();
 builder.Services.AddHostedService<KafkaConsumerBackgroundService>();
+builder.Services.AddHostedService<DeactivateVoucherBackgroundService>();
 builder.Services.AddSingleton<HttpClient>();
+builder.Services.AddSingleton<IVoucherService, VoucherService>();
+
 var host = builder.Build();
 host.Run();

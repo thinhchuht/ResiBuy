@@ -1,8 +1,8 @@
 ﻿namespace ResiBuy.BackgroundTask.Services.HttpServices
 {
-    public class CheckoutService(HttpClient httpClient, ILogger<CheckoutService> logger) : ICheckoutService
+    internal class VoucherService(HttpClient httpClient, ILogger<VoucherService> logger) : IVoucherService
     {
-        public async Task<ResponseModel> Checkout(CheckoutData checkoutData)
+        public async Task<ResponseModel> DeactivateBatchVoucher()
         {
             try
             {
@@ -13,19 +13,18 @@
 
                 // Tạo HttpClient với handler
                 using var client = new HttpClient(handler);
-                var response = await client.PostAsJsonAsync("http://localhost:5000/api/Order", checkoutData);
-
+                var response = await client.GetAsync("http://localhost:5000/api/voucher/batch/deactive");
                 if (response.StatusCode == HttpStatusCode.OK) return ResponseModel.SuccessResponse();
                 var content = await response.Content.ReadAsStringAsync();
                 ResponseModel apiResponse = JsonSerializer.Deserialize<ResponseModel>(content); ;
                 logger.LogError($"Checkout API error: {apiResponse?.Message ?? content}");
-                return ResponseModel.FailureResponse(apiResponse?.Message ?? "Không thể tạo đơn hàng");
+                return ResponseModel.FailureResponse("Lỗi xảy ra khi vô hiệu hóa mã giảm giá");
             }
             catch (Exception ex)
             {
                 logger.LogError(ex, ex.Message);
-                return ResponseModel.FailureResponse("Không thể tạo đơn hàng");
+                return ResponseModel.FailureResponse("Lỗi xảy ra khi vô hiệu hóa mã giảm giá");
             }
         }
     }
-}   
+}

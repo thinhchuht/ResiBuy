@@ -9,5 +9,6 @@ namespace ResiBuy.Server.Infrastructure.Model.DTOs.VoucherDtos
         public int PageNumber { get; set; } = 1;
         public int PageSize { get; set; } = 10;
         public string UserId { get; set; }
+        public decimal? MinOrderPrice { get; set; }
     }
 } 

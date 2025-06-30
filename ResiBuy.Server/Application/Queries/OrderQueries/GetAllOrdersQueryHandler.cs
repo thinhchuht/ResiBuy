@@ -49,7 +49,7 @@ namespace ResiBuy.Server.Application.Queries.OrderQueries
                     Id = item.StoreId,
                     Name = item.Store.Name,
                 },
-                item.Voucher,
+                item.Voucher == null ? null : new { item.Voucher.Id, item.Voucher.DiscountAmount, item.Voucher.Type, item.Voucher.MinOrderPrice, item.Voucher.MaxDiscountPrice },
                 item.Items.Select(oi => new OrderItemQueryResult(
                     oi.ID,
                     oi.ProductDetail.ProductId,
