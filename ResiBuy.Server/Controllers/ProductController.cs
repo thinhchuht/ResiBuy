@@ -12,15 +12,15 @@ namespace ResiBuy.Server.Controllers
         [HttpPost]
         public async Task<IActionResult> CreateAsync([FromBody] CreateProductDto dto)
         {
-                var result = await mediator.Send(new CreateProductCommand(dto));
-                return Ok(result);
+            var result = await mediator.Send(new CreateProductCommand(dto));
+            return Ok(result);
         }
 
         [HttpPut]
         public async Task<IActionResult> UpdateAsync([FromBody] UpdateProductDto dto)
         {
-                var result = await mediator.Send(new UpdateProductCommand(dto));
-                return Ok(result);
+            var result = await mediator.Send(new UpdateProductCommand(dto));
+            return Ok(result);
         }
 
 
@@ -28,15 +28,15 @@ namespace ResiBuy.Server.Controllers
         [HttpGet("{id}")]
         public async Task<IActionResult> GetProductById(int id)
         {
-                var result = await mediator.Send(new GetProductByIdQuery(id));
-                return Ok(result);
+            var result = await mediator.Send(new GetProductByIdQuery(id));
+            return Ok(result);
         }
 
         [HttpGet]
         public async Task<IActionResult> GetAllProducts([FromQuery] ProductFilter filter)
         {
-                var result = await mediator.Send(new GetAllProductsQuery(filter));
-                return Ok(result);
+            var result = await mediator.Send(new GetAllProductsQuery(filter));
+            return Ok(result);
         }
 
         [HttpPatch("{id}/status")]

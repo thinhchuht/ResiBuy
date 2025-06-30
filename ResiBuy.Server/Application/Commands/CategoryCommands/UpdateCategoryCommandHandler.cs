@@ -17,10 +17,10 @@ namespace ResiBuy.Server.Application.Commands.CategoryCommands
 
                 var category = await CategoryDbService.GetByIdAsync(dto.Id);
                 if (category == null)
-                    throw new CustomException(ExceptionErrorCode.ValidationFailed, $"Category {dto.Id} không tồn tại");
+                    throw new CustomException(ExceptionErrorCode.ValidationFailed, $"Danh mục {dto.Id} không tồn tại");
 
                 if (string.IsNullOrWhiteSpace(dto.Name))
-                    throw new CustomException(ExceptionErrorCode.ValidationFailed, $"CategoryName là bắt buộc");
+                    throw new CustomException(ExceptionErrorCode.ValidationFailed, $"Tên danh mục là bắt buộc");
 
                 category.UpdateCategory(dto.Name, dto.Status);
 
@@ -62,7 +62,7 @@ namespace ResiBuy.Server.Application.Commands.CategoryCommands
                 }
                 var result = await CategoryDbService.UpdateAsync(category);
                 if (result == null)
-                    throw new CustomException(ExceptionErrorCode.UpdateFailed, "Không thể cập nhật Category. Vui lòng kiểm tra lại dữ liệu.");
+                    throw new CustomException(ExceptionErrorCode.UpdateFailed, "Không thể cập nhật danh mục. Vui lòng kiểm tra lại dữ liệu.");
                 return ResponseModel.SuccessResponse(result);
             }
             catch (Exception ex)
