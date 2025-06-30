@@ -106,5 +106,19 @@
                 throw new CustomException(ExceptionErrorCode.RepositoryError, ex.Message);
             }
         }
+
+        public async Task<IEnumerable<T>> UpdateBatch(IEnumerable<T> entities)
+        {
+            try
+            {
+                _dbSet.UpdateRange(entities);
+                await context.SaveChangesAsync();
+                return entities;
+            }
+            catch (Exception ex)
+            {
+                throw new CustomException(ExceptionErrorCode.RepositoryError, ex.Message);
+            }
+        }
     }
 }

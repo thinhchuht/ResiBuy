@@ -6,6 +6,7 @@
         Task<T> GetByIdBaseAsync(Guid id);
         Task<T> GetByIntIdBaseAsync(int id);
         Task<T> CreateAsync(T entity);
+        Task<IEnumerable<T>> UpdateBatch(IEnumerable<T> entities);
         Task<IEnumerable<T>> CreateBatchAsync(IEnumerable<T> entities);
         Task<T> UpdateAsync(T entity);
         Task<T> DeleteAsync(Guid id);
