@@ -6,6 +6,7 @@ import { useToastify } from "../../hooks/useToastify";
 import { Formik, Form, Field } from "formik";
 import * as Yup from "yup";
 import { useState } from "react";
+import ConfirmCodeModal from "../../components/ConfirmCodeModal";
 
 interface PasswordChangeSectionProps {
   user: User | null;
@@ -32,6 +33,10 @@ const PasswordChangeSection = ({
   const [showOldPassword, setShowOldPassword] = useState(false);
   const [showNewPassword, setShowNewPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
+  const [openConfirmModal, setOpenConfirmModal] = useState(false);
+  const [confirmCode, setConfirmCode] = useState("");
+  const [isSubmittingCode, setIsSubmittingCode] = useState(false);
+  const [pendingPassword, setPendingPassword] = useState<{oldPassword: string, newPassword: string} | null>(null);
 
   const initialValues = {
     oldPassword: "",
@@ -41,13 +46,37 @@ const PasswordChangeSection = ({
 
   const handleSubmit = async (values: typeof initialValues) => {
     if (!user) return;
-    const response = await userApi.changePassword(
-      user.id,
-      values.oldPassword,
-      values.newPassword
-    );
-    if (response.data) {
-      toast.success("Đổi mật khẩu thành công!");
+    setPendingPassword({ oldPassword: values.oldPassword, newPassword: values.newPassword });
+    try {
+      const response = await userApi.sendPasswordConfirmCode(user.id, values.oldPassword, values.newPassword);
+      if (response.data) {
+        setOpenConfirmModal(true);
+        toast.success("Mã xác nhận đã được gửi về email của bạn!");
+      }
+    } catch {
+      toast.error("Gửi mã xác nhận thất bại!");
+    }
+  };
+
+  const handleConfirmCodeSubmit = async () => {
+    if (!user || !pendingPassword) return;
+    if (confirmCode.length !== 6) {
+      toast.error("Mã xác nhận phải gồm 6 ký tự!");
+      return;
+    }
+    setIsSubmittingCode(true);
+    try {
+      const response = await userApi.changePassword(user.id, confirmCode.toUpperCase());
+      if (response.data) {
+        toast.success("Đổi mật khẩu thành công!");
+        setOpenConfirmModal(false);
+        setConfirmCode("");
+        setPendingPassword(null);
+      }
+    } catch {
+      toast.error("Mã xác nhận không đúng hoặc đã hết hạn!");
+    } finally {
+      setIsSubmittingCode(false);
     }
   };
 
@@ -196,6 +225,14 @@ const PasswordChangeSection = ({
           </Form>
         )}
       </Formik>
+      <ConfirmCodeModal
+        open={openConfirmModal}
+        onClose={() => setOpenConfirmModal(false)}
+        onSubmit={handleConfirmCodeSubmit}
+        isSubmitting={isSubmittingCode}
+        code={confirmCode}
+        setCode={setConfirmCode}
+      />
     </Box>
   );
 };

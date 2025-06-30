@@ -1,5 +1,4 @@
 ﻿using ResiBuy.Server.Application.Commands.CategoryCommands.DTOs;
-using ResiBuy.Server.Infrastructure.DbServices.CategoryDbServices;
 
 namespace ResiBuy.Server.Application.Commands.CategoryCommands
 {
@@ -12,7 +11,8 @@ namespace ResiBuy.Server.Application.Commands.CategoryCommands
             try
             {
                 var dto = command.CategoryDto;
-                if (dto.Name.IsNullOrEmpty()) return ResponseModel.FailureResponse("CategoryName is Required");
+             
+                if (string.IsNullOrEmpty(dto.Name)) throw new CustomException(ExceptionErrorCode.ValidationFailed, $"CategoryName là bắt buộc");
                 var category = new Category(dto.Name, dto.Status);
                 if (dto.Image != null && !string.IsNullOrEmpty(dto.Image.Id))
                 {
@@ -28,6 +28,10 @@ namespace ResiBuy.Server.Application.Commands.CategoryCommands
 
                 }
                 var createCategory = await CategoryDbService.CreateAsync(category);
+
+                if (createCategory == null)
+                    throw new CustomException(ExceptionErrorCode.CreateFailed, "Không thể tạo Category mới. Vui lòng kiểm tra lại dữ liệu.");
+
                 return ResponseModel.SuccessResponse(createCategory);
             }
             catch (Exception ex)

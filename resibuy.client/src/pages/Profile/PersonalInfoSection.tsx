@@ -1,4 +1,4 @@
-import { Avatar, Box, Button, TextField, Typography } from "@mui/material";
+import { Avatar, Box, Button, TextField, Typography, CircularProgress } from "@mui/material";
 import { Person } from "@mui/icons-material";
 import { useState } from "react";
 import { Formik, Form, Field } from "formik";
@@ -6,6 +6,9 @@ import * as Yup from "yup";
 import userApi from "../../api/user.api";
 import { useAuth } from "../../contexts/AuthContext";
 import { useToastify } from "../../hooks/useToastify";
+import cloudinaryApi from "../../api/cloudinary.api";
+import type { Image } from "../../types/models";
+import ConfirmCodeModal from "../../components/ConfirmCodeModal";
 
 interface PersonalInfoSectionProps {
   isAdmin: boolean;
@@ -26,12 +29,14 @@ const PersonalInfoSection = ({
   maskMiddle,
 }: PersonalInfoSectionProps) => {
   const { user, setUser } = useAuth();
-  const [avatar, setAvatar] = useState<string | null>(null);
-  const [avatarFile, setAvatarFile] = useState<File | null>(null);
+  const [avatar, setAvatar] = useState<Image | null>(null);
+  const [isUploading, setIsUploading] = useState(false);
   const toast = useToastify();
+  const [openConfirmModal, setOpenConfirmModal] = useState(false);
+  const [confirmCode, setConfirmCode] = useState("");
+  const [isSubmittingCode, setIsSubmittingCode] = useState(false);
 
-  console.log(user)
-  const handleAvatarChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+  const handleAvatarChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
     if (e.target.files && e.target.files[0]) {
       const file = e.target.files[0];
 
@@ -45,8 +50,24 @@ const PersonalInfoSection = ({
         return;
       }
 
-      setAvatarFile(file);
-      setAvatar(URL.createObjectURL(file));
+      setIsUploading(true);
+      try {
+        const uploadRes = await cloudinaryApi.upload(file);
+        const ava = uploadRes.data;
+        if (ava) {
+          setAvatar({id : ava.id,
+          url : ava.url,
+          thumbUrl : ava.thumbnailUrl,
+          name : ava.name
+          });
+        } else {
+          toast.error("Không lấy được đường dẫn ảnh!");
+        }
+      } catch {
+        // toast.error("Upload ảnh thất bại!");
+      } finally {
+        setIsUploading(false);
+      }
     }
   };
 
@@ -60,21 +81,42 @@ const PersonalInfoSection = ({
   const handleSubmit = async (values: typeof initialValues) => {
     if (!user) return;
 
-    const formData = new FormData();
-    formData.append("email", values.email);
-    formData.append("dateOfBirth", values.dateOfBirth);
-    if (avatarFile) {
-      formData.append("avatar", avatarFile);
-    }
+    const updatePayload = {
+      email: values.email,
+      dateOfBirth: values.dateOfBirth,
+      avatar: avatar,
+    };
 
     try {
-      const response = await userApi.updateUser(user.id, formData);
+      const response = await userApi.sendUpdateConfirmCode(user.id, updatePayload);
       if (response.data) {
-        setUser(response.data);
-        toast.success("Cập nhật thông tin thành công!");
+        setOpenConfirmModal(true);
+        toast.success("Mã xác nhận sẽ được gửi về mail của bạn!");
       }
     } catch {
       toast.error("Cập nhật thông tin thất bại!");
+    }
+  };
+
+  const handleConfirmCodeSubmit = async () => {
+    if (!user) return;
+    if (confirmCode.length !== 6) {
+      toast.error("Mã xác nhận phải gồm 6 ký tự!");
+      return;
+    }
+    setIsSubmittingCode(true);
+    try {
+      const response = await userApi.updateUser(user.id, confirmCode.toUpperCase());
+      if (response.data) {
+        setUser(response.data);
+        toast.success("Cập nhật thông tin thành công!");
+        setOpenConfirmModal(false);
+        setConfirmCode("");
+      }
+    } catch {
+      toast.error("Mã xác nhận không đúng hoặc đã hết hạn!");
+    } finally {
+      setIsSubmittingCode(false);
     }
   };
 
@@ -219,7 +261,6 @@ const PersonalInfoSection = ({
           )}
         </Formik>
       </Box>
-      {/* Right: Avatar upload */}
       <Box
         sx={{
           minWidth: 180,
@@ -231,7 +272,7 @@ const PersonalInfoSection = ({
         }}
       >
         <Avatar
-          src={avatar ? avatar : user?.avatar ? user?.avatar.url  : undefined}
+          src={!isUploading ? (avatar ? avatar?.url : user?.avatar.url ? user?.avatar.url : undefined) : undefined}
           sx={{
             width: 140,
             height: 140,
@@ -241,9 +282,13 @@ const PersonalInfoSection = ({
             fontSize: 64,
             border: "4px solid #fce4ec",
             boxShadow: "0 4px 12px rgba(233, 30, 99, 0.2)",
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "center",
+            position: "relative",
           }}
         >
-          {!user?.avatar && <Person fontSize="inherit" />}
+          {isUploading ? <CircularProgress size={48} color="secondary" /> : (!user?.avatar && <Person fontSize="inherit" />)}
         </Avatar>
         <Button
           variant="outlined"
@@ -274,6 +319,14 @@ const PersonalInfoSection = ({
           Định dạng: JPEG, PNG
         </Typography>
       </Box>
+      <ConfirmCodeModal
+        open={openConfirmModal}
+        onClose={() => setOpenConfirmModal(false)}
+        onSubmit={handleConfirmCodeSubmit}
+        isSubmitting={isSubmittingCode}
+        code={confirmCode}
+        setCode={setConfirmCode}
+      />
     </Box>
   );
 };

@@ -46,7 +46,7 @@ const ProductTableSection = ({ items, formatPrice }: ProductTableSectionProps) =
           </Box>
           <Box sx={{ flex: 1, textAlign: "center" }}>
             <Typography variant="body1" sx={{ fontWeight: 500 }}>
-              {item.productDetail.product.weight}kg
+              {item.productDetail.weight}kg
             </Typography>
           </Box>
           <Box sx={{ flex: 1, textAlign: "center" }}>
