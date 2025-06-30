@@ -11,7 +11,6 @@ import CheckoutVoucherSection from "./CheckoutVoucherSection";
 import NoteSection from "./NoteSection";
 import CheckoutSummarySection from "./CheckoutSummarySection";
 import NotFound from "../../components/NotFound";
-import { useToastify } from "../../hooks/useToastify";
 import { formatPrice } from "../../utils/priceUtils";
 import vnPayApi from "../../api/vnpay.api";
 import checkoutApi from "../../api/checkout.api";
@@ -43,7 +42,6 @@ const Checkout: React.FC = () => {
   const location = useLocation();
   const { user } = useAuth();
   const navigate = useNavigate();
-  const toast = useToastify();
   const { selectedItems } = (location.state as {
     selectedItems: CartItem[];
   }) || { selectedItems: [] };
