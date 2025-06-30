@@ -50,9 +50,9 @@
             Quantity = quantity;
             IsActive = quantity > 0;
         }
-        public void Active()
+        public void Deactivate()
         {
-            IsActive = !IsActive;
+            IsActive = false;
         }
     }
 

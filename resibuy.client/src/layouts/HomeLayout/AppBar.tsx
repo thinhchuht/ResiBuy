@@ -339,7 +339,7 @@ const AppBar: React.FC = () => {
             </Popover>
           </Box>
 
-          {user && (
+          {user && user.roles?.includes("CUSTOMER") && (
             <>
               <Button
                 color="inherit"

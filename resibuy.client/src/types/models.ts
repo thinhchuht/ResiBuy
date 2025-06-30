@@ -29,8 +29,8 @@ export enum UserRole {
 }
 
 export enum VoucherType {
-  Amount = 1,
-  Percentage = 2,
+  Amount = "Amount",
+  Percentage = "Percentage",
 }
 
 export enum DeliveryType {
