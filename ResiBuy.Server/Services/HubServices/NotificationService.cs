@@ -2,7 +2,7 @@ namespace ResiBuy.Server.Services.HubServices;
 
 public class NotificationService(IHubContext<NotificationHub> hubContext, ILogger<NotificationService> logger) : INotificationService
 {
-    public void SendNotification(string eventName, object data, string hubGroup = null, List<string> userIds = null)
+    public void SendNotification(string eventName, object data, string hubGroup = Constants.AllHubGroup, List<string> userIds = null)
     {
         if (string.IsNullOrEmpty(hubGroup) && (userIds == null || !userIds.Any()))
             throw new ArgumentException("Either hubGroup or userIds must be provided");
@@ -19,7 +19,7 @@ public class NotificationService(IHubContext<NotificationHub> hubContext, ILogge
                     }
                     //await hubContext.Clients.Users(userIds).SendAsync(eventName, data, cts.Token);
                 }
-                if(!string.IsNullOrEmpty(hubGroup))
+                else
                 {
                     await hubContext.Clients.Group(hubGroup).SendAsync(eventName, data, cts.Token);
                 }

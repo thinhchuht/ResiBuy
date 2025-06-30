@@ -1,8 +1,7 @@
 import { Box, Typography, Button, Slider, Stack, Paper } from "@mui/material";
 import type { Category } from "../../types/models";
-import { useEffect, useState, useMemo } from "react";
+import { useEffect, useState } from "react";
 import categoryApi from "../../api/category.api";
-import { debounce } from "lodash";
 
 interface ProductFilterProps {
   selectedCategory: string | null;
@@ -14,8 +13,6 @@ interface ProductFilterProps {
 
 const ProductFilterSection = ({ selectedCategory, setSelectedCategory, priceRange, setPriceRange, storeId }: ProductFilterProps) => {
   const [categories, setCategories] = useState<Category[]>([]);
-  const [sliderValue, setSliderValue] = useState(priceRange);
-
   useEffect(() => {
     const fetchCategories = async () => {
       try {
@@ -27,26 +24,6 @@ const ProductFilterSection = ({ selectedCategory, setSelectedCategory, priceRang
     };
     fetchCategories();
   }, []);
-
-  useEffect(() => {
-    setSliderValue(priceRange);
-  }, [priceRange]);
-
-  const debouncedSetPriceRange = useMemo(
-    () => debounce((val: number[]) => setPriceRange(val), 400),
-    [setPriceRange]
-  );
-
-  const handleSliderChange = (_event: Event, newValue: number | number[]) => {
-    setSliderValue(newValue as number[]);
-    debouncedSetPriceRange(newValue as number[]);
-  };
-
-  useEffect(() => {
-    return () => {
-      debouncedSetPriceRange.cancel();
-    };
-  }, [debouncedSetPriceRange]);
 
   return (
     <Paper
@@ -107,8 +84,8 @@ const ProductFilterSection = ({ selectedCategory, setSelectedCategory, priceRang
           Khoảng giá
         </Typography>
         <Slider
-          value={sliderValue}
-          onChange={handleSliderChange}
+          value={priceRange}
+          onChange={(_, newValue) => setPriceRange(newValue as number[])}
           valueLabelDisplay="auto"
           min={0}
           max={50000000}

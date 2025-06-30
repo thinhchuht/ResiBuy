@@ -131,9 +131,7 @@ const AppBar: React.FC = () => {
   };
 
   const handleSearch = () => {
-    if (searchValue.trim()) {
-      navigate(`/products?search=${encodeURIComponent(searchValue.trim())}`);
-    }
+    console.log(searchValue);
   };
 
   const handleProfileMenuOpen = (event: React.MouseEvent<HTMLElement>) => {

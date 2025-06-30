@@ -10,10 +10,6 @@ namespace ResiBuy.Server.Application.Queries.CategoryQueries
         public async Task<ResponseModel> Handle(GetAllCategoriesQuery query, CancellationToken cancellationToken)
         {
             var categories = await CategoryDbService.GetAllCategoryAsync();
-            if(categories == null || !categories.Any())
-            {
-                throw new CustomException(ExceptionErrorCode.ValidationFailed, "Không tìm thấy Category");
-            }
             return ResponseModel.SuccessResponse(categories);
         }
     }

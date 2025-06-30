@@ -1,5 +1,4 @@
-﻿using ResiBuy.Server.Infrastructure.DbServices.VoucherDbServices;
-using ResiBuy.Server.Services.SMSServices;
+﻿using ResiBuy.Server.Application.Commands.ProductCommands;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -11,10 +10,7 @@ services.AddSqlDb(builder.Configuration)
     .AddKafka(builder.Configuration)
     .AddCloudinary(builder.Configuration)
     .AddAuthenJwtBase(builder.Configuration);
-services.AddScoped<ICodeGeneratorSerivce, CodeGeneratorSerivce>();
-services.AddScoped<ISMSService, SMSService>();
-services.AddScoped<IVoucherDbService, VoucherDbService>();
-services.AddMemoryCache();
+
 services.AddSignalR();
 services.AddMediatR(cfg => cfg.RegisterServicesFromAssemblyContaining(typeof(Program)));
 

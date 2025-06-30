@@ -1,9 +1,9 @@
-import React, { useEffect, useState } from "react";
-import { Box, Typography, Button, CircularProgress } from "@mui/material";
+import React from "react";
+import { Box, Typography, Button } from "@mui/material";
 import type { Product } from "../../../types/models";
+import { fakeProducts } from "../../../fakeData/fakeProductData";
 import ProductCard from "../../../components/ProductCard";
 import { useNavigate } from 'react-router-dom';
-import productApi from '../../../api/product.api';
 
 interface RelatedProductsSectionProps {
   currentProduct: Product;
@@ -13,24 +13,14 @@ const RelatedProductsSection: React.FC<RelatedProductsSectionProps> = ({
   currentProduct,
 }) => {
   const navigate = useNavigate();
-  const [relatedProducts, setRelatedProducts] = useState<Product[]>([]);
-  const [loading, setLoading] = useState(true);
 
-  useEffect(() => {
-    setLoading(true);
-    productApi.getAll({ categoryId: currentProduct.categoryId, pageNumber: 1, pageSize: 8 })
-      .then(res => {
-        const items = (res.items || []).filter((p: Product) => p.id !== currentProduct.id);
-        setRelatedProducts(items);
-      })
-      .finally(() => setLoading(false));
-  }, [currentProduct.categoryId, currentProduct.id]);
+  const relatedProducts = fakeProducts.filter(
+    (product) =>
+      product.categoryId === currentProduct.categoryId &&
+      product.id !== currentProduct.id
+  );
 
-  if (loading) {
-    return <Box sx={{ display: 'flex', justifyContent: 'center', my: 4 }}><CircularProgress /></Box>;
-  }
-
-  if (!relatedProducts.length) {
+  if (relatedProducts.length === 0) {
     return null;
   }
 
@@ -81,7 +71,7 @@ const RelatedProductsSection: React.FC<RelatedProductsSectionProps> = ({
               },
               cursor: 'pointer',
             }}
-            onClick={() => handleProductClick(product.id.toString())}
+            onClick={() => handleProductClick(product.id)}
           >
             <ProductCard product={product} productActions={[]} />
           </Box>
