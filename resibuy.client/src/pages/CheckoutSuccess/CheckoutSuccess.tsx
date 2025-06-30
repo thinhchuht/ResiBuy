@@ -136,7 +136,7 @@ const CheckoutSuccess: React.FC = () => {
                 textAlign: "center",
               }}
             >
-              Đặt hàng thành công!
+              Đơn hàng của bạn đang được xử lý!
             </Typography>
 
             <Typography

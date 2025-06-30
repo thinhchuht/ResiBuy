@@ -1,6 +1,4 @@
-﻿using System.ComponentModel.DataAnnotations;
-
-namespace ResiBuy.Server.Exceptions
+﻿namespace ResiBuy.Server.Exceptions
 {
     public class ExceptionMiddleware
     {

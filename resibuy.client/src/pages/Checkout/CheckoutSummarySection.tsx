@@ -105,8 +105,10 @@ const CheckoutSummarySection = ({
   const [buildingsData, setBuildingsData] = useState<Building[]>([]);
   const [roomsData, setRoomsData] = useState<Room[]>([]);
   const [fetchedAreas, setFetchedAreas] = useState<Set<string>>(new Set());
-  const [fetchedBuildings, setFetchedBuildings] = useState<Set<string>>(new Set());
   const [areasLoaded, setAreasLoaded] = useState(false);
+  const [roomPage, setRoomPage] = useState(1);
+  const [roomHasMore, setRoomHasMore] = useState(true);
+  const [roomLoadingMore, setRoomLoadingMore] = useState(false);
 
   const initialValues: FormValues = {
     deliveryType: "my-room",
@@ -125,7 +127,6 @@ const CheckoutSummarySection = ({
     try {
       setBuildingsData([]);
       setRoomsData([]);
-      setFetchedBuildings(new Set()); 
       
       const buildingsData = await buildingApi.getByBuilingId(areaId);
       setBuildingsData(buildingsData);
@@ -136,19 +137,31 @@ const CheckoutSummarySection = ({
     }
   };
 
-  const fetchRooms = async (buildingId: string) => {
-    if (fetchedBuildings.has(buildingId)) {
-      return;
-    }
-
+  const fetchRooms = async (buildingId: string, page = 1, pageSize = 6) => {
+    if (roomLoadingMore) return;
+    setRoomLoadingMore(true);
     try {
-      setRoomsData([]);
-      const roomsData = await roomApi.getByBuilingId(buildingId);
-      setRoomsData(roomsData);
-      setFetchedBuildings(prev => new Set([...prev, buildingId]));
-    } catch (error) {
-      console.error("Error fetching rooms:", error);
-      showError("Không thể tải danh sách phòng");
+      const roomsRes = await roomApi.getByBuilingId(buildingId, page, pageSize);
+      const roomsWithBuildingId = roomsRes.items.map((room: Room) => ({ ...room, buildingId }));
+      if (page === 1) {
+        setRoomsData(roomsWithBuildingId);
+      } else {
+        setRoomsData(prev => [...prev, ...roomsWithBuildingId]);
+      }
+      setRoomPage(page);
+      setRoomHasMore(roomsRes.pageNumber < roomsRes.totalPages);
+    } catch {
+      setRoomHasMore(false);
+    } finally {
+      setRoomLoadingMore(false);
+    }
+  };
+
+  const handleRoomScroll = async (e: React.UIEvent<HTMLDivElement>, buildingId: string) => {
+    const target = e.currentTarget;
+    if (roomLoadingMore || !roomHasMore) return;
+    if (target.scrollTop + target.clientHeight >= target.scrollHeight - 20) {
+      await fetchRooms(buildingId, roomPage + 1, 6);
     }
   };
 
@@ -376,12 +389,14 @@ const CheckoutSummarySection = ({
                         name="selectedBuilding"
                         value={values.selectedBuilding}
                         label="Tòa nhà"
-                        onChange={(e) => {
+                        onChange={async (e) => {
                           handleChange(e);
                           setFieldValue("selectedOtherRoom", "");
-                          // Fetch rooms for selected building
                           if (e.target.value) {
-                            fetchRooms(e.target.value);
+                            setRoomPage(1);
+                            setRoomHasMore(true);
+                            setRoomsData([]);
+                            await fetchRooms(e.target.value as string, 1, 6);
                           }
                         }}
                         onBlur={() => handleFieldBlur("selectedBuilding")}
@@ -415,12 +430,28 @@ const CheckoutSummarySection = ({
                         onChange={handleChange}
                         onBlur={() => handleFieldBlur("selectedOtherRoom")}
                         disabled={!values.selectedBuilding}
+                        MenuProps={{
+                          PaperProps: {
+                            style: { maxHeight: 200 },
+                            onScroll: (e: React.UIEvent<HTMLDivElement>) => handleRoomScroll(e, values.selectedBuilding)
+                          }
+                        }}
                       >
                         {filteredRooms.map((room) => (
                           <MenuItem key={room.id} value={room.id}>
                             {room.name}
                           </MenuItem>
                         ))}
+                        {roomLoadingMore && (
+                          <MenuItem disabled sx={{ justifyContent: 'center' }}>
+                            Đang tải thêm phòng...
+                          </MenuItem>
+                        )}
+                        {!roomHasMore && filteredRooms.length > 0 && (
+                          <MenuItem disabled sx={{ justifyContent: 'center', color: '#888' }}>
+                            Đã tải hết phòng
+                          </MenuItem>
+                        )}
                       </Select>
                       {touched.selectedOtherRoom &&
                         errors.selectedOtherRoom && (

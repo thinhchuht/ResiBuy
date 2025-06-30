@@ -11,16 +11,24 @@ interface VoucherSelectionModalProps {
   shopVouchers: Voucher[];
   onSelectVoucher: (voucher: Voucher) => void;
   selectedVoucherId?: string;
+  loading?: boolean;
 }
 
-const VoucherSelectionModal = ({ open, onClose, userVouchers, shopVouchers, onSelectVoucher, selectedVoucherId }: VoucherSelectionModalProps) => {
+const VoucherSelectionModal = ({ open, onClose, userVouchers, shopVouchers, onSelectVoucher, selectedVoucherId, loading }: VoucherSelectionModalProps) => {
   const [activeTab, setActiveTab] = useState(0);
 
-  const handleTabChange = (event: React.SyntheticEvent, newValue: number) => {
+  const handleTabChange = (_event: React.SyntheticEvent, newValue: number) => {
     setActiveTab(newValue);
   };
 
-  const renderVoucherList = (vouchers: Voucher[], emptyMessage: string) => {
+  const renderVoucherList = (vouchers: Voucher[], emptyMessage: string, loading?: boolean) => {
+    if (loading) {
+      return (
+        <Box sx={{ display: "flex", justifyContent: "center", alignItems: "center", py: 8 }}>
+          <Typography variant="h6" color="text.secondary">Đang tải voucher...</Typography>
+        </Box>
+      );
+    }
     if (vouchers.length === 0) {
       return (
         <Box
@@ -41,7 +49,6 @@ const VoucherSelectionModal = ({ open, onClose, userVouchers, shopVouchers, onSe
         </Box>
       );
     }
-
     return (
       <Box
         sx={{
@@ -115,7 +122,9 @@ const VoucherSelectionModal = ({ open, onClose, userVouchers, shopVouchers, onSe
         </Box>
 
         <Box sx={{ display: "flex", flexDirection: "column", gap: 2 }}>
-          {activeTab === 0 ? renderVoucherList(userVouchers, "Bạn chưa có voucher nào") : renderVoucherList(shopVouchers, "Shop chưa có voucher nào")}
+          {activeTab === 0
+            ? renderVoucherList(userVouchers, "Bạn chưa có voucher nào", loading)
+            : renderVoucherList(shopVouchers, "Shop chưa có voucher nào", loading)}
         </Box>
       </DialogContent>
     </Dialog>
