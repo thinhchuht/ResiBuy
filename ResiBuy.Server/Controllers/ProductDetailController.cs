@@ -6,8 +6,8 @@ namespace ResiBuy.Server.Controllers
     [ApiController]
     public class ProductDetailController(IMediator mediator) : ControllerBase
     {
-        [HttpPatch("{id}/{status}/edit")]
-        public async Task<IActionResult> UpdateStatusProductDetail(int id, bool status)
+        [HttpPatch("{id}/status")]
+        public async Task<IActionResult> UpdateStatusProductDetail(int id, [FromBody] bool status)
         {
             var result = await mediator.Send(new UpdateStatusProductDetailCommand(id, status));
             return Ok(result);

@@ -39,8 +39,8 @@ namespace ResiBuy.Server.Controllers
                 return Ok(result);
         }
 
-        [HttpPatch("{id}/{status}/edit")]
-        public async Task<IActionResult> UpdateStatusProduct(int id, bool status)
+        [HttpPatch("{id}/status")]
+        public async Task<IActionResult> UpdateStatusProduct(int id, [FromBody] bool status)
         {
             var result = await mediator.Send(new UpdateStatusProductCommand(id, status));
             return Ok(result);
