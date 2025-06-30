@@ -51,6 +51,11 @@
             UpdatedAt = DateTime.UtcNow;
 
         }
+
+        public void UpdateStatusProduct(bool isOutOfStock)
+        {
+            IsOutOfStock = isOutOfStock;
+        }
     }
 
 
