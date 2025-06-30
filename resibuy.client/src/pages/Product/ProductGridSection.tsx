@@ -9,13 +9,11 @@ interface ProductGridProps {
     onClick: (product: Product) => void;
     label: string;
   }[];
-  onResetState?: () => void;
 }
 
 const ProductGridSection = ({
   filteredProducts,
   productActions,
-  onResetState,
 }: ProductGridProps) => {
   return (
     <Box
@@ -27,7 +25,7 @@ const ProductGridSection = ({
     >
       {filteredProducts.map((product) => (
         <Box key={product.id}>
-          <ProductCard product={product} productActions={productActions} onResetState={onResetState} />
+          <ProductCard product={product} productActions={productActions} />
         </Box>
       ))}
     </Box>

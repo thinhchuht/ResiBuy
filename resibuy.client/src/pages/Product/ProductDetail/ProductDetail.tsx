@@ -1,7 +1,12 @@
 import React, { useEffect, useState } from "react";
 import { useSearchParams } from "react-router-dom";
 import productApi from "../../../api/product.api";
-import { Box, Container, Divider, Typography } from "@mui/material";
+import {
+  Box,
+  Container,
+  Divider,
+  Typography,
+} from "@mui/material";
 import type { Product } from "../../../types/models";
 import ProductImageSection from "./ProductImageSection";
 import ProductInfoSection from "./ProductInfoSection";
@@ -21,11 +26,11 @@ const ProductDetail: React.FC = () => {
         setLoading(true);
         if (productId) {
           const response = await productApi.getById(productId);
-          console.log(response.data);
+          console.log(response.data)
           if (response.data) {
             setProduct(response.data);
           } else {
-            setProduct(null);
+            setProduct(null); 
           }
         }
       } catch (error) {
@@ -53,7 +58,12 @@ const ProductDetail: React.FC = () => {
 
   if (loading) {
     return (
-      <Box display="flex" justifyContent="center" alignItems="center" minHeight="80vh">
+      <Box
+        display="flex"
+        justifyContent="center"
+        alignItems="center"
+        minHeight="80vh"
+      >
         <Typography variant="h5">Đang tải sản phẩm...</Typography>
       </Box>
     );
@@ -61,20 +71,26 @@ const ProductDetail: React.FC = () => {
 
   if (!product) {
     return (
-      <Box display="flex" justifyContent="center" alignItems="center" minHeight="80vh">
+      <Box
+        display="flex"
+        justifyContent="center"
+        alignItems="center"
+        minHeight="80vh"
+      >
         <Typography variant="h5">Không tìm thấy sản phẩm</Typography>
       </Box>
     );
   }
 
   return (
-    <Container maxWidth="lg" sx={{ py: 4, backgroundColor: "white", borderRadius: 14 }}>
+    <Container maxWidth="lg" sx={{ py: 4 , backgroundColor : 'white', borderRadius : 14 }}>
       <Box
         sx={{
           display: "flex",
           flexDirection: { xs: "column", md: "row" },
           gap: 4,
-        }}>
+        }}
+      >
         <ProductImageSection product={product} />
 
         <ProductInfoSection

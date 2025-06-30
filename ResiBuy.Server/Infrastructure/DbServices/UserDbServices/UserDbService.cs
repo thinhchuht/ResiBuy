@@ -141,29 +141,26 @@
                 PageSize = pageSize
             };
         }
-        public async Task CheckUniqueField(string userId = null, string phoneNumber = null, string email = null, string identityNumber = null)
+        public async Task CheckUniqueField(string phoneNumber = null, string email = null, string identityNumber = null)
         {
             var query = context.Users.AsQueryable();
 
             if (!string.IsNullOrEmpty(phoneNumber))
             {
-                bool exists = await query.AnyAsync(u => u.PhoneNumber == phoneNumber && u.Id != userId);
-                if (exists)
-                    throw new CustomException(ExceptionErrorCode.ValidationFailed, "Số điện thoại đã được sử dụng");
+                bool exists = await query.AnyAsync(u => u.PhoneNumber == phoneNumber);
+                if (exists) throw new CustomException(ExceptionErrorCode.ValidationFailed, "Số điện thoại đã được sử dụng");
             }
 
             if (!string.IsNullOrEmpty(email))
             {
-                bool exists = await query.AnyAsync(u => u.Email == email && u.Id != userId);
-                if (exists)
-                    throw new CustomException(ExceptionErrorCode.ValidationFailed, "Mail đã được sử dụng");
+                bool exists = await query.AnyAsync(u => u.Email == email);
+                if (exists) throw new CustomException(ExceptionErrorCode.ValidationFailed, "Mail đã được sử dụng");
             }
 
             if (!string.IsNullOrEmpty(identityNumber))
             {
-                bool exists = await query.AnyAsync(u => u.IdentityNumber == identityNumber && u.Id != userId);
-                if (exists)
-                    throw new CustomException(ExceptionErrorCode.ValidationFailed, "Số CCCD đã được sử dụng");
+                bool exists = await query.AnyAsync(u => u.IdentityNumber == identityNumber);
+                if (exists) throw new CustomException(ExceptionErrorCode.ValidationFailed, "Số CCCD đã được sử dụng");
             }
         }
     }

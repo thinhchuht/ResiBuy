@@ -2,7 +2,7 @@
 {
     public class Order
     {
-        public Order(Guid id, decimal totalPrice, PaymentMethod paymentMethod, string note, Guid shippingAddressId, string userId, Guid storeId, IEnumerable<OrderItem> items, Guid? voucherId)
+        public Order(Guid id, decimal totalPrice, PaymentMethod paymentMethod, string note, Guid shippingAddressId, string userId, Guid storeId, IEnumerable<OrderItem> items)
         {
             Id = id;
             TotalPrice = totalPrice >-1000 ? totalPrice : totalPrice;
@@ -17,7 +17,6 @@
             UserId = userId;
             StoreId = storeId;
             Items = items;
-            VoucherId = voucherId;
         }
 
         public Order()

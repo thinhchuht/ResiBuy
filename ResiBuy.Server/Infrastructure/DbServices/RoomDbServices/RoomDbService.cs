@@ -40,23 +40,13 @@
             }
         }
 
-        public async Task<PagedResult<Room>> GetAllRoomsAsync(int pageNumber, int pageSize)
+        public async Task<IEnumerable<Room>> GetAllRoomsAsync()
         {
             try
             {
-                if (pageNumber < 1 || pageSize < 1)
-                    throw new CustomException(ExceptionErrorCode.ValidationFailed, "Số trang và số phần tử phải lớn hơn 0");
-
-                var query = _context.Rooms.Include(r => r.UserRooms);
-
-                var totalCount = await query.CountAsync();
-                var items = await query
-                    .OrderBy(r => r.Name)
-                    .Skip((pageNumber - 1) * pageSize)
-                    .Take(pageSize)
-                    .ToListAsync();
-
-                return new PagedResult<Room>(items, totalCount, pageNumber, pageSize);
+                var a = await _context.Rooms.ToListAsync();
+                var b = await _context.Rooms.Include(r => r.UserRooms).ToListAsync();
+                return b;
             }
             catch (Exception ex)
             {
@@ -77,17 +67,7 @@
                 throw new CustomException(ExceptionErrorCode.RepositoryError, ex.Message);
             }
         }
-        public async Task<Room> GetByIdAsync(Guid id)
-        {
-            try
-            {
-                return await _context.Rooms.Include(a => a.UserRooms).FirstOrDefaultAsync();
-            }
-            catch (Exception ex)
-            {
-                throw new CustomException(ExceptionErrorCode.RepositoryError, ex.Message);
-            }
-        }
+
         public async Task<IEnumerable<Room>> GetBatchAsync(IEnumerable<Guid> ids)
         {
             try
@@ -114,52 +94,11 @@
             }
         }
 
-        public async Task<PagedResult<Room>> GetRoomsByBuildingIdPagedAsync(Guid buildingId, int pageNumber, int pageSize)
+        public async Task<IEnumerable<Room>> GetByBuildingIdAsync(Guid id)
         {
             try
             {
-                if (pageNumber < 1 || pageSize < 1)
-                    throw new CustomException(ExceptionErrorCode.ValidationFailed, "Số trang và số phần tử phải lớn hơn 0");
-
-                var query = _context.Rooms
-                    .Where(r => r.BuildingId == buildingId)
-                    .Include(r => r.UserRooms)
-                    .AsQueryable();
-
-                var totalCount = await query.CountAsync();
-                var items = await query
-                    .Skip((pageNumber - 1) * pageSize)
-                    .Take(pageSize)
-                    .ToListAsync();
-
-                return new PagedResult<Room>(items, totalCount, pageNumber, pageSize);
-            }
-            catch (Exception ex)
-            {
-                throw new CustomException(ExceptionErrorCode.RepositoryError, ex.Message);
-            }
-        }
-
-        public async Task<int> CountAllAsync()
-        {
-            try
-            {
-                return await _context.Rooms.CountAsync();
-            }
-            catch (Exception ex)
-            {
-                throw new CustomException(ExceptionErrorCode.RepositoryError, ex.Message);
-            }
-        }
-
-        public async Task<int> CountByBuildingIdAsync(Guid buildingId)
-        {
-            try
-            {
-                if (buildingId == Guid.Empty)
-                    throw new CustomException(ExceptionErrorCode.ValidationFailed, "Id tòa nhà không hợp lệ");
-
-                return await _context.Rooms.CountAsync(r => r.BuildingId == buildingId);
+                return await _context.Rooms.Where(r => r.BuildingId == id).ToListAsync();
             }
             catch (Exception ex)
             {

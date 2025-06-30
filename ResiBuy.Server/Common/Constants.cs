@@ -21,7 +21,6 @@
         public const string DefaulAccountPassword = "123456";
 
         //Hub Group
-        public const string NoHubGroup = "";
         public const string AllHubGroup = "all";
         public const string AdminHubGroup = "admin";
         public const string SellerHubGroup = "seller";

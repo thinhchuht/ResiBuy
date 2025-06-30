@@ -161,7 +161,7 @@ export default function Carousel({ items, autoplay = true, autoplayDelay = 3000,
       };
 
   const handleItemClick = (storeId: string) => {
-    navigate(`/products?storeId=${storeId}`);
+    navigate(`/shop/${storeId}`);
   };
 
   return (

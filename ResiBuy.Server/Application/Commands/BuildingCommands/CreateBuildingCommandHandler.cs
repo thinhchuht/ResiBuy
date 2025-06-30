@@ -16,7 +16,7 @@
                     if (admin != null)
                         return ResponseModel.SuccessResponse(building);
                     else
-                    throw new CustomException(ExceptionErrorCode.NotFound, "Khởi tạo Admin thất bại.");
+                        return ResponseModel.FailureResponse("Khởi tạo Admin thất bại.");
             }
             catch (Exception ex)
             {

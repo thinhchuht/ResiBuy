@@ -78,43 +78,14 @@ const userApi = {
     }
   },
 
-  updateUser: async (id: string, code: string) => {
+  updateUser: async (id: string, userData: FormData) => {
     try {
-      const response = await axiosClient.put(userUrl + `/${id}`, JSON.stringify(code), {
-        headers: { 'Content-Type': 'application/json' },
-      });
-      return response.data;
-    } catch (error: any) {
-      console.error("Update user failed:", error);
-      return {
-        error: {
-          message: error.response?.data?.message || error.message || "Cập nhật người dùng thất bại",
+      const response = await axiosClient.put(userUrl + `/${id}`, userData, {
+        headers: {
+          'Content-Type': 'multipart/form-data',
         },
-      };
-    }
-  },
-
-  sendUpdateConfirmCode: async (id: string, userData: any) => {
-    try {
-      const response = await axiosClient.put(userUrl + `/${id}/confirm`, userData);
-      return response.data;
-    } catch (error: any) {
-      console.error("Update user failed:", error);
-      return {
-        error: {
-          message: error.response?.data?.message || error.message || "Cập nhật người dùng thất bại",
-        },
-      };
-    }
-  },
-
-  sendPasswordConfirmCode: async (id: string, oldPassword: string, newPassword: string) => {
-    try {
-      const response = await axiosClient.put(userUrl + `/${id}/password/confirm`, {
-        oldPassword,
-        newPassword
       });
-      return response.data;
+      return  response.data ;
     } catch (error: any) {
       console.error("Update user failed:", error);
       return {
@@ -139,10 +110,11 @@ const userApi = {
     }
   },
 
-  changePassword: async (id: string, code: string) => {
+  changePassword: async (id: string, oldPassword: string, newPassword: string) => {
     try {
-      const response = await axiosClient.put(userUrl + `/${id}/password`, JSON.stringify(code), {
-        headers: { 'Content-Type': 'application/json' },
+      const response = await axiosClient.put(userUrl + `/${id}/change-password`, {
+        oldPassword,
+        newPassword
       });
       return response.data;
     } catch (error: any) {

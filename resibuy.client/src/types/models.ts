@@ -30,12 +30,12 @@ export enum UserRole {
 
 export enum VoucherType {
   Amount = 1,
-  Percentage = 2,
+  Percentage = 2
 }
 
 export enum DeliveryType {
-  MyRoom = "my-room",
-  Other = "other",
+  MyRoom = 'my-room',
+  Other = 'other',
 }
 
 // Base Models
@@ -69,30 +69,30 @@ export interface Product {
   id: number;
   name: string;
   describe: string;
-  sold: number;
+  weight: number;
   isOutOfStock: boolean;
   discount: number;
+  sold: number;
   createdAt: string;
   updatedAt: string;
   storeId: string;
   categoryId: string;
-  store: Store;
-  category: Category;
+  store : Store
+  category : Category
   productDetails: ProductDetail[];
 }
 
 export interface ProductDetail {
-  id: number;
-  isOutOfStock: boolean;
-  productId: number;
-  product: Product;
-  weight: number;
-  sold: number;
-  price: number;
-  image: Image;
-  cartItems: CartItem[];
-  orderItems: OrderItem[];
-  additionalData: AdditionalData[];
+  id: number
+  isOutOfStock : boolean
+  productId : number
+  product : Product
+  sold : number
+  price : number
+  image : Image
+  cartItems : CartItem[]
+  orderItems : OrderItem[]
+  additionalData : AdditionalData[]
 }
 
 export interface Store {
@@ -113,7 +113,7 @@ export interface Category {
   id: string;
   name: string;
   status: string;
-  image: Image;
+  image : Image
 }
 
 export interface Cart {
@@ -136,10 +136,10 @@ export interface Order {
   totalPrice: number;
   status: OrderStatus;
   paymentStatus: PaymentStatus;
-  paymentMethod: PaymentMethod;
+  paymentMethod: PaymentMethod
   createAt: string;
   updateAt: string;
-  note: string;
+  note : string
   shipAddressId: string;
   shipAddress: Room;
   userId: string;
@@ -169,10 +169,11 @@ export interface Shipper {
   userId: string;
   isAvailable: boolean;
   orders: Order[];
-  startWorkTime: string;
-  endWorkTime: string;
+  startWorkTime: string;  
+  endWorkTime: string;    
   reportCount: number;
 }
+
 
 export interface Voucher {
   id: string;
@@ -268,9 +269,10 @@ export interface TooltipProps {
 }
 
 export interface StatisticsSectionProps {
-  activeTab: string;
-  setActiveTab: (value: string) => void;
+    activeTab: string;
+    setActiveTab: (value: string) => void;
 }
+
 
 export interface Image {
   id: string;
@@ -279,7 +281,7 @@ export interface Image {
   name: string;
   productDetailId?: number;
   userId?: string;
-  categoryId?: string;
+  categoryId : string
 }
 
 export interface AdditionalData {
@@ -287,7 +289,7 @@ export interface AdditionalData {
   key: string;
   value: string;
   productDetailId: string;
-  productDetail: ProductDetail;
+  productDetail : ProductDetail
 }
 
 export interface ProductDto {
@@ -304,16 +306,4 @@ export interface ProductDto {
   updatedAt?: string;
   storeId: string;
   categoryId: string;
-}
-
-export interface ProductFilter {
-  search?: string;
-  storeId?: string;
-  categoryId?: string;
-  minPrice?: number;
-  maxPrice?: number;
-  sortBy?: string; // "price", "sold", "name", "createdAt"
-  sortDirection?: string; // "asc" or "desc"
-  pageNumber?: number;
-  pageSize?: number;
 }

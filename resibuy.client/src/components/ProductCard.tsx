@@ -11,10 +11,9 @@ interface ProductCardProps {
     onClick: (product: Product) => void;
     label: string;
   }[];
-  onResetState?: () => void;
 }
 
-const ProductCard = ({ product, productActions, onResetState }: ProductCardProps) => {
+const ProductCard = ({ product, productActions }: ProductCardProps) => {
   // Get productDetail with minimum price
   const defaultProductDetail = product.productDetails.reduce((min, current) => 
     (current.price < min.price ? current : min), product.productDetails[0]);
@@ -70,7 +69,7 @@ const ProductCard = ({ product, productActions, onResetState }: ProductCardProps
           Giảm {product.discount}%
         </Box>
       )}
-      <Link to={`/products?id=${product.id}`} style={{ display: "block", width: "100%" }} onClick={onResetState}>
+      <Link to={`/products?id=${product.id}`} style={{ display: "block", width: "100%" }}>
         <Box
           sx={{
             width: "100%",

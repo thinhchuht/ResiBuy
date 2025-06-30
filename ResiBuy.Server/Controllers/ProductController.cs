@@ -37,13 +37,13 @@ namespace ResiBuy.Server.Controllers
         {
                 var result = await mediator.Send(new GetAllProductsQuery(filter));
                 return Ok(result);
+        }
 
         [HttpPatch("{id}/status")]
         public async Task<IActionResult> UpdateStatusProduct(int id, [FromBody] bool status)
         {
             var result = await mediator.Send(new UpdateStatusProductCommand(id, status));
             return Ok(result);
-
         }
     }
 }

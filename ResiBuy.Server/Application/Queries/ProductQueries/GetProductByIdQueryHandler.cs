@@ -14,6 +14,7 @@ namespace ResiBuy.Server.Application.Queries.ProductQueries
             var product = await ProductDbService.GetByIdAsync(query.id);
             if (product == null)
                 throw new CustomException(ExceptionErrorCode.ValidationFailed, "Không tìm thấy sản phẩm");
+
             return ResponseModel.SuccessResponse(product);
         }
     }

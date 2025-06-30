@@ -25,7 +25,7 @@ const ProductInfoSection: React.FC<ProductInfoSectionProps> = ({ product, quanti
   const navigate = useNavigate();
 
   const optionGroups: Record<string, string[]> = {};
-  (product.productDetails ?? []).forEach((detail) => {
+  product.productDetails.forEach((detail) => {
     if (Array.isArray(detail.additionalData)) {
       detail.additionalData.forEach(({ key, value }) => {
         if (!optionGroups[key]) optionGroups[key] = [];
@@ -43,7 +43,7 @@ const ProductInfoSection: React.FC<ProductInfoSectionProps> = ({ product, quanti
   });
 
   const selectedDetail =
-    (product.productDetails ?? []).find((detail) => {
+    product.productDetails.find((detail) => {
       if (!Array.isArray(detail.additionalData)) return false;
       const keys = Object.keys(selectedOptions);
       return keys.every(
@@ -65,7 +65,7 @@ const ProductInfoSection: React.FC<ProductInfoSectionProps> = ({ product, quanti
       const k = keys[i];
       const validValue = optionGroups[k].find((v) => {
         const testOptions = { ...newSelected, [k]: v };
-        return (product.productDetails ?? []).some((detail) =>
+        return product.productDetails.some((detail) =>
           Object.entries(testOptions).every(
             ([kk, vv]) => Array.isArray(detail.additionalData) && detail.additionalData.some((ad: { key: string; value: string }) => ad.key === kk && ad.value === vv)
           )
@@ -177,7 +177,7 @@ const ProductInfoSection: React.FC<ProductInfoSectionProps> = ({ product, quanti
                       testOptions[prevKey] = selectedOptions[prevKey];
                     });
                     testOptions[key] = value;
-                    isValid = (product.productDetails ?? []).some((detail) =>
+                    isValid = product.productDetails.some((detail) =>
                       Object.entries(testOptions).every(
                         ([k, v]) => Array.isArray(detail.additionalData) && detail.additionalData.some((ad: { key: string; value: string }) => ad.key === k && ad.value === v)
                       )
@@ -343,7 +343,7 @@ const ProductInfoSection: React.FC<ProductInfoSectionProps> = ({ product, quanti
                 {product.describe}
               </Typography>
               <Typography variant="body2" color="text.secondary">
-                Trọng lượng: {selectedDetail?.weight ?? "Không xác định"} kg
+                Trọng lượng: {product.weight} kg
               </Typography>
             </AccordionDetails>
           </Accordion>

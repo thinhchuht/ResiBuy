@@ -9,13 +9,9 @@
   </PropertyGroup>
 
   <ItemGroup>
-    <Compile Remove="Application\Commands\NewFolder\**" />
     <Compile Remove="Infrastructure\Repositories\**" />
-    <Content Remove="Application\Commands\NewFolder\**" />
     <Content Remove="Infrastructure\Repositories\**" />
-    <EmbeddedResource Remove="Application\Commands\NewFolder\**" />
     <EmbeddedResource Remove="Infrastructure\Repositories\**" />
-    <None Remove="Application\Commands\NewFolder\**" />
     <None Remove="Infrastructure\Repositories\**" />
   </ItemGroup>
 
@@ -39,7 +35,6 @@
     </PackageReference>
     <PackageReference Include="MimeKit" Version="4.12.0" />
     <PackageReference Include="Swashbuckle.AspNetCore" Version="8.1.2" />
-    <PackageReference Include="Twilio" Version="7.11.3" />
   </ItemGroup>
 
   <ItemGroup>
@@ -50,6 +45,8 @@
 
   <ItemGroup>
     <Folder Include="Application\Commands\CartitemCommands\" />
+    <Folder Include="Application\Commands\NewFolder\" />
+    <Folder Include="Application\Queries\AreaQueries\" />
     <Folder Include="Services\HttpServices\" />
   </ItemGroup>
 </Project>
