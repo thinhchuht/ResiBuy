@@ -16,6 +16,12 @@
             IsActive   = true;
             Name       = name;
         }
+        public Room UpdateRoom(string name, bool isActive)
+        {
+            Name = name;
+            IsActive = isActive;
+            return this;
+        }
 
         public Room UpdateStatus()
         {

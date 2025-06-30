@@ -5,7 +5,7 @@
     {
         public async Task<ResponseModel> Handle(GetAllBuildingsQuery query, CancellationToken cancellationToken)
         {
-            var buildings = await BuildingDbService.GetAllAsync();
+            var buildings = await BuildingDbService.GetAllWithOutInclude();
             return ResponseModel.SuccessResponse(buildings);
         }
     }

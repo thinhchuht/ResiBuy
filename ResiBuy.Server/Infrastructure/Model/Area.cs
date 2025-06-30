@@ -16,7 +16,13 @@
             Name = name;
             IsActive = true;
         }
-
+        public void UpdateArea(string name, bool? isActive = null)
+        {
+            if (!string.IsNullOrWhiteSpace(name))
+                Name = name;
+            if (isActive.HasValue)
+                IsActive = isActive.Value;
+        }
         public Area UpdateAreaStatus()
         {
             IsActive = !IsActive;

@@ -264,7 +264,7 @@ const CartItemSection = ({
                   </Box>
                 </TableCell>
                 <TableCell align="center" sx={{ ...tableCellStyle, minWidth: "10px" }}>
-                  <Typography variant="body1">{(product.weight * item.quantity).toFixed(2)} kg</Typography>
+                  <Typography variant="body1">{(item.productDetail.weight * item.quantity).toFixed(2)} kg</Typography>
                 </TableCell>
                 <TableCell align="right" sx={{ ...tableCellStyle, minWidth: "150px" }}>
                   <Typography variant="h6" color="red">

@@ -7,5 +7,6 @@
         Task<IEnumerable<Building>> GetByAreaIdAsync(Guid id);
         Task<Building> CreateAsync(string name, Guid areaId);
         Task<Building> GetBuildingByNameAndAreaIdAssync(string name, Guid areaId);
+        Task<int> CountAsync();
     }
 }
