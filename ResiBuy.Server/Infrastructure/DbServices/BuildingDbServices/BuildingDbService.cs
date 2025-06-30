@@ -71,7 +71,7 @@
         {
             try
             {
-                return await context.Buildings.Include(a => a.Rooms).FirstOrDefaultAsync();
+                return await context.Buildings.Include(a => a.Rooms).FirstOrDefaultAsync(b => b.Id == id);
             }
             catch (Exception ex)
             {

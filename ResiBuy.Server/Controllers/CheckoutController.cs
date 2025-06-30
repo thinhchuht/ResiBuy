@@ -7,32 +7,29 @@
         [HttpPost]
         public IActionResult Checkout ([FromBody] CheckoutDto checkoutDto)
         {
+            var user = dbContext.Users.Include(u => u.Cart).FirstOrDefault(u => u.Id == checkoutDto.UserId);
+            if (user == null) return NotFound("Không tìm thấy người dùng");
+            var cart = dbContext.Carts.FirstOrDefault(c => c.Id == user.Cart.Id);
+            if (cart == null)
+                return NotFound("Không tìm thấy giỏ hàng");
+
+            if (cart.IsCheckingOut)
+                throw new CustomException(ExceptionErrorCode.NotFound, "Giỏ hàng đang được thanh toán ở nơi khác..");
+            var voucherIds = checkoutDto.Orders.Select(o => o.VoucherId).ToList();
+            var checkVoucherRs = await voucherDbService.CheckIsActiveVouchers(voucherIds);
+            if (!checkVoucherRs.IsSuccess()) return NotFound(checkVoucherRs.Message);
+            cart.IsCheckingOut = true;
             try
             {
-                var user = dbContext.Users.Include(u => u.Cart).FirstOrDefault(u => u.Id == checkoutDto.UserId);
-                var cart = dbContext.Carts.FirstOrDefault(c => c.Id == user.Cart.Id);
-                if (cart == null)
-                    return NotFound();
-
-                if (cart.IsCheckingOut)
-                throw new CustomException(ExceptionErrorCode.NotFound, "Giỏ hàng đang được thanh toán ở nơi khác..");
-                cart.IsCheckingOut = true;
-                try
-                {
-                    dbContext.SaveChanges();
-                }
-                catch (DbUpdateConcurrencyException)
-                {
-                     throw new CustomException(ExceptionErrorCode.NotFound , "Có người khác đang thao tác với giỏ hàng này. Vui lòng thử lại.");
-                }
-                var message = JsonSerializer.Serialize(checkoutDto);
-                producer.ProduceMessageAsync("checkout", message, "checkout-topic");
-                return Ok(ResponseModel.SuccessResponse());
+                dbContext.SaveChanges();
             }
-            catch (Exception ex)
+            catch (DbUpdateConcurrencyException)
             {
-                throw new CustomException(ExceptionErrorCode.RepositoryError, ex.ToString());
+                throw new CustomException(ExceptionErrorCode.NotFound, "Có người khác đang thao tác với giỏ hàng này. Vui lòng thử lại.");
             }
+            var message = JsonSerializer.Serialize(checkoutDto);
+            producer.ProduceMessageAsync("checkout", message, "checkout-topic");
+            return Ok(ResponseModel.SuccessResponse());
         }
     }
 }

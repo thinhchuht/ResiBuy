@@ -12,17 +12,20 @@ import {
   Radio,
   RadioGroup,
   FormHelperText,
+  Autocomplete,
+  TextField,
 } from "@mui/material";
 import type { PaperProps as MuiPaperProps } from "@mui/material";
 import { Formik, Form, Field } from "formik";
 import type { FieldProps } from "formik";
 import * as Yup from "yup";
-import { useState } from "react";
+import { useState, useMemo } from "react";
 import type { Room, Building, Area } from "../../types/models";
 import { useToastify } from "../../hooks/useToastify";
 import areaApi from "../../api/area.api";
 import buildingApi from "../../api/building.api";
 import roomApi from "../../api/room.api";
+import { debounce } from "lodash";
 
 interface OrderSummary {
   totalBeforeDiscount: number;
@@ -66,7 +69,7 @@ const validationSchema = Yup.object().shape({
   deliveryType: Yup.string().required(),
   selectedRoom: Yup.string().when("deliveryType", {
     is: (val: string) => val === "my-room",
-    then: (schema) =>  schema.required("Vui lòng chọn phòng"),
+    then: (schema) => schema.required("Vui lòng chọn phòng"),
   }),
   selectedArea: Yup.string().when("deliveryType", {
     is: (val: string) => val === "other",
@@ -92,21 +95,19 @@ const formatPrice = (price: number) => (
   </Box>
 );
 
-const CheckoutSummarySection = ({
-  orders,
-  grandTotal,
-  onCheckout,
-  userRooms = [],
-  isLoading = false,
-}: CheckoutSummarySectionProps) => {
+const CheckoutSummarySection = ({ orders, grandTotal, onCheckout, userRooms = [], isLoading = false }: CheckoutSummarySectionProps) => {
   const { error: showError } = useToastify();
-  
+
   const [areasData, setAreasData] = useState<Area[]>([]);
   const [buildingsData, setBuildingsData] = useState<Building[]>([]);
   const [roomsData, setRoomsData] = useState<Room[]>([]);
   const [fetchedAreas, setFetchedAreas] = useState<Set<string>>(new Set());
-  const [fetchedBuildings, setFetchedBuildings] = useState<Set<string>>(new Set());
   const [areasLoaded, setAreasLoaded] = useState(false);
+  const [roomPage, setRoomPage] = useState(1);
+  const [roomHasMore, setRoomHasMore] = useState(true);
+  const [roomLoadingMore, setRoomLoadingMore] = useState(false);
+  const [selectedOtherRoomObject, setSelectedOtherRoomObject] = useState<Room | null>(null);
+  const [roomSearchText, setRoomSearchText] = useState("");
 
   const initialValues: FormValues = {
     deliveryType: "my-room",
@@ -125,30 +126,53 @@ const CheckoutSummarySection = ({
     try {
       setBuildingsData([]);
       setRoomsData([]);
-      setFetchedBuildings(new Set()); 
-      
+
       const buildingsData = await buildingApi.getByBuilingId(areaId);
       setBuildingsData(buildingsData);
-      setFetchedAreas(prev => new Set([...prev, areaId]));
+      setFetchedAreas((prev) => new Set([...prev, areaId]));
     } catch (error) {
       console.error("Error fetching buildings:", error);
       showError("Không thể tải danh sách tòa nhà");
     }
   };
 
-  const fetchRooms = async (buildingId: string) => {
-    if (fetchedBuildings.has(buildingId)) {
-      return;
-    }
-
+  const fetchRooms = async (buildingId: string, page = 1, pageSize = 6, search = "") => {
+    if (roomLoadingMore) return;
+    setRoomLoadingMore(true);
     try {
-      setRoomsData([]);
-      const roomsData = await roomApi.getByBuilingId(buildingId);
-      setRoomsData(roomsData);
-      setFetchedBuildings(prev => new Set([...prev, buildingId]));
-    } catch (error) {
-      console.error("Error fetching rooms:", error);
-      showError("Không thể tải danh sách phòng");
+      const roomsRes = await roomApi.getByBuilingId(buildingId, page, pageSize, search);
+      const roomsWithBuildingId = roomsRes.items.map((room: Room) => ({
+        ...room,
+        buildingId,
+      }));
+      if (page === 1) {
+        setRoomsData(roomsWithBuildingId);
+      } else {
+        setRoomsData((prev) => [...prev, ...roomsWithBuildingId]);
+      }
+      setRoomPage(page);
+      setRoomHasMore(roomsRes.pageNumber < roomsRes.totalPages);
+    } catch {
+      setRoomHasMore(false);
+    } finally {
+      setRoomLoadingMore(false);
+    }
+  };
+
+  const debouncedSearch = useMemo(
+    () =>
+      debounce(async (buildingId: string, search: string) => {
+        await fetchRooms(buildingId, 1, 6, search);
+      }, 500),
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    []
+  );
+
+  const handleRoomScroll = async (e: React.UIEvent<HTMLDivElement>, buildingId: string) => {
+    const target = e.currentTarget;
+    if (roomLoadingMore || !roomHasMore) return;
+    if (target.scrollTop + target.clientHeight >= target.scrollHeight - 20) {
+      await fetchRooms(buildingId, roomPage + 1, 6, roomSearchText);
     }
   };
 
@@ -173,12 +197,8 @@ const CheckoutSummarySection = ({
         transition: "all 0.3s ease-in-out",
         overflow: "hidden",
         bgcolor: "#ffffff",
-      }}
-    >
-      <Typography
-        variant="h6"
-        sx={{ fontWeight: "bold", color: "#2c3e50", mb: 2 }}
-      >
+      }}>
+      <Typography variant="h6" sx={{ fontWeight: "bold", color: "#2c3e50", mb: 2 }}>
         Tóm tắt đơn hàng
       </Typography>
       <Divider sx={{ mb: 2 }} />
@@ -190,32 +210,20 @@ const CheckoutSummarySection = ({
         onSubmit={(values) => {
           const formValues = {
             ...values,
-            paymentMethod: values.paymentMethod || "BankTransfer"
+            paymentMethod: values.paymentMethod || "BankTransfer",
           };
-          console.log('CheckoutSummarySection onSubmit formValues:', formValues);
+          console.log("CheckoutSummarySection onSubmit formValues:", formValues);
           onCheckout?.(formValues);
-        }}
-      >
-        {({
-          values,
-          errors,
-          touched,
-          handleChange,
-          handleBlur,
-          setFieldValue,
-        }) => {
-          const filteredBuildings = displayBuildings.filter(
-            (b) => b.areaId === values.selectedArea
-          );
-          const filteredRooms = displayRooms.filter(
-            (r) => r.buildingId === values.selectedBuilding
-          );
+        }}>
+        {({ values, errors, touched, handleChange, handleBlur, setFieldValue }) => {
+          const filteredBuildings = displayBuildings.filter((b) => b.areaId === values.selectedArea);
+          const filteredRooms = displayRooms.filter((r) => r.buildingId === values.selectedBuilding);
 
           const handleFieldBlur = (fieldName: string) => {
             handleBlur(fieldName);
             const fieldError = errors[fieldName as keyof typeof errors];
             const fieldTouched = touched[fieldName as keyof typeof touched];
-            
+
             if (fieldError && fieldTouched) {
               showError(fieldError as string);
             }
@@ -223,12 +231,12 @@ const CheckoutSummarySection = ({
 
           const handleSubmit = (e: React.FormEvent) => {
             e.preventDefault();
-            
+
             if (values.deliveryType === "my-room" && !values.selectedRoom) {
               showError("Vui lòng chọn phòng");
               return;
             }
-            
+
             if (values.deliveryType === "other") {
               if (!values.selectedArea) {
                 showError("Vui lòng chọn khu vực");
@@ -246,7 +254,7 @@ const CheckoutSummarySection = ({
 
             const formValues = {
               ...values,
-              paymentMethod: values.paymentMethod || "BankTransfer"
+              paymentMethod: values.paymentMethod || "BankTransfer",
             };
             onCheckout?.(formValues);
           };
@@ -282,45 +290,24 @@ const CheckoutSummarySection = ({
                         } else {
                           setFieldValue("selectedRoom", "");
                         }
-                      }}
-                    >
-                      <FormControlLabel
-                        value="my-room"
-                        control={<Radio />}
-                        label="Chọn từ phòng của tôi"
-                      />
-                      <FormControlLabel
-                        value="other"
-                        control={<Radio />}
-                        label="Địa chỉ khác"
-                      />
+                      }}>
+                      <FormControlLabel value="my-room" control={<Radio />} label="Chọn từ phòng của tôi" />
+                      <FormControlLabel value="other" control={<Radio />} label="Địa chỉ khác" />
                     </RadioGroup>
                   )}
                 </Field>
 
                 {values.deliveryType === "my-room" ? (
-                  <FormControl
-                    fullWidth
-                    sx={{ mt: 2 }}
-                    error={touched.selectedRoom && Boolean(errors.selectedRoom)}
-                  >
+                  <FormControl fullWidth sx={{ mt: 2 }} error={touched.selectedRoom && Boolean(errors.selectedRoom)}>
                     <InputLabel>Chọn phòng</InputLabel>
-                    <Select
-                      name="selectedRoom"
-                      value={values.selectedRoom}
-                      label="Chọn phòng"
-                      onChange={handleChange}
-                      onBlur={() => handleFieldBlur("selectedRoom")}
-                    >
+                    <Select name="selectedRoom" value={values.selectedRoom} label="Chọn phòng" onChange={handleChange} onBlur={() => handleFieldBlur("selectedRoom")}>
                       {userRooms.map((room) => (
                         <MenuItem key={room.roomId} value={room.roomId}>
                           {`${room.roomName} - ${room.buildingName} - ${room.areaName}`}
                         </MenuItem>
                       ))}
                     </Select>
-                    {touched.selectedRoom && errors.selectedRoom && (
-                      <FormHelperText>{errors.selectedRoom}</FormHelperText>
-                    )}
+                    {touched.selectedRoom && errors.selectedRoom && <FormHelperText>{errors.selectedRoom}</FormHelperText>}
                   </FormControl>
                 ) : (
                   <Box
@@ -329,14 +316,8 @@ const CheckoutSummarySection = ({
                       display: "flex",
                       flexDirection: "column",
                       gap: 2,
-                    }}
-                  >
-                    <FormControl
-                      fullWidth
-                      error={
-                        touched.selectedArea && Boolean(errors.selectedArea)
-                      }
-                    >
+                    }}>
+                    <FormControl fullWidth error={touched.selectedArea && Boolean(errors.selectedArea)}>
                       <InputLabel>Khu vực</InputLabel>
                       <Select
                         name="selectedArea"
@@ -346,96 +327,83 @@ const CheckoutSummarySection = ({
                           handleChange(e);
                           setFieldValue("selectedBuilding", "");
                           setFieldValue("selectedOtherRoom", "");
+                          setSelectedOtherRoomObject(null);
                           // Fetch buildings for selected area
                           if (e.target.value) {
                             fetchBuildings(e.target.value);
                           }
                         }}
-                        onBlur={() => handleFieldBlur("selectedArea")}
-                      >
+                        onBlur={() => handleFieldBlur("selectedArea")}>
                         {displayAreas.map((area) => (
                           <MenuItem key={area.id} value={area.id}>
                             {area.name}
                           </MenuItem>
                         ))}
                       </Select>
-                      {touched.selectedArea && errors.selectedArea && (
-                        <FormHelperText>{errors.selectedArea}</FormHelperText>
-                      )}
+                      {touched.selectedArea && errors.selectedArea && <FormHelperText>{errors.selectedArea}</FormHelperText>}
                     </FormControl>
 
-                    <FormControl
-                      fullWidth
-                      error={
-                        touched.selectedBuilding &&
-                        Boolean(errors.selectedBuilding)
-                      }
-                    >
+                    <FormControl fullWidth error={touched.selectedBuilding && Boolean(errors.selectedBuilding)}>
                       <InputLabel>Tòa nhà</InputLabel>
                       <Select
                         name="selectedBuilding"
                         value={values.selectedBuilding}
                         label="Tòa nhà"
-                        onChange={(e) => {
+                        onChange={async (e) => {
                           handleChange(e);
                           setFieldValue("selectedOtherRoom", "");
-                          // Fetch rooms for selected building
+                          setSelectedOtherRoomObject(null);
                           if (e.target.value) {
-                            fetchRooms(e.target.value);
+                            setRoomPage(1);
+                            setRoomHasMore(true);
+                            setRoomsData([]);
+                            await fetchRooms(e.target.value as string, 1, 6);
                           }
                         }}
                         onBlur={() => handleFieldBlur("selectedBuilding")}
-                        disabled={!values.selectedArea}
-                      >
+                        disabled={!values.selectedArea}>
                         {filteredBuildings.map((building) => (
                           <MenuItem key={building.id} value={building.id}>
                             {building.name}
                           </MenuItem>
                         ))}
                       </Select>
-                      {touched.selectedBuilding && errors.selectedBuilding && (
-                        <FormHelperText>
-                          {errors.selectedBuilding}
-                        </FormHelperText>
-                      )}
+                      {touched.selectedBuilding && errors.selectedBuilding && <FormHelperText>{errors.selectedBuilding}</FormHelperText>}
                     </FormControl>
 
-                    <FormControl
-                      fullWidth
-                      error={
-                        touched.selectedOtherRoom &&
-                        Boolean(errors.selectedOtherRoom)
-                      }
-                    >
-                      <InputLabel>Phòng</InputLabel>
-                      <Select
-                        name="selectedOtherRoom"
-                        value={values.selectedOtherRoom}
-                        label="Phòng"
-                        onChange={handleChange}
-                        onBlur={() => handleFieldBlur("selectedOtherRoom")}
-                        disabled={!values.selectedBuilding}
-                      >
-                        {filteredRooms.map((room) => (
-                          <MenuItem key={room.id} value={room.id}>
-                            {room.name}
-                          </MenuItem>
-                        ))}
-                      </Select>
-                      {touched.selectedOtherRoom &&
-                        errors.selectedOtherRoom && (
-                          <FormHelperText>
-                            {errors.selectedOtherRoom}
-                          </FormHelperText>
-                        )}
-                    </FormControl>
+                    <Autocomplete
+                      options={filteredRooms}
+                      getOptionLabel={(option) => option.name}
+                      value={selectedOtherRoomObject}
+                      onChange={(_, newValue) => {
+                        setSelectedOtherRoomObject(newValue);
+                        setFieldValue("selectedOtherRoom", newValue ? newValue.id : "");
+                      }}
+                      onInputChange={(_, newInputValue) => {
+                        setRoomSearchText(newInputValue);
+                        debouncedSearch(values.selectedBuilding, newInputValue);
+                      }}
+                      loading={roomLoadingMore}
+                      disabled={!values.selectedBuilding}
+                      renderInput={(params) => <TextField {...params} label="Phòng" error={touched.selectedOtherRoom && Boolean(errors.selectedOtherRoom)} />}
+                      ListboxProps={{
+                        onScroll: (e: React.UIEvent<HTMLUListElement>) => handleRoomScroll(e as unknown as React.UIEvent<HTMLDivElement>, values.selectedBuilding),
+                      }}
+                      renderOption={(props, option) => {
+                        return (
+                          <li {...props} key={option.id}>
+                            {option.name}
+                          </li>
+                        );
+                      }}
+                    />
                   </Box>
                 )}
               </Box>
 
               <Box
                 sx={{
-                  maxHeight: "600px", 
+                  maxHeight: "600px",
                   overflowY: "auto",
                   mb: 2,
                   "&::-webkit-scrollbar": {
@@ -452,17 +420,10 @@ const CheckoutSummarySection = ({
                       background: "#555",
                     },
                   },
-                }}
-              >
+                }}>
                 {orders.map((order, index) => (
-                  <Box
-                    key={index}
-                    sx={{ mb: 1, p: 1, borderRadius: 2, bgcolor: "#fafbfc" }}
-                  >
-                    <Typography
-                      variant="subtitle1"
-                      sx={{ fontWeight: 600, color: "#1976d2" }}
-                    >
+                  <Box key={index} sx={{ mb: 1, p: 1, borderRadius: 2, bgcolor: "#fafbfc" }}>
+                    <Typography variant="subtitle1" sx={{ fontWeight: 600, color: "#1976d2" }}>
                       Đơn hàng {index + 1}
                     </Typography>
                     <Box
@@ -470,55 +431,34 @@ const CheckoutSummarySection = ({
                         display: "flex",
                         justifyContent: "space-between",
                         mt: 1,
-                      }}
-                    >
+                      }}>
                       <Typography variant="body2">Tổng sản phẩm:</Typography>
                       <Typography variant="body2" sx={{ fontWeight: 500 }}>
                         {order.itemCount}
                       </Typography>
                     </Box>
-                    <Box
-                      sx={{ display: "flex", justifyContent: "space-between" }}
-                    >
-                      <Typography variant="body2">
-                        Tổng tiền trước giảm:
-                      </Typography>
-                      <Typography variant="body2">
-                        {formatPrice(order.totalBeforeDiscount)}
-                      </Typography>
+                    <Box sx={{ display: "flex", justifyContent: "space-between" }}>
+                      <Typography variant="body2">Tổng tiền trước giảm:</Typography>
+                      <Typography variant="body2">{formatPrice(order.totalBeforeDiscount)}</Typography>
                     </Box>
-                    <Box
-                      sx={{ display: "flex", justifyContent: "space-between" }}
-                    >
+                    <Box sx={{ display: "flex", justifyContent: "space-between" }}>
                       <Typography variant="body2">Đã giảm:</Typography>
-                      <Typography
-                        variant="body2"
-                        color="success.main"
-                        sx={{ fontWeight: 600 }}
-                      >
+                      <Typography variant="body2" color="success.main" sx={{ fontWeight: 600 }}>
                         -{formatPrice(order.discount)}
                       </Typography>
                     </Box>
-                    <Box
-                      sx={{ display: "flex", justifyContent: "space-between" }}
-                    >
+                    <Box sx={{ display: "flex", justifyContent: "space-between" }}>
                       <Typography variant="body2" sx={{ fontWeight: 600 }}>
                         Cần thanh toán:
                       </Typography>
-                      <Typography
-                        variant="body2"
-                        sx={{ fontWeight: 600, color: "red" }}
-                      >
+                      <Typography variant="body2" sx={{ fontWeight: 600, color: "red" }}>
                         {formatPrice(order.totalAfterDiscount)}
                       </Typography>
                     </Box>
                     {order.note && (
                       <>
                         <Box sx={{ mt: 1 }}>
-                          <Typography
-                            variant="subtitle2"
-                            sx={{ fontWeight: 600, color: "#1976d2", mb: 1 }}
-                          >
+                          <Typography variant="subtitle2" sx={{ fontWeight: 600, color: "#1976d2", mb: 1 }}>
                             Lời nhắn:
                           </Typography>
                           <Typography
@@ -533,8 +473,7 @@ const CheckoutSummarySection = ({
                               textOverflow: "ellipsis",
                               wordBreak: "break-word",
                               lineHeight: 1.4,
-                            }}
-                          >
+                            }}>
                             {order.note}
                           </Typography>
                         </Box>
@@ -551,18 +490,11 @@ const CheckoutSummarySection = ({
                   justifyContent: "space-between",
                   alignItems: "center",
                   mb: 2,
-                }}
-              >
-                <Typography
-                  variant="h6"
-                  sx={{ fontWeight: "bold", color: "#333" }}
-                >
+                }}>
+                <Typography variant="h6" sx={{ fontWeight: "bold", color: "#333" }}>
                   Tổng cộng:
                 </Typography>
-                <Typography
-                  variant="h5"
-                  sx={{ fontWeight: "bold", color: "red" }}
-                >
+                <Typography variant="h5" sx={{ fontWeight: "bold", color: "red" }}>
                   {formatPrice(grandTotal)}
                 </Typography>
               </Box>
@@ -579,13 +511,8 @@ const CheckoutSummarySection = ({
                         control={<Radio />}
                         label={
                           <Box>
-                            <Typography variant="body1">
-                              Chuyển khoản ngân hàng
-                            </Typography>
-                            <Typography
-                              variant="caption"
-                              color="text.secondary"
-                            >
+                            <Typography variant="body1">Chuyển khoản ngân hàng</Typography>
+                            <Typography variant="caption" color="text.secondary">
                               Thanh toán qua chuyển khoản ngân hàng
                             </Typography>
                           </Box>
@@ -598,10 +525,7 @@ const CheckoutSummarySection = ({
                         label={
                           <Box>
                             <Typography variant="body1">Tiền mặt</Typography>
-                            <Typography
-                              variant="caption"
-                              color="text.secondary"
-                            >
+                            <Typography variant="caption" color="text.secondary">
                               Thanh toán khi nhận hàng
                             </Typography>
                           </Box>
@@ -626,8 +550,7 @@ const CheckoutSummarySection = ({
                   "&:hover": {
                     backgroundColor: "#FF5C5C",
                   },
-                }}
-              >
+                }}>
                 {isLoading ? "Đang xử lý..." : "Tiếp tục Thanh toán"}
               </Button>
             </Form>

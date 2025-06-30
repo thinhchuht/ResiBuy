@@ -33,7 +33,7 @@ const SearchBase: React.FC<SearchBaseProps> = ({ placeholder = "Tìm kiếm...",
         ...sx,
       }}>
       <InputBase
-        sx={{ ml: 1, flex: 1, ...inputSx }}
+        sx={{ ml: 1, flex: 1, minWidth: 0, fontSize: { xs: 14, sm: 15, md: 16 }, ...inputSx }}
         placeholder={placeholder}
         inputProps={{ "aria-label": "search" }}
         value={value}

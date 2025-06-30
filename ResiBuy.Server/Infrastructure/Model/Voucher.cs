@@ -18,10 +18,35 @@
             public IEnumerable<Order> Orders { get; set; }
         }
 
-        public enum VoucherType
+        public void Update(decimal discountAmount, VoucherType type, int quantity, decimal minOrderPrice,
+            decimal maxDiscountPrice, DateTime startDate, DateTime endDate, bool isActive)
         {
-            Amount = 1,
-            Percentage = 2
+            DiscountAmount = discountAmount;
+            Type = type;
+            Quantity = quantity;
+            MinOrderPrice = minOrderPrice;
+            MaxDiscountPrice = maxDiscountPrice;
+            StartDate = startDate;
+            EndDate = endDate;
+            IsActive = isActive;
         }
-    
+
+        public void UpdateQuantity( int quantity)
+        {
+            Quantity = quantity;
+            IsActive = quantity > 0;
+        }
+        public void Deactivate()
+        {
+            IsActive = false;
+        }
+    }
+
+    [JsonConverter(typeof(JsonStringEnumConverter))]
+    public enum VoucherType
+    {
+        Amount = 1,
+        Percentage = 2
+    }
+
 }
