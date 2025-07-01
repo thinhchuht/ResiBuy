@@ -9,6 +9,7 @@ import { useNavigate } from "react-router-dom";
 import { formatPrice } from "../../../utils/priceUtils";
 import Tooltip from "@mui/material/Tooltip";
 import cartApi from "../../../api/cart.api";
+import checkoutApi from "../../../api/checkout.api";
 
 interface ProductInfoSectionProps {
   product: Product;
@@ -86,27 +87,22 @@ const ProductInfoSection: React.FC<ProductInfoSectionProps> = ({ product, quanti
     toast.success(`Đã thêm sản phẩm vào giỏ hàng!`);
   };
 
-  const handleBuy = (product: Product) => {
+  const handleBuy = async () => {
     if (!selectedDetail) {
       toast.error("Vui lòng chọn phân loại sản phẩm");
       return;
     }
     if (user) {
-      navigate("/checkout", {
-        state: {
-          selectedItems: [
-            {
-              id: "temp-id", // hoặc tạo id tạm nếu cần
-              cartId: user.cartId,
-              productDetail: {
-                ...selectedDetail,
-                product,
-              },
-              quantity,
-            },
-          ],
-        },
-      });
+      try {
+        const item = {
+          productDetailId: String(selectedDetail.id),
+          quantity
+        };
+        await checkoutApi.createTempOrder(user.id, [item]);
+        // navigate("/checkout", { state: { checkoutId } });
+      } catch {
+        toast.error("Có lỗi khi tạo đơn hàng");
+      }
     } else {
       toast.error("Vui lòng đăng nhập để mua hàng");
       navigate("/login");
@@ -316,7 +312,7 @@ const ProductInfoSection: React.FC<ProductInfoSectionProps> = ({ product, quanti
             },
             width: "100%",
           }}
-          onClick={() => handleBuy(product)}>
+          onClick={handleBuy}>
           Mua ngay
         </Button>
 

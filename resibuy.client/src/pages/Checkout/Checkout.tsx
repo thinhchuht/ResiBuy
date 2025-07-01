@@ -243,7 +243,7 @@ const Checkout: React.FC = () => {
             console.error("Payment creation failed:", response.error);
           }
         } else if (info.paymentMethod === "COD") {
-          await checkoutApi.checkout(checkoutData)
+          await checkoutApi.checkoutUser(user.id, checkoutData);
           window.history.replaceState({}, "");
           navigate("/checkout-success", {
             state: { isOrderSuccess: true },

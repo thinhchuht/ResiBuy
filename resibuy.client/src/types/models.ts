@@ -317,3 +317,33 @@ export interface ProductFilter {
   pageNumber?: number;
   pageSize?: number;
 }
+
+// Temp checkout DTOs for checkout process
+export interface TempProductDetailDto {
+  id: number;
+  name: string;
+  isOutOfStock: boolean;
+  weight: number;
+  price: number;
+  quantity: number;
+  image: Image;
+  additionalDatas: AdditionalData[];
+}
+
+export interface TempOrderDto {
+  id: string;
+  storeId: string;
+  voucherId?: string;
+  note: string;
+  totalPrice: number;
+  productDetails: TempProductDetailDto[];
+}
+
+export interface TempCheckoutDto {
+  id: string;
+  addressId?: string;
+  paymentMethod: PaymentMethod;
+  grandTotal: number;
+  orders: TempOrderDto[];
+  isInstance: boolean;
+}
