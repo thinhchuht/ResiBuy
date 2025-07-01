@@ -49,6 +49,7 @@
                         null,
                         rooms.Select(r => new RoomQueryResult(r.Id, r.Name, r.Building.Name, r.Building.Area.Name)),
                         [],
+                        [],
                         []
                     );
                     //notificationService.SendNotification("UserCreated", userResult, Constants.AdminHubGroup);

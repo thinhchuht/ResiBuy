@@ -31,6 +31,10 @@ public class NotificationHub(IUserDbService userDbService) : Hub
                     {
                         await Groups.AddToGroupAsync(Context.ConnectionId, Constants.ShipperHubGroup);
                     }
+                    if (user.Stores.Count() > 0)
+                    {
+                        await Groups.AddToGroupAsync(Context.ConnectionId, Constants.StoreHubGroup);
+                    }
                 }
             }
 

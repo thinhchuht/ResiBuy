@@ -1,12 +1,9 @@
-
 export interface Product {
   id: number;
   name: string;
   describe: string;
-  weight: number;
   isOutOfStock: boolean;
   discount: number;
-  sold: number;
   createdAt: Date;
   updatedAt: Date;
   storeId: string;
@@ -20,9 +17,9 @@ export interface ProductDetail {
   id: number;
   isOutOfStock: boolean;
   productId: number;
-  product: Product;             // tham chiếu lại interface Product đã khai báo trước
+  product: Product; // tham chiếu lại interface Product đã khai báo trước
   sold: number;
-  price: number;      
+  price: number;
   weight: number;
   image: Image;
   cartItems: CartItem[];
@@ -36,11 +33,11 @@ export interface Image {
   thumbUrl: string;
   name: string;
   productDetailId?: number; // int? => number | undefined
-  userId?: string;          // string? => string | undefined
+  userId?: string; // string? => string | undefined
   productDetail?: ProductDetail; // tham chiếu ProductDetail đã khai báo trước
   user: User;
   categoryId: string;
-  category?: Category;      // Category? => Category | undefined
+  category?: Category; // Category? => Category | undefined
 }
 
 export interface User {
@@ -66,7 +63,7 @@ export interface User {
 }
 
 export interface Store {
-  id: string;           // Guid → string
+  id: string; // Guid → string
   name: string;
   description: string;
   isLocked: boolean;
@@ -83,7 +80,7 @@ export interface Store {
 }
 
 export interface Category {
-  id: string;             // Guid → string
+  id: string; // Guid → string
   name: string;
   status?: string;
   image?: Image;
@@ -91,7 +88,7 @@ export interface Category {
 }
 
 export interface CartItem {
-  id: string;             // Guid → string
+  id: string; // Guid → string
   quantity: number;
   cartId: string;
   productDetailId: number;
@@ -100,7 +97,7 @@ export interface CartItem {
 }
 
 export interface OrderItem {
-  id: string;             // Guid → string
+  id: string; // Guid → string
   quantity: number;
   price: number;
   orderId: string;
@@ -118,7 +115,7 @@ export interface AdditionalData {
 }
 
 export interface Cart {
-  id: string;            // Guid → string
+  id: string; // Guid → string
   userId: string;
   user: User;
   cartItems: CartItem[];
@@ -126,39 +123,39 @@ export interface Cart {
 
 export interface UserRoom {
   userId: string;
-  roomId: string;   // Guid → string
+  roomId: string; // Guid → string
   user: User;
   room: Room;
 }
 
 export interface UserVoucher {
   userId: string;
-  voucherId: string;  // Guid → string
+  voucherId: string; // Guid → string
   user: User;
   voucher: Voucher;
 }
 
 export interface Room {
-  id: string;           // Guid → string
+  id: string; // Guid → string
   name: string;
   isActive: boolean;
-  buildingId: string;   // Guid → string
+  buildingId: string; // Guid → string
   building: Building;
   orders: Order[];
   userRooms: UserRoom[];
 }
 
 export interface Voucher {
-  id: string;               // Guid → string
+  id: string; // Guid → string
   discountAmount: number;
-  type: string;             // bạn có thể thay string bằng enum nếu cần
+  type: string; // bạn có thể thay string bằng enum nếu cần
   quantity: number;
   minOrderPrice: number;
   maxDiscountPrice: number;
   startDate: Date;
   endDate: Date;
   isActive: boolean;
-  storeId: string;          // Guid → string
+  storeId: string; // Guid → string
   store: Store;
   userVouchers: UserVoucher[];
   orders: Order[];
@@ -188,16 +185,16 @@ export interface Order {
 }
 
 export interface Building {
-  id: string;           // Guid → string
+  id: string; // Guid → string
   name: string;
   isActive: boolean;
-  areaId: string;       // Guid → string
+  areaId: string; // Guid → string
   area: Area;
   rooms: Room[];
 }
 
 export interface Shipper {
-  id: string;            // Guid → string
+  id: string; // Guid → string
   userId: string;
   isOnline: boolean;
   reportCount: number;
@@ -210,13 +207,12 @@ export interface Shipper {
 }
 
 export interface Area {
-  id: string;             // Guid → string
+  id: string; // Guid → string
   name: string;
   isActive: boolean;
   buildings: Building[];
   shippers: Shipper[];
 }
-
 
 export enum OrderStatus {
   Pending = "Pending",
@@ -236,5 +232,3 @@ export enum PaymentStatus {
   Fail = "Fail",
   UnPaid = "UnPaid",
 }
-
-
