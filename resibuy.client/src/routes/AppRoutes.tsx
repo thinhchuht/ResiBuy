@@ -27,6 +27,7 @@ import ShippersPage from "../pages/Admin/Shipper/page";
 import Orders from "../pages/Order/Orders";
 import Profile from "../pages/Profile/Profile";
 import Store from "../pages/Store/StorePage";
+import ListStore from "../pages/Store/ListStore";
 
 const AppRoutes: React.FC = () => {
   const { user } = useAuth();
@@ -68,6 +69,16 @@ const AppRoutes: React.FC = () => {
             <HomeLayout>
               <Store />
             </HomeLayout>
+          }
+        />
+        <Route
+          path="/my-stores"
+          element={
+            <ProtectedRoute allowedRoles={["ADMIN", "SELLER"]}>
+              <HomeLayout>
+                <ListStore />
+              </HomeLayout>
+            </ProtectedRoute>
           }
         />
         <Route

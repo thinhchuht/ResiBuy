@@ -63,6 +63,7 @@ interface Classify {
 // Main component
 export default function CreateProduct() {
   const { id } = useParams<{ id: string }>();
+  const { storeId } = useParams<{ storeId: string }>();
   useEffect(() => {
     // lấy category
     axiosClient
@@ -79,7 +80,7 @@ export default function CreateProduct() {
     // set mặc định storeId
     setProduct((prev) => ({
       ...prev,
-      storeId: id,
+      storeId: storeId || "",
     }));
 
     // lấy product
@@ -94,23 +95,29 @@ export default function CreateProduct() {
             productData.productDetails || [];
           setListProductDetail(tempProductDetails);
           // Chuyển đổi classify từ productDetails
+          const classifyMap: Record<string, Set<string>> = {};
+
           tempProductDetails.forEach((detail) => {
             detail.additionalData.forEach((data) => {
-              classifies.forEach((item) =>{
-                if (item.key === data.key) {
-                  item.value.push({ text: data.value, isEdit: false });
-                } else {
-                  addClassifies(false);
-                  const newClassify: Classify = {
-                    key: data.key,
-                    value: [{ text: data.value, isEdit: false }],
-                    isEdit: false,
-                  };
-                  setClassifies((prev) => [...prev, newClassify]);
-                }
-              })
+              if (!classifyMap[data.key]) {
+                classifyMap[data.key] = new Set();
+              }
+              classifyMap[data.key].add(data.value);
             });
           });
+
+          const newClassifies: Classify[] = Object.entries(classifyMap).map(
+            ([key, values]) => ({
+              key,
+              value: Array.from(values).map((val) => ({
+                text: val,
+                isEdit: false,
+              })),
+              isEdit: false,
+            })
+          );
+
+          setClassifies(newClassifies);
         }
       })
       .catch((err) => console.error(err));
@@ -118,10 +125,11 @@ export default function CreateProduct() {
 
   const navigate = useNavigate();
 
-
   const [listCategory, setListCategory] = useState<Category[]>([]);
 
-  const [newProductDetails, setNewProductDetails] = useState<ProductDetailInput[]>([])
+  const [newProductDetails, setNewProductDetails] = useState<
+    ProductDetailInput[]
+  >([]);
 
   const [product, setProduct] = useState<ProductInput>({
     name: "",
@@ -142,15 +150,13 @@ export default function CreateProduct() {
     };
     await axiosClient.put("api/Product", tempProduct).then((res) => {
       if (res.status === 200) {
-        navigate("/store/products");
+        navigate(`/store/${storeId}/productPage`);
       }
     });
   };
 
   const [classifies, setClassifies] = useState<Classify[]>([]);
 
-  const addClassifies = (isEdit: boolean = true) =>
-    setClassifies((prev) => [...prev, { key: "", value: [], isEdit }]);
   const removeClassify = (index: number) =>
     setClassifies((prev) => prev.filter((_, i) => i !== index));
   const removeclassifyValue = (classifyIndex: number, valueIndex: number) =>
@@ -178,9 +184,7 @@ export default function CreateProduct() {
           ? {
               ...item,
               value: item.value.map((val, vi) =>
-                vi === valueIndex
-                  ? { ...val, text: newValue }
-                  : val
+                vi === valueIndex ? { ...val, text: newValue } : val
               ),
             }
           : item
@@ -188,13 +192,13 @@ export default function CreateProduct() {
     );
 
   const addClassifyValue = (classifyIndex: number) =>
-      setClassifies((prev) =>
-        prev.map((item, i) =>
-          i === classifyIndex
-            ? { ...item, value: [...item.value, { text: "", isEdit: true }] }
-            : item
-        )
-      );
+    setClassifies((prev) =>
+      prev.map((item, i) =>
+        i === classifyIndex
+          ? { ...item, value: [...item.value, { text: "", isEdit: true }] }
+          : item
+      )
+    );
 
   // HÀM sinh tổ hợp các thuộc tính
   const generateProductDetail = () => {
@@ -382,7 +386,7 @@ export default function CreateProduct() {
                   >
                     <TextField
                       label="Thuộc tính"
-                      value={classifyValue}
+                      value={classifyValue.text}
                       required
                       onChange={(e) => {
                         updateClassifyValue(

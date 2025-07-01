@@ -55,7 +55,7 @@ interface Classify {
 
 // Main component
 export default function CreateProduct() {
-  const { id } = useParams<{ id: string }>();
+  const { storeId } = useParams<{ storeId: string }>();
 
   useEffect(() => {
     axiosClient
@@ -75,7 +75,7 @@ export default function CreateProduct() {
     name: "",
     describe: "",
     discount: 0,
-    storeId: id || "",
+    storeId: storeId || "",
     categoryId: "",
     productDetails: [],
   });
@@ -210,7 +210,7 @@ export default function CreateProduct() {
     };
     await axiosClient.post("api/Product", tempProduct).then((res) => {
       if (res.status === 200) {
-        navigate("/store/products");
+        navigate(`/store/${storeId}/productPage`);
       }
     });
   };
