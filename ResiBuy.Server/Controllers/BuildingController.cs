@@ -1,4 +1,7 @@
-﻿namespace ResiBuy.Server.Controllers
+﻿using ResiBuy.Server.Application.Commands.AreaCommands.DTOs;
+using ResiBuy.Server.Application.Commands.BuildingCommands.DTOs;
+
+namespace ResiBuy.Server.Controllers
 {
     [Route("api/[controller]")]
     [ApiController]
@@ -60,11 +63,11 @@
             }
         }
         [HttpPut]
-        public async Task<IActionResult> UpdateAsync([FromBody] UpdateBuildingCommand command)
+        public async Task<IActionResult> UpdateAsync([FromBody] UpdateBuildingDto dto)
         {
             try
             {
-                var result = await mediator.Send(command);
+                var result = await mediator.Send(new UpdateBuildingCommand(dto)); // 👈 Sửa ở đây
                 return Ok(result);
             }
             catch (Exception ex)

@@ -12,5 +12,8 @@
         Task<Room> GetByRoomNameAndBuildingIdAsync(Guid buildingId, string name);
         Task<int> CountAllAsync();
         Task<int> CountByBuildingIdAsync(Guid buildingId);
+        Task<PagedResult<Room>> SearchRoomsByNameAsync(string keyword, int pageNumber, int pageSize);
+        Task<PagedResult<Room>> SearchRoomsByNameAndBuildingAsync(Guid buildingId, string keyword, int pageNumber, int pageSize);
+
     }
 }

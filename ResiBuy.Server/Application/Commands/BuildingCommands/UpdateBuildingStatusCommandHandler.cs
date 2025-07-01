@@ -25,7 +25,12 @@ namespace ResiBuy.Server.Application.Commands.BuildingCommands
 
                 var updatedRoom = await buildingDbService.UpdateAsync(room);
 
-                return ResponseModel.SuccessResponse(updatedRoom);
+                return ResponseModel.SuccessResponse(new
+                {
+                    id = updatedRoom.Id,
+                    name = updatedRoom.Name,
+                    isActive = updatedRoom.IsActive
+                });
             }
          
             catch (Exception ex)
