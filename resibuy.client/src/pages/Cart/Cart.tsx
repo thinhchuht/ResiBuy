@@ -8,8 +8,9 @@ import cartApi from "../../api/cart.api";
 import { useAuth } from "../../contexts/AuthContext";
 import { toast } from "react-toastify";
 import { HubEventType, useEventHub, type HubEventHandler } from "../../hooks/useEventHub";
-import HomeIcon from '@mui/icons-material/Home';
-import NavigateNextIcon from '@mui/icons-material/NavigateNext';
+import HomeIcon from "@mui/icons-material/Home";
+import NavigateNextIcon from "@mui/icons-material/NavigateNext";
+import checkoutApi from "../../api/checkout.api";
 
 const Cart = () => {
   const [cartItems, setCartItems] = useState<CartItem[]>([]);
@@ -25,13 +26,9 @@ const Cart = () => {
   const fetchCartItems = useCallback(async () => {
     try {
       if (!user?.cartId) return;
-      const response = await cartApi.getCartById(
-        user.cartId,
-        page + 1,
-        rowsPerPage
-      );
+      const response = await cartApi.getCartById(user.cartId, page + 1, rowsPerPage);
       const { items, totalCount } = response.data.data;
-      console.log('fetch', response.data.data)
+      console.log("fetch", response.data.data);
 
       setCartItems(items);
       setTotalItems(totalCount);
@@ -48,9 +45,7 @@ const Cart = () => {
 
   useEffect(() => {
     if (selectedProductDetailIds && cartItems.length > 0) {
-      setSelectedCartItems(
-        cartItems.filter(item => selectedProductDetailIds.includes(item.productDetailId))
-      );
+      setSelectedCartItems(cartItems.filter((item) => selectedProductDetailIds.includes(item.productDetailId)));
     }
   }, [cartItems, selectedProductDetailIds]);
 
@@ -60,11 +55,7 @@ const Cart = () => {
       fetchCartItems();
       console.log(selectedCartItems);
       if (data?.Id) {
-        setSelectedCartItems((prevSelected) =>
-          prevSelected.map((item) =>
-            item.id === data.Id ? { ...item, quantity: data.Quantity } : item
-          )
-        );
+        setSelectedCartItems((prevSelected) => prevSelected.map((item) => (item.id === data.Id ? { ...item, quantity: data.Quantity } : item)));
       }
     },
     [fetchCartItems, selectedCartItems]
@@ -74,11 +65,9 @@ const Cart = () => {
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     (data: any) => {
       if (data?.cartItemIds) {
-        fetchCartItems()
+        fetchCartItems();
         setSelectedCartItems((prevSelected) => {
-          return prevSelected.filter(
-            (item) => !data.cartItemIds.includes(item.id)
-          );
+          return prevSelected.filter((item) => !data.cartItemIds.includes(item.id));
         });
       }
     },
@@ -95,32 +84,12 @@ const Cart = () => {
 
   useEventHub(eventHandlers as Partial<Record<HubEventType, HubEventHandler>>);
 
-  const handleQuantityChange = async (
-    productDetailId: number,
-    newQuantity: number
-  ) => {
+  const handleQuantityChange = async (productDetailId: number, newQuantity: number) => {
     try {
       if (user) {
-        await cartApi.addToCart(
-          user?.cartId,
-          productDetailId,
-          newQuantity,
-          false
-        );
-        setCartItems((prevItems) =>
-          prevItems.map((item) =>
-            item.productDetailId === productDetailId
-              ? { ...item, quantity: newQuantity }
-              : item
-          )
-        );
-        setSelectedCartItems((prevSelected) =>
-          prevSelected.map((item) =>
-            item.productDetailId === productDetailId
-              ? { ...item, quantity: newQuantity }
-              : item
-          )
-        );
+        await cartApi.addToCart(user?.cartId, productDetailId, newQuantity, false);
+        setCartItems((prevItems) => prevItems.map((item) => (item.productDetailId === productDetailId ? { ...item, quantity: newQuantity } : item)));
+        setSelectedCartItems((prevSelected) => prevSelected.map((item) => (item.productDetailId === productDetailId ? { ...item, quantity: newQuantity } : item)));
       }
     } catch (error) {
       console.error("Error updating quantity:", error);
@@ -130,9 +99,7 @@ const Cart = () => {
   const handleRemoveItem = async (itemId: string) => {
     try {
       await cartApi.removeFromCart([itemId], user?.id);
-      setCartItems((prevItems) =>
-        prevItems.filter((item) => item.id !== itemId)
-      );
+      setCartItems((prevItems) => prevItems.filter((item) => item.id !== itemId));
       setSelectedCartItems((prev) => prev.filter((item) => item.id !== itemId));
       toast.success("Xóa sản phẩm khỏi giỏ hàng thành công!");
     } catch (error) {
@@ -155,53 +122,53 @@ const Cart = () => {
   const handleSelectAllItems = (event: React.ChangeEvent<HTMLInputElement>) => {
     if (event.target.checked) {
       setSelectedCartItems((prev) => {
-        const newItems = cartItems.filter(
-          (cartItem) =>
-            !prev.some((selectedItem) => selectedItem.id === cartItem.id)
-        );
+        const newItems = cartItems.filter((cartItem) => !prev.some((selectedItem) => selectedItem.id === cartItem.id));
         return [...prev, ...newItems];
       });
     } else {
       const currentItemIds = cartItems.map((item) => item.id);
-      setSelectedCartItems((prev) =>
-        prev.filter((item) => !currentItemIds.includes(item.id))
-      );
+      setSelectedCartItems((prev) => prev.filter((item) => !currentItemIds.includes(item.id)));
     }
   };
 
-  const handleCheckout = () => {
-    const selectedCartItemsWithDiscount = selectedCartItems.map((item) => {
-      const discount = item.productDetail.product.discount || 0;
-      const discountedPrice = item.productDetail.price * (1 - discount / 100);
-      return {
-        ...item,
-        productDetail: {
-          ...item.productDetail,
-          price: discountedPrice,
-        },
-      };
-    });
-    console.log(selectedCartItemsWithDiscount)
-    navigate("/checkout", {
-      state: { selectedItems: selectedCartItemsWithDiscount },
-    });
+  const handleCheckout = async () => {
+    if (!user) {
+      toast.error("Vui lòng đăng nhập để thanh toán");
+      navigate("/login");
+      return;
+    }
+    if (selectedCartItems.length === 0) {
+      toast.error("Vui lòng chọn sản phẩm để thanh toán");
+      return;
+    }
+    try {
+      const cartItems = selectedCartItems.map((item) => ({
+        productDetailId: item.productDetailId,
+        storeId: item.productDetail.product.storeId,
+        quantity: item.quantity,
+      }));
+      const response = await checkoutApi.createTempOrder(user.id, { cartItems, isInstance: false });
+      const tempCheckoutId = response.data;
+      if (tempCheckoutId) {
+        navigate("/checkout", { state: { tempCheckoutId } });
+      } else {
+        toast.error("Không lấy được mã đơn hàng, thử lại sau");
+      }
+    } catch (error) {
+      toast.error("Có lỗi khi tạo đơn hàng");
+      console.error(error);
+    }
   };
 
   const handleChangePage = (_event: unknown, newPage: number) => {
     setPage(newPage);
   };
 
-  const handleChangeRowsPerPage = (
-    event: React.ChangeEvent<HTMLInputElement>
-  ) => {
+  const handleChangeRowsPerPage = (event: React.ChangeEvent<HTMLInputElement>) => {
     setRowsPerPage(parseInt(event.target.value, 10));
   };
 
-  const allSelected =
-    cartItems.length > 0 &&
-    cartItems.every((item) =>
-      selectedCartItems.some((sel) => sel.id === item.id)
-    );
+  const allSelected = cartItems.length > 0 && cartItems.every((item) => selectedCartItems.some((sel) => sel.id === item.id));
 
   return (
     <Container maxWidth="xl" sx={{ py: 4 }}>
@@ -212,24 +179,22 @@ const Cart = () => {
           mb: 3,
           fontSize: 20,
           fontWeight: 500,
-          '& .MuiBreadcrumbs-separator': { color: '#bdbdbd' }
-        }}
-      >
+          "& .MuiBreadcrumbs-separator": { color: "#bdbdbd" },
+        }}>
         <Link
           to="/"
           style={{
-            display: 'flex',
-            alignItems: 'center',
-            textDecoration: 'none',
-            color: '#1976d2',
-            fontWeight: 600
-          }}
-        >
+            display: "flex",
+            alignItems: "center",
+            textDecoration: "none",
+            color: "#1976d2",
+            fontWeight: 600,
+          }}>
           <HomeIcon sx={{ mr: 0.5 }} fontSize="inherit" />
           Trang chủ
         </Link>
         <Typography color="#2c3e50" fontWeight={700}>
-         Giỏ hàng của bạn
+          Giỏ hàng của bạn
         </Typography>
       </Breadcrumbs>
       <Box sx={{ display: "flex", gap: 4 }}>
@@ -240,8 +205,7 @@ const Cart = () => {
               p: 3,
               borderRadius: 4,
               border: "1px solid #eee",
-            }}
-          >
+            }}>
             <CartItemSection
               items={cartItems}
               selectedItems={selectedCartItems}
@@ -259,10 +223,7 @@ const Cart = () => {
           </Paper>
         </Box>
 
-        <CartSummarySection
-          selectedItems={selectedCartItems}
-          onCheckout={handleCheckout}
-        />
+        <CartSummarySection selectedItems={selectedCartItems} onCheckout={handleCheckout} />
       </Box>
     </Container>
   );
