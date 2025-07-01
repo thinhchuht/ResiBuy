@@ -29,15 +29,11 @@ namespace ResiBuy.Server.Application.Commands.StoreCommands
             var user = await _userDbService.GetUserById(command.OwnerId);
             if (user == null)
                 throw new CustomException(ExceptionErrorCode.NotFound, "Người dùng không tồn tại");
-
-            // Kiểm tra store đã tồn tại cho user này chưa
-            var existingStore = await _storeDbService.GetStoreByOwnerIdAsync(command.OwnerId);
-            if (existingStore != null)
-                throw new CustomException(ExceptionErrorCode.DuplicateValue, "Người dùng đã có store");
+            if (await _storeDbService.CheckRoomIsAvailable(command.RoomId))
+                throw new CustomException(ExceptionErrorCode.DuplicateValue, "Room đã có người sử dụng");
 
             var store = new Store
             {
-                Id = Guid.Parse(user.Id),
                 Name = command.Name,
                 Description = command.Description,
                 IsLocked = false,
@@ -48,9 +44,9 @@ namespace ResiBuy.Server.Application.Commands.StoreCommands
                 RoomId = command.RoomId
             };
 
-            await _storeDbService.CreateAsync(store);
+            var newstore = await _storeDbService.CreateAsync(store);
 
-            return ResponseModel.SuccessResponse();
+            return ResponseModel.SuccessResponse(newstore);
         }
     }
 } 

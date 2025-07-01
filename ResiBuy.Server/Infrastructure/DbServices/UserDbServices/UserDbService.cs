@@ -71,7 +71,7 @@
 
         public async Task<User> GetUserById(string id)
         {
-            return await context.Users.Include(u => u.Avatar).Include(u => u.Cart).Include(u => u.UserRooms).ThenInclude(ur => ur.Room).ThenInclude(r => r.Building).ThenInclude(b => b.Area).FirstOrDefaultAsync(u => u.Id == id);
+            return await context.Users.Include(u => u.Stores).Include(u => u.Avatar).Include(u => u.Cart).Include(u => u.UserRooms).ThenInclude(ur => ur.Room).ThenInclude(r => r.Building).ThenInclude(b => b.Area).FirstOrDefaultAsync(u => u.Id == id);
         }
 
         public async Task<PagedResult<User>> GetAllUsers(int pageNumber = 1, int pageSize = 10)

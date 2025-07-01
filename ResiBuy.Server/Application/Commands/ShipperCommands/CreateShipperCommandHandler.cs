@@ -63,8 +63,8 @@ namespace ResiBuy.Server.Application.Commands.ShipperCommands
                 UserId = createdUser.Id,
                 IsOnline = false,
                 ReportCount = 0,
-                StartWorkTime = DateTime.Now,
-                EndWorkTime = DateTime.Now,
+                StartWorkTime = 8,
+                EndWorkTime = 18,
                 LastLocationId = command.LastLocationId
             };
 

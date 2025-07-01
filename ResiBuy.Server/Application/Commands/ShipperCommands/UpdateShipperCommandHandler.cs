@@ -5,8 +5,8 @@ namespace ResiBuy.Server.Application.Commands.ShipperCommands
 {
     public record UpdateShipperCommand(
         Guid Id,
-        DateTime StartWorkTime,
-        DateTime EndWorkTime
+        float StartWorkTime,
+        float EndWorkTime
     ) : IRequest<ResponseModel>;
 
     public class UpdateShipperCommandHandler : IRequestHandler<UpdateShipperCommand, ResponseModel>

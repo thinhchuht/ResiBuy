@@ -27,6 +27,7 @@
         public const string SellerHubGroup = "seller";
         public const string CustomerHubGroup = "customer";
         public const string ShipperHubGroup = "shipper";
+        public const string StoreHubGroup = "store";
 
         //Hub events
         public const string CartItemAdded = "CartItemAdded";
