@@ -1,12 +1,12 @@
 // import type { CartItem } from "../types/models";
 import axiosClient from "./base.api";
 // import type { CheckoutRequest } from "./vnpay.api";
-import type { TempCheckoutDto } from "../types/models";
+import type { UpdateTempOrderDto } from "../types/models";
 
 const checkoutApi = {
   checkoutUser: async (userId: string, checkoutId: string) => {
     const response = await axiosClient.post(`/api/checkout/user/${userId}/checkout`, checkoutId, {
-      headers: { 'Content-Type': 'application/json' }
+      headers: { "Content-Type": "application/json" },
     });
     return response.data;
   },
@@ -16,15 +16,15 @@ const checkoutApi = {
     return response.data;
   },
 
-  createTempOrder: async (userId: string, cartItems: { productDetailId: string; quantity: number }[]) => {
-    const response = await axiosClient.post(`/api/checkout/user/${userId}`, cartItems);
+  createTempOrder: async (userId: string, dto: { cartItems: { productDetailId: number; storeId: string; quantity: number }[]; isInstance?: boolean }) => {
+    const response = await axiosClient.post(`/api/checkout/user/${userId}`, dto);
     return response.data;
   },
 
-  updateTempOrder: async (userId: string, tempCheckout: TempCheckoutDto) => {
-    const response = await axiosClient.put(`/api/checkout/user/${userId}`, tempCheckout);
+  updateTempOrder: async (userId: string, updateDto: UpdateTempOrderDto) => {
+    const response = await axiosClient.put(`/api/checkout/user/${userId}`, updateDto);
     return response.data;
-  }
+  },
 };
 
 export default checkoutApi;

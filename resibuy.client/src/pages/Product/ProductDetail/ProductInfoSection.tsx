@@ -92,16 +92,20 @@ const ProductInfoSection: React.FC<ProductInfoSectionProps> = ({ product, quanti
       toast.error("Vui lòng chọn phân loại sản phẩm");
       return;
     }
+    console.log(selectedDetail);
     if (user) {
-      try {
-        const item = {
-          productDetailId: String(selectedDetail.id),
-          quantity
-        };
-        await checkoutApi.createTempOrder(user.id, [item]);
-        // navigate("/checkout", { state: { checkoutId } });
-      } catch {
-        toast.error("Có lỗi khi tạo đơn hàng");
+      const item = {
+        productDetailId: selectedDetail.id,
+        storeId: product.storeId,
+        quantity,
+      };
+      console.log(item);
+      const response = await checkoutApi.createTempOrder(user.id, { cartItems: [item], isInstance: true });
+      const tempCheckoutId = response.data;
+      if (tempCheckoutId) {
+        navigate("/checkout", { state: { tempCheckoutId } });
+      } else {
+        toast.error("Không lấy được mã đơn hàng, thử lại sau");
       }
     } else {
       toast.error("Vui lòng đăng nhập để mua hàng");

@@ -20,23 +20,15 @@ import { Formik, Form, Field } from "formik";
 import type { FieldProps } from "formik";
 import * as Yup from "yup";
 import { useState, useMemo } from "react";
-import type { Room, Building, Area } from "../../types/models";
+import type { Room, Building, Area, TempOrderDto } from "../../types/models";
 import { useToastify } from "../../hooks/useToastify";
 import areaApi from "../../api/area.api";
 import buildingApi from "../../api/building.api";
 import roomApi from "../../api/room.api";
 import { debounce } from "lodash";
 
-interface OrderSummary {
-  totalBeforeDiscount: number;
-  totalAfterDiscount: number;
-  discount: number;
-  itemCount: number;
-  note?: string;
-}
-
 interface CheckoutSummarySectionProps {
-  orders: OrderSummary[];
+  orders: TempOrderDto[];
   grandTotal: number;
   PaperProps?: MuiPaperProps;
   onCheckout?: (info: {
@@ -401,62 +393,50 @@ const CheckoutSummarySection = ({ orders, grandTotal, onCheckout, userRooms = []
                 )}
               </Box>
 
-              <Box
-                sx={{
-                  maxHeight: "600px",
-                  overflowY: "auto",
-                  mb: 2,
-                  "&::-webkit-scrollbar": {
-                    width: "8px",
-                  },
-                  "&::-webkit-scrollbar-track": {
-                    background: "#f1f1f1",
-                    borderRadius: "4px",
-                  },
-                  "&::-webkit-scrollbar-thumb": {
-                    background: "#888",
-                    borderRadius: "4px",
-                    "&:hover": {
-                      background: "#555",
-                    },
-                  },
-                }}>
-                {orders.map((order, index) => (
-                  <Box key={index} sx={{ mb: 1, p: 1, borderRadius: 2, bgcolor: "#fafbfc" }}>
-                    <Typography variant="subtitle1" sx={{ fontWeight: 600, color: "#1976d2" }}>
-                      Đơn hàng {index + 1}
-                    </Typography>
-                    <Box
-                      sx={{
-                        display: "flex",
-                        justifyContent: "space-between",
-                        mt: 1,
-                      }}>
-                      <Typography variant="body2">Tổng sản phẩm:</Typography>
-                      <Typography variant="body2" sx={{ fontWeight: 500 }}>
-                        {order.itemCount}
+              <Box sx={{ mb: 2 }}>
+                {orders.map((order, index) => {
+                  const itemCount = Array.isArray(order.productDetails) ? order.productDetails.reduce((sum, pd) => sum + (pd.quantity || 0), 0) : 0;
+                  const totalBeforeDiscount = order.productDetails.reduce((sum, pd) => sum + pd.price * pd.quantity, 0);
+                  const discount = order.DiscountAmount ?? 0;
+                  const totalAfterDiscount = order.totalPrice;
+                  return (
+                    <Box key={index} sx={{ mb: 1, p: 2, borderRadius: 2, bgcolor: "#fafbfc" }}>
+                      <Typography variant="subtitle1" sx={{ fontWeight: 600, color: "#1976d2" }}>
+                        Đơn hàng {index + 1}
                       </Typography>
-                    </Box>
-                    <Box sx={{ display: "flex", justifyContent: "space-between" }}>
-                      <Typography variant="body2">Tổng tiền trước giảm:</Typography>
-                      <Typography variant="body2">{formatPrice(order.totalBeforeDiscount)}</Typography>
-                    </Box>
-                    <Box sx={{ display: "flex", justifyContent: "space-between" }}>
-                      <Typography variant="body2">Đã giảm:</Typography>
-                      <Typography variant="body2" color="success.main" sx={{ fontWeight: 600 }}>
-                        -{formatPrice(order.discount)}
-                      </Typography>
-                    </Box>
-                    <Box sx={{ display: "flex", justifyContent: "space-between" }}>
-                      <Typography variant="body2" sx={{ fontWeight: 600 }}>
-                        Cần thanh toán:
-                      </Typography>
-                      <Typography variant="body2" sx={{ fontWeight: 600, color: "red" }}>
-                        {formatPrice(order.totalAfterDiscount)}
-                      </Typography>
-                    </Box>
-                    {order.note && (
-                      <>
+                      <Box sx={{ display: "flex", justifyContent: "space-between", mt: 1 }}>
+                        <Typography variant="body2">Tổng sản phẩm:</Typography>
+                        <Typography variant="body2" sx={{ fontWeight: 500 }}>
+                          {itemCount}
+                        </Typography>
+                      </Box>
+                      <Box sx={{ display: "flex", justifyContent: "space-between" }}>
+                        <Typography variant="body2">Tổng tiền trước giảm:</Typography>
+                        <Typography variant="body2">{formatPrice(totalBeforeDiscount)}</Typography>
+                      </Box>
+                      <Box sx={{ display: "flex", justifyContent: "space-between" }}>
+                        <Typography variant="body2">Đã giảm:</Typography>
+                        <Typography variant="body2" color="success.main" sx={{ fontWeight: 600 }}>
+                          -{formatPrice(discount)}
+                        </Typography>
+                      </Box>
+                      <Box sx={{ display: "flex", justifyContent: "space-between" }}>
+                        <Typography variant="body2" sx={{ fontWeight: 600 }}>
+                          Cần thanh toán:
+                        </Typography>
+                        <Typography variant="body2" sx={{ fontWeight: 600, color: "red" }}>
+                          {formatPrice(totalAfterDiscount)}
+                        </Typography>
+                      </Box>
+                      {order.voucher && (
+                        <Box sx={{ display: "flex", justifyContent: "space-between" }}>
+                          <Typography variant="body2">Voucher:</Typography>
+                          <Typography variant="body2" color="primary.main">
+                            {order.voucher.type === "Percentage" ? `${order.voucher.discountAmount}%` : formatPrice(order.voucher.discountAmount)}
+                          </Typography>
+                        </Box>
+                      )}
+                      {order.note && (
                         <Box sx={{ mt: 1 }}>
                           <Typography variant="subtitle2" sx={{ fontWeight: 600, color: "#1976d2", mb: 1 }}>
                             Lời nhắn:
@@ -477,11 +457,11 @@ const CheckoutSummarySection = ({ orders, grandTotal, onCheckout, userRooms = []
                             {order.note}
                           </Typography>
                         </Box>
-                      </>
-                    )}
-                    <Divider sx={{ mt: 2 }} />
-                  </Box>
-                ))}
+                      )}
+                      {index < orders.length - 1 && <Divider sx={{ mt: 2 }} />}
+                    </Box>
+                  );
+                })}
               </Box>
 
               <Box

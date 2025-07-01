@@ -1,34 +1,39 @@
-﻿using ResiBuy.Server.Services.CheckoutSessionService;
+﻿using ResiBuy.Server.Infrastructure.DbServices.VoucherDbServices;
+using ResiBuy.Server.Infrastructure.Model.DTOs.CheckoutDtos;
+using ResiBuy.Server.Services.CheckoutSessionService;
+using ResiBuy.Server.Services.RedisServices;
 
 namespace ResiBuy.Server.Controllers
 {
     [ApiController]
     [Route("api/[controller]")]
-    public class VNPayController(IVNPayService vnPayService, ICheckoutSessionService checkoutSessionService, IKafkaProducerService producer, ResiBuyContext dbContext) : ControllerBase
+    public class VNPayController(IVNPayService vnPayService, IVoucherDbService voucherDbService, ICheckoutSessionService checkoutSessionService, IRedisService redisService, IKafkaProducerService producer, ResiBuyContext dbContext) : ControllerBase
     {
         private static readonly Dictionary<string, DateTime> _paymentTokens = new();
 
         [HttpPost("create-payment")]
-        public IActionResult CreatePayment([FromBody] CheckoutDto dto)
+        public async Task<IActionResult> CreatePaymentAsync([FromQuery] string userId, [FromQuery] Guid checkoutId)
         {
-            var user = dbContext.Users.Include(u => u.Cart).FirstOrDefault(u => u.Id == dto.UserId) ?? throw new CustomException(ExceptionErrorCode.NotFound, "Không tồn tại người dùng"); ;
-            var cart = dbContext.Carts.FirstOrDefault(c => c.Id == user.Cart.Id) ?? throw new CustomException(ExceptionErrorCode.NotFound,"Không tồn tại giỏ hàng");
+            var db =  redisService.GetDatabase();
+            var key = $"temp_order:{userId}-{checkoutId}";
+            var json = await db.StringGetAsync(key);
+            if (json.IsNullOrEmpty)
+                throw new CustomException(ExceptionErrorCode.InvalidInput, "Đơn hàng đã hết hạn hoặc không tồn tại, hãy thử lại nhé");
+            var checkoutData = JsonSerializer.Deserialize<TempCheckoutDto>(json!);
+            var user = dbContext.Users.Include(u => u.Cart).FirstOrDefault(u => u.Id == userId) ?? throw new CustomException(ExceptionErrorCode.NotFound, "Không tồn tại người dùng");
+            var cart = dbContext.Carts.FirstOrDefault(c => c.Id == user.Cart.Id) ?? throw new CustomException(ExceptionErrorCode.NotFound, "Không tồn tại giỏ hàng");
             if (cart.IsCheckingOut)
                 throw new CustomException(ExceptionErrorCode.ValidationFailed, "Giỏ hàng đang được thanh toán ở nơi khác. Thử lại sau ít phút.");
+            // Kiểm tra voucher
+            var voucherIds = checkoutData.Orders.Select(o => o.VoucherId).ToList();
+            var checkVoucherRs = await voucherDbService.CheckIsActiveVouchers(voucherIds);
+            if (!checkVoucherRs.IsSuccess()) throw new CustomException(ExceptionErrorCode.ValidationFailed, checkVoucherRs.Message);
             cart.IsCheckingOut = true;
             cart.ExpiredCheckOutTime = DateTime.Now.AddSeconds(15);
-            try
-            {
-                dbContext.SaveChanges();
-            }
-            catch (DbUpdateConcurrencyException)
-            {
-                throw new CustomException(ExceptionErrorCode.ValidationFailed, "Có người khác đang thao tác với giỏ hàng này. Vui lòng thử lại.");
-            }
-
+            dbContext.SaveChanges();
             var paymentId = Guid.NewGuid();
-            checkoutSessionService.StoreCheckoutSession(paymentId, dto);
-            var paymentUrl = vnPayService.CreatePaymentUrl(dto.GrandTotal, paymentId, $"ResiBuy");
+            checkoutSessionService.StoreCheckoutSession(paymentId, checkoutData);
+            var paymentUrl = vnPayService.CreatePaymentUrl(checkoutData.GrandTotal, paymentId, $"ResiBuy");
             return Ok(new { paymentUrl });
         }
 
@@ -52,9 +57,9 @@ namespace ResiBuy.Server.Controllers
                 {
                     try
                     {
-                        //var message = JsonSerializer.Serialize(checkoutData);
-                        // producer.ProduceMessageAsync("checkout", message, "checkout-topic");
-                        //checkoutSessionService.RemoveCheckoutSession(sessionId);
+                        var message = JsonSerializer.Serialize(checkoutData);
+                        producer.ProduceMessageAsync("checkout", message, "checkout-topic");
+                        checkoutSessionService.RemoveCheckoutSession(sessionId);
                         var token = GenerateToken();
                         _paymentTokens[token] = DateTime.Now.AddMinutes(5);
                         return Redirect($"http://localhost:5001/checkout-success?token={token}");

@@ -17,7 +17,6 @@ export enum PaymentStatus {
 }
 
 export enum PaymentMethod {
-  None = "None",
   COD = "COD",
   BankTransfer = "BankTransfer",
 }
@@ -337,6 +336,8 @@ export interface TempOrderDto {
   note: string;
   totalPrice: number;
   productDetails: TempProductDetailDto[];
+  voucher?: Voucher;
+  DiscountAmount?: number;
 }
 
 export interface TempCheckoutDto {
@@ -346,4 +347,18 @@ export interface TempCheckoutDto {
   grandTotal: number;
   orders: TempOrderDto[];
   isInstance: boolean;
+}
+
+// Update DTOs for temp order
+export interface UpdateTempOrderDto {
+  id: string;
+  addressId?: string;
+  paymentMethod?: PaymentMethod;
+  orders: UpdateOrderDto[];
+}
+
+export interface UpdateOrderDto {
+  id: string;
+  voucherId?: string;
+  note?: string;
 }

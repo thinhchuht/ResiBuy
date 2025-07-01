@@ -1,5 +1,6 @@
 ﻿using ResiBuy.Server.Application.Commands.CheckoutComands;
 using ResiBuy.Server.Application.Queries.CheckoutQueries;
+using ResiBuy.Server.Infrastructure.Model.DTOs.CheckoutDtos;
 
 namespace ResiBuy.Server.Controllers
 {
@@ -16,9 +17,9 @@ namespace ResiBuy.Server.Controllers
         }
 
         [HttpPost("user/{userId}")]
-        public async Task<IActionResult> CreateTempOrder(string userId, [FromBody] List<CreateTempCartItemDto> cartItems)
+        public async Task<IActionResult> CreateTempOrder(string userId, [FromBody] CreateTempOrderDto dto)
         {
-            var result = await mediator.Send(new CreateTempOrderCommand(userId, cartItems));
+            var result = await mediator.Send(new CreateTempOrderCommand(userId, dto));
             return Ok(result);
         }
 
@@ -30,16 +31,6 @@ namespace ResiBuy.Server.Controllers
             var result = await mediator.Send(new UpdateTempOrderCommand(userId, dto));
             return Ok(result);
         }
-
-        //[HttpPut("user/{userId}/apply-voucher")]
-        //public async Task<IActionResult> ApplyVoucherTempOrder(string userId, [FromBody] TempCheckoutDto dto)
-        //{
-
-        //    var result = await mediator.Send(new ApplyVoucherCommand(userId, dto));
-        //    return Ok(result);
-        //}
-
-
 
         [HttpPost("user/{userId}/checkout")]
         public async Task<IActionResult> Checkout(string userId, [FromBody] Guid checkoutId)
