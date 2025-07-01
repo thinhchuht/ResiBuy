@@ -1,49 +1,28 @@
-import {
-  Box,
-  Paper,
-  Typography,
-  Chip,
-  Button,
-  Divider,
-  Avatar,
-  Dialog,
-  FormControl,
-  InputLabel,
-  Select,
-  MenuItem,
-} from "@mui/material";
+import { Box, Paper, Typography, Chip, Button, Divider, Avatar, Dialog, FormControl, InputLabel, Select, MenuItem, Autocomplete } from "@mui/material";
 import { formatPrice } from "../../utils/priceUtils";
 import type { SelectChangeEvent } from "@mui/material/Select";
 
 import { useNavigate } from "react-router-dom";
-import {
-  OrderStatus,
-  PaymentStatus,
-  type Store,
-  type Voucher,
-  type Area,
-  type Building,
-  type Room,
-} from "../../types/models";
-import React, { useState } from "react";
+import { OrderStatus, PaymentStatus, type Store, type Voucher, type Area, type Building, type Room } from "../../types/models";
+import React, { useState, useCallback, useMemo } from "react";
 import orderApi from "../../api/order.api";
 import { useAuth } from "../../contexts/AuthContext";
 import areaApi from "../../api/area.api";
 import buildingApi from "../../api/building.api";
 import roomApi from "../../api/room.api";
 import { useToastify } from "../../hooks/useToastify";
-import EditIcon from '@mui/icons-material/Edit';
-import AddCommentIcon from '@mui/icons-material/AddComment';
-import SaveIcon from '@mui/icons-material/Save';
-import CloseIcon from '@mui/icons-material/Close';
-import TextField from '@mui/material/TextField';
-import ReportIcon from '@mui/icons-material/Report';
-import DialogTitle from '@mui/material/DialogTitle';
-import DialogContent from '@mui/material/DialogContent';
-import DialogActions from '@mui/material/DialogActions';
-import WarningAmberIcon from '@mui/icons-material/WarningAmber';
+import EditIcon from "@mui/icons-material/Edit";
+import AddCommentIcon from "@mui/icons-material/AddComment";
+import SaveIcon from "@mui/icons-material/Save";
+import CloseIcon from "@mui/icons-material/Close";
+import TextField from "@mui/material/TextField";
+import ReportIcon from "@mui/icons-material/Report";
+import DialogTitle from "@mui/material/DialogTitle";
+import DialogContent from "@mui/material/DialogContent";
+import DialogActions from "@mui/material/DialogActions";
+import WarningAmberIcon from "@mui/icons-material/WarningAmber";
 import cartApi from "../../api/cart.api";
-import CircularProgress from '@mui/material/CircularProgress';
+import { debounce } from "lodash";
 
 // Define types matching API result
 interface RoomQueryResult {
@@ -86,22 +65,11 @@ export interface OrderApiResult {
 interface OrderCardProps {
   order: OrderApiResult;
   onUpdate?: () => void;
-  onAddressChange?: (
-    orderId: string,
-    area: string,
-    building: string,
-    room: string,
-    roomId: string
-  ) => void;
+  onAddressChange?: (orderId: string, area: string, building: string, room: string, roomId: string) => void;
   onCancel?: (orderId: string) => void;
 }
 
-const OrderCard = ({
-  order,
-  onUpdate,
-  onAddressChange,
-  onCancel,
-}: OrderCardProps) => {
+const OrderCard = ({ order, onUpdate, onAddressChange, onCancel }: OrderCardProps) => {
   const navigate = useNavigate();
   const { user } = useAuth();
   const toast = useToastify();
@@ -111,7 +79,7 @@ const OrderCard = ({
   const [roomsData, setRoomsData] = useState<Room[]>([]);
   const [selectedArea, setSelectedArea] = useState("");
   const [selectedBuilding, setSelectedBuilding] = useState("");
-  const [selectedRoom, setSelectedRoom] = useState("");
+  const [selectedRoom, setSelectedRoom] = useState<Room | null>(null);
   const [editNote, setEditNote] = useState(false);
   const [noteValue, setNoteValue] = useState(order.note || "");
   const [localNote, setLocalNote] = useState(order.note || "");
@@ -121,13 +89,7 @@ const OrderCard = ({
   const [reportReason, setReportReason] = useState("");
   const [reportOtherReason, setReportOtherReason] = useState("");
   const [reportLoading, setReportLoading] = useState(false);
-  const reportReasons = [
-    "Hàng không đúng mô tả",
-    "Đơn hàng bị trễ",
-    "Thái độ shipper không tốt",
-    "Sản phẩm bị hỏng",
-    "Khác"
-  ];
+  const reportReasons = ["Hàng không đúng mô tả", "Đơn hàng bị trễ", "Thái độ shipper không tốt", "Sản phẩm bị hỏng", "Khác"];
   const [roomPage, setRoomPage] = useState(1);
   const [roomHasMore, setRoomHasMore] = useState(true);
   const [roomLoadingMore, setRoomLoadingMore] = useState(false);
@@ -200,22 +162,18 @@ const OrderCard = ({
         for (const item of order.orderItems) {
           await cartApi.addToCart(user.cartId, item.productDetailId, item.quantity, false);
         }
-        const selectedProductDetailIds = order.orderItems.map(item => item.productDetailId);
-        navigate('/cart', { state: { selectedProductDetailIds } });
+        const selectedProductDetailIds = order.orderItems.map((item) => item.productDetailId);
+        navigate("/cart", { state: { selectedProductDetailIds } });
       } catch (error) {
         console.error(error);
-        toast.error('Không thể thêm lại sản phẩm vào giỏ hàng!');
+        toast.error("Không thể thêm lại sản phẩm vào giỏ hàng!");
       }
     }
   };
 
   const handleCancelOrder = async () => {
     if (user) {
-      await orderApi.updateOrderSatus(
-        user?.id,
-        order.id,
-        OrderStatus.Cancelled
-      );
+      await orderApi.updateOrderSatus(user?.id, order.id, OrderStatus.Cancelled);
       if (onCancel) onCancel(order.id);
       if (onUpdate) onUpdate();
     }
@@ -236,11 +194,9 @@ const OrderCard = ({
   const handleAreaChange = async (e: SelectChangeEvent) => {
     setSelectedArea(e.target.value as string);
     setSelectedBuilding("");
-    setSelectedRoom("");
+    setSelectedRoom(null);
     try {
-      const buildings = await buildingApi.getByBuilingId(
-        e.target.value as string
-      );
+      const buildings = await buildingApi.getByBuilingId(e.target.value as string);
       setBuildingsData(buildings);
     } catch {
       toast.error("Không thể tải danh sách tòa nhà");
@@ -248,25 +204,53 @@ const OrderCard = ({
   };
 
   const handleBuildingChange = async (e: SelectChangeEvent) => {
-    setSelectedBuilding(e.target.value as string);
-    setSelectedRoom("");
-    setRoomPage(1);
-    setRoomHasMore(true);
+    const buildingId = e.target.value as string;
+    setSelectedBuilding(buildingId);
+    setSelectedRoom(null);
     setRoomsData([]);
-    try {
-      const rooms = await roomApi.getByBuilingId(e.target.value as string, 1, 6);
-      setRoomsData(rooms.items);
-      setRoomHasMore(rooms.pageNumber < rooms.totalPages);
-    } catch {
-      toast.error("Không thể tải danh sách phòng");
+
+    if (buildingId) {
+      setRoomLoadingMore(true);
+      setRoomPage(1);
+      try {
+        const rooms = await roomApi.getByBuilingId(buildingId, 1, 6, "");
+        setRoomsData(rooms.items);
+        setRoomHasMore(rooms.pageNumber < rooms.totalPages);
+      } catch {
+        toast.error("Không thể tải danh sách phòng");
+        setRoomHasMore(false);
+      } finally {
+        setRoomLoadingMore(false);
+      }
+    } else {
+      setRoomHasMore(false);
     }
   };
 
-  const handleRoomChange = (e: SelectChangeEvent) => {
-    setSelectedRoom(e.target.value as string);
-  };
+  const searchRooms = useCallback(
+    async (text: string) => {
+      if (!selectedBuilding) return;
 
-  const handleRoomScroll = async (e: React.UIEvent<HTMLDivElement>) => {
+      setRoomLoadingMore(true);
+      setRoomPage(1);
+      try {
+        const rooms = await roomApi.getByBuilingId(selectedBuilding, 1, 6, text);
+        setRoomsData(rooms.items);
+        setRoomHasMore(rooms.pageNumber < rooms.totalPages);
+      } catch {
+        toast.error("Không thể tải danh sách phòng");
+        setRoomHasMore(false);
+      } finally {
+        setRoomLoadingMore(false);
+      }
+    },
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    [selectedBuilding]
+  );
+
+  const debouncedSearchRooms = useMemo(() => debounce(searchRooms, 500), [searchRooms]);
+
+  const handleRoomScroll = async (e: React.UIEvent<HTMLElement>) => {
     const target = e.currentTarget;
     if (roomLoadingMore || !roomHasMore) return;
     if (target.scrollTop + target.clientHeight >= target.scrollHeight - 20) {
@@ -274,7 +258,7 @@ const OrderCard = ({
       try {
         const nextPage = roomPage + 1;
         const rooms = await roomApi.getByBuilingId(selectedBuilding, nextPage, 6);
-        setRoomsData(prev => [...prev, ...rooms.items]);
+        setRoomsData((prev) => [...prev, ...rooms.items]);
         setRoomPage(nextPage);
         setRoomHasMore(rooms.items.length >= 3);
       } catch {
@@ -288,26 +272,15 @@ const OrderCard = ({
   const handleChangeAddress = async () => {
     if (!selectedRoom) {
       toast.error("Vui lòng chọn phòng mới");
-      return;    }
+      return;
+    }
     if (!user?.id) return;
-    await orderApi.updateOrder(
-      user?.id,
-      order.id,
-      order.roomQueryResult.id,
-      noteValue
-    );
+    await orderApi.updateOrder(user?.id, order.id, selectedRoom.id, noteValue);
     setOpenAddressModal(false);
     if (onAddressChange) {
       const areaObj = areasData.find((a) => a.id === selectedArea);
       const buildingObj = buildingsData.find((b) => b.id === selectedBuilding);
-      const roomObj = roomsData.find((r) => r.id === selectedRoom);
-      onAddressChange(
-        order.id,
-        areaObj?.name || "",
-        buildingObj?.name || "",
-        roomObj?.name || "",
-        selectedRoom
-      );
+      onAddressChange(order.id, areaObj?.name || "", buildingObj?.name || "", selectedRoom.name, selectedRoom.id);
     }
     if (onUpdate) onUpdate();
   };
@@ -321,12 +294,7 @@ const OrderCard = ({
     if (!user?.id) return;
     setNoteLoading(true);
     try {
-      await orderApi.updateOrder(
-        user.id,
-        order.id,
-        order.roomQueryResult.id,
-        noteValue
-      );
+      await orderApi.updateOrder(user.id, order.id, order.roomQueryResult.id, noteValue);
       setEditNote(false);
       setLocalNote(noteValue);
       if (onUpdate) onUpdate();
@@ -366,8 +334,7 @@ const OrderCard = ({
           boxShadow: "0 4px 12px rgba(0,0,0,0.1)",
           transform: "translateY(-2px)",
         },
-      }}
-    >
+      }}>
       <Box sx={{ display: "flex", justifyContent: "space-between", mb: 2 }}>
         <Box>
           <Typography variant="subtitle2" sx={{ color: "#666", mb: 0.5 }}>
@@ -402,15 +369,11 @@ const OrderCard = ({
           <Chip
             label={getPaymentStatusText(order.paymentStatus)}
             sx={{
-              backgroundColor: `${getPaymentStatusColor(
-                order.paymentStatus
-              )}30`,
+              backgroundColor: `${getPaymentStatusColor(order.paymentStatus)}30`,
               color: getPaymentStatusColor(order.paymentStatus),
               fontWeight: 600,
               height: 32,
-              border: `1px solid ${getPaymentStatusColor(
-                order.paymentStatus
-              )}50`,
+              border: `1px solid ${getPaymentStatusColor(order.paymentStatus)}50`,
             }}
           />
         </Box>
@@ -433,13 +396,8 @@ const OrderCard = ({
                     color: "#FF385C",
                   },
                 },
-              }}
-            >
-              <Avatar
-                src={item.image?.thumbUrl}
-                variant="rounded"
-                sx={{ width: 80, height: 80, mr: 2 }}
-              />
+              }}>
+              <Avatar src={item.image?.thumbUrl} variant="rounded" sx={{ width: 80, height: 80, mr: 2 }} />
               <Box sx={{ flex: 1 }}>
                 <Typography
                   variant="subtitle1"
@@ -447,14 +405,10 @@ const OrderCard = ({
                     fontWeight: 600,
                     mb: 0.5,
                     transition: "color 0.2s ease",
-                  }}
-                >
+                  }}>
                   {item.productName}
                 </Typography>
-                <Typography
-                  variant="body2"
-                  sx={{ color: "#666", transition: "color 0.2s ease" }}
-                >
+                <Typography variant="body2" sx={{ color: "#666", transition: "color 0.2s ease" }}>
                   Số lượng: {item.quantity}
                 </Typography>
               </Box>
@@ -464,8 +418,7 @@ const OrderCard = ({
                   fontWeight: 600,
                   color: "#FF385C",
                   transition: "color 0.2s ease",
-                }}
-              >
+                }}>
                 {formatPrice(item.price)}
               </Typography>
             </Box>
@@ -491,20 +444,13 @@ const OrderCard = ({
         {order.roomQueryResult && (
           <Typography variant="body2">
             {order.roomQueryResult.name}
-            {order.roomQueryResult.buildingName
-              ? `, ${order.roomQueryResult.buildingName}`
-              : ""}
-            {order.roomQueryResult.areaName
-              ? `, ${order.roomQueryResult.areaName}`
-              : ""}
+            {order.roomQueryResult.buildingName ? `, ${order.roomQueryResult.buildingName}` : ""}
+            {order.roomQueryResult.areaName ? `, ${order.roomQueryResult.areaName}` : ""}
           </Typography>
         )}
-        {(!localNote && order.status === OrderStatus.Pending && !editNote) && (
-          <Box sx={{ mt: 1, display: 'flex', alignItems: 'center', gap: 1, background: '#f8f9fa', borderRadius: 2, p: 1 }}>
-            <Typography
-              variant="subtitle2"
-              sx={{ color: "#1976d2", fontWeight: 600, mb: 0.5 }}
-            >
+        {!localNote && order.status === OrderStatus.Pending && !editNote && (
+          <Box sx={{ mt: 1, display: "flex", alignItems: "center", gap: 1, background: "#f8f9fa", borderRadius: 2, p: 1 }}>
+            <Typography variant="subtitle2" sx={{ color: "#1976d2", fontWeight: 600, mb: 0.5 }}>
               Lời nhắn:
             </Typography>
             <Button size="small" onClick={handleEditNote} startIcon={<AddCommentIcon />} sx={{ minWidth: 0, px: 1 }}>
@@ -513,11 +459,8 @@ const OrderCard = ({
           </Box>
         )}
         {localNote && !editNote && (
-          <Box sx={{ mt: 1, display: 'flex', alignItems: 'center', gap: 1, background: '#f8f9fa', borderRadius: 2, p: 1, transition: 'background 0.3s' }}>
-            <Typography
-              variant="subtitle2"
-              sx={{ color: "#1976d2", fontWeight: 600, mb: 0.5 }}
-            >
+          <Box sx={{ mt: 1, display: "flex", alignItems: "center", gap: 1, background: "#f8f9fa", borderRadius: 2, p: 1, transition: "background 0.3s" }}>
+            <Typography variant="subtitle2" sx={{ color: "#1976d2", fontWeight: 600, mb: 0.5 }}>
               Lời nhắn:
             </Typography>
             {order.status === OrderStatus.Pending && (
@@ -528,11 +471,11 @@ const OrderCard = ({
           </Box>
         )}
         {editNote ? (
-          <Paper elevation={2} sx={{ mt: 1, p: 2, borderRadius: 2, background: '#f8f9fa', transition: 'all 0.3s' }}>
-            <Box sx={{ display: 'flex', flexDirection: 'column', gap: 1 }}>
+          <Paper elevation={2} sx={{ mt: 1, p: 2, borderRadius: 2, background: "#f8f9fa", transition: "all 0.3s" }}>
+            <Box sx={{ display: "flex", flexDirection: "column", gap: 1 }}>
               <TextField
                 value={noteValue}
-                onChange={e => {
+                onChange={(e) => {
                   if (e.target.value.length <= 100) setNoteValue(e.target.value);
                 }}
                 multiline
@@ -542,18 +485,32 @@ const OrderCard = ({
                 variant="outlined"
                 placeholder="Nhập lời nhắn cho đơn hàng..."
                 disabled={noteLoading}
-                sx={{ background: 'white', borderRadius: 1 }}
+                sx={{ background: "white", borderRadius: 1 }}
                 inputProps={{ maxLength: 100 }}
               />
-              <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mt: 0.5 }}>
-                <Typography variant="caption" color={noteValue.length === 100 ? 'error' : 'text.secondary'}>
+              <Box sx={{ display: "flex", justifyContent: "space-between", alignItems: "center", mt: 0.5 }}>
+                <Typography variant="caption" color={noteValue.length === 100 ? "error" : "text.secondary"}>
                   {noteValue.length}/100 ký tự
                 </Typography>
-                <Box sx={{ display: 'flex', gap: 1 }}>
-                  <Button size="small" onClick={handleSaveNote} disabled={noteLoading || noteValue.length > 100} startIcon={<SaveIcon />} variant="contained" color="primary" sx={{ borderRadius: 2, px: 2 }}>
+                <Box sx={{ display: "flex", gap: 1 }}>
+                  <Button
+                    size="small"
+                    onClick={handleSaveNote}
+                    disabled={noteLoading || noteValue.length > 100}
+                    startIcon={<SaveIcon />}
+                    variant="contained"
+                    color="primary"
+                    sx={{ borderRadius: 2, px: 2 }}>
                     Lưu
                   </Button>
-                  <Button size="small" onClick={handleCancelEditNote} disabled={noteLoading} startIcon={<CloseIcon />} variant="outlined" color="inherit" sx={{ borderRadius: 2, px: 2 }}>
+                  <Button
+                    size="small"
+                    onClick={handleCancelEditNote}
+                    disabled={noteLoading}
+                    startIcon={<CloseIcon />}
+                    variant="outlined"
+                    color="inherit"
+                    sx={{ borderRadius: 2, px: 2 }}>
                     Hủy
                   </Button>
                 </Box>
@@ -561,11 +518,9 @@ const OrderCard = ({
             </Box>
           </Paper>
         ) : (
-          localNote && !editNote && (
-            <Typography
-              variant="body2"
-              sx={{ color: "#666", whiteSpace: "pre-wrap", background: '#f8f9fa', borderRadius: 2, p: 1, mt: 0.5, transition: 'background 0.3s' }}
-            >
+          localNote &&
+          !editNote && (
+            <Typography variant="body2" sx={{ color: "#666", whiteSpace: "pre-wrap", background: "#f8f9fa", borderRadius: 2, p: 1, mt: 0.5, transition: "background 0.3s" }}>
               {localNote}
             </Typography>
           )
@@ -577,8 +532,7 @@ const OrderCard = ({
           display: "flex",
           justifyContent: "space-between",
           alignItems: "center",
-        }}
-      >
+        }}>
         <Box>
           <Typography variant="subtitle2" sx={{ color: "#666", mb: 0.5 }}>
             Tổng tiền:
@@ -589,21 +543,12 @@ const OrderCard = ({
         </Box>
         <Box sx={{ display: "flex", gap: 2 }}>
           {order.status === OrderStatus.Pending && (
-            <Button
-              variant="outlined"
-              color="error"
-              sx={{ borderRadius: 2, textTransform: "none", px: 3 }}
-              onClick={handleCancelOrder}
-            >
+            <Button variant="outlined" color="error" sx={{ borderRadius: 2, textTransform: "none", px: 3 }} onClick={handleCancelOrder}>
               Hủy đơn
             </Button>
           )}
           {order.status === OrderStatus.Pending && (
-            <Button
-              variant="outlined"
-              sx={{ borderRadius: 2, textTransform: "none", px: 3 }}
-              onClick={handleOpenAddressModal}
-            >
+            <Button variant="outlined" sx={{ borderRadius: 2, textTransform: "none", px: 3 }} onClick={handleOpenAddressModal}>
               Đổi địa chỉ
             </Button>
           )}
@@ -621,18 +566,11 @@ const OrderCard = ({
                   borderColor: "#FF385C",
                   backgroundColor: "#FF385C15",
                 },
-              }}
-            >
+              }}>
               Mua lại
             </Button>
           )}
-          <Button
-            variant="outlined"
-            color="warning"
-            startIcon={<ReportIcon />}
-            onClick={handleOpenReport}
-            sx={{ borderRadius: 2, textTransform: "none", px: 3 }}
-          >
+          <Button variant="outlined" color="warning" startIcon={<ReportIcon />} onClick={handleOpenReport} sx={{ borderRadius: 2, textTransform: "none", px: 3 }}>
             Báo cáo
           </Button>
         </Box>
@@ -644,25 +582,19 @@ const OrderCard = ({
         maxWidth="xs"
         fullWidth
         PaperProps={{
-          sx: { borderRadius: 4, p: 0, background: 'linear-gradient(135deg, #f8fafc 0%, #e3f2fd 100%)', boxShadow: '0 8px 32px #90caf940' }
-        }}
-      >
+          sx: { borderRadius: 4, p: 0, background: "linear-gradient(135deg, #f8fafc 0%, #e3f2fd 100%)", boxShadow: "0 8px 32px #90caf940" },
+        }}>
         <Box sx={{ p: 3, pb: 2 }}>
-          <Typography variant="h6" sx={{ mb: 1.5, fontWeight: 700, color: '#1976d2', display: 'flex', alignItems: 'center', gap: 1 }}>
-            <EditIcon sx={{ color: '#1976d2', fontSize: 28 }} />
+          <Typography variant="h6" sx={{ mb: 1.5, fontWeight: 700, color: "#1976d2", display: "flex", alignItems: "center", gap: 1 }}>
+            <EditIcon sx={{ color: "#1976d2", fontSize: 28 }} />
             Đổi địa chỉ giao hàng
           </Typography>
-          <Typography variant="body2" sx={{ mb: 2, color: '#666', fontStyle: 'italic' }}>
+          <Typography variant="body2" sx={{ mb: 2, color: "#666", fontStyle: "italic" }}>
             Vui lòng chọn khu vực, tòa nhà và phòng mới cho đơn hàng này.
           </Typography>
           <FormControl fullWidth sx={{ mb: 2 }}>
             <InputLabel>Khu vực</InputLabel>
-            <Select
-              value={selectedArea}
-              label="Khu vực"
-              onChange={handleAreaChange}
-              sx={{ borderRadius: 3, background: '#fff', '&:hover': { background: '#e3f2fd' } }}
-            >
+            <Select value={selectedArea} label="Khu vực" onChange={handleAreaChange} sx={{ borderRadius: 3, background: "#fff", "&:hover": { background: "#e3f2fd" } }}>
               {areasData.map((area) => (
                 <MenuItem key={area.id} value={area.id} sx={{ borderRadius: 2, my: 0.5, fontWeight: 500 }}>
                   {area.name}
@@ -672,12 +604,7 @@ const OrderCard = ({
           </FormControl>
           <FormControl fullWidth sx={{ mb: 2 }} disabled={!selectedArea}>
             <InputLabel>Tòa nhà</InputLabel>
-            <Select
-              value={selectedBuilding}
-              label="Tòa nhà"
-              onChange={handleBuildingChange}
-              sx={{ borderRadius: 3, background: '#fff', '&:hover': { background: '#e3f2fd' } }}
-            >
+            <Select value={selectedBuilding} label="Tòa nhà" onChange={handleBuildingChange} sx={{ borderRadius: 3, background: "#fff", "&:hover": { background: "#e3f2fd" } }}>
               {buildingsData.map((building) => (
                 <MenuItem key={building.id} value={building.id} sx={{ borderRadius: 2, my: 0.5, fontWeight: 500 }}>
                   {building.name}
@@ -686,35 +613,32 @@ const OrderCard = ({
             </Select>
           </FormControl>
           <FormControl fullWidth sx={{ mb: 2 }} disabled={!selectedBuilding}>
-            <InputLabel>Phòng</InputLabel>
-            <Select
+            <Autocomplete
+              disabled={!selectedBuilding}
+              options={roomsData}
+              getOptionLabel={(option) => option.name}
               value={selectedRoom}
-              label="Phòng"
-              onChange={handleRoomChange}
-              sx={{ borderRadius: 3, background: '#fff', '&:hover': { background: '#e3f2fd' } }}
-              MenuProps={{
-                PaperProps: {
-                  style: { maxHeight: 240 },
-                  onScroll: handleRoomScroll
-                }
+              onChange={(_, newValue) => {
+                setSelectedRoom(newValue);
               }}
-            >
-              {roomsData.map((room) => (
-                <MenuItem key={room.id} value={room.id} sx={{ borderRadius: 2, my: 0.5, fontWeight: 500 }}>
-                  {room.name}
-                </MenuItem>
-              ))}
-              {roomLoadingMore && (
-                <MenuItem disabled sx={{ justifyContent: 'center' }}>
-                  <CircularProgress size={20} /> Đang tải thêm phòng...
-                </MenuItem>
-              )}
-              {!roomHasMore && roomsData.length > 0 && (
-                <MenuItem disabled sx={{ justifyContent: 'center', color: '#888' }}>
-                  Đã tải hết phòng
-                </MenuItem>
-              )}
-            </Select>
+              onInputChange={(_, newInputValue) => {
+                debouncedSearchRooms(newInputValue);
+              }}
+              loading={roomLoadingMore}
+              loadingText="Đang tải..."
+              noOptionsText="Không tìm thấy phòng"
+              renderInput={(params) => <TextField {...params} label="Phòng" sx={{ background: "#fff", borderRadius: 3, "&:hover": { background: "#e3f2fd" } }} />}
+              ListboxProps={{
+                onScroll: handleRoomScroll,
+              }}
+              renderOption={(props, option) => {
+                return (
+                  <li {...props} key={option.id}>
+                    {option.name}
+                  </li>
+                );
+              }}
+            />
           </FormControl>
           <Button
             variant="contained"
@@ -725,72 +649,77 @@ const OrderCard = ({
               mt: 1,
               borderRadius: 99,
               fontWeight: 700,
-              fontSize: '1.1rem',
-              background: 'linear-gradient(90deg, #1976d2 0%, #42a5f5 100%)',
-              color: '#fff',
-              boxShadow: '0 2px 8px #1976d233',
+              fontSize: "1.1rem",
+              background: "linear-gradient(90deg, #1976d2 0%, #42a5f5 100%)",
+              color: "#fff",
+              boxShadow: "0 2px 8px #1976d233",
               py: 1.2,
-              transition: 'all 0.2s',
-              '&:hover': {
-                background: 'linear-gradient(90deg, #1565c0 0%, #64b5f6 100%)',
-                boxShadow: '0 4px 16px #1976d244',
+              transition: "all 0.2s",
+              "&:hover": {
+                background: "linear-gradient(90deg, #1565c0 0%, #64b5f6 100%)",
+                boxShadow: "0 4px 16px #1976d244",
               },
-              '&.Mui-disabled': {
-                background: '#bdbdbd',
-                color: '#fff',
-              }
-            }}
-          >
+              "&.Mui-disabled": {
+                background: "#bdbdbd",
+                color: "#fff",
+              },
+            }}>
             Xác nhận đổi địa chỉ
           </Button>
         </Box>
       </Dialog>
 
-      <Dialog open={reportOpen} onClose={handleCloseReport} maxWidth="xs" fullWidth PaperProps={{
-        sx: { borderRadius: 3, p: 1 }
-      }}>
-        <DialogTitle sx={{ display: 'flex', alignItems: 'center', gap: 1, fontWeight: 700, color: '#ff9800', pb: 0 }}>
+      <Dialog
+        open={reportOpen}
+        onClose={handleCloseReport}
+        maxWidth="xs"
+        fullWidth
+        PaperProps={{
+          sx: { borderRadius: 3, p: 1 },
+        }}>
+        <DialogTitle sx={{ display: "flex", alignItems: "center", gap: 1, fontWeight: 700, color: "#ff9800", pb: 0 }}>
           <WarningAmberIcon color="warning" sx={{ fontSize: 28 }} />
           Báo cáo đơn hàng
         </DialogTitle>
-        <DialogContent sx={{ display: 'flex', flexDirection: 'column', gap: 2, mt: 1, pb: 0 }}>
-          <Typography variant="body2" sx={{ color: '#666', mb: 1, fontStyle: 'italic' }}>
+        <DialogContent sx={{ display: "flex", flexDirection: "column", gap: 2, mt: 1, pb: 0 }}>
+          <Typography variant="body2" sx={{ color: "#666", mb: 1, fontStyle: "italic" }}>
             Nếu bạn gặp vấn đề với đơn hàng, hãy gửi báo cáo để chúng tôi hỗ trợ nhanh nhất.
           </Typography>
           <TextField
             label="Tiêu đề báo cáo"
             value={reportTitle}
-            onChange={e => setReportTitle(e.target.value)}
+            onChange={(e) => setReportTitle(e.target.value)}
             fullWidth
             variant="outlined"
             size="small"
-            sx={{ borderRadius: 2, background: '#fafafa' }}
+            sx={{ borderRadius: 2, background: "#fafafa" }}
             inputProps={{ maxLength: 100 }}
-            helperText={reportTitle.length === 0 ? 'Vui lòng nhập tiêu đề' : `${reportTitle.length}/100 ký tự`}
+            helperText={reportTitle.length === 0 ? "Vui lòng nhập tiêu đề" : `${reportTitle.length}/100 ký tự`}
             error={reportTitle.length === 0}
           />
           <TextField
             select
             label="Lý do báo cáo"
             value={reportReason}
-            onChange={e => setReportReason(e.target.value)}
+            onChange={(e) => setReportReason(e.target.value)}
             fullWidth
             variant="outlined"
             size="small"
-            sx={{ borderRadius: 2, background: '#fafafa' }}
-            helperText={reportReason.length === 0 ? 'Vui lòng chọn lý do' : ''}
-            error={reportReason.length === 0}
-          >
-            {reportReasons.map(reason => (
-              <MenuItem key={reason} value={reason}>{reason}</MenuItem>
+            sx={{ borderRadius: 2, background: "#fafafa" }}
+            helperText={reportReason.length === 0 ? "Vui lòng chọn lý do" : ""}
+            error={reportReason.length === 0}>
+            {reportReasons.map((reason) => (
+              <MenuItem key={reason} value={reason}>
+                {reason}
+              </MenuItem>
             ))}
           </TextField>
-          {reportReason === 'Khác' && (
+          {reportReason === "Khác" && (
             <Box>
               <TextField
                 label="Lý do khác"
                 value={reportOtherReason}
-                onChange={e => {
+                onChange={(e) => {
                   if (e.target.value.length <= 200) setReportOtherReason(e.target.value);
                 }}
                 fullWidth
@@ -800,12 +729,12 @@ const OrderCard = ({
                 minRows={3}
                 maxRows={6}
                 inputProps={{ maxLength: 200 }}
-                sx={{ borderRadius: 2, background: '#fafafa' }}
-                helperText={reportOtherReason.length === 0 ? 'Vui lòng nhập lý do khác' : `${reportOtherReason.length}/200 ký tự`}
+                sx={{ borderRadius: 2, background: "#fafafa" }}
+                helperText={reportOtherReason.length === 0 ? "Vui lòng nhập lý do khác" : `${reportOtherReason.length}/200 ký tự`}
                 error={reportOtherReason.length === 0}
               />
-              <Box sx={{ display: 'flex', justifyContent: 'flex-end', mt: 0.5 }}>
-                <Typography variant="caption" color={reportOtherReason.length === 200 ? 'error' : 'text.secondary'}>
+              <Box sx={{ display: "flex", justifyContent: "flex-end", mt: 0.5 }}>
+                <Typography variant="caption" color={reportOtherReason.length === 200 ? "error" : "text.secondary"}>
                   {reportOtherReason.length}/200 ký tự
                 </Typography>
               </Box>
@@ -820,9 +749,8 @@ const OrderCard = ({
             onClick={handleSubmitReport}
             color="warning"
             variant="contained"
-            disabled={reportLoading || !reportTitle || !reportReason || (reportReason === 'Khác' && !reportOtherReason)}
-            sx={{ borderRadius: 2, fontWeight: 700, boxShadow: '0 2px 8px #ff980033' }}
-          >
+            disabled={reportLoading || !reportTitle || !reportReason || (reportReason === "Khác" && !reportOtherReason)}
+            sx={{ borderRadius: 2, fontWeight: 700, boxShadow: "0 2px 8px #ff980033" }}>
             Gửi báo cáo
           </Button>
         </DialogActions>
