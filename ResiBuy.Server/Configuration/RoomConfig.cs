@@ -9,6 +9,10 @@
                    .WithOne(o => o.ShippingAddress)
                    .HasForeignKey(r => r.ShippingAddressId)
                    .OnDelete(DeleteBehavior.Cascade);
+            builder.HasMany(r => r.Stores)
+                   .WithOne(o => o.Room)
+                   .HasForeignKey(r => r.RoomId)
+                   .OnDelete(DeleteBehavior.Cascade);
         }
     }
 }
