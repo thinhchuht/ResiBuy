@@ -17,7 +17,6 @@ export enum PaymentStatus {
 }
 
 export enum PaymentMethod {
-  None = "None",
   COD = "COD",
   BankTransfer = "BankTransfer",
 }
@@ -29,8 +28,8 @@ export enum UserRole {
 }
 
 export enum VoucherType {
-  Amount = 1,
-  Percentage = 2,
+  Amount = "Amount",
+  Percentage = "Percentage",
 }
 
 export enum DeliveryType {
@@ -316,4 +315,50 @@ export interface ProductFilter {
   sortDirection?: string; // "asc" or "desc"
   pageNumber?: number;
   pageSize?: number;
+}
+
+// Temp checkout DTOs for checkout process
+export interface TempProductDetailDto {
+  id: number;
+  name: string;
+  isOutOfStock: boolean;
+  weight: number;
+  price: number;
+  quantity: number;
+  image: Image;
+  additionalDatas: AdditionalData[];
+}
+
+export interface TempOrderDto {
+  id: string;
+  storeId: string;
+  voucherId?: string;
+  note: string;
+  totalPrice: number;
+  productDetails: TempProductDetailDto[];
+  voucher?: Voucher;
+  DiscountAmount?: number;
+}
+
+export interface TempCheckoutDto {
+  id: string;
+  addressId?: string;
+  paymentMethod: PaymentMethod;
+  grandTotal: number;
+  orders: TempOrderDto[];
+  isInstance: boolean;
+}
+
+// Update DTOs for temp order
+export interface UpdateTempOrderDto {
+  id: string;
+  addressId?: string;
+  paymentMethod?: PaymentMethod;
+  orders: UpdateOrderDto[];
+}
+
+export interface UpdateOrderDto {
+  id: string;
+  voucherId?: string;
+  note?: string;
 }

@@ -94,6 +94,24 @@ namespace ResiBuy.Server.Infrastructure.DbServices.StoreDbServices
             }
         }
 
-
+        public async Task<bool> CheckRoomIsAvailable(Guid roomId)
+        {
+            try
+            {
+                var stores = await _context.Stores.ToListAsync(); 
+                if (stores == null || !stores.Any()) 
+                {
+                    return true;
+                }
+                else
+                {
+                    return !stores.Any(s => s.RoomId == roomId && s.IsLocked == false);
+                }
+            }
+            catch (Exception ex)
+            {
+                throw new CustomException(ExceptionErrorCode.RepositoryError, ex.Message);
+            }
+        }
     }
 }

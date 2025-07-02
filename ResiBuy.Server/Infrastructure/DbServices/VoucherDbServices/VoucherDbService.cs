@@ -27,7 +27,13 @@
             return ResponseModel.SuccessResponse("Tất cả voucher còn hiệu lực.");
         }
 
-        public async Task<PagedResult<Voucher>> GetAllVouchersAsync(Guid? storeId = null, bool? isActive = null, DateTime? startDate = null, DateTime? endDate = null, int pageNumber = 1, int pageSize = 10, string userId = null)
+        public async Task<IEnumerable<Voucher>> GetAllActiveVouchersAsync()
+        {
+            var now = DateTime.Now;
+            return await context.Vouchers.Where(v => v.IsActive && v.EndDate < now).ToListAsync();
+        }
+
+        public async Task<PagedResult<Voucher>> GetAllVouchersAsync(Guid? storeId = null, bool? isActive = null, DateTime? startDate = null, DateTime? endDate = null, int pageNumber = 1, int pageSize = 10, string userId = null, decimal? minOrderPrice = null)
         {
             var query = context.Vouchers.AsQueryable();
 
@@ -46,6 +52,9 @@
             if (!string.IsNullOrEmpty(userId))
                 query = query.Where(v => v.UserVouchers.Any(uv => uv.UserId == userId));
 
+            if (minOrderPrice.HasValue)
+                query = query.Where(v => v.MinOrderPrice <= minOrderPrice.Value);
+
             var totalCount = await query.CountAsync();
             var items = await query
                 .OrderByDescending(v => v.StartDate)
@@ -62,11 +71,10 @@
             };
         }
 
-        public async Task<ResponseModel> UpdateBatchAsync(IEnumerable<Guid?> voucherIds)
+        public async Task<ResponseModel> UpdateQuantityBatchAsync(IEnumerable<Guid?> voucherIds)
         {
             try
             {
-
                 if (!voucherIds.Any())
                     return ResponseModel.FailureResponse("Không có Voucher nào.");
 
@@ -79,7 +87,7 @@
 
                 foreach (var voucher in vouchers)
                 {
-                    if (voucher == null)
+                    if (voucher != null)
                         voucher.UpdateQuantity(voucher.Quantity - 1);
                 }
 

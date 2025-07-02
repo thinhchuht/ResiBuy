@@ -13,7 +13,11 @@ namespace ResiBuy.Server.Configuration
             builder.HasOne(u => u.Avatar)
        .WithOne(i => i.User)
        .HasForeignKey<Image>(i => i.UserId)
-       .OnDelete(DeleteBehavior.NoAction); 
+       .OnDelete(DeleteBehavior.NoAction);
+
+            builder.HasMany(u => u.Stores)
+                    .WithOne(s => s.Owner)
+                    .HasForeignKey(s => s.OwnerId);
 
             builder.HasMany(u => u.UserRooms)
                    .WithOne(ur => ur.User)

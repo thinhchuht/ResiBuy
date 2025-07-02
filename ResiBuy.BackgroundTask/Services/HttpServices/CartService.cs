@@ -1,6 +1,6 @@
 ﻿namespace ResiBuy.BackgroundTask.Services.HttpServices
 {
-    internal class CartService : ICartService
+    internal class CartService(ILogger<CartService> logger) : ICartService
     {
         public async Task<ResponseModel> GetCheckingOutCarts()
         {
@@ -20,6 +20,9 @@
                     var carts = await response.Content.ReadFromJsonAsync<List<Cart>>();
                     return ResponseModel.SuccessResponse(carts);
                 }
+                var content = await response.Content.ReadAsStringAsync();
+                ResponseModel apiResponse = JsonSerializer.Deserialize<ResponseModel>(content); ;
+                logger.LogError($"Checkout API error: {apiResponse?.Message ?? content}");
                 return ResponseModel.FailureResponse("Không thể lấy danh sách cart");
             }
             catch (Exception ex)

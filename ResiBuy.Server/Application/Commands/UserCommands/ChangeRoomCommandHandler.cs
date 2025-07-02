@@ -56,6 +56,7 @@
                     user.Avatar == null ? null : new AvatarQueryResult(user.Avatar.Id, user.Avatar.Name, user.Avatar.Url, user.Avatar.ThumbUrl),
                     user.UserRooms.Select(ur => new RoomQueryResult(ur.Room.Id, ur.Room.Name, ur.Room.Building.Name, ur.Room.Building.Area.Name)),
                     [],
+                    [],
                     []);
                 return ResponseModel.SuccessResponse(userResult);
             }
