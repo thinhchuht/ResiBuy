@@ -9,6 +9,7 @@
         public Building              Building   { get; set; }
         public IEnumerable<Order> Orders { get; set; }
         public IEnumerable<UserRoom> UserRooms  { get; set; }
+        public IEnumerable<Store> Stores { get; set; }
 
         public Room(string name, Guid buildingId)
         {
