@@ -37,7 +37,7 @@ interface ProductDetailInput {
   price: number;
   weight: number;
   isOutOfStock: boolean;
-  image: Image;
+  image?: Image;
   additionalData: AdditionalDataInput[];
 }
 interface ProductInput {
@@ -271,9 +271,9 @@ export default function CreateProduct() {
     return text;
   }
 
-  async function uploadImg(file: File, index: number) {
+  async function uploadImg(file: File, img: Image | null, index: number) {
     const formData = new FormData();
-    const id = v4();
+    const id = img?.id || v4(); // Nếu không có id thì tạo mới
     formData.append("id", id);
     // Append file:
     formData.append("file", file); // file binary
@@ -294,6 +294,29 @@ export default function CreateProduct() {
       };
       setListProductDetail(newList);
       console.log("listProductDetail", listProductDetail[index]);
+    }
+  }
+
+  async function uploadImgForNewProduct(file: File, index: number) {
+    const formData = new FormData();
+    const id = v4();
+    formData.append("id", id);
+    formData.append("file", file);
+
+    const resp = await axiosClient.post("/api/Cloudinary/upload", formData, {
+      headers: { "Content-Type": "multipart/form-data" },
+    });
+
+    if (resp.status === 200) {
+      const data = resp.data;
+      const newList = [...newProductDetails];
+      newList[index].image = {
+        id: data.id,
+        thumbUrl: data.thumbnailUrl,
+        url: data.url,
+        name: data.name,
+      };
+      setNewProductDetails(newList);
     }
   }
 
@@ -541,7 +564,12 @@ export default function CreateProduct() {
                         type="file"
                         onChange={(e) => {
                           const file = e.target.files?.[0];
-                          if (file) uploadImg(file, index);
+                          if (file)
+                            uploadImg(
+                              file,
+                              productDetail?.image || null,
+                              index
+                            );
                         }}
                       />
                     </Button>
@@ -569,7 +597,7 @@ export default function CreateProduct() {
                 </TableRow>
               ))}
               {newProductDetails.map((productDetail, index) => (
-                <TableRow key={index}>
+                <TableRow key={`new-${index}`}>
                   <TableCell>{classyfyText(productDetail)}</TableCell>
                   <TableCell>
                     <TextField
@@ -577,9 +605,12 @@ export default function CreateProduct() {
                       type="number"
                       value={productDetail.price}
                       onChange={(e) => {
-                        const newList = [...listProductDetail];
-                        newList[index].price = Number(e.target.value);
-                        setListProductDetail(newList);
+                        const newList = [...newProductDetails];
+                        newList[index] = {
+                          ...newList[index],
+                          price: Number(e.target.value),
+                        };
+                        setNewProductDetails(newList);
                       }}
                     />
                   </TableCell>
@@ -589,9 +620,12 @@ export default function CreateProduct() {
                       type="number"
                       value={productDetail.weight}
                       onChange={(e) => {
-                        const newList = [...listProductDetail];
-                        newList[index].weight = Number(e.target.value);
-                        setListProductDetail(newList);
+                        const newList = [...newProductDetails];
+                        newList[index] = {
+                          ...newList[index],
+                          weight: Number(e.target.value),
+                        };
+                        setNewProductDetails(newList);
                       }}
                     />
                   </TableCell>
@@ -599,15 +633,17 @@ export default function CreateProduct() {
                     <Checkbox
                       checked={productDetail.isOutOfStock}
                       onChange={(e) => {
-                        const newList = [...listProductDetail];
-                        newList[index].isOutOfStock = e.target.checked;
-                        setListProductDetail(newList);
+                        const newList = [...newProductDetails];
+                        newList[index] = {
+                          ...newList[index],
+                          isOutOfStock: e.target.checked,
+                        };
+                        setNewProductDetails(newList);
                       }}
                       color="primary"
                     />
                   </TableCell>
                   <TableCell>
-                    {/* Nút tải ảnh */}
                     <Button variant="outlined" component="label" size="small">
                       Tải ảnh
                       <input
@@ -616,12 +652,11 @@ export default function CreateProduct() {
                         type="file"
                         onChange={(e) => {
                           const file = e.target.files?.[0];
-                          if (file) uploadImg(file, index);
+                          if (file) uploadImgForNewProduct(file, index); // cần tách hàm riêng cho newProduct
                         }}
                       />
                     </Button>
 
-                    {/* Hiển thị ảnh nếu có */}
                     {productDetail.image?.thumbUrl ? (
                       <Box mt={1}>
                         <img

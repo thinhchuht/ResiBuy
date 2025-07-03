@@ -141,7 +141,7 @@ const ProductPage: React.FC = () => {
   };
 
   const handleDelete = async (id: number) => {
-    if (!window.confirm("Bạn có chắc muốn xóa sản phẩm này?")) return;
+    if (!window.confirm("Bạn có chắc muốn dừng bán sản phẩm này?")) return;
     try {
       await axios.put(`/api/products/${id}`);
       setProducts((prev) => prev.filter((p) => p.id !== id));
