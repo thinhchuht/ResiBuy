@@ -11,7 +11,15 @@
 
 
                 var buildings = await BuildingDbService.GetByAreaIdAsync(query.Id);
-                return ResponseModel.SuccessResponse(buildings);
+                var result = buildings.Select(b => new
+                {
+                    id = b.Id,
+                    name = b.Name,
+                    isActive = b.IsActive,
+                  
+
+                }).ToList();
+                return ResponseModel.SuccessResponse(result);
             }
             catch (Exception e)
             {

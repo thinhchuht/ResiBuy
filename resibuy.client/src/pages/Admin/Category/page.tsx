@@ -1,3 +1,4 @@
+import { useState, useEffect } from "react";
 import { Box, Typography, IconButton } from "@mui/material";
 import {
   Edit,
@@ -13,32 +14,42 @@ import {
   calculateCategoryStats,
   formatCurrency,
   useCategoriesLogic,
-} from "../../../components/admin/Category/seg/utlis"
+} from "../../../components/admin/Category/seg/utlis";
 import { StatsCard } from "../../../layouts/AdminLayout/components/StatsCard";
 import type { Category } from "../../../types/models";
 
-function CategoryStatsCards() {
-  const stats = calculateCategoryStats(useCategoriesLogic().categories);
+interface ApiResponse<T> {
+  code: number;
+  message: string;
+  data: {
+    items: T[];
+    totalCount: number;
+    pageNumber: number;
+    pageSize: number;
+    totalPages: number;
+  };
+}
+
+function CategoryStatsCards({ categories }: { categories: Category[] }) {
+  const stats = calculateCategoryStats(categories);
 
   const cards = [
     {
       title: "Tổng Danh Mục",
       value: stats.totalCategories.toString(),
       icon: CategoryIcon,
-      iconColor: "#1976d2", // Xanh dương
-      iconBgColor: "#e3f2fd", // Xanh dương nhạt
+      iconColor: "#1976d2",
+      iconBgColor: "#e3f2fd",
       valueColor: "#1976d2",
     },
     {
       title: "Tổng Sản Phẩm",
       value: stats.totalProducts.toLocaleString(),
       icon: Inventory,
-      iconColor: "#d81b60", // Hồng
-      iconBgColor: "#fce4ec", // Hồng nhạt
+      iconColor: "#d81b60",
+      iconBgColor: "#fce4ec",
       valueColor: "#d81b60",
     },
-   
-
   ];
 
   return (
@@ -86,9 +97,68 @@ export default function CategoriesPage() {
     handleExportCategories,
   } = useCategoriesLogic();
 
+  const [pageNumber, setPageNumber] = useState(1); // 1-based, khớp với API
+  const [pageSize] = useState(15); // pageSize cố định
+  const [totalCount, setTotalCount] = useState(0);
+  const [fetchedCategories, setFetchedCategories] = useState<Category[]>([]);
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+
+  // Hàm giả lập gọi API
+  const fetchCategories = async (pageNum: number, size: number) => {
+    setLoading(true);
+    setError(null);
+    try {
+      console.log(`Fetching page ${pageNum}, size ${size}, total categories: ${categories.length}`);
+
+      // Thay bằng API thực tế, ví dụ: axios.get('/api/categories')
+      const response: ApiResponse<Category> = await new Promise((resolve) => {
+        setTimeout(() => {
+          const start = (pageNum - 1) * size;
+          const end = pageNum * size;
+          const items = categories.slice(start, end);
+          console.log(`Sliced items: start=${start}, end=${end}, items=`, items);
+
+          const fakeResponse: ApiResponse<Category> = {
+            code: 0,
+            message: "Thành công",
+            data: {
+              items,
+              totalCount: categories.length,
+              pageNumber: pageNum,
+              pageSize: size,
+              totalPages: Math.ceil(categories.length / size),
+            },
+          };
+          resolve(fakeResponse);
+        }, 500);
+      });
+
+      if (response.code === 0) {
+        console.log("API response:", response.data);
+        setFetchedCategories(response.data.items);
+        setTotalCount(response.data.totalCount);
+      } else {
+        setError(response.message);
+        setFetchedCategories([]);
+      }
+    } catch (err) {
+      console.error("Fetch error:", err);
+      setError("Lỗi khi gọi API");
+      setFetchedCategories([]);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  // Gọi API khi pageNumber thay đổi
+  useEffect(() => {
+    fetchCategories(pageNumber, pageSize);
+  }, [pageNumber, pageSize, categories]);
+
   const columns = [
     {
-      key: "id",
+      key: "id" as keyof Category,
       label: "ID Danh Mục",
       sortable: true,
       render: (category: Category) => (
@@ -105,7 +175,7 @@ export default function CategoriesPage() {
       ),
     },
     {
-      key: "name",
+      key: "name" as keyof Category,
       label: "Danh Mục",
       sortable: true,
       render: (category: Category) => (
@@ -142,7 +212,7 @@ export default function CategoriesPage() {
       ),
     },
     {
-      key: "products",
+      key: "products" as keyof Category,
       label: "Sản Phẩm",
       sortable: true,
       render: (category: Category) => (
@@ -152,7 +222,7 @@ export default function CategoriesPage() {
       ),
     },
     {
-      key: "totalRevenue",
+      key: "totalRevenue" as keyof Category,
       label: "Tổng Doanh Thu",
       sortable: true,
       render: (category: Category) => (
@@ -170,7 +240,7 @@ export default function CategoriesPage() {
       ),
     },
     {
-      key: "actions",
+      key: "actions" as keyof Category,
       label: "Hành Động",
       render: (category: Category) => (
         <Box sx={{ display: "flex", alignItems: "center", gap: 0.5 }}>
@@ -284,18 +354,23 @@ export default function CategoriesPage() {
           </Typography>
         </Box>
 
-        <CategoryStatsCards />
+        {loading && <Typography>Đang tải...</Typography>}
+        {error && <Typography color="error">{error}</Typography>}
+
+        <CategoryStatsCards categories={fetchedCategories} />
 
         <CustomTable
-          data={categories}
+          data={fetchedCategories}
+          totalCount={totalCount}
           columns={columns}
           onAddItem={handleAddCategory}
           onExport={handleExportCategories}
+          onPageChange={setPageNumber}
           headerTitle="Tất Cả Danh Mục"
           description="Quản lý danh mục và sản phẩm"
           showExport={true}
           showBulkActions={false}
-          itemsPerPage={15}
+          itemsPerPage={pageSize}
         />
       </Box>
 

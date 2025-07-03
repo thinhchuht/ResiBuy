@@ -14,7 +14,31 @@
                 if (room == null)
                     throw new CustomException(ExceptionErrorCode.NotFound, $"Không tìm thấy phòng với Id: {request.Id}");
 
-                return ResponseModel.SuccessResponse(room);
+                var result = new
+                {
+                    room.Id,
+                    room.Name,
+                    room.IsActive,
+                    room.BuildingId,
+                    Users = room.UserRooms?
+                        .Where(ur => ur.User != null)
+                        .Select(ur => new
+                        {
+                            ur.User.Id,
+                            ur.User.Email,
+                            ur.User.PhoneNumber,
+                            ur.User.FullName,
+                            ur.User.DateOfBirth,
+                            ur.User.Roles,
+                            ur.User.IsLocked,
+                            ur.User.CreatedAt,
+                            ur.User.UpdatedAt,
+                            ur.User.EmailConfirmed,
+                            ur.User.PhoneNumberConfirmed
+                        })
+                };
+
+                return ResponseModel.SuccessResponse(result);
             }
             catch (Exception ex)
             {
