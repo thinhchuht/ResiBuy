@@ -6,7 +6,7 @@ using Microsoft.EntityFrameworkCore.Migrations;
 namespace ResiBuy.Server.Infrastructure.Migrations
 {
     /// <inheritdoc />
-    public partial class Initial_Create : Migration
+    public partial class Init : Migration
     {
         /// <inheritdoc />
         protected override void Up(MigrationBuilder migrationBuilder)
@@ -86,7 +86,10 @@ namespace ResiBuy.Server.Infrastructure.Migrations
                 columns: table => new
                 {
                     Id = table.Column<Guid>(type: "uniqueidentifier", nullable: false),
-                    UserId = table.Column<string>(type: "nvarchar(450)", nullable: true)
+                    UserId = table.Column<string>(type: "nvarchar(450)", nullable: true),
+                    IsCheckingOut = table.Column<bool>(type: "bit", nullable: false),
+                    ExpiredCheckOutTime = table.Column<DateTime>(type: "datetime2", nullable: false),
+                    RowVersion = table.Column<byte[]>(type: "varbinary(max)", nullable: true)
                 },
                 constraints: table =>
                 {
@@ -129,9 +132,10 @@ namespace ResiBuy.Server.Infrastructure.Migrations
                     Id = table.Column<Guid>(type: "uniqueidentifier", nullable: false),
                     UserId = table.Column<string>(type: "nvarchar(450)", nullable: true),
                     IsOnline = table.Column<bool>(type: "bit", nullable: false),
+                    IsShipping = table.Column<bool>(type: "bit", nullable: false),
                     ReportCount = table.Column<int>(type: "int", nullable: false),
-                    StartWorkTime = table.Column<DateTime>(type: "datetime2", nullable: false),
-                    EndWorkTime = table.Column<DateTime>(type: "datetime2", nullable: false),
+                    StartWorkTime = table.Column<float>(type: "real", nullable: false),
+                    EndWorkTime = table.Column<float>(type: "real", nullable: false),
                     LastLocationId = table.Column<Guid>(type: "uniqueidentifier", nullable: false)
                 },
                 constraints: table =>
@@ -182,7 +186,8 @@ namespace ResiBuy.Server.Infrastructure.Migrations
                     ReportCount = table.Column<int>(type: "int", nullable: false),
                     CreatedAt = table.Column<DateTime>(type: "datetime2", nullable: false),
                     OwnerId = table.Column<string>(type: "nvarchar(450)", nullable: true),
-                    RoomId = table.Column<Guid>(type: "uniqueidentifier", nullable: false)
+                    RoomId = table.Column<Guid>(type: "uniqueidentifier", nullable: false),
+                    RoomId1 = table.Column<Guid>(type: "uniqueidentifier", nullable: true)
                 },
                 constraints: table =>
                 {
@@ -193,6 +198,11 @@ namespace ResiBuy.Server.Infrastructure.Migrations
                         principalTable: "Rooms",
                         principalColumn: "Id",
                         onDelete: ReferentialAction.Restrict);
+                    table.ForeignKey(
+                        name: "FK_Stores_Rooms_RoomId1",
+                        column: x => x.RoomId1,
+                        principalTable: "Rooms",
+                        principalColumn: "Id");
                     table.ForeignKey(
                         name: "FK_Stores_Users_OwnerId",
                         column: x => x.OwnerId,
@@ -233,7 +243,6 @@ namespace ResiBuy.Server.Infrastructure.Migrations
                         .Annotation("SqlServer:Identity", "1, 1"),
                     Name = table.Column<string>(type: "nvarchar(max)", nullable: true),
                     Describe = table.Column<string>(type: "nvarchar(max)", nullable: true),
-                    Weight = table.Column<float>(type: "real", nullable: false),
                     IsOutOfStock = table.Column<bool>(type: "bit", nullable: false),
                     Discount = table.Column<int>(type: "int", nullable: false),
                     CreatedAt = table.Column<DateTime>(type: "datetime2", nullable: false),
@@ -294,7 +303,7 @@ namespace ResiBuy.Server.Infrastructure.Migrations
                     ProductId = table.Column<int>(type: "int", nullable: false),
                     Sold = table.Column<int>(type: "int", nullable: false),
                     Price = table.Column<decimal>(type: "decimal(18,2)", nullable: false),
-                    Weight = table.Column<int>(type: "int", nullable: false)
+                    Weight = table.Column<float>(type: "real", nullable: false)
                 },
                 constraints: table =>
                 {
@@ -521,7 +530,7 @@ namespace ResiBuy.Server.Infrastructure.Migrations
             migrationBuilder.InsertData(
                 table: "Users",
                 columns: new[] { "Id", "AvatarId", "CreatedAt", "DateOfBirth", "Email", "EmailConfirmed", "FullName", "IdentityNumber", "IsLocked", "PasswordHash", "PhoneNumber", "PhoneNumberConfirmed", "Roles", "UpdatedAt" },
-                values: new object[] { "adm_df", null, new DateTime(2025, 6, 20, 18, 47, 38, 860, DateTimeKind.Local).AddTicks(7558), new DateTime(1990, 1, 1, 0, 0, 0, 0, DateTimeKind.Unspecified), "admin@123", true, "Administrator", "admin", false, "$2a$11$i1UtG5WAPDxkcmSXeVtHTubtwQXwX/YS3M4cMas.JqRiD7HG7VQM6", "admin", true, "[\"ADMIN\"]", new DateTime(2025, 6, 20, 18, 47, 38, 860, DateTimeKind.Local).AddTicks(7582) });
+                values: new object[] { "adm_df", null, new DateTime(2025, 7, 2, 22, 35, 53, 298, DateTimeKind.Local).AddTicks(5406), new DateTime(1990, 1, 1, 0, 0, 0, 0, DateTimeKind.Unspecified), "admin@123", true, "Administrator", "admin", false, "$2a$11$MoRxgspjGegFEZin/iKg2u602uivuNFpwanQIYGKvb0Q.y7pZ2hhO", "admin", true, "[\"ADMIN\"]", new DateTime(2025, 7, 2, 22, 35, 53, 298, DateTimeKind.Local).AddTicks(5428) });
 
             migrationBuilder.CreateIndex(
                 name: "IX_AdditionalDatas_ProductDetailId",
@@ -662,6 +671,11 @@ namespace ResiBuy.Server.Infrastructure.Migrations
                 name: "IX_Stores_RoomId",
                 table: "Stores",
                 column: "RoomId");
+
+            migrationBuilder.CreateIndex(
+                name: "IX_Stores_RoomId1",
+                table: "Stores",
+                column: "RoomId1");
 
             migrationBuilder.CreateIndex(
                 name: "IX_UserRooms_RoomId",

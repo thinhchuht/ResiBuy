@@ -66,7 +66,7 @@ const AppRoutes: React.FC = () => {
           }
         />
         <Route
-          path="/store/*"
+          path="/store/:storeId/*"
           element={
             <HomeLayout>
               <Store />

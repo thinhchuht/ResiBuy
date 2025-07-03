@@ -12,8 +12,8 @@ using ResiBuy.Server.Infrastructure;
 namespace ResiBuy.Server.Infrastructure.Migrations
 {
     [DbContext(typeof(ResiBuyContext))]
-    [Migration("20250625133935_Initial_Create_01")]
-    partial class Initial_Create_01
+    [Migration("20250702153553_Init")]
+    partial class Init
     {
         /// <inheritdoc />
         protected override void BuildTargetModel(ModelBuilder modelBuilder)
@@ -341,8 +341,8 @@ namespace ResiBuy.Server.Infrastructure.Migrations
                     b.Property<int>("Sold")
                         .HasColumnType("int");
 
-                    b.Property<int>("Weight")
-                        .HasColumnType("int");
+                    b.Property<float>("Weight")
+                        .HasColumnType("real");
 
                     b.HasKey("Id");
 
@@ -442,10 +442,13 @@ namespace ResiBuy.Server.Infrastructure.Migrations
                         .ValueGeneratedOnAdd()
                         .HasColumnType("uniqueidentifier");
 
-                    b.Property<DateTime>("EndWorkTime")
-                        .HasColumnType("datetime2");
+                    b.Property<float>("EndWorkTime")
+                        .HasColumnType("real");
 
                     b.Property<bool>("IsOnline")
+                        .HasColumnType("bit");
+
+                    b.Property<bool>("IsShipping")
                         .HasColumnType("bit");
 
                     b.Property<Guid>("LastLocationId")
@@ -454,8 +457,8 @@ namespace ResiBuy.Server.Infrastructure.Migrations
                     b.Property<int>("ReportCount")
                         .HasColumnType("int");
 
-                    b.Property<DateTime>("StartWorkTime")
-                        .HasColumnType("datetime2");
+                    b.Property<float>("StartWorkTime")
+                        .HasColumnType("real");
 
                     b.Property<string>("UserId")
                         .HasColumnType("nvarchar(450)");
@@ -501,11 +504,16 @@ namespace ResiBuy.Server.Infrastructure.Migrations
                     b.Property<Guid>("RoomId")
                         .HasColumnType("uniqueidentifier");
 
+                    b.Property<Guid?>("RoomId1")
+                        .HasColumnType("uniqueidentifier");
+
                     b.HasKey("Id");
 
                     b.HasIndex("OwnerId");
 
                     b.HasIndex("RoomId");
+
+                    b.HasIndex("RoomId1");
 
                     b.ToTable("Stores");
                 });
@@ -562,18 +570,18 @@ namespace ResiBuy.Server.Infrastructure.Migrations
                         new
                         {
                             Id = "adm_df",
-                            CreatedAt = new DateTime(2025, 6, 25, 20, 39, 32, 298, DateTimeKind.Local).AddTicks(9580),
+                            CreatedAt = new DateTime(2025, 7, 2, 22, 35, 53, 298, DateTimeKind.Local).AddTicks(5406),
                             DateOfBirth = new DateTime(1990, 1, 1, 0, 0, 0, 0, DateTimeKind.Unspecified),
                             Email = "admin@123",
                             EmailConfirmed = true,
                             FullName = "Administrator",
                             IdentityNumber = "admin",
                             IsLocked = false,
-                            PasswordHash = "$2a$11$1099ozw2lL0v4cKTUl6VPuku4wKNWgxJ0.AB7TgBWEIKVYKcyoE72",
+                            PasswordHash = "$2a$11$MoRxgspjGegFEZin/iKg2u602uivuNFpwanQIYGKvb0Q.y7pZ2hhO",
                             PhoneNumber = "admin",
                             PhoneNumberConfirmed = true,
                             Roles = "[\"ADMIN\"]",
-                            UpdatedAt = new DateTime(2025, 6, 25, 20, 39, 32, 298, DateTimeKind.Local).AddTicks(9599)
+                            UpdatedAt = new DateTime(2025, 7, 2, 22, 35, 53, 298, DateTimeKind.Local).AddTicks(5428)
                         });
                 });
 
@@ -869,7 +877,7 @@ namespace ResiBuy.Server.Infrastructure.Migrations
             modelBuilder.Entity("ResiBuy.Server.Infrastructure.Model.Store", b =>
                 {
                     b.HasOne("ResiBuy.Server.Infrastructure.Model.User", "Owner")
-                        .WithMany()
+                        .WithMany("Stores")
                         .HasForeignKey("OwnerId")
                         .OnDelete(DeleteBehavior.Cascade);
 
@@ -878,6 +886,10 @@ namespace ResiBuy.Server.Infrastructure.Migrations
                         .HasForeignKey("RoomId")
                         .OnDelete(DeleteBehavior.Restrict)
                         .IsRequired();
+
+                    b.HasOne("ResiBuy.Server.Infrastructure.Model.Room", null)
+                        .WithMany("Stores")
+                        .HasForeignKey("RoomId1");
 
                     b.Navigation("Owner");
 
@@ -984,6 +996,8 @@ namespace ResiBuy.Server.Infrastructure.Migrations
                 {
                     b.Navigation("Orders");
 
+                    b.Navigation("Stores");
+
                     b.Navigation("UserRooms");
                 });
 
@@ -1008,6 +1022,8 @@ namespace ResiBuy.Server.Infrastructure.Migrations
                     b.Navigation("Cart");
 
                     b.Navigation("Reports");
+
+                    b.Navigation("Stores");
 
                     b.Navigation("UserRooms");
 

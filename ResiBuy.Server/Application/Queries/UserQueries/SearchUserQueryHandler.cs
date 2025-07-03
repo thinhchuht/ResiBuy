@@ -36,7 +36,8 @@
                     ur.Room?.Building.Name,
                     ur.Room?.Building.Area.Name)),
                 user.UserVouchers.Select(uv => uv.VoucherId),
-                user.Reports.ToList()
+                user.Reports.ToList(),
+                user.Stores.ToList()
             )).ToList();
             return ResponseModel.SuccessResponse(new PagedResult<UserQueryResult>(items, pagedResult.TotalCount, pagedResult.PageNumber, pagedResult.PageSize));
         }

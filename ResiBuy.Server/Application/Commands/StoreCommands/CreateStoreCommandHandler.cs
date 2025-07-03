@@ -2,6 +2,9 @@ using ResiBuy.Server.Exceptions;
 using ResiBuy.Server.Infrastructure.DbServices.StoreDbServices;
 using ResiBuy.Server.Infrastructure.DbServices.UserDbServices;
 using ResiBuy.Server.Infrastructure.Model;
+using System;
+using System.Threading;
+using System.Threading.Tasks;
 
 namespace ResiBuy.Server.Application.Commands.StoreCommands
 {
@@ -25,19 +28,19 @@ namespace ResiBuy.Server.Application.Commands.StoreCommands
 
         public async Task<ResponseModel> Handle(CreateStoreCommand command, CancellationToken cancellationToken)
         {
-            // Kiểm tra user có tồn tại không
+            // Kiểm tra xem OwnerId có hợp lệ hay không
+            if (string.IsNullOrEmpty(command.OwnerId))
+                throw new CustomException(ExceptionErrorCode.ValidationFailed, "Id người dùng không hợp lệ.");
+
+            // Kiểm tra xem người dùng có tồn tại hay không
             var user = await _userDbService.GetUserById(command.OwnerId);
             if (user == null)
                 throw new CustomException(ExceptionErrorCode.NotFound, "Người dùng không tồn tại");
-
-            // Kiểm tra store đã tồn tại cho user này chưa
-            var existingStore = await _storeDbService.GetStoreByOwnerIdAsync(command.OwnerId);
-            if (existingStore != null)
-                throw new CustomException(ExceptionErrorCode.DuplicateValue, "Người dùng đã có store");
+            if (await _storeDbService.CheckRoomIsAvailable(command.RoomId))
+                throw new CustomException(ExceptionErrorCode.DuplicateValue, "Room đã có người sử dụng");
 
             var store = new Store
             {
-                Id = Guid.Parse(user.Id),
                 Name = command.Name,
                 Description = command.Description,
                 IsLocked = false,
@@ -48,9 +51,9 @@ namespace ResiBuy.Server.Application.Commands.StoreCommands
                 RoomId = command.RoomId
             };
 
-            await _storeDbService.CreateAsync(store);
+            var newstore = await _storeDbService.CreateAsync(store);
 
-            return ResponseModel.SuccessResponse();
+            return ResponseModel.SuccessResponse(newstore);
         }
     }
-} 
+}
