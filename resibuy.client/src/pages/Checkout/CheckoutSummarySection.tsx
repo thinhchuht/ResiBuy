@@ -20,12 +20,13 @@ import { Formik, Form, Field } from "formik";
 import type { FieldProps } from "formik";
 import * as Yup from "yup";
 import { useState, useMemo } from "react";
-import type { Room, Building, Area, TempOrderDto } from "../../types/models";
+import type { Area, TempOrderDto } from "../../types/models";
 import { useToastify } from "../../hooks/useToastify";
 import areaApi from "../../api/area.api";
 import buildingApi from "../../api/building.api";
 import roomApi from "../../api/room.api";
 import { debounce } from "lodash";
+import type { BuildingDto, RoomDto } from "../../types/dtoModels";
 
 interface CheckoutSummarySectionProps {
   orders: TempOrderDto[];
@@ -91,14 +92,14 @@ const CheckoutSummarySection = ({ orders, grandTotal, onCheckout, userRooms = []
   const { error: showError } = useToastify();
 
   const [areasData, setAreasData] = useState<Area[]>([]);
-  const [buildingsData, setBuildingsData] = useState<Building[]>([]);
-  const [roomsData, setRoomsData] = useState<Room[]>([]);
+  const [buildingsData, setBuildingsData] = useState<BuildingDto[]>([]);
+  const [roomsData, setRoomsData] = useState<RoomDto[]>([]);
   const [fetchedAreas, setFetchedAreas] = useState<Set<string>>(new Set());
   const [areasLoaded, setAreasLoaded] = useState(false);
   const [roomPage, setRoomPage] = useState(1);
   const [roomHasMore, setRoomHasMore] = useState(true);
   const [roomLoadingMore, setRoomLoadingMore] = useState(false);
-  const [selectedOtherRoomObject, setSelectedOtherRoomObject] = useState<Room | null>(null);
+  const [selectedOtherRoomObject, setSelectedOtherRoomObject] = useState<RoomDto | null>(null);
   const [roomSearchText, setRoomSearchText] = useState("");
 
   const initialValues: FormValues = {
@@ -119,8 +120,9 @@ const CheckoutSummarySection = ({ orders, grandTotal, onCheckout, userRooms = []
       setBuildingsData([]);
       setRoomsData([]);
 
-      const buildingsData = await buildingApi.getByBuilingId(areaId);
-      setBuildingsData(buildingsData);
+      const buildingsData = await buildingApi.getByAreaId(areaId);
+      console.log("buildingsData", buildingsData);
+      setBuildingsData(buildingsData as BuildingDto[]);
       setFetchedAreas((prev) => new Set([...prev, areaId]));
     } catch (error) {
       console.error("Error fetching buildings:", error);
@@ -132,8 +134,8 @@ const CheckoutSummarySection = ({ orders, grandTotal, onCheckout, userRooms = []
     if (roomLoadingMore) return;
     setRoomLoadingMore(true);
     try {
-      const roomsRes = await roomApi.getByBuilingId(buildingId, page, pageSize, search);
-      const roomsWithBuildingId = roomsRes.items.map((room: Room) => ({
+      const roomsRes = await roomApi.searchInBuilding({ buildingId, pageNumber: page, pageSize, keyword: search });
+      const roomsWithBuildingId = roomsRes.items.map((room: RoomDto) => ({
         ...room,
         buildingId,
       }));
@@ -171,7 +173,7 @@ const CheckoutSummarySection = ({ orders, grandTotal, onCheckout, userRooms = []
   const displayAreas = areasData.length > 0 ? areasData : [];
   const displayBuildings = buildingsData.length > 0 ? buildingsData : [];
   const displayRooms = roomsData.length > 0 ? roomsData : [];
-
+  console.log("displayBuildings", displayBuildings);
   return (
     <Paper
       elevation={0}
@@ -208,9 +210,6 @@ const CheckoutSummarySection = ({ orders, grandTotal, onCheckout, userRooms = []
           onCheckout?.(formValues);
         }}>
         {({ values, errors, touched, handleChange, handleBlur, setFieldValue }) => {
-          const filteredBuildings = displayBuildings.filter((b) => b.areaId === values.selectedArea);
-          const filteredRooms = displayRooms.filter((r) => r.buildingId === values.selectedBuilding);
-
           const handleFieldBlur = (fieldName: string) => {
             handleBlur(fieldName);
             const fieldError = errors[fieldName as keyof typeof errors];
@@ -354,7 +353,7 @@ const CheckoutSummarySection = ({ orders, grandTotal, onCheckout, userRooms = []
                         }}
                         onBlur={() => handleFieldBlur("selectedBuilding")}
                         disabled={!values.selectedArea}>
-                        {filteredBuildings.map((building) => (
+                        {displayBuildings.map((building) => (
                           <MenuItem key={building.id} value={building.id}>
                             {building.name}
                           </MenuItem>
@@ -364,7 +363,7 @@ const CheckoutSummarySection = ({ orders, grandTotal, onCheckout, userRooms = []
                     </FormControl>
 
                     <Autocomplete
-                      options={filteredRooms}
+                      options={displayRooms}
                       getOptionLabel={(option) => option.name}
                       value={selectedOtherRoomObject}
                       onChange={(_, newValue) => {

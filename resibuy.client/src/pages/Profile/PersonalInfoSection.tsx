@@ -18,17 +18,12 @@ interface PersonalInfoSectionProps {
 
 const validationSchema = Yup.object().shape({
   email: Yup.string().email("Email không hợp lệ").required("Email là bắt buộc"),
-  dateOfBirth: Yup.date()
-    .max(new Date(), "Ngày sinh không thể lớn hơn ngày hiện tại")
-    .required("Ngày sinh là bắt buộc"),
+  dateOfBirth: Yup.date().max(new Date(), "Ngày sinh không thể lớn hơn ngày hiện tại").required("Ngày sinh là bắt buộc"),
 });
 
-const PersonalInfoSection = ({
-  isAdmin,
-  formatDate,
-  maskMiddle,
-}: PersonalInfoSectionProps) => {
+const PersonalInfoSection = ({ isAdmin, formatDate, maskMiddle }: PersonalInfoSectionProps) => {
   const { user, setUser } = useAuth();
+  console.log(user);
   const [avatar, setAvatar] = useState<Image | null>(null);
   const [isUploading, setIsUploading] = useState(false);
   const toast = useToastify();
@@ -55,11 +50,7 @@ const PersonalInfoSection = ({
         const uploadRes = await cloudinaryApi.upload(file);
         const ava = uploadRes.data;
         if (ava) {
-          setAvatar({id : ava.id,
-          url : ava.url,
-          thumbUrl : ava.thumbnailUrl,
-          name : ava.name
-          });
+          setAvatar({ id: ava.id, url: ava.url, thumbUrl: ava.thumbnailUrl, name: ava.name });
         } else {
           toast.error("Không lấy được đường dẫn ảnh!");
         }
@@ -73,9 +64,7 @@ const PersonalInfoSection = ({
 
   const initialValues = {
     email: user?.email || "",
-    dateOfBirth: user?.dateOfBirth
-      ? user.dateOfBirth.substring(0, 10)
-      : "1990-01-01",
+    dateOfBirth: user?.dateOfBirth ? user.dateOfBirth.substring(0, 10) : "1990-01-01",
   };
 
   const handleSubmit = async (values: typeof initialValues) => {
@@ -123,12 +112,7 @@ const PersonalInfoSection = ({
   return (
     <Box sx={{ display: { xs: "block", md: "flex" }, gap: 4 }}>
       <Box sx={{ flex: 1, minWidth: 0 }}>
-        <Formik
-          initialValues={initialValues}
-          validationSchema={validationSchema}
-          onSubmit={handleSubmit}
-          enableReinitialize
-        >
+        <Formik initialValues={initialValues} validationSchema={validationSchema} onSubmit={handleSubmit} enableReinitialize>
           {({ errors, touched, values, handleChange, handleBlur }) => (
             <Form>
               <Box mb={3}>
@@ -216,7 +200,7 @@ const PersonalInfoSection = ({
                   </Typography>
                   {user.rooms.map((room, index) => (
                     <Typography key={room.id} variant="body1" fontWeight={500}>
-                      Phòng {index +1} : {`${room.name} - ${room.buildingName} - ${room.areaName}`}
+                      Phòng {index + 1} : {`${room.name} - ${room.buildingName} - ${room.areaName}`}
                     </Typography>
                   ))}
                 </Box>
@@ -253,8 +237,7 @@ const PersonalInfoSection = ({
                     backgroundColor: "#FF5C5C",
                     boxShadow: "0 6px 20px rgba(233, 30, 99, 0.4)",
                   },
-                }}
-              >
+                }}>
                 Lưu
               </Button>
             </Form>
@@ -269,10 +252,9 @@ const PersonalInfoSection = ({
           alignItems: "center",
           justifyContent: "center",
           mt: { xs: 4, md: 0 },
-        }}
-      >
+        }}>
         <Avatar
-          src={!isUploading ? (avatar ? avatar?.url : user?.avatar.url ? user?.avatar.url : undefined) : undefined}
+          src={!isUploading ? avatar?.url ?? user?.avatar?.url ?? undefined : undefined}
           sx={{
             width: 140,
             height: 140,
@@ -286,9 +268,8 @@ const PersonalInfoSection = ({
             alignItems: "center",
             justifyContent: "center",
             position: "relative",
-          }}
-        >
-          {isUploading ? <CircularProgress size={48} color="secondary" /> : (!user?.avatar && <Person fontSize="inherit" />)}
+          }}>
+          {isUploading ? <CircularProgress size={48} color="secondary" /> : !user?.avatar && <Person fontSize="inherit" />}
         </Avatar>
         <Button
           variant="outlined"
@@ -303,15 +284,9 @@ const PersonalInfoSection = ({
               borderColor: "#c2185b",
               backgroundColor: "rgba(233, 30, 99, 0.04)",
             },
-          }}
-        >
+          }}>
           Chọn Ảnh
-          <input
-            hidden
-            accept="image/jpeg,image/png"
-            type="file"
-            onChange={handleAvatarChange}
-          />
+          <input hidden accept="image/jpeg,image/png" type="file" onChange={handleAvatarChange} />
         </Button>
         <Typography variant="caption" color="text.secondary" align="center">
           Dung lượng file tối đa 2 MB

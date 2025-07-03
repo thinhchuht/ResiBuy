@@ -30,16 +30,8 @@
             return await query.FirstOrDefaultAsync();
         }
 
-        public async Task<User> CreateUser(RegisterDto registerDto)
+        public async Task<User> CreateCustomerUser(RegisterDto registerDto)
         {
-            var existUser = context.Users.FirstOrDefault(u => u.PhoneNumber == registerDto.PhoneNumber || u.Email == registerDto.Email || u.IdentityNumber == registerDto.IdentityNumber);
-            if (existUser != null)
-            {
-                if (existUser.PhoneNumber == registerDto.PhoneNumber)
-                    throw new CustomException(ExceptionErrorCode.DuplicateValue, "Đã có người sử dụng số điện thoại này.");
-                if (existUser.IdentityNumber == registerDto.IdentityNumber)
-                    throw new CustomException(ExceptionErrorCode.DuplicateValue, "Đã có người sử dụng số CCCD này.");
-            }
             var room = await roomDbService.GetBatchAsync(registerDto.RoomIds);
             if (room == null || !room.Any())
             {

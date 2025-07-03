@@ -1,10 +1,5 @@
 import React from "react";
-import {
-  BrowserRouter as Router,
-  Routes,
-  Route,
-  Navigate,
-} from "react-router-dom";
+import { BrowserRouter as Router, Routes, Route, Navigate } from "react-router-dom";
 import { useAuth } from "../contexts/AuthContext";
 import Login from "../components/auth/Login";
 import ProtectedRoute from "../components/auth/ProtectedRoute";
@@ -76,7 +71,7 @@ const AppRoutes: React.FC = () => {
         <Route
           path="/profile"
           element={
-            <ProtectedRoute allowedRoles={["CUSTOMER"]}>
+            <ProtectedRoute allowedRoles={["CUSTOMER", "ADMIN"]}>
               <HomeLayout>
                 <Profile />
               </HomeLayout>
@@ -144,19 +139,18 @@ const AppRoutes: React.FC = () => {
             </ProtectedRoute>
           }
         /> */
-         <Route path="/admin" element={<AdminLayout />}>
-          <Route index element={<Navigate to="dashboard" replace />} />
+          <Route path="/admin" element={<AdminLayout />}>
+            <Route index element={<Navigate to="dashboard" replace />} />
 
-  <Route path="dashboard" element={<Dashboard />} />
-  <Route path="Shipper" element={<ShippersPage />} />
-  <Route path="Category" element={<CategoriesPage />} />
-  <Route path="Store" element={<StoresPage />} />
-  <Route path="area" element={<AreasPage />} />
-  <Route path="resi" element={<OverviewPage />} />
-  <Route path="buildings/:areaId" element={<BuildingsPage />} />
-  <Route path="rooms/:buildingId" element={<RoomsPage />} />
-</Route>
-
+            <Route path="dashboard" element={<Dashboard />} />
+            <Route path="Shipper" element={<ShippersPage />} />
+            <Route path="Category" element={<CategoriesPage />} />
+            <Route path="Store" element={<StoresPage />} />
+            <Route path="area" element={<AreasPage />} />
+            <Route path="resi" element={<OverviewPage />} />
+            <Route path="buildings/:areaId" element={<BuildingsPage />} />
+            <Route path="rooms/:buildingId" element={<RoomsPage />} />
+          </Route>
         }
         <Route
           path="/seller/*"
