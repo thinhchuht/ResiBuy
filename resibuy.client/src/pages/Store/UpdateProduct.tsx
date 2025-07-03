@@ -60,6 +60,14 @@ interface Classify {
   isEdit: boolean;
 }
 
+interface TempAdditionalData {
+  key: string;
+  value: {
+    text: string;
+    isEdit: boolean;
+  };
+}
+
 // Main component
 export default function CreateProduct() {
   const { id } = useParams<{ id: string }>();
@@ -203,44 +211,53 @@ export default function CreateProduct() {
   // HÀM sinh tổ hợp các thuộc tính
   const generateProductDetail = () => {
     if (classifies.length === 0) {
-      alert("nhập đủ thông tin thêm");
+      alert("Vui lòng nhập thông tin phân loại");
       return;
     }
 
-    let listAdditionalData: AdditionalDataInput[][] = [[]];
+    // Bước 1: Sinh tổ hợp tất cả TempAdditionalData (không lọc isEdit)
+    let combinations: TempAdditionalData[][] = [[]];
 
     classifies.forEach((classify) => {
-      // Lọc ra những giá trị có isEdit === true
-      const editableValues = classify.value.filter((val) => val.isEdit);
-      if (editableValues.length === 0) return; // Bỏ qua nếu không có giá trị nào hợp lệ
-
-      // Nhân chéo các giá trị hợp lệ
-      listAdditionalData = listAdditionalData.flatMap((combination) => {
-        return editableValues.map((val): AdditionalDataInput[] => [
-          ...combination,
-          { key: classify.key, value: val.text } as AdditionalDataInput,
-        ]);
-      });
+      const allValues = classify.value;
+      combinations = combinations.flatMap((combo) =>
+        allValues.map((val) => [
+          ...combo,
+          {
+            key: classify.key,
+            value: val,
+          },
+        ])
+      );
     });
-    addToProductDetail(listAdditionalData);
+
+    // Bước 2: Lọc bỏ tổ hợp mà tất cả value đều có isEdit = false
+    const filteredCombinations = combinations.filter((combo) =>
+      combo.some((item) => item.value.isEdit)
+    );
+
+    // Bước 3: Chuyển sang AdditionalDataInput[][]
+    const finalList: AdditionalDataInput[][] = filteredCombinations.map(
+      (combo) =>
+        combo.map((item) => ({
+          key: item.key,
+          value: item.value.text,
+        }))
+    );
+
+    console.log("Tổ hợp cuối cùng:", finalList);
+    addToProductDetail(finalList);
   };
 
   const addToProductDetail = (listAdditionalData: AdditionalDataInput[][]) => {
-    if (listProductDetail.length === 0) {
-      listAdditionalData.forEach((data) => {
-        const productDetail: ProductDetailInput = {
-          price: 0,
-          weight: 0,
-          isOutOfStock: false,
-          image: { id: "", url: "", thumbUrl: "", name: "" },
-          additionalData: data,
-        };
-        setNewProductDetails((prev) => [...prev, productDetail]);
-      });
-    } else {
-      setNewProductDetails([]);
-      addToProductDetail(listAdditionalData);
-    }
+    const newDetails: ProductDetailInput[] = listAdditionalData.map((data) => ({
+      price: 0,
+      weight: 0,
+      isOutOfStock: false,
+      image: { id: "", url: "", thumbUrl: "", name: "" },
+      additionalData: data,
+    }));
+    setNewProductDetails(newDetails);
   };
 
   function classyfyText(productDetail: ProductDetailInput) {
