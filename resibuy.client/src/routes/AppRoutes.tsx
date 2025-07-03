@@ -27,7 +27,10 @@ import ShippersPage from "../pages/Admin/Shipper/page";
 import Orders from "../pages/Order/Orders";
 import Profile from "../pages/Profile/Profile";
 import Store from "../pages/Store/StorePage";
-
+import AreasPage from "../components/admin/Area/AreasPage";
+import OverviewPage from "../pages/Admin/Resi/page";
+import BuildingsPage from "../components/admin/Building/BuildingPage";
+import RoomsPage from "../components/admin/Room/RoomPage";
 const AppRoutes: React.FC = () => {
   const { user } = useAuth();
 
@@ -141,12 +144,19 @@ const AppRoutes: React.FC = () => {
             </ProtectedRoute>
           }
         /> */
-          <Route path="/admin" element={<AdminLayout />}>
-            <Route path="dashboard" element={<Dashboard />} />
-            <Route path="Shipper" element={<ShippersPage />} />
-            <Route path="Category" element={<CategoriesPage />} />
-            <Route path="Store" element={<StoresPage />} />
-          </Route>
+         <Route path="/admin" element={<AdminLayout />}>
+          <Route index element={<Navigate to="dashboard" replace />} />
+
+  <Route path="dashboard" element={<Dashboard />} />
+  <Route path="Shipper" element={<ShippersPage />} />
+  <Route path="Category" element={<CategoriesPage />} />
+  <Route path="Store" element={<StoresPage />} />
+  <Route path="area" element={<AreasPage />} />
+  <Route path="resi" element={<OverviewPage />} />
+  <Route path="buildings/:areaId" element={<BuildingsPage />} />
+  <Route path="rooms/:buildingId" element={<RoomsPage />} />
+</Route>
+
         }
         <Route
           path="/seller/*"

@@ -88,6 +88,21 @@ namespace ResiBuy.Server.Controllers
                 throw new CustomException(ExceptionErrorCode.RepositoryError, ex.Message);
             }
         }
+        [HttpGet("{id}")]
+        public async Task<IActionResult> GetBuildingById(Guid id)
+        {
+            try
+            {
+                var result = await mediator.Send(new GetBuildingByIdQuery(id));
+                return Ok(result);
+            }
+           
+            catch (Exception ex)
+            {
+                throw new CustomException(ExceptionErrorCode.RepositoryError, ex.Message);
+            }
+        }
+
 
     }
 }

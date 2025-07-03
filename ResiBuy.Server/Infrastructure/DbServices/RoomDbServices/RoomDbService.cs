@@ -226,6 +226,71 @@
                 throw new CustomException(ExceptionErrorCode.RepositoryError, ex.Message);
             }
         }
+        public async Task<PagedResult<Room>> GetRoomsByStatusAsync(bool isActive, int pageNumber, int pageSize)
+        {
+            try
+            {
+                if (pageNumber < 1 || pageSize < 1)
+                    throw new CustomException(ExceptionErrorCode.ValidationFailed, "Số trang và số phần tử phải lớn hơn 0");
+
+                var query = _context.Rooms
+                    .Where(r => r.IsActive == isActive)
+                    .OrderBy(r => r.Name);
+
+                var totalCount = await query.CountAsync();
+                var items = await query
+                    .Skip((pageNumber - 1) * pageSize)
+                    .Take(pageSize)
+                    .ToListAsync();
+
+                return new PagedResult<Room>(items, totalCount, pageNumber, pageSize);
+            }
+            catch (Exception ex)
+            {
+                throw new CustomException(ExceptionErrorCode.RepositoryError, ex.Message);
+            }
+        }
+        public async Task<PagedResult<Room>> GetRoomsByStatusAndBuildingAsync(Guid buildingId, bool isActive, int pageNumber, int pageSize)
+        {
+            try
+            {
+                if (pageNumber < 1 || pageSize < 1)
+                    throw new CustomException(ExceptionErrorCode.ValidationFailed, "Số trang và phần tử phải lớn hơn 0.");
+
+                var query = _context.Rooms
+                    .Where(r => r.BuildingId == buildingId && r.IsActive == isActive)
+                    .OrderBy(r => r.Name);
+
+                var totalCount = await query.CountAsync();
+                var items = await query
+                    .Skip((pageNumber - 1) * pageSize)
+                    .Take(pageSize)
+                    .ToListAsync();
+
+                return new PagedResult<Room>(items, totalCount, pageNumber, pageSize);
+            }
+            catch (Exception ex)
+            {
+                throw new CustomException(ExceptionErrorCode.RepositoryError, ex.Message);
+            }
+        }
+        public async Task<int> CountRoomsByBuildingIdAndStatusAsync(Guid buildingId, bool isActive)
+        {
+            try
+            {
+                if (buildingId == Guid.Empty)
+                    throw new CustomException(ExceptionErrorCode.ValidationFailed, "Id tòa nhà không hợp lệ");
+
+                return await _context.Rooms
+                    .Where(r => r.BuildingId == buildingId && r.IsActive == isActive)
+                    .CountAsync();
+            }
+            catch (Exception ex)
+            {
+                throw new CustomException(ExceptionErrorCode.RepositoryError, ex.Message);
+            }
+        }
 
     }
+
 }

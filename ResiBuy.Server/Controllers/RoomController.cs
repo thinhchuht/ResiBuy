@@ -128,6 +128,63 @@ namespace ResiBuy.Server.Controllers
                 return Ok(result);
           
         }
+        [HttpGet("status")]
+        public async Task<IActionResult> GetRoomsByStatus([FromQuery] bool isActive, [FromQuery] int pageNumber = 1, [FromQuery] int pageSize = 10)
+        {
+            try
+            {
+                var result = await mediator.Send(new GetRoomsByStatusQuery(isActive, pageNumber, pageSize));
+                return Ok(result);
+            }
+            
+            catch (Exception ex)
+            {
+                throw new CustomException(ExceptionErrorCode.RepositoryError, ex.Message);
+            }
+        }
+        [HttpGet("{buildingId}/status")]
+        public async Task<IActionResult> GetRoomsByStatusAndBuilding(Guid buildingId, [FromQuery] bool isActive, [FromQuery] int pageNumber = 1, [FromQuery] int pageSize = 10)
+        {
+            try
+            {
+                var result = await mediator.Send(new GetRoomsByStatusAndBuildingQuery(buildingId, isActive, pageNumber, pageSize));
+                return Ok(result);
+            }
+           
+            catch (Exception ex)
+            {
+                throw new CustomException(ExceptionErrorCode.RepositoryError, ex.Message);
+            }
+        }
+        [HttpGet("count/active/{buildingId}")]
+        public async Task<IActionResult> CountActiveRooms(Guid buildingId)
+        {
+            try
+            {
+                var result = await mediator.Send(new CountActiveRoomsByBuildingIdQuery(buildingId));
+                return Ok(result);
+            }
+          
+            catch (Exception ex)
+            {
+                throw new CustomException(ExceptionErrorCode.RepositoryError, ex.Message);
+            }
+        }
+
+        [HttpGet("count/inactive/{buildingId}")]
+        public async Task<IActionResult> CountInactiveRooms(Guid buildingId)
+        {
+            try
+            {
+                var result = await mediator.Send(new CountInactiveRoomsByBuildingIdQuery(buildingId));
+                return Ok(result);
+            }
+           
+            catch (Exception ex)
+            {
+                throw new CustomException(ExceptionErrorCode.RepositoryError, ex.Message);
+            }
+        }
 
     }
 
