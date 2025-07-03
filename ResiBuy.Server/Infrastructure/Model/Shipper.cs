@@ -5,6 +5,7 @@
         public Guid               Id             { get; set; }
         public string             UserId         { get; set; }
         public bool               IsOnline       { get; set; }
+        public bool               IsShipping     { get; set; } = false;
         public int                ReportCount    { get; set; }
         public float              StartWorkTime  { get; set; }
         public float              EndWorkTime    { get; set; }

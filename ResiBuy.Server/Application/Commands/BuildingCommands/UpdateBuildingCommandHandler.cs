@@ -20,18 +20,11 @@ namespace ResiBuy.Server.Application.Commands.BuildingCommands
                 if (string.IsNullOrWhiteSpace(dto.Name))
                     throw new CustomException(ExceptionErrorCode.ValidationFailed, "Tên là bắt buộc");
 
-                if (dto.AreaId == Guid.Empty)
-                    throw new CustomException(ExceptionErrorCode.ValidationFailed, "Cần Id khu vực");
-
-                var area = await areaDbService.GetByIdAsync(dto.AreaId)
-                    ?? throw new CustomException(ExceptionErrorCode.NotFound, "Khu vực không tồn tại");
-
-                if (!area.IsActive)
-                    throw new CustomException(ExceptionErrorCode.ValidationFailed, "Khu vực không hoạt động");
+                
                 var existingBuilding = await buildingDbService.GetByIdAsync(dto.Id)
                     ?? throw new CustomException(ExceptionErrorCode.NotFound, $"Building với Id {dto.Id} không tồn tại");
                 existingBuilding.Name = dto.Name;
-                existingBuilding.AreaId = dto.AreaId;
+                
                 existingBuilding.IsActive = dto.IsActive;
                 var updatedBuilding = await buildingDbService.UpdateAsync(existingBuilding);
                 return ResponseModel.SuccessResponse(dto);

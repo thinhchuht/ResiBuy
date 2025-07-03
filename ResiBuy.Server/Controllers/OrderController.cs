@@ -1,5 +1,6 @@
 ﻿using ResiBuy.Server.Application.Commands.OrderCommands;
 using ResiBuy.Server.Application.Queries.OrderQueries;
+using ResiBuy.Server.Infrastructure.Model.DTOs.CheckoutDtos;
 using ResiBuy.Server.Infrastructure.Model.DTOs.OrderDtos;
 
 namespace ResiBuy.Server.Controllers

@@ -20,11 +20,12 @@
                     room.Id,
                     room.Name,
                     room.IsActive,
-                    UserRooms = room.UserRooms?.Select(ur => new
-                    {
-                        ur.UserId,
-                        ur.RoomId
-                    })
+                    //UserRooms = room.UserRooms?.Select(ur => new
+                    //{
+                    //    ur.UserId,
+                    //    ur.RoomId
+                    //}
+                    
                 }).Cast<object>().ToList();
 
                 return ResponseModel.SuccessResponse(new PagedResult<object>(

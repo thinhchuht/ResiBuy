@@ -2,6 +2,9 @@ using ResiBuy.Server.Exceptions;
 using ResiBuy.Server.Infrastructure.DbServices.StoreDbServices;
 using ResiBuy.Server.Infrastructure.DbServices.UserDbServices;
 using ResiBuy.Server.Infrastructure.Model;
+using System;
+using System.Threading;
+using System.Threading.Tasks;
 
 namespace ResiBuy.Server.Application.Commands.StoreCommands
 {
@@ -25,7 +28,11 @@ namespace ResiBuy.Server.Application.Commands.StoreCommands
 
         public async Task<ResponseModel> Handle(CreateStoreCommand command, CancellationToken cancellationToken)
         {
-            // Kiểm tra user có tồn tại không
+            // Kiểm tra xem OwnerId có hợp lệ hay không
+            if (string.IsNullOrEmpty(command.OwnerId))
+                throw new CustomException(ExceptionErrorCode.ValidationFailed, "Id người dùng không hợp lệ.");
+
+            // Kiểm tra xem người dùng có tồn tại hay không
             var user = await _userDbService.GetUserById(command.OwnerId);
             if (user == null)
                 throw new CustomException(ExceptionErrorCode.NotFound, "Người dùng không tồn tại");
@@ -49,4 +56,4 @@ namespace ResiBuy.Server.Application.Commands.StoreCommands
             return ResponseModel.SuccessResponse(newstore);
         }
     }
-} 
+}
