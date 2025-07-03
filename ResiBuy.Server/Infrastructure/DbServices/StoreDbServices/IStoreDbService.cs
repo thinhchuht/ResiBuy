@@ -10,5 +10,6 @@ namespace ResiBuy.Server.Infrastructure.DbServices.StoreDbServices
         Task<Store> GetStoreByIdAsync(Guid id);
         Task<IEnumerable<Store>> GetStoreByOwnerIdAsync(string ownerId, int pageNumber = 1, int pageSize = 5);
         Task<Store> UpdateStoreStatusAsync(Guid storeId, bool isLocked, bool isOpen);
+        Task<bool> CheckRoomIsAvailable(Guid roomId);
     }
 }

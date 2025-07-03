@@ -1,12 +1,20 @@
-﻿using ResiBuy.Server.Application.Commands.RoomCommands.DTOs;
+﻿
+
+using ResiBuy.Server.Application.Commands.RoomCommands.DTOs;
 
 namespace ResiBuy.Server.Application.Commands.RoomCommands
 {
     public record UpdateRoomCommand(UpdateRoomDto RoomDto) : IRequest<ResponseModel>;
 
-    public class UpdateRoomCommandHandler(IRoomDbService roomDbService)
-        : IRequestHandler<UpdateRoomCommand, ResponseModel>
+    public class UpdateRoomCommandHandler : IRequestHandler<UpdateRoomCommand, ResponseModel>
     {
+        private readonly IRoomDbService roomDbService;
+
+        public UpdateRoomCommandHandler(IRoomDbService roomDbService)
+        {
+            this.roomDbService = roomDbService;
+        }
+
         public async Task<ResponseModel> Handle(UpdateRoomCommand command, CancellationToken cancellationToken)
         {
             try
@@ -26,11 +34,12 @@ namespace ResiBuy.Server.Application.Commands.RoomCommands
 
                 if (existingRoom == null)
                     throw new CustomException(ExceptionErrorCode.NotFound, $"Không tìm thấy phòng có Id: {dto.Id}");
+
                 existingRoom.UpdateRoom(dto.Name, dto.IsActive);
 
                 var result = await roomDbService.UpdateAsync(existingRoom);
 
-                return ResponseModel.SuccessResponse(result);
+                return ResponseModel.SuccessResponse(dto);
             }
             catch (Exception ex)
             {

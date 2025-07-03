@@ -8,6 +8,7 @@ import {
   Chat,
   Store,
   DeliveryDiningSharp,
+  Apartment ,
 } from "@mui/icons-material";
 
 export const menuItems = [
@@ -18,7 +19,7 @@ export const menuItems = [
    { title: "Shipper", url: "/admin/shipper", icon: DeliveryDiningSharp  },
   { title: "Users", url: "/users", icon: People },
   { title: "Vouchers", url: "/vouchers", icon: ConfirmationNumber },
-  { title: "Messages", url: "/messages", icon: Chat },
+  { title: "Quản lý chung cư", url: "/admin/resi", icon: Apartment },
   { title: "Cửa hàng", url: "/admin/store", icon: Store },
 ];
 export const categoryData = [

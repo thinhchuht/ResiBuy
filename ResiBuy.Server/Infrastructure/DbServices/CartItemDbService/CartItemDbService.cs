@@ -1,3 +1,4 @@
+
 namespace ResiBuy.Server.Infrastructure.DbServices.CartItemDbService
 {
     public class CartItemDbService : BaseDbService<CartItem>, ICartItemDbService
@@ -100,6 +101,20 @@ namespace ResiBuy.Server.Infrastructure.DbServices.CartItemDbService
                  .Where(ci => ci.CartId == cartId)
                  .CountAsync();
             return count;
+        }
+
+        public async Task<IEnumerable<CartItem>> GetBatchCartItemsAsync(List<Guid> ids)
+        {
+            return await _context.CartItems
+                .Where(ci => ids.Contains(ci.Id))
+                .Include(ci => ci.ProductDetail)
+                    .ThenInclude(pd => pd.Image)
+                .Include(ci => ci.ProductDetail)
+                    .ThenInclude(pd => pd.Product)
+                .Include(ci => ci.ProductDetail)
+                    .ThenInclude(pd => pd.AdditionalData)
+                .Include(ci => ci.Cart)
+                .ToListAsync();
         }
     }
 }

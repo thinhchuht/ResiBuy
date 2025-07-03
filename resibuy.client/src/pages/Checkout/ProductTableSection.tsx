@@ -1,8 +1,8 @@
 import { Box, Typography } from "@mui/material";
-import type { CartItem } from "../../types/models";
+import type { TempProductDetailDto } from "../../types/models";
 
 interface ProductTableSectionProps {
-  items: CartItem[];
+  items: TempProductDetailDto[];
   formatPrice: (price: number) => React.ReactNode;
 }
 
@@ -34,24 +34,24 @@ const ProductTableSection = ({ items, formatPrice }: ProductTableSectionProps) =
             boxShadow: "0 1px 4px rgba(0,0,0,0.03)",
           }}>
           <Box sx={{ width: 80, mr: 2 }}>
-            <img src={item.productDetail.image?.thumbUrl || item.productDetail.image?.url} alt={item.productDetail.product.name} style={{ width: "60px", height: "60px", borderRadius: "4px", objectFit: "cover" }} />
+            <img src={item.image?.thumbUrl || item.image?.url} alt={item.name} style={{ width: "60px", height: "60px", borderRadius: "4px", objectFit: "cover" }} />
           </Box>
           <Box sx={{ flex: 2 }}>
             <Typography variant="body1" sx={{ fontWeight: "bold" }}>
-              {item.productDetail.product.name}
+              {item.name}
             </Typography>
             <Typography variant="body2" color="text.secondary">
-              Loại: {item.productDetail.additionalData.map(ad => `${ad.value}`).join(', ')}
+              Loại: {item.additionalDatas?.map((ad) => `${ad.value}`).join(", ")}
             </Typography>
           </Box>
           <Box sx={{ flex: 1, textAlign: "center" }}>
             <Typography variant="body1" sx={{ fontWeight: 500 }}>
-              {item.productDetail.weight}kg
+              {item.weight}kg
             </Typography>
           </Box>
           <Box sx={{ flex: 1, textAlign: "center" }}>
             <Typography variant="body1" sx={{ fontWeight: 500 }}>
-              {formatPrice(item.productDetail.price)}
+              {formatPrice(item.price)}
             </Typography>
           </Box>
           <Box sx={{ flex: 1, textAlign: "center" }}>
@@ -61,7 +61,7 @@ const ProductTableSection = ({ items, formatPrice }: ProductTableSectionProps) =
           </Box>
           <Box sx={{ flex: 1, textAlign: "right" }}>
             <Typography variant="body1" sx={{ fontWeight: "bold", color: "red" }}>
-              {formatPrice(item.productDetail.price * item.quantity)}
+              {formatPrice(item.price * item.quantity)}
             </Typography>
           </Box>
         </Box>

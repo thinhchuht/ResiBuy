@@ -3,6 +3,11 @@ using ResiBuy.Server.Infrastructure.DbServices.AreaDbServices;
 using ResiBuy.Server.Infrastructure.DbServices.ShipperDbServices;
 using ResiBuy.Server.Infrastructure.DbServices.UserDbServices;
 using ResiBuy.Server.Infrastructure.Model;
+using System;
+using System.Collections.Generic;
+using System.ComponentModel.DataAnnotations;
+using System.Threading;
+using System.Threading.Tasks;
 
 namespace ResiBuy.Server.Application.Commands.ShipperCommands
 {
@@ -13,7 +18,9 @@ namespace ResiBuy.Server.Application.Commands.ShipperCommands
         string IdentityNumber,
         DateTime DateOfBirth,
         string FullName,
-        Guid LastLocationId
+        Guid LastLocationId,
+        float StartWorkTime, 
+        float EndWorkTime    
     ) : IRequest<ResponseModel>;
 
     public class CreateShipperCommandHandler : IRequestHandler<CreateShipperCommand, ResponseModel>
@@ -31,19 +38,30 @@ namespace ResiBuy.Server.Application.Commands.ShipperCommands
 
         public async Task<ResponseModel> Handle(CreateShipperCommand command, CancellationToken cancellationToken)
         {
-            // 1. Kiểm tra user đã tồn tại chưa
+
+            if (!Regex.IsMatch(command.PhoneNumber, Constants.PhoneNumberPattern)) throw new CustomException(ExceptionErrorCode.ValidationFailed, "Số điện thoại không hợp lệ");
+            if (!string.IsNullOrEmpty(command.Email) && !Regex.IsMatch(command.Email, Constants.EmailPattern)) throw new CustomException(ExceptionErrorCode.ValidationFailed, "Email không hợp lệ");
+            if (!Regex.IsMatch(command.IdentityNumber, Constants.IndentityNumberPattern)) throw new CustomException(ExceptionErrorCode.ValidationFailed, "Số CCCD/CMND không hợp lệ");
+            await _userDbService.CheckUniqueField(command.PhoneNumber, command.Email, command.IdentityNumber);
+            if (command.DateOfBirth > DateTime.Now)
+                throw new CustomException(ExceptionErrorCode.ValidationFailed, "Ngày sinh phải trước ngày hiện tại.");
+            if (command.LastLocationId == Guid.Empty)
+                throw new CustomException(ExceptionErrorCode.ValidationFailed, "Khu vực không hợp lệ.");
+            if (command.StartWorkTime < 0 || command.StartWorkTime > 24)
+                throw new CustomException(ExceptionErrorCode.ValidationFailed, "Thời gian bắt đầu làm việc phải nằm trong khoảng từ 0 đến 24 giờ.");
+            if (command.EndWorkTime < 0 || command.EndWorkTime > 24)
+                throw new CustomException(ExceptionErrorCode.ValidationFailed, "Thời gian kết thúc làm việc phải nằm trong khoảng từ 0 đến 24 giờ.");
+            // 2. Kiểm tra user đã tồn tại chưa
             var existingUser = await _userDbService.GetUserAsync(null, command.IdentityNumber, command.PhoneNumber, command.Email);
             if (existingUser != null)
                 throw new CustomException(ExceptionErrorCode.DuplicateValue, "Người dùng đã tồn tại với thông tin tương tự (SĐT, Email hoặc CMND/CCCD).");
-
-            // 2. Kiểm tra khu vực (Area) có tồn tại không
+            // 3. Kiểm tra khu vực (Area) có tồn tại không
             var area = await _areaDbService.GetByIdBaseAsync(command.LastLocationId);
             if (area == null)
             {
                 throw new CustomException(ExceptionErrorCode.NotFound, "Khu vực không tồn tại.");
             }
-
-            // 3. Tạo User với role SHIPPER
+            // 4. Tạo User với role SHIPPER
             var user = new User(
                 command.PhoneNumber,
                 command.Email,
@@ -55,16 +73,15 @@ namespace ResiBuy.Server.Application.Commands.ShipperCommands
             user.PasswordHash = CustomPasswordHasher.HashPassword(command.Password);
 
             var createdUser = await _userDbService.CreateAsync(user);
-
-            // 4. Tạo Shipper
+            // 5. Tạo Shipper
             var shipper = new Shipper
             {
                 Id = Guid.Parse(user.Id),
                 UserId = createdUser.Id,
                 IsOnline = false,
                 ReportCount = 0,
-                StartWorkTime = DateTime.Now,
-                EndWorkTime = DateTime.Now,
+                StartWorkTime = 8,
+                EndWorkTime = 18,
                 LastLocationId = command.LastLocationId
             };
 
@@ -73,4 +90,4 @@ namespace ResiBuy.Server.Application.Commands.ShipperCommands
             return ResponseModel.SuccessResponse();
         }
     }
-} 
+}

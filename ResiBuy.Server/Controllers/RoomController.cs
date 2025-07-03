@@ -1,4 +1,6 @@
-﻿namespace ResiBuy.Server.Controllers
+﻿using ResiBuy.Server.Application.Commands.RoomCommands.DTOs;
+
+namespace ResiBuy.Server.Controllers
 {
     [Route("api/[controller]")]
     [ApiController]
@@ -57,11 +59,11 @@
             }
         }
         [HttpPut]
-        public async Task<IActionResult> UpdateAsync([FromBody] UpdateRoomCommand command)
+        public async Task<IActionResult> UpdateAsync([FromBody] UpdateRoomDto dto)
         {
             try
             {
-                var result = await mediator.Send(command);
+                var result = await mediator.Send(new UpdateRoomCommand(dto));
                 return Ok(result);
             }
             catch (Exception ex)
@@ -109,6 +111,81 @@
                 throw new CustomException(ExceptionErrorCode.RepositoryError, ex.Message);
             }
         }
+        [HttpGet("search")]
+        public async Task<IActionResult> SearchRoomsByName([FromQuery] string keyword, [FromQuery] int pageNumber = 1, [FromQuery] int pageSize = 10)
+        {
+            
+                var result = await mediator.Send(new GetRoomsByNameQuery(keyword, pageNumber, pageSize));
+                return Ok(result);
+            
+        }
+
+        [HttpGet("searchrom/building")]
+        public async Task<IActionResult> SearchRoomsByNameAndBuilding([FromQuery] Guid buildingId, [FromQuery] string keyword, [FromQuery] int pageNumber = 1, [FromQuery] int pageSize = 10)
+        {
+         
+                var result = await mediator.Send(new GetRoomsByNameAndBuildingQuery(buildingId, keyword, pageNumber, pageSize));
+                return Ok(result);
+          
+        }
+        [HttpGet("status")]
+        public async Task<IActionResult> GetRoomsByStatus([FromQuery] bool isActive, [FromQuery] int pageNumber = 1, [FromQuery] int pageSize = 10)
+        {
+            try
+            {
+                var result = await mediator.Send(new GetRoomsByStatusQuery(isActive, pageNumber, pageSize));
+                return Ok(result);
+            }
+            
+            catch (Exception ex)
+            {
+                throw new CustomException(ExceptionErrorCode.RepositoryError, ex.Message);
+            }
+        }
+        [HttpGet("{buildingId}/status")]
+        public async Task<IActionResult> GetRoomsByStatusAndBuilding(Guid buildingId, [FromQuery] bool isActive, [FromQuery] int pageNumber = 1, [FromQuery] int pageSize = 10)
+        {
+            try
+            {
+                var result = await mediator.Send(new GetRoomsByStatusAndBuildingQuery(buildingId, isActive, pageNumber, pageSize));
+                return Ok(result);
+            }
+           
+            catch (Exception ex)
+            {
+                throw new CustomException(ExceptionErrorCode.RepositoryError, ex.Message);
+            }
+        }
+        [HttpGet("count/active/{buildingId}")]
+        public async Task<IActionResult> CountActiveRooms(Guid buildingId)
+        {
+            try
+            {
+                var result = await mediator.Send(new CountActiveRoomsByBuildingIdQuery(buildingId));
+                return Ok(result);
+            }
+          
+            catch (Exception ex)
+            {
+                throw new CustomException(ExceptionErrorCode.RepositoryError, ex.Message);
+            }
+        }
+
+        [HttpGet("count/inactive/{buildingId}")]
+        public async Task<IActionResult> CountInactiveRooms(Guid buildingId)
+        {
+            try
+            {
+                var result = await mediator.Send(new CountInactiveRoomsByBuildingIdQuery(buildingId));
+                return Ok(result);
+            }
+           
+            catch (Exception ex)
+            {
+                throw new CustomException(ExceptionErrorCode.RepositoryError, ex.Message);
+            }
+        }
 
     }
+
 }

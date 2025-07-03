@@ -4,10 +4,10 @@ import axiosClient from "./base.api";
 export interface CheckoutRequest {
   userId: string;
   grandTotal: number;
-  addressId : string;
+  addressId: string;
   paymentMethod: string;
   orders: OrderRequest[];
-  isInstance? : boolean
+  isInstance?: boolean;
 }
 
 export interface OrderRequest {
@@ -34,9 +34,9 @@ export interface SessionStatistics {
 
 const vnPayUrl = "/api/vnpay";
 const vnPayApi = {
-  getPaymentUrl: async (checkoutRequest : CheckoutRequest) => {
+  getPaymentUrl: async (userId: string, checkoutId: string) => {
     try {
-      const response = await axiosClient.post(vnPayUrl + "/create-payment", checkoutRequest);
+      const response = await axiosClient.post(`${vnPayUrl}/create-payment?userId=${userId}&checkoutId=${checkoutId}`);
       return { success: true, data: response.data };
     } catch (error: any) {
       console.error("Createpayment failed:", error);
