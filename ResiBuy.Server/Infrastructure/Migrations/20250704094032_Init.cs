@@ -17,7 +17,9 @@ namespace ResiBuy.Server.Infrastructure.Migrations
                 {
                     Id = table.Column<Guid>(type: "uniqueidentifier", nullable: false),
                     Name = table.Column<string>(type: "nvarchar(max)", nullable: true),
-                    IsActive = table.Column<bool>(type: "bit", nullable: false)
+                    IsActive = table.Column<bool>(type: "bit", nullable: false),
+                    Latitude = table.Column<double>(type: "float", nullable: false),
+                    Longitude = table.Column<double>(type: "float", nullable: false)
                 },
                 constraints: table =>
                 {
@@ -186,8 +188,7 @@ namespace ResiBuy.Server.Infrastructure.Migrations
                     ReportCount = table.Column<int>(type: "int", nullable: false),
                     CreatedAt = table.Column<DateTime>(type: "datetime2", nullable: false),
                     OwnerId = table.Column<string>(type: "nvarchar(450)", nullable: true),
-                    RoomId = table.Column<Guid>(type: "uniqueidentifier", nullable: false),
-                    RoomId1 = table.Column<Guid>(type: "uniqueidentifier", nullable: true)
+                    RoomId = table.Column<Guid>(type: "uniqueidentifier", nullable: false)
                 },
                 constraints: table =>
                 {
@@ -197,12 +198,7 @@ namespace ResiBuy.Server.Infrastructure.Migrations
                         column: x => x.RoomId,
                         principalTable: "Rooms",
                         principalColumn: "Id",
-                        onDelete: ReferentialAction.Restrict);
-                    table.ForeignKey(
-                        name: "FK_Stores_Rooms_RoomId1",
-                        column: x => x.RoomId1,
-                        principalTable: "Rooms",
-                        principalColumn: "Id");
+                        onDelete: ReferentialAction.Cascade);
                     table.ForeignKey(
                         name: "FK_Stores_Users_OwnerId",
                         column: x => x.OwnerId,
@@ -530,7 +526,7 @@ namespace ResiBuy.Server.Infrastructure.Migrations
             migrationBuilder.InsertData(
                 table: "Users",
                 columns: new[] { "Id", "AvatarId", "CreatedAt", "DateOfBirth", "Email", "EmailConfirmed", "FullName", "IdentityNumber", "IsLocked", "PasswordHash", "PhoneNumber", "PhoneNumberConfirmed", "Roles", "UpdatedAt" },
-                values: new object[] { "adm_df", null, new DateTime(2025, 7, 2, 22, 35, 53, 298, DateTimeKind.Local).AddTicks(5406), new DateTime(1990, 1, 1, 0, 0, 0, 0, DateTimeKind.Unspecified), "admin@123", true, "Administrator", "admin", false, "$2a$11$MoRxgspjGegFEZin/iKg2u602uivuNFpwanQIYGKvb0Q.y7pZ2hhO", "admin", true, "[\"ADMIN\"]", new DateTime(2025, 7, 2, 22, 35, 53, 298, DateTimeKind.Local).AddTicks(5428) });
+                values: new object[] { "adm_df", null, new DateTime(2025, 7, 4, 16, 40, 32, 616, DateTimeKind.Local).AddTicks(6818), new DateTime(1990, 1, 1, 0, 0, 0, 0, DateTimeKind.Unspecified), "admin@123", true, "Administrator", "admin", false, "$2a$11$f12JVdhsiatw5D53d/qdZe6q.vY5CWhM5/VJOeRj8osgh0GKddZA6", "admin", true, "[\"ADMIN\"]", new DateTime(2025, 7, 4, 16, 40, 32, 616, DateTimeKind.Local).AddTicks(6837) });
 
             migrationBuilder.CreateIndex(
                 name: "IX_AdditionalDatas_ProductDetailId",
@@ -671,11 +667,6 @@ namespace ResiBuy.Server.Infrastructure.Migrations
                 name: "IX_Stores_RoomId",
                 table: "Stores",
                 column: "RoomId");
-
-            migrationBuilder.CreateIndex(
-                name: "IX_Stores_RoomId1",
-                table: "Stores",
-                column: "RoomId1");
 
             migrationBuilder.CreateIndex(
                 name: "IX_UserRooms_RoomId",
