@@ -18,7 +18,7 @@ namespace ResiBuy.Server.Infrastructure.DbServices.StoreDbServices
                 var totalCount = await query.CountAsync();
                 var items = await query
                     .OrderBy(s => s.Id)
-                    .Skip((pageNumber-1)*pageSize)
+                    .Skip((pageNumber - 1) * pageSize)
                     .Take(pageSize)
                     .ToListAsync();
                 return new PagedResult<Store>

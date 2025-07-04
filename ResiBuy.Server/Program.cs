@@ -1,5 +1,6 @@
 ﻿using ResiBuy.Server.Infrastructure.DbServices.VoucherDbServices;
 using ResiBuy.Server.Services.RedisServices;
+using ResiBuy.Server.Services.ShippingCost;
 using ResiBuy.Server.Services.SMSServices;
 
 var builder = WebApplication.CreateBuilder(args);
