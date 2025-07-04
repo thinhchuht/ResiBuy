@@ -22,6 +22,8 @@ export interface UserCreatedData {
 
   export interface OrderStatusChangedData {
     id: string
+    storeId: string
+    storeName: string
     orderStatus : string
     oldOrderStatus : string
     paymentStatus : string

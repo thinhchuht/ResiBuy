@@ -1,5 +1,5 @@
 import { Avatar, Box, List, ListItem, ListItemButton, ListItemIcon, ListItemText, Paper, Typography } from "@mui/material";
-import { Person, Lock, Security } from "@mui/icons-material";
+import { Person, Lock, Security, LocalShipping, Store } from "@mui/icons-material";
 import type { User } from "../../types/models";
 
 interface ProfileSidebarProps {
@@ -103,6 +103,7 @@ const ProfileSidebar = ({ user, selected, setSelected }: ProfileSidebarProps) =>
             onClick={() => setSelected(2)}
             sx={{
               borderRadius: 2,
+              mb: 1,
               "&.Mui-selected": {
                 backgroundColor: "rgba(233, 30, 99, 0.08)",
                 "&:hover": {
@@ -122,6 +123,62 @@ const ProfileSidebar = ({ user, selected, setSelected }: ProfileSidebarProps) =>
             />
           </ListItemButton>
         </ListItem>
+        {user?.roles?.includes("SHIPPER") && (
+          <ListItem disablePadding>
+            <ListItemButton
+              selected={selected === 3}
+              onClick={() => setSelected(3)}
+              sx={{
+                borderRadius: 2,
+                mb: 1,
+                "&.Mui-selected": {
+                  backgroundColor: "rgba(233, 30, 99, 0.08)",
+                  "&:hover": {
+                    backgroundColor: "rgba(233, 30, 99, 0.12)",
+                  },
+                },
+              }}>
+              <ListItemIcon sx={{ minWidth: 40 }}>
+                <LocalShipping sx={{ color: selected === 3 ? "#e91e63" : "inherit" }} />
+              </ListItemIcon>
+              <ListItemText
+                primary="Tài khoản giao hàng"
+                primaryTypographyProps={{
+                  fontWeight: selected === 3 ? 600 : 400,
+                  color: selected === 3 ? "#e91e63" : "inherit",
+                }}
+              />
+            </ListItemButton>
+          </ListItem>
+        )}
+        {user?.roles?.includes("SELLER") && (
+          <ListItem disablePadding>
+            <ListItemButton
+              selected={selected === 4}
+              onClick={() => setSelected(4)}
+              sx={{
+                borderRadius: 2,
+                mb: 1,
+                "&.Mui-selected": {
+                  backgroundColor: "rgba(233, 30, 99, 0.08)",
+                  "&:hover": {
+                    backgroundColor: "rgba(233, 30, 99, 0.12)",
+                  },
+                },
+              }}>
+              <ListItemIcon sx={{ minWidth: 40 }}>
+                <Store sx={{ color: selected === 4 ? "#e91e63" : "inherit" }} />
+              </ListItemIcon>
+              <ListItemText
+                primary="Cửa hàng của bạn"
+                primaryTypographyProps={{
+                  fontWeight: selected === 4 ? 600 : 400,
+                  color: selected === 4 ? "#e91e63" : "inherit",
+                }}
+              />
+            </ListItemButton>
+          </ListItem>
+        )}
       </List>
     </Paper>
   );

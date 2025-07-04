@@ -37,7 +37,7 @@
             {
                 throw new CustomException(ExceptionErrorCode.CreateFailed, "Phòng không tồn tại");
             }
-            var user = new User(registerDto.PhoneNumber, registerDto.Email, registerDto.IdentityNumber, registerDto.DateOfBirth, registerDto.FullName, registerDto.Roles);
+            var user = new User(registerDto.PhoneNumber, registerDto.Email, registerDto.IdentityNumber, registerDto.DateOfBirth, registerDto.FullName, [Constants.CustomerRole]);
             user.Cart = new Cart(user.Id);
             user.UserRooms = registerDto.RoomIds.Select(r => new UserRoom(user.Id, r)).ToList();
             user.PasswordHash = CustomPasswordHasher.HashPassword(registerDto.Password);

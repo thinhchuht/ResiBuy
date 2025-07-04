@@ -110,198 +110,205 @@ const PersonalInfoSection = ({ isAdmin, formatDate, maskMiddle }: PersonalInfoSe
   };
 
   return (
-    <Box sx={{ display: { xs: "block", md: "flex" }, gap: 4 }}>
-      <Box sx={{ flex: 1, minWidth: 0 }}>
-        <Formik initialValues={initialValues} validationSchema={validationSchema} onSubmit={handleSubmit} enableReinitialize>
-          {({ errors, touched, values, handleChange, handleBlur }) => (
-            <Form>
-              <Box mb={3}>
-                <Typography variant="subtitle2" color="text.secondary" mb={0.5}>
-                  ID
-                </Typography>
-                <Typography variant="body1" fontWeight={500}>
-                  {user?.id || "-"}
-                </Typography>
-              </Box>
-              <Box mb={3}>
-                <Typography variant="subtitle2" color="text.secondary" mb={0.5}>
-                  Họ và tên
-                </Typography>
-                <Typography variant="body1" fontWeight={500}>
-                  {user?.fullName || "-"}
-                </Typography>
-              </Box>
-              <Field
-                as={TextField}
-                name="email"
-                label="Email"
-                variant="outlined"
-                fullWidth
-                value={values.email}
-                onChange={handleChange}
-                onBlur={handleBlur}
-                error={touched.email && Boolean(errors.email)}
-                helperText={touched.email && errors.email}
-                disabled={isAdmin}
-                sx={{
-                  mb: 3,
-                  "& .MuiOutlinedInput-root": {
-                    borderRadius: 2,
-                    "&:hover fieldset": {
-                      borderColor: "#e91e63",
-                    },
-                  },
-                }}
-              />
-              <Box mb={3}>
-                <Typography variant="subtitle2" color="text.secondary" mb={0.5}>
-                  Số điện thoại
-                </Typography>
-                <Typography variant="body1" fontWeight={500}>
-                  {maskMiddle(user?.phoneNumber) || "-"}
-                </Typography>
-              </Box>
-              <Box mb={3}>
-                <Typography variant="subtitle2" color="text.secondary" mb={0.5}>
-                  CCCD/CMND
-                </Typography>
-                <Typography variant="body1" fontWeight={500}>
-                  {maskMiddle(user?.identityNumber) || "-"}
-                </Typography>
-              </Box>
-              <Field
-                as={TextField}
-                name="dateOfBirth"
-                label="Ngày sinh"
-                type="date"
-                variant="outlined"
-                fullWidth
-                value={values.dateOfBirth}
-                onChange={handleChange}
-                onBlur={handleBlur}
-                error={touched.dateOfBirth && Boolean(errors.dateOfBirth)}
-                helperText={touched.dateOfBirth && errors.dateOfBirth}
-                disabled={isAdmin}
-                sx={{
-                  mb: 3,
-                  "& .MuiOutlinedInput-root": {
-                    borderRadius: 2,
-                    "&:hover fieldset": {
-                      borderColor: "#e91e63",
-                    },
-                  },
-                }}
-                InputLabelProps={{ shrink: true }}
-              />
-              {user?.rooms && user.rooms.length > 0 && (
-                <Box mb={3}>
-                  <Typography variant="subtitle2" color="text.secondary" mb={0.5}>
-                    Địa chỉ
-                  </Typography>
-                  {user.rooms.map((room, index) => (
-                    <Typography key={room.id} variant="body1" fontWeight={500}>
-                      Phòng {index + 1} : {`${room.name} - ${room.buildingName} - ${room.areaName}`}
-                    </Typography>
-                  ))}
-                </Box>
-              )}
-              <Box mb={3}>
-                <Typography variant="subtitle2" color="text.secondary" mb={0.5}>
-                  Ngày tạo tài khoản
-                </Typography>
-                <Typography variant="body1" fontWeight={500}>
-                  {formatDate(user?.createdAt)}
-                </Typography>
-              </Box>
-              <Box mb={3}>
-                <Typography variant="subtitle2" color="text.secondary" mb={0.5}>
-                  Ngày cập nhật
-                </Typography>
-                <Typography variant="body1" fontWeight={500}>
-                  {formatDate(user?.updatedAt)}
-                </Typography>
-              </Box>
-              <Button
-                type="submit"
-                variant="contained"
-                disabled={isAdmin}
-                sx={{
-                  mt: 2,
-                  px: 5,
-                  py: 1.5,
-                  fontWeight: 600,
-                  borderRadius: 2,
-                  backgroundColor: "#FF6B6B",
-                  boxShadow: "0 3px 12px rgba(233, 30, 99, 0.3)",
-                  "&:hover": {
-                    backgroundColor: "#FF5C5C",
-                    boxShadow: "0 6px 20px rgba(233, 30, 99, 0.4)",
-                  },
-                }}>
-                Lưu
-              </Button>
-            </Form>
-          )}
-        </Formik>
-      </Box>
-      <Box
-        sx={{
-          minWidth: 180,
-          display: "flex",
-          flexDirection: "column",
-          alignItems: "center",
-          justifyContent: "center",
-          mt: { xs: 4, md: 0 },
-        }}>
-        <Avatar
-          src={!isUploading ? avatar?.url ?? user?.avatar?.url ?? undefined : undefined}
-          sx={{
-            width: 140,
-            height: 140,
-            mb: 2,
-            bgcolor: "#fce4ec",
-            color: "#e91e63",
-            fontSize: 64,
-            border: "4px solid #fce4ec",
-            boxShadow: "0 4px 12px rgba(233, 30, 99, 0.2)",
-            display: "flex",
-            alignItems: "center",
-            justifyContent: "center",
-            position: "relative",
-          }}>
-          {isUploading ? <CircularProgress size={48} color="secondary" /> : !user?.avatar && <Person fontSize="inherit" />}
-        </Avatar>
-        <Button
-          variant="outlined"
-          component="label"
-          disabled={isAdmin}
-          sx={{
-            mb: 1,
-            borderRadius: 2,
-            borderColor: "#e91e63",
-            color: "#e91e63",
-            "&:hover": {
-              borderColor: "#c2185b",
-              backgroundColor: "rgba(233, 30, 99, 0.04)",
-            },
-          }}>
-          Chọn Ảnh
-          <input hidden accept="image/jpeg,image/png" type="file" onChange={handleAvatarChange} />
-        </Button>
-        <Typography variant="caption" color="text.secondary" align="center">
-          Dung lượng file tối đa 2 MB
-          <br />
-          Định dạng: JPEG, PNG
+    <Box>
+      <Box sx={{ borderBottom: '1px solid #f8bbd0', mb: 3, pb: 1 }}>
+        <Typography variant="h6" fontWeight={700} color="#e91e63" sx={{ textAlign: 'left' }}>
+          Thông tin cá nhân
         </Typography>
       </Box>
-      <ConfirmCodeModal
-        open={openConfirmModal}
-        onClose={() => setOpenConfirmModal(false)}
-        onSubmit={handleConfirmCodeSubmit}
-        isSubmitting={isSubmittingCode}
-        code={confirmCode}
-        setCode={setConfirmCode}
-      />
+      <Box sx={{ display: { xs: "block", md: "flex" }, gap: 4 }}>
+        <Box sx={{ flex: 1, minWidth: 0 }}>
+          <Formik initialValues={initialValues} validationSchema={validationSchema} onSubmit={handleSubmit} enableReinitialize>
+            {({ errors, touched, values, handleChange, handleBlur }) => (
+              <Form>
+                <Box mb={3}>
+                  <Typography variant="subtitle2" color="text.secondary" mb={0.5}>
+                    ID
+                  </Typography>
+                  <Typography variant="body1" fontWeight={500}>
+                    {user?.id || "-"}
+                  </Typography>
+                </Box>
+                <Box mb={3}>
+                  <Typography variant="subtitle2" color="text.secondary" mb={0.5}>
+                    Họ và tên
+                  </Typography>
+                  <Typography variant="body1" fontWeight={500}>
+                    {user?.fullName || "-"}
+                  </Typography>
+                </Box>
+                <Field
+                  as={TextField}
+                  name="email"
+                  label="Email"
+                  variant="outlined"
+                  fullWidth
+                  value={values.email}
+                  onChange={handleChange}
+                  onBlur={handleBlur}
+                  error={touched.email && Boolean(errors.email)}
+                  helperText={touched.email && errors.email}
+                  disabled={isAdmin}
+                  sx={{
+                    mb: 3,
+                    "& .MuiOutlinedInput-root": {
+                      borderRadius: 2,
+                      "&:hover fieldset": {
+                        borderColor: "#e91e63",
+                      },
+                    },
+                  }}
+                />
+                <Box mb={3}>
+                  <Typography variant="subtitle2" color="text.secondary" mb={0.5}>
+                    Số điện thoại
+                  </Typography>
+                  <Typography variant="body1" fontWeight={500}>
+                    {maskMiddle(user?.phoneNumber) || "-"}
+                  </Typography>
+                </Box>
+                <Box mb={3}>
+                  <Typography variant="subtitle2" color="text.secondary" mb={0.5}>
+                    CCCD/CMND
+                  </Typography>
+                  <Typography variant="body1" fontWeight={500}>
+                    {maskMiddle(user?.identityNumber) || "-"}
+                  </Typography>
+                </Box>
+                <Field
+                  as={TextField}
+                  name="dateOfBirth"
+                  label="Ngày sinh"
+                  type="date"
+                  variant="outlined"
+                  fullWidth
+                  value={values.dateOfBirth}
+                  onChange={handleChange}
+                  onBlur={handleBlur}
+                  error={touched.dateOfBirth && Boolean(errors.dateOfBirth)}
+                  helperText={touched.dateOfBirth && errors.dateOfBirth}
+                  disabled={isAdmin}
+                  sx={{
+                    mb: 3,
+                    "& .MuiOutlinedInput-root": {
+                      borderRadius: 2,
+                      "&:hover fieldset": {
+                        borderColor: "#e91e63",
+                      },
+                    },
+                  }}
+                  InputLabelProps={{ shrink: true }}
+                />
+                {user?.rooms && user.rooms.length > 0 && (
+                  <Box mb={3}>
+                    <Typography variant="subtitle2" color="text.secondary" mb={0.5}>
+                      Địa chỉ
+                    </Typography>
+                    {user.rooms.map((room, index) => (
+                      <Typography key={room.id} variant="body1" fontWeight={500}>
+                        Phòng {index + 1} : {`${room.name} - ${room.buildingName} - ${room.areaName}`}
+                      </Typography>
+                    ))}
+                  </Box>
+                )}
+                <Box mb={3}>
+                  <Typography variant="subtitle2" color="text.secondary" mb={0.5}>
+                    Ngày tạo tài khoản
+                  </Typography>
+                  <Typography variant="body1" fontWeight={500}>
+                    {formatDate(user?.createdAt)}
+                  </Typography>
+                </Box>
+                <Box mb={3}>
+                  <Typography variant="subtitle2" color="text.secondary" mb={0.5}>
+                    Ngày cập nhật
+                  </Typography>
+                  <Typography variant="body1" fontWeight={500}>
+                    {formatDate(user?.updatedAt)}
+                  </Typography>
+                </Box>
+                <Button
+                  type="submit"
+                  variant="contained"
+                  disabled={isAdmin}
+                  sx={{
+                    mt: 2,
+                    px: 5,
+                    py: 1.5,
+                    fontWeight: 600,
+                    borderRadius: 2,
+                    backgroundColor: "#FF6B6B",
+                    boxShadow: "0 3px 12px rgba(233, 30, 99, 0.3)",
+                    "&:hover": {
+                      backgroundColor: "#FF5C5C",
+                      boxShadow: "0 6px 20px rgba(233, 30, 99, 0.4)",
+                    },
+                  }}>
+                  Lưu
+                </Button>
+              </Form>
+            )}
+          </Formik>
+        </Box>
+        <Box
+          sx={{
+            minWidth: 180,
+            display: "flex",
+            flexDirection: "column",
+            alignItems: "center",
+            justifyContent: "center",
+            mt: { xs: 4, md: 0 },
+          }}>
+          <Avatar
+            src={!isUploading ? avatar?.url ?? user?.avatar?.url ?? undefined : undefined}
+            sx={{
+              width: 140,
+              height: 140,
+              mb: 2,
+              bgcolor: "#fce4ec",
+              color: "#e91e63",
+              fontSize: 64,
+              border: "4px solid #fce4ec",
+              boxShadow: "0 4px 12px rgba(233, 30, 99, 0.2)",
+              display: "flex",
+              alignItems: "center",
+              justifyContent: "center",
+              position: "relative",
+            }}>
+            {isUploading ? <CircularProgress size={48} color="secondary" /> : !user?.avatar && <Person fontSize="inherit" />}
+          </Avatar>
+          <Button
+            variant="outlined"
+            component="label"
+            disabled={isAdmin}
+            sx={{
+              mb: 1,
+              borderRadius: 2,
+              borderColor: "#e91e63",
+              color: "#e91e63",
+              "&:hover": {
+                borderColor: "#c2185b",
+                backgroundColor: "rgba(233, 30, 99, 0.04)",
+              },
+            }}>
+            Chọn Ảnh
+            <input hidden accept="image/jpeg,image/png" type="file" onChange={handleAvatarChange} />
+          </Button>
+          <Typography variant="caption" color="text.secondary" align="center">
+            Dung lượng file tối đa 2 MB
+            <br />
+            Định dạng: JPEG, PNG
+          </Typography>
+        </Box>
+        <ConfirmCodeModal
+          open={openConfirmModal}
+          onClose={() => setOpenConfirmModal(false)}
+          onSubmit={handleConfirmCodeSubmit}
+          isSubmitting={isSubmittingCode}
+          code={confirmCode}
+          setCode={setConfirmCode}
+        />
+      </Box>
     </Box>
   );
 };

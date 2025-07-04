@@ -9,6 +9,7 @@ namespace ResiBuy.Server.Application.Commands.OrderCommands
     public record CreateOrderCommand(CheckoutDto CheckoutDto) : IRequest<ResponseModel>;
     public class CreateOrderCommandHandler(IUserDbService userDbService, IOrderDbService orderDbService, IRoomDbService roomDbService,
         IVoucherDbService voucherDbService, ICartDbService cartDbService, ICartItemDbService cartItemDbService,
+        IStoreDbService storeDbService,
         IMailBaseService mailBaseService, INotificationService notificationService
         ) : IRequestHandler<CreateOrderCommand, ResponseModel>
     {
@@ -52,8 +53,9 @@ namespace ResiBuy.Server.Application.Commands.OrderCommands
              await cartItemDbService.DeleteBatchByProductDetailIdAsync(cart.Id , createdOrders.SelectMany(o => o.Items).Select(ci => ci.ProductDetailId));
             foreach (var order in createdOrders)
             {
-                var notiUserIds = new List<string> { order.StoreId.ToString(), user.Id };
-                notificationService.SendNotification("OrderCreated",  new OrderStatusChangedDto(order.Id, order.Status, order.Status, order.PaymentStatus, order.CreateAt), "", notiUserIds);
+                var store = await storeDbService.GetByIdBaseAsync(order.StoreId);
+                var notiUserIds = new List<string> { store.OwnerId, user.Id };
+                notificationService.SendNotification("OrderCreated",  new OrderStatusChangedDto(order.Id, order.StoreId, store.Name, order.Status, order.Status, order.PaymentStatus, order.CreateAt), "", notiUserIds);
             }
             //mailBaseService.SendEmailAsync(user.Email, "Hóa đơn thanh toán đơn hà ResiBuy",);
             return ResponseModel.SuccessResponse();

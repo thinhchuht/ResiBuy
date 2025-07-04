@@ -61,7 +61,7 @@ namespace ResiBuy.Server.Application.Commands.ShipperCommands
                 command.IdentityNumber,
                 command.DateOfBirth,
                 command.FullName,
-                new List<string> { "SHIPPER" }
+                new List<string> { Constants.ShipperRole }
             );
             user.PasswordHash = CustomPasswordHasher.HashPassword(string.IsNullOrEmpty(command.Password) ? Constants.DefaulAccountPassword: command.Password);
 
