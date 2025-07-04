@@ -82,12 +82,11 @@ namespace ResiBuy.Server.Controllers
                 var result = await mediator.Send(new GetAreaByIdQuery(id));
                 return Ok(result);
             }
-           
+
             catch (Exception ex)
             {
                 throw new CustomException(ExceptionErrorCode.RepositoryError, ex.Message);
             }
         }
-
     }
 }

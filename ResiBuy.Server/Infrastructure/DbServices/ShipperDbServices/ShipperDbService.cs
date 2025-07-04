@@ -2,16 +2,19 @@ using Microsoft.EntityFrameworkCore;
 using ResiBuy.Server.Exceptions;
 using ResiBuy.Server.Infrastructure.DbServices.BaseDbServices;
 using ResiBuy.Server.Infrastructure.Filter;
+using ResiBuy.Server.Services.ShippingCost;
 
 namespace ResiBuy.Server.Infrastructure.DbServices.ShipperDbServices
 {
     public class ShipperDbService : BaseDbService<Shipper>, IShipperDbService
     {
         private readonly ResiBuyContext _context;
+        private readonly GoogleDistanceService _googleDistanceService;
 
-        public ShipperDbService(ResiBuyContext context) : base(context)
+        public ShipperDbService(ResiBuyContext context, GoogleDistanceService googleDistanceService) : base(context)
         {
             _context = context;
+            _googleDistanceService = googleDistanceService;
         }
 
         public async Task<PagedResult<Shipper>> GetAllShippersAsync(int pageNumber = 1, int pageSize = 5)
@@ -42,7 +45,22 @@ namespace ResiBuy.Server.Infrastructure.DbServices.ShipperDbServices
             }
         }
 
-
+        public Task<double> GetDistance(Guid curentAreaId, Guid destinationAreaId)
+        {
+            try
+            {
+                var currentArea = _context.Areas.Find(curentAreaId);
+                var destinationArea = _context.Areas.Find(destinationAreaId);
+                if (currentArea == null || destinationArea == null)
+                    throw new CustomException(ExceptionErrorCode.NotFound, "Khu vực không tồn tại");
+                // Giả sử bạn có một phương thức tính khoảng cách giữa hai khu vực
+                return _googleDistanceService.GetDistanceInMetersAsync(currentArea.Latitude,currentArea.Longitude,destinationArea.Latitude,destinationArea.Longitude);
+            }
+            catch (Exception ex)
+            {
+                throw new CustomException(ExceptionErrorCode.RepositoryError, ex.Message);
+            }
+        }
 
         public async Task<Shipper> GetShipperByIdAsync(Guid id)
         {
