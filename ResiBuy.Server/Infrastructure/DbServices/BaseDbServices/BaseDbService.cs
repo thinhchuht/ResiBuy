@@ -1,4 +1,6 @@
-﻿namespace ResiBuy.Server.Infrastructure.DbServices.BaseDbServices
+﻿using Microsoft.EntityFrameworkCore.Storage;
+
+namespace ResiBuy.Server.Infrastructure.DbServices.BaseDbServices
 {
     public class BaseDbService<T>(ResiBuyContext context) : IBaseDbService<T> where T : class
     {
@@ -119,6 +121,85 @@
             {
                 throw new CustomException(ExceptionErrorCode.RepositoryError, ex.Message);
             }
+        }
+
+        public async Task<IDbContextTransaction> BeginTransactionAsync()
+        {
+            return await context.Database.BeginTransactionAsync();
+        }
+
+        public virtual async Task<T> CreateTransactionAsync(T entity)
+        {
+            try
+            {
+                await _dbSet.AddAsync(entity);
+                return entity;
+            }
+            catch (Exception ex)
+            {
+                throw new CustomException(ExceptionErrorCode.RepositoryError, ex.Message);
+            }
+        }
+
+        public virtual async Task<IEnumerable<T>> CreateBatchTransactionAsync(IEnumerable<T> entities)
+        {
+            try
+            {
+                await _dbSet.AddRangeAsync(entities);
+                return entities;
+            }
+            catch (Exception ex)
+            {
+                throw new CustomException(ExceptionErrorCode.RepositoryError, ex.Message);
+            }
+        }
+
+        public virtual async Task<T> UpdateTransactionAsync(T entity)
+        {
+            try
+            {
+                _dbSet.Update(entity);
+                return entity;
+            }
+            catch (Exception ex)
+            {
+                throw new CustomException(ExceptionErrorCode.RepositoryError, ex.Message);
+            }
+        }
+
+        public virtual async Task<T> DeleteTransactionAsync(Guid id)
+        {
+            try
+            {
+                var entity = await GetByIdBaseAsync(id); // nếu không tìm thấy sẽ tự throw NotFound
+                _dbSet.Remove(entity);
+                return entity;
+            }
+            catch (CustomException)
+            {
+                throw; // giữ nguyên lỗi NotFound hoặc RepositoryError
+            }
+            catch (Exception ex)
+            {
+                throw new CustomException(ExceptionErrorCode.RepositoryError, ex.Message);
+            }
+        }
+
+        public async Task<IEnumerable<T>> UpdateTransactionBatch(IEnumerable<T> entities)
+        {
+            try
+            {
+                _dbSet.UpdateRange(entities);
+                return entities;
+            }
+            catch (Exception ex)
+            {
+                throw new CustomException(ExceptionErrorCode.RepositoryError, ex.Message);
+            }
+        }
+        public async Task<int> SaveChangesAsync()
+        {
+            return await context.SaveChangesAsync();
         }
     }
 }

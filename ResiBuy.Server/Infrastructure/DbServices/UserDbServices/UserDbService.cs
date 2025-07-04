@@ -30,22 +30,14 @@
             return await query.FirstOrDefaultAsync();
         }
 
-        public async Task<User> CreateUser(RegisterDto registerDto)
+        public async Task<User> CreateCustomerUser(RegisterDto registerDto)
         {
-            var existUser = context.Users.FirstOrDefault(u => u.PhoneNumber == registerDto.PhoneNumber || u.Email == registerDto.Email || u.IdentityNumber == registerDto.IdentityNumber);
-            if (existUser != null)
-            {
-                if (existUser.PhoneNumber == registerDto.PhoneNumber)
-                    throw new CustomException(ExceptionErrorCode.DuplicateValue, "Đã có người sử dụng số điện thoại này.");
-                if (existUser.IdentityNumber == registerDto.IdentityNumber)
-                    throw new CustomException(ExceptionErrorCode.DuplicateValue, "Đã có người sử dụng số CCCD này.");
-            }
             var room = await roomDbService.GetBatchAsync(registerDto.RoomIds);
             if (room == null || !room.Any())
             {
                 throw new CustomException(ExceptionErrorCode.CreateFailed, "Phòng không tồn tại");
             }
-            var user = new User(registerDto.PhoneNumber, registerDto.Email, registerDto.IdentityNumber, registerDto.DateOfBirth, registerDto.FullName, registerDto.Roles);
+            var user = new User(registerDto.PhoneNumber, registerDto.Email, registerDto.IdentityNumber, registerDto.DateOfBirth, registerDto.FullName, [Constants.CustomerRole]);
             user.Cart = new Cart(user.Id);
             user.UserRooms = registerDto.RoomIds.Select(r => new UserRoom(user.Id, r)).ToList();
             user.PasswordHash = CustomPasswordHasher.HashPassword(registerDto.Password);

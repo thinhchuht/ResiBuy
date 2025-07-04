@@ -57,6 +57,7 @@ const AppBar: React.FC = () => {
   const [searchValue, setSearchValue] = useState("");
   const [notificationAnchorEl, setNotificationAnchorEl] = useState<null | HTMLElement>(null);
   const [notifications, setNotifications] = useState<Notification[]>([]);
+  const [storeMenuAnchorEl, setStoreMenuAnchorEl] = useState<null | HTMLElement>(null);
 
   const fetchItemCount = useCallback(async () => {
     if (user) {
@@ -169,6 +170,29 @@ const AppBar: React.FC = () => {
 
   const handleNotificationClose = () => {
     setNotificationAnchorEl(null);
+  };
+
+  const handleStoreMenuClick = (event: React.MouseEvent<HTMLElement>) => {
+    if (user?.stores && Array.isArray(user.stores) && user.stores.length > 1) {
+      setStoreMenuAnchorEl(event.currentTarget);
+    } else {
+      const storeId = Array.isArray(user?.stores) ? user.stores[0]?.id : user?.stores?.id;
+      if (storeId) {
+        navigate(`/seller`);
+        handleProfileMenuClose();
+      }
+    }
+  };
+
+  const handleStoreMenuClose = () => {
+    setStoreMenuAnchorEl(null);
+    handleProfileMenuClose();
+  };
+
+  const handleStoreSelect = (storeId: string) => {
+    navigate(`/seller`);
+    setStoreMenuAnchorEl(null);
+    handleProfileMenuClose();
   };
 
   return (
@@ -519,7 +543,7 @@ const AppBar: React.FC = () => {
           )}
           {user?.roles?.includes("SELLER") && (
             <MenuItem
-              onClick={() => handleNavigation("/seller", handleProfileMenuClose)}
+              onClick={handleStoreMenuClick}
               sx={{
                 py: 1.5,
                 px: 2,
@@ -538,7 +562,11 @@ const AppBar: React.FC = () => {
               }}>
               <Store fontSize="small" sx={{ transition: "all 0.2s ease-in-out" }} />
               <Typography variant="body2" sx={{ fontWeight: 500 }}>
-                Cửa hàng của bạn
+                {Array.isArray(user?.stores) && user.stores.length === 1
+                  ? user.stores[0]?.name
+                  : !Array.isArray(user?.stores) && user?.stores?.name
+                  ? user.stores.name
+                  : "Cửa hàng của bạn"}
               </Typography>
             </MenuItem>
           )}
@@ -746,6 +774,46 @@ const AppBar: React.FC = () => {
             </Box>
           )}
         </Popover>
+
+        {/* Menu chọn store nếu có nhiều store */}
+        <Menu
+          anchorEl={storeMenuAnchorEl}
+          open={Boolean(storeMenuAnchorEl)}
+          onClose={handleStoreMenuClose}
+          PaperProps={{
+            sx: {
+              mt: 1,
+              borderRadius: 2,
+              boxShadow: "0 4px 20px rgba(0,0,0,0.1)",
+              minWidth: 220,
+              overflow: "hidden",
+            },
+          }}
+        >
+          {Array.isArray(user?.stores) && user.stores.map((store) => (
+            <MenuItem
+              key={store.id}
+              onClick={() => handleStoreSelect(store.id)}
+              sx={{
+                py: 1.5,
+                px: 2,
+                gap: 1.5,
+                "&:hover": {
+                  backgroundColor: "rgba(235, 92, 96, 0.08)",
+                  "& .MuiTypography-root": {
+                    color: "#EB5C60",
+                  },
+                },
+                transition: "all 0.2s ease-in-out",
+              }}
+            >
+              <Storefront fontSize="small" sx={{ color: "#e91e63", mr: 1 }} />
+              <Typography variant="body2" sx={{ fontWeight: 500 }}>
+                {store.name}
+              </Typography>
+            </MenuItem>
+          ))}
+        </Menu>
       </Toolbar>
     </MuiAppBar>
   );

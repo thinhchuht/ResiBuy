@@ -32,7 +32,7 @@
         [HttpPost]
         public async Task<IActionResult> CreateAsync([FromBody] RegisterDto dto)
         {
-            var command = new CreatUserCommand(dto);
+            var command = new CreatUserCustomerCommand(dto);
             var result = await mediator.Send(command);
             return Ok(result);
         }
@@ -68,10 +68,10 @@
 
         //[Authorize(Roles = Constants.AdminRole)]
         [HttpPut("{id}/roles")]
-        public async Task<IActionResult> UpdateRoleAsync(string id, [FromBody] List<string> roles)
+        public async Task<IActionResult> UpdateRoleAsync(string id, [FromBody] UpdateRolesDto dto)
         {
 
-            var command = new UpdateUserRoleCommand(id, roles);
+            var command = new UpdateUserRoleCommand(id, dto);
             var result = await mediator.Send(command);
             return Ok(result);
         }

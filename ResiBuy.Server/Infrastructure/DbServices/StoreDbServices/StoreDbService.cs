@@ -1,8 +1,3 @@
-using Microsoft.EntityFrameworkCore;
-using ResiBuy.Server.Exceptions;
-using ResiBuy.Server.Infrastructure.DbServices.BaseDbServices;
-using ResiBuy.Server.Infrastructure.Filter;
-
 namespace ResiBuy.Server.Infrastructure.DbServices.StoreDbServices
 {
     public class StoreDbService : BaseDbService<Store>, IStoreDbService
@@ -98,15 +93,8 @@ namespace ResiBuy.Server.Infrastructure.DbServices.StoreDbServices
         {
             try
             {
-                var stores = await _context.Stores.ToListAsync(); 
-                if (stores == null || !stores.Any()) 
-                {
-                    return true;
-                }
-                else
-                {
-                    return !stores.Any(s => s.RoomId == roomId && s.IsLocked == false);
-                }
+                return await _context.Stores
+                    .AnyAsync(s => s.RoomId == roomId);
             }
             catch (Exception ex)
             {
