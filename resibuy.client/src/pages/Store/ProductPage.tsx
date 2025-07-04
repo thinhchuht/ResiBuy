@@ -23,6 +23,7 @@ import {
 import SearchIcon from "@mui/icons-material/Search";
 import EditIcon from "@mui/icons-material/Edit";
 import DeleteIcon from "@mui/icons-material/Delete";
+import CheckCircleIcon from "@mui/icons-material/CheckCircle";
 import axios from "../../api/base.api";
 import { useNavigate, useParams } from "react-router-dom";
 import { Slider } from "@mui/material";
@@ -140,13 +141,26 @@ const ProductPage: React.FC = () => {
     navigate(`/store/${storeId}/update/${id}`);
   };
 
-  const handleDelete = async (id: number) => {
-    if (!window.confirm("Bạn có chắc muốn dừng bán sản phẩm này?")) return;
+  const handleToggleStatus = async (product: Product) => {
+    const newStatus = !product.isOutOfStock;
+    const confirmMsg = newStatus
+      ? "Bạn có chắc muốn dừng bán sản phẩm này?"
+      : "Bạn có chắc muốn mở bán lại sản phẩm này?";
+    if (!window.confirm(confirmMsg)) return;
+
     try {
-      await axios.put(`/api/products/${id}`);
-      setProducts((prev) => prev.filter((p) => p.id !== id));
+      await axios.patch(`/api/Product/${product.id}/status`, newStatus, {
+        headers: {
+          "Content-Type": "application/json",
+        },
+      });
+      setProducts((prev) =>
+        prev.map((p) =>
+          p.id === product.id ? { ...p, isOutOfStock: newStatus } : p
+        )
+      );
     } catch (error) {
-      console.error("Lỗi khi xóa sản phẩm:", error);
+      console.error("Lỗi khi cập nhật trạng thái sản phẩm:", error);
     }
   };
 
@@ -307,10 +321,14 @@ const ProductPage: React.FC = () => {
                           <EditIcon />
                         </IconButton>
                         <IconButton
-                          onClick={() => handleDelete(product.id)}
-                          color="error"
+                          onClick={() => handleToggleStatus(product)}
+                          color={product.isOutOfStock ? "success" : "error"}
                         >
-                          <DeleteIcon />
+                          {product.isOutOfStock ? (
+                            <CheckCircleIcon />
+                          ) : (
+                            <DeleteIcon />
+                          )}
                         </IconButton>
                       </TableCell>
                     </TableRow>

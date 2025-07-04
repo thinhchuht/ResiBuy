@@ -9,6 +9,7 @@ using ResiBuy.Server.Infrastructure.DbServices.OrderDbServices;
 using ResiBuy.Server.Infrastructure.DbServices.OrderItemDbServices;
 using ResiBuy.Server.Services.CheckoutSessionService;
 using ResiBuy.Server.Infrastructure.DbServices.ProductDetailDbServices;
+using ResiBuy.Server.Services.ShippingCost;
 
 namespace ResiBuy.Server.Extensions
 {
@@ -43,6 +44,7 @@ namespace ResiBuy.Server.Extensions
             services.AddScoped<IOrderDbService, OrderDbService>();
             services.AddScoped<IOrderItemDbService, OrderItemDbService>();
             services.AddScoped<IProductDetailDbService, ProductDetailDbService>();
+            services.AddHttpClient<GoogleDistanceService>();
             return services;
         }
 
