@@ -178,9 +178,7 @@ export default function CreateProduct() {
   async function uploadImg(file: File, index: number) {
     const formData = new FormData();
     const id = v4();
-      formData.
-    
-      ("id", id);
+      formData.append("id", id);
     // Append file:
     formData.append("file", file); // file binary
     // Gửi API:
