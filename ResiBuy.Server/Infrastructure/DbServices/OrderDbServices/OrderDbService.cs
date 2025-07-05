@@ -85,4 +85,15 @@ public class OrderDbService : BaseDbService<Order>, IOrderDbService
                 .Include(o => o.Shipper).ThenInclude(s => s.User)
                 .Include(o => o.Reports).FirstOrDefaultAsync(o => o.Id == id);
     }
+    public async Task<List<Order>> getOrdersByStatus(OrderStatus orderStatus)
+    {
+        try
+        {
+            return await _context.Orders.Where(o => o.Status == orderStatus).ToListAsync();
+        }
+        catch (Exception ex)
+        {
+            throw new CustomException(ExceptionErrorCode.RepositoryError, ex.ToString());
+        }
+    }
 }

@@ -95,6 +95,20 @@ namespace ResiBuy.Server.Infrastructure.DbServices.ShipperDbServices
             }
         }
 
+        public Task<List<Shipper>> GetShippersInAreaAsync(Guid areaId)
+        {
+            try
+            {
+                var shippers = _context.Shippers.Where(s => s.LastLocationId == areaId).ToListAsync();
+                return shippers;
+            }
+            catch
+            (Exception ex)
+            {
+                throw new CustomException(ExceptionErrorCode.RepositoryError, ex.Message);
+            }
+        }
+
         public async Task<Shipper> UpdateShipperLocationAsync(Guid shipperId, Guid locationId)
         {
             try
