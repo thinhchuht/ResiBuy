@@ -7,7 +7,7 @@ public class OrderDbService : BaseDbService<Order>, IOrderDbService
     {
         this._context = context;
     }
-    public async Task<PagedResult<Order>> GetAllAsync(OrderStatus orderStatus, PaymentMethod paymentMethod, PaymentStatus paymentStatus, string userId = null, int pageNumber = 1, int pageSize = 10, DateTime? startDate = null, DateTime? endDate = null)
+    public async Task<PagedResult<Order>> GetAllAsync(OrderStatus orderStatus, PaymentMethod paymentMethod, PaymentStatus paymentStatus, Guid storeId, string userId = null, int pageNumber = 1, int pageSize = 10, DateTime? startDate = null, DateTime? endDate = null)
     {
         try
         {
@@ -21,7 +21,13 @@ public class OrderDbService : BaseDbService<Order>, IOrderDbService
                 query = query.Where(o => o.UserId == userId);
             }
 
-            if(orderStatus != OrderStatus.None)
+            if (storeId != Guid.Empty)
+            {
+                query = query.Where(o => o.UserId == userId);
+            }
+
+
+            if (orderStatus != OrderStatus.None)
             {
                 query = query.Where(o => o.Status == orderStatus);
             }
@@ -68,5 +74,15 @@ public class OrderDbService : BaseDbService<Order>, IOrderDbService
             throw new CustomException(ExceptionErrorCode.RepositoryError, ex.ToString());
         }
 
+    }
+    public async Task<Order> GetById(Guid id)
+    {
+        return await _context.Orders.Include(o => o.ShippingAddress).ThenInclude(sa => sa.Building).ThenInclude(b => b.Area)
+                .Include(o => o.Store)
+                .Include(o => o.Items).ThenInclude(oi => oi.ProductDetail).ThenInclude(pd => pd.Image)
+                .Include(o => o.Items).ThenInclude(oi => oi.ProductDetail).ThenInclude(pd => pd.Product)
+                .Include(o => o.Voucher)
+                .Include(o => o.Shipper).ThenInclude(s => s.User)
+                .Include(o => o.Reports).FirstOrDefaultAsync(o => o.Id == id);
     }
 }

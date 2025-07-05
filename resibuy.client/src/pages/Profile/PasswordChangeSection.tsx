@@ -82,6 +82,11 @@ const PasswordChangeSection = ({
 
   return (
     <Box>
+      <Box sx={{ borderBottom: '1px solid #f8bbd0', mb: 3, pb: 1 }}>
+        <Typography variant="h6" fontWeight={700} color="#e91e63" sx={{ textAlign: 'left' }}>
+          Đổi mật khẩu
+        </Typography>
+      </Box>
       <Box mb={3}>
         <Typography variant="subtitle2" color="text.secondary" mb={0.5}>
           Số điện thoại

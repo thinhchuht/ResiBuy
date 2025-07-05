@@ -25,7 +25,9 @@ const VoucherSelectionModal = ({ open, onClose, userVouchers, shopVouchers, onSe
     if (loading) {
       return (
         <Box sx={{ display: "flex", justifyContent: "center", alignItems: "center", py: 8 }}>
-          <Typography variant="h6" color="text.secondary">Đang tải voucher...</Typography>
+          <Typography variant="h6" color="text.secondary">
+            Đang tải voucher...
+          </Typography>
         </Box>
       );
     }
@@ -60,7 +62,6 @@ const VoucherSelectionModal = ({ open, onClose, userVouchers, shopVouchers, onSe
         {vouchers.map((voucher) => (
           <Box
             key={voucher.id}
-            onClick={() => onSelectVoucher(voucher)}
             sx={{
               cursor: "pointer",
               opacity: selectedVoucherId === voucher.id ? 0.7 : 1,
@@ -122,9 +123,7 @@ const VoucherSelectionModal = ({ open, onClose, userVouchers, shopVouchers, onSe
         </Box>
 
         <Box sx={{ display: "flex", flexDirection: "column", gap: 2 }}>
-          {activeTab === 0
-            ? renderVoucherList(userVouchers, "Bạn chưa có voucher nào", loading)
-            : renderVoucherList(shopVouchers, "Shop chưa có voucher nào", loading)}
+          {activeTab === 0 ? renderVoucherList(userVouchers, "Bạn chưa có voucher nào", loading) : renderVoucherList(shopVouchers, "Shop chưa có voucher nào", loading)}
         </Box>
       </DialogContent>
     </Dialog>

@@ -1,23 +1,19 @@
 ﻿namespace ResiBuy.Server.Application.Commands.UserCommands
 {
-    public record CreatUserCommand(RegisterDto RegisterDto) : IRequest<ResponseModel>;
-    public class CreatUserCommandHandler(
+    public record CreatUserCustomerCommand(RegisterDto RegisterDto) : IRequest<ResponseModel>;
+    public class CreatUserCustomerCommandHandler(
         IUserDbService userDbService,
         IRoomDbService roomDbService,
-        INotificationService notificationService) : IRequestHandler<CreatUserCommand, ResponseModel>
+        INotificationService notificationService) : IRequestHandler<CreatUserCustomerCommand, ResponseModel>
     {
-        public async Task<ResponseModel> Handle(CreatUserCommand command, CancellationToken cancellationToken)
+        public async Task<ResponseModel> Handle(CreatUserCustomerCommand command, CancellationToken cancellationToken)
         {
             if (!command.RegisterDto.RoomIds.Any())
                 throw new CustomException(ExceptionErrorCode.ValidationFailed, "Không thể tạo người dùng mà không có phòng");
-            if (!command.RegisterDto.Roles.Any())
-                throw new CustomException(ExceptionErrorCode.ValidationFailed, "Không thể tạo người dùng mà không có vài trò");
             if (!command.RegisterDto.IdentityNumber.Any())
                 throw new CustomException(ExceptionErrorCode.ValidationFailed, "Không thể tạo người dùng mà không có số CCCD");
             if (!command.RegisterDto.PhoneNumber.Any())
                 throw new CustomException(ExceptionErrorCode.ValidationFailed, "Không thể tạo người dùng mà không có số điện thoại");
-            if (!command.RegisterDto.Roles.All(role => Constants.AllowedRoles.Contains(role)))
-                throw new CustomException(ExceptionErrorCode.ValidationFailed, "Vai trò người dùng không hợp lệ");
             if (string.IsNullOrEmpty(command.RegisterDto.Password))
             {
                 command.RegisterDto.Password = Constants.DefaulAccountPassword;
@@ -26,7 +22,7 @@
             if (!string.IsNullOrEmpty(command.RegisterDto.Email) && !Regex.IsMatch(command.RegisterDto.Email, Constants.EmailPattern)) throw new CustomException(ExceptionErrorCode.ValidationFailed, "Email không hợp lệ");
             if (!Regex.IsMatch(command.RegisterDto.IdentityNumber, Constants.IndentityNumberPattern)) throw new CustomException(ExceptionErrorCode.ValidationFailed, "Số CCCD/CMND không hợp lệ");
             await userDbService.CheckUniqueField(command.RegisterDto.PhoneNumber, command.RegisterDto.Email, command.RegisterDto.IdentityNumber);
-            var user = await userDbService.CreateUser(command.RegisterDto);
+            var user = await userDbService.CreateCustomerUser(command.RegisterDto);
             if (user != null)
             {
                 var rooms = await roomDbService.GetBatchAsync(command.RegisterDto.RoomIds);
@@ -54,7 +50,6 @@
                     );
                     //notificationService.SendNotification("UserCreated", userResult, Constants.AdminHubGroup);
                     return ResponseModel.SuccessResponse(userResult);
-
             }
             return ResponseModel.SuccessResponse(user);
         }

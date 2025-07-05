@@ -1,14 +1,3 @@
-using ResiBuy.Server.Exceptions;
-using ResiBuy.Server.Infrastructure.DbServices.AreaDbServices;
-using ResiBuy.Server.Infrastructure.DbServices.ShipperDbServices;
-using ResiBuy.Server.Infrastructure.DbServices.UserDbServices;
-using ResiBuy.Server.Infrastructure.Model;
-using System;
-using System.Collections.Generic;
-using System.ComponentModel.DataAnnotations;
-using System.Threading;
-using System.Threading.Tasks;
-
 namespace ResiBuy.Server.Application.Commands.ShipperCommands
 {
     public record CreateShipperCommand(
@@ -39,6 +28,10 @@ namespace ResiBuy.Server.Application.Commands.ShipperCommands
         public async Task<ResponseModel> Handle(CreateShipperCommand command, CancellationToken cancellationToken)
         {
 
+            if (!command.IdentityNumber.Any())
+                throw new CustomException(ExceptionErrorCode.ValidationFailed, "Không thể tạo người dùng mà không có số CCCD");
+            if (!command.PhoneNumber.Any())
+                throw new CustomException(ExceptionErrorCode.ValidationFailed, "Không thể tạo người dùng mà không có số điện thoại");
             if (!Regex.IsMatch(command.PhoneNumber, Constants.PhoneNumberPattern)) throw new CustomException(ExceptionErrorCode.ValidationFailed, "Số điện thoại không hợp lệ");
             if (!string.IsNullOrEmpty(command.Email) && !Regex.IsMatch(command.Email, Constants.EmailPattern)) throw new CustomException(ExceptionErrorCode.ValidationFailed, "Email không hợp lệ");
             if (!Regex.IsMatch(command.IdentityNumber, Constants.IndentityNumberPattern)) throw new CustomException(ExceptionErrorCode.ValidationFailed, "Số CCCD/CMND không hợp lệ");
@@ -68,9 +61,9 @@ namespace ResiBuy.Server.Application.Commands.ShipperCommands
                 command.IdentityNumber,
                 command.DateOfBirth,
                 command.FullName,
-                new List<string> { "SHIPPER" }
+                new List<string> { Constants.ShipperRole }
             );
-            user.PasswordHash = CustomPasswordHasher.HashPassword(command.Password);
+            user.PasswordHash = CustomPasswordHasher.HashPassword(string.IsNullOrEmpty(command.Password) ? Constants.DefaulAccountPassword: command.Password);
 
             var createdUser = await _userDbService.CreateAsync(user);
             // 5. Tạo Shipper
@@ -80,8 +73,8 @@ namespace ResiBuy.Server.Application.Commands.ShipperCommands
                 UserId = createdUser.Id,
                 IsOnline = false,
                 ReportCount = 0,
-                StartWorkTime = 8,
-                EndWorkTime = 18,
+                StartWorkTime = command.StartWorkTime,
+                EndWorkTime = command.EndWorkTime,
                 LastLocationId = command.LastLocationId
             };
 

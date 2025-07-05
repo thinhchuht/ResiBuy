@@ -37,7 +37,7 @@ interface ProductDetailInput {
   price: number;
   weight: number;
   isOutOfStock: boolean;
-  image: Image;
+  image?: Image;
   additionalData: AdditionalDataInput[];
 }
 interface ProductInput {
@@ -60,9 +60,18 @@ interface Classify {
   isEdit: boolean;
 }
 
+interface TempAdditionalData {
+  key: string;
+  value: {
+    text: string;
+    isEdit: boolean;
+  };
+}
+
 // Main component
 export default function CreateProduct() {
   const { id } = useParams<{ id: string }>();
+  const { storeId } = useParams<{ storeId: string }>();
   useEffect(() => {
     // lấy category
     axiosClient
@@ -79,7 +88,7 @@ export default function CreateProduct() {
     // set mặc định storeId
     setProduct((prev) => ({
       ...prev,
-      storeId: id,
+      storeId: storeId || "",
     }));
 
     // lấy product
@@ -94,23 +103,29 @@ export default function CreateProduct() {
             productData.productDetails || [];
           setListProductDetail(tempProductDetails);
           // Chuyển đổi classify từ productDetails
+          const classifyMap: Record<string, Set<string>> = {};
+
           tempProductDetails.forEach((detail) => {
             detail.additionalData.forEach((data) => {
-              classifies.forEach((item) =>{
-                if (item.key === data.key) {
-                  item.value.push({ text: data.value, isEdit: false });
-                } else {
-                  addClassifies(false);
-                  const newClassify: Classify = {
-                    key: data.key,
-                    value: [{ text: data.value, isEdit: false }],
-                    isEdit: false,
-                  };
-                  setClassifies((prev) => [...prev, newClassify]);
-                }
-              })
+              if (!classifyMap[data.key]) {
+                classifyMap[data.key] = new Set();
+              }
+              classifyMap[data.key].add(data.value);
             });
           });
+
+          const newClassifies: Classify[] = Object.entries(classifyMap).map(
+            ([key, values]) => ({
+              key,
+              value: Array.from(values).map((val) => ({
+                text: val,
+                isEdit: false,
+              })),
+              isEdit: false,
+            })
+          );
+
+          setClassifies(newClassifies);
         }
       })
       .catch((err) => console.error(err));
@@ -118,10 +133,11 @@ export default function CreateProduct() {
 
   const navigate = useNavigate();
 
-
   const [listCategory, setListCategory] = useState<Category[]>([]);
 
-  const [newProductDetails, setNewProductDetails] = useState<ProductDetailInput[]>([])
+  const [newProductDetails, setNewProductDetails] = useState<
+    ProductDetailInput[]
+  >([]);
 
   const [product, setProduct] = useState<ProductInput>({
     name: "",
@@ -142,15 +158,13 @@ export default function CreateProduct() {
     };
     await axiosClient.put("api/Product", tempProduct).then((res) => {
       if (res.status === 200) {
-        navigate("/store/products");
+        navigate(`/store/${storeId}/productPage`);
       }
     });
   };
 
   const [classifies, setClassifies] = useState<Classify[]>([]);
 
-  const addClassifies = (isEdit: boolean = true) =>
-    setClassifies((prev) => [...prev, { key: "", value: [], isEdit }]);
   const removeClassify = (index: number) =>
     setClassifies((prev) => prev.filter((_, i) => i !== index));
   const removeclassifyValue = (classifyIndex: number, valueIndex: number) =>
@@ -178,9 +192,7 @@ export default function CreateProduct() {
           ? {
               ...item,
               value: item.value.map((val, vi) =>
-                vi === valueIndex
-                  ? { ...val, text: newValue }
-                  : val
+                vi === valueIndex ? { ...val, text: newValue } : val
               ),
             }
           : item
@@ -188,55 +200,64 @@ export default function CreateProduct() {
     );
 
   const addClassifyValue = (classifyIndex: number) =>
-      setClassifies((prev) =>
-        prev.map((item, i) =>
-          i === classifyIndex
-            ? { ...item, value: [...item.value, { text: "", isEdit: true }] }
-            : item
-        )
-      );
+    setClassifies((prev) =>
+      prev.map((item, i) =>
+        i === classifyIndex
+          ? { ...item, value: [...item.value, { text: "", isEdit: true }] }
+          : item
+      )
+    );
 
   // HÀM sinh tổ hợp các thuộc tính
   const generateProductDetail = () => {
     if (classifies.length === 0) {
-      alert("nhập đủ thông tin thêm");
+      alert("Vui lòng nhập thông tin phân loại");
       return;
     }
 
-    let listAdditionalData: AdditionalDataInput[][] = [[]];
+    // Bước 1: Sinh tổ hợp tất cả TempAdditionalData (không lọc isEdit)
+    let combinations: TempAdditionalData[][] = [[]];
 
     classifies.forEach((classify) => {
-      // Lọc ra những giá trị có isEdit === true
-      const editableValues = classify.value.filter((val) => val.isEdit);
-      if (editableValues.length === 0) return; // Bỏ qua nếu không có giá trị nào hợp lệ
-
-      // Nhân chéo các giá trị hợp lệ
-      listAdditionalData = listAdditionalData.flatMap((combination) => {
-        return editableValues.map((val): AdditionalDataInput[] => [
-          ...combination,
-          { key: classify.key, value: val.text } as AdditionalDataInput,
-        ]);
-      });
+      const allValues = classify.value;
+      combinations = combinations.flatMap((combo) =>
+        allValues.map((val) => [
+          ...combo,
+          {
+            key: classify.key,
+            value: val,
+          },
+        ])
+      );
     });
-    addToProductDetail(listAdditionalData);
+
+    // Bước 2: Lọc bỏ tổ hợp mà tất cả value đều có isEdit = false
+    const filteredCombinations = combinations.filter((combo) =>
+      combo.some((item) => item.value.isEdit)
+    );
+
+    // Bước 3: Chuyển sang AdditionalDataInput[][]
+    const finalList: AdditionalDataInput[][] = filteredCombinations.map(
+      (combo) =>
+        combo.map((item) => ({
+          key: item.key,
+          value: item.value.text,
+        }))
+    );
+
+    console.log("Tổ hợp cuối cùng:", finalList);
+    addToProductDetail(finalList);
   };
 
   const addToProductDetail = (listAdditionalData: AdditionalDataInput[][]) => {
-    if (listProductDetail.length === 0) {
-      listAdditionalData.forEach((data) => {
-        const productDetail: ProductDetailInput = {
-          price: 0,
-          weight: 0,
-          isOutOfStock: false,
-          image: { id: "", url: "", thumbUrl: "", name: "" },
-          additionalData: data,
-        };
-        setNewProductDetails((prev) => [...prev, productDetail]);
-      });
-    } else {
-      setNewProductDetails([]);
-      addToProductDetail(listAdditionalData);
-    }
+    const newDetails: ProductDetailInput[] = listAdditionalData.map((data) => ({
+      price: 0,
+      weight: 0,
+      isOutOfStock: false,
+      image: { id: "", url: "", thumbUrl: "", name: "" },
+      additionalData: data,
+    }));
+    setNewProductDetails(newDetails);
   };
 
   function classyfyText(productDetail: ProductDetailInput) {
@@ -250,9 +271,9 @@ export default function CreateProduct() {
     return text;
   }
 
-  async function uploadImg(file: File, index: number) {
+  async function uploadImg(file: File, img: Image | null, index: number) {
     const formData = new FormData();
-    const id = v4();
+    const id = img?.id || v4(); // Nếu không có id thì tạo mới
     formData.append("id", id);
     // Append file:
     formData.append("file", file); // file binary
@@ -273,6 +294,29 @@ export default function CreateProduct() {
       };
       setListProductDetail(newList);
       console.log("listProductDetail", listProductDetail[index]);
+    }
+  }
+
+  async function uploadImgForNewProduct(file: File, index: number) {
+    const formData = new FormData();
+    const id = v4();
+    formData.append("id", id);
+    formData.append("file", file);
+
+    const resp = await axiosClient.post("/api/Cloudinary/upload", formData, {
+      headers: { "Content-Type": "multipart/form-data" },
+    });
+
+    if (resp.status === 200) {
+      const data = resp.data;
+      const newList = [...newProductDetails];
+      newList[index].image = {
+        id: data.id,
+        thumbUrl: data.thumbnailUrl,
+        url: data.url,
+        name: data.name,
+      };
+      setNewProductDetails(newList);
     }
   }
 
@@ -382,7 +426,7 @@ export default function CreateProduct() {
                   >
                     <TextField
                       label="Thuộc tính"
-                      value={classifyValue}
+                      value={classifyValue.text}
                       required
                       onChange={(e) => {
                         updateClassifyValue(
@@ -520,7 +564,12 @@ export default function CreateProduct() {
                         type="file"
                         onChange={(e) => {
                           const file = e.target.files?.[0];
-                          if (file) uploadImg(file, index);
+                          if (file)
+                            uploadImg(
+                              file,
+                              productDetail?.image || null,
+                              index
+                            );
                         }}
                       />
                     </Button>
@@ -548,7 +597,7 @@ export default function CreateProduct() {
                 </TableRow>
               ))}
               {newProductDetails.map((productDetail, index) => (
-                <TableRow key={index}>
+                <TableRow key={`new-${index}`}>
                   <TableCell>{classyfyText(productDetail)}</TableCell>
                   <TableCell>
                     <TextField
@@ -556,9 +605,12 @@ export default function CreateProduct() {
                       type="number"
                       value={productDetail.price}
                       onChange={(e) => {
-                        const newList = [...listProductDetail];
-                        newList[index].price = Number(e.target.value);
-                        setListProductDetail(newList);
+                        const newList = [...newProductDetails];
+                        newList[index] = {
+                          ...newList[index],
+                          price: Number(e.target.value),
+                        };
+                        setNewProductDetails(newList);
                       }}
                     />
                   </TableCell>
@@ -568,9 +620,12 @@ export default function CreateProduct() {
                       type="number"
                       value={productDetail.weight}
                       onChange={(e) => {
-                        const newList = [...listProductDetail];
-                        newList[index].weight = Number(e.target.value);
-                        setListProductDetail(newList);
+                        const newList = [...newProductDetails];
+                        newList[index] = {
+                          ...newList[index],
+                          weight: Number(e.target.value),
+                        };
+                        setNewProductDetails(newList);
                       }}
                     />
                   </TableCell>
@@ -578,15 +633,17 @@ export default function CreateProduct() {
                     <Checkbox
                       checked={productDetail.isOutOfStock}
                       onChange={(e) => {
-                        const newList = [...listProductDetail];
-                        newList[index].isOutOfStock = e.target.checked;
-                        setListProductDetail(newList);
+                        const newList = [...newProductDetails];
+                        newList[index] = {
+                          ...newList[index],
+                          isOutOfStock: e.target.checked,
+                        };
+                        setNewProductDetails(newList);
                       }}
                       color="primary"
                     />
                   </TableCell>
                   <TableCell>
-                    {/* Nút tải ảnh */}
                     <Button variant="outlined" component="label" size="small">
                       Tải ảnh
                       <input
@@ -595,12 +652,11 @@ export default function CreateProduct() {
                         type="file"
                         onChange={(e) => {
                           const file = e.target.files?.[0];
-                          if (file) uploadImg(file, index);
+                          if (file) uploadImgForNewProduct(file, index); // cần tách hàm riêng cho newProduct
                         }}
                       />
                     </Button>
 
-                    {/* Hiển thị ảnh nếu có */}
                     {productDetail.image?.thumbUrl ? (
                       <Box mt={1}>
                         <img

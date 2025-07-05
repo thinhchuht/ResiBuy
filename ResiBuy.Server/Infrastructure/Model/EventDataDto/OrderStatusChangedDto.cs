@@ -3,6 +3,8 @@
     public class OrderStatusChangedDto
     {
         public Guid Id { get; set; }
+        public Guid StoreId { get; set; }
+        public string StoreName { get; set; }
         public OrderStatus OrderStatus { get; set; } 
         public OrderStatus OldOrderStatus { get; set; }
         public PaymentStatus PaymentStatus { get; set; }  
@@ -12,13 +14,15 @@
             
         }
 
-        public OrderStatusChangedDto(Guid orderId, OrderStatus orderStatus, OrderStatus oldOrderStatus, PaymentStatus paymentStatus, DateTime createdAt)
+        public OrderStatusChangedDto(Guid orderId, Guid storeId, string storeName, OrderStatus orderStatus, OrderStatus oldOrderStatus, PaymentStatus paymentStatus, DateTime createdAt)
         {
             Id = orderId;
+            StoreId = storeId;
+            StoreName = storeName;
             OrderStatus = orderStatus;
             OldOrderStatus = oldOrderStatus;
             PaymentStatus = paymentStatus;
-            CreatedAt = createdAt;
+            CreatedAt = createdAt;  
         }
     }
 }
