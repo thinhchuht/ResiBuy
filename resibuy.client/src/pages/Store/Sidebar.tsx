@@ -11,7 +11,14 @@ const Sidebar: React.FC<SidebarProps> = ({ menuItems }) => {
   const location = useLocation();
 
   return (
-    <List sx={{ width: 240, backgroundColor: "#f5f5f5", height: "100vh" }}>
+    <List
+      sx={{
+        width: 240,
+        backgroundColor: "#f5f5f5",
+        height: "100vh",
+        borderRight: "1px solid #ccc", // dễ nhìn layout hơn
+      }}
+    >
       {menuItems.map((item) => (
         <ListItemButton
           key={item.path}

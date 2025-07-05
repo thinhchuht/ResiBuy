@@ -268,6 +268,7 @@ const ProductPage: React.FC = () => {
               <TableRow>
                 <TableCell>Ảnh</TableCell>
                 <TableCell>Tên sản phẩm</TableCell>
+                <TableCell>Phân loại</TableCell>
                 <TableCell>Giá</TableCell>
                 <TableCell>Trạng thái</TableCell>
                 <TableCell align="right">Hành động</TableCell>
@@ -300,6 +301,12 @@ const ProductPage: React.FC = () => {
                         />
                       </TableCell>
                       <TableCell>{product.name}</TableCell>
+                      <TableCell>
+                        {
+                          categories.find((c) => c.id === product.categoryId)
+                            ?.name
+                        }
+                      </TableCell>
                       <TableCell>
                         {detail?.price
                           ? detail.price.toLocaleString() + " ₫"
