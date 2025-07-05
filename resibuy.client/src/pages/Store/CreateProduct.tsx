@@ -241,9 +241,17 @@ export default function CreateProduct() {
               label="Discount (%)"
               type="number"
               value={product.discount}
-              onChange={(e) =>
-                setProduct({ ...product, discount: Number(e.target.value) })
+              error={product.discount > 99}
+              helperText={
+                product.discount > 99 ? "Giảm giá không được vượt quá 99%" : ""
               }
+              inputProps={{ min: 0, max: 100 }}
+              onChange={(e) => {
+                const value = Number(e.target.value);
+                if (value >= 0 && value <= 100) {
+                  setProduct({ ...product, discount: value });
+                }
+              }}
             />
             <TextField
               select
