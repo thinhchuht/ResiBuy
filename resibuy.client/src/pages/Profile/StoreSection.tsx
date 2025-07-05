@@ -79,18 +79,12 @@ const StoreSection = () => {
 
   return (
     <Box sx={{ width: "100%" }}>
-      <Box sx={{ borderBottom: '1px solid #f8bbd0', mb: 3, pb: 1 }}>
-        <Typography variant="h6" fontWeight={700} color="#e91e63" sx={{ textAlign: 'left' }}>
+      <Box sx={{ borderBottom: "1px solid #f8bbd0", mb: 3, pb: 1 }}>
+        <Typography variant="h6" fontWeight={700} color="#e91e63" sx={{ textAlign: "left" }}>
           Cửa hàng của bạn
         </Typography>
       </Box>
-      <Tabs
-        value={tabIndex}
-        onChange={(_, idx) => setTabIndex(idx)}
-        variant="scrollable"
-        scrollButtons="auto"
-        sx={{ mb: 3, borderBottom: 1, borderColor: "divider" }}
-      >
+      <Tabs value={tabIndex} onChange={(_, idx) => setTabIndex(idx)} variant="scrollable" scrollButtons="auto" sx={{ mb: 3, borderBottom: 1, borderColor: "divider" }}>
         {stores.map((store) => (
           <Tab key={store.id} label={store.name} />
         ))}
@@ -110,14 +104,15 @@ const StoreSection = () => {
             alignItems: isMobile ? "center" : "flex-start",
             gap: isMobile ? 2 : 4,
             background: "#fff",
-          }}
-        >
+          }}>
           {loading ? (
             <Box sx={{ width: "100%", display: "flex", justifyContent: "center", alignItems: "center", minHeight: 180 }}>
               <CircularProgress color="secondary" />
             </Box>
           ) : error ? (
-            <Typography color="error" align="center" sx={{ width: "100%" }}>{error}</Typography>
+            <Typography color="error" align="center" sx={{ width: "100%" }}>
+              {error}
+            </Typography>
           ) : selectedStore ? (
             selectedStore.isLocked ? (
               <Box sx={{ width: "100%", display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", minHeight: 220, p: 4 }}>
@@ -131,8 +126,7 @@ const StoreSection = () => {
                     fontSize: 48,
                     border: "4px solid #f5f5f5",
                     boxShadow: "0 4px 12px rgba(233, 30, 99, 0.08)",
-                  }}
-                >
+                  }}>
                   <Lock fontSize="inherit" />
                 </Avatar>
                 <Chip
@@ -157,8 +151,7 @@ const StoreSection = () => {
                       ) : (
                         <WarningAmber sx={{ color: "#ffb300", fontSize: 32, bgcolor: "#fff", borderRadius: "50%" }} />
                       )
-                    }
-                  >
+                    }>
                     <Avatar
                       sx={{
                         width: 100,
@@ -169,8 +162,7 @@ const StoreSection = () => {
                         fontSize: 48,
                         border: "4px solid #fce4ec",
                         boxShadow: "0 4px 12px rgba(233, 30, 99, 0.2)",
-                      }}
-                    >
+                      }}>
                       <StorefrontIcon fontSize="inherit" />
                     </Avatar>
                   </Badge>
@@ -178,13 +170,17 @@ const StoreSection = () => {
                     {selectedStore.isOpen ? (
                       <Chip icon={<CheckCircleIcon sx={{ color: "#4caf50" }} />} label="Đang hoạt động" color="success" sx={{ fontWeight: 600, fontSize: 16, px: 2 }} />
                     ) : (
-                      <Chip icon={<WarningAmber sx={{ color: "#ffb300" }} />} label="Đang đóng cửa" sx={{ fontWeight: 600, fontSize: 16, px: 2, bgcolor: "#fffde7", color: "#ffb300" }} />
+                      <Chip
+                        icon={<WarningAmber sx={{ color: "#ffb300" }} />}
+                        label="Đang đóng cửa"
+                        sx={{ fontWeight: 600, fontSize: 16, px: 2, bgcolor: "#fffde7", color: "#ffb300" }}
+                      />
                     )}
                   </Box>
                 </Box>
                 <Box sx={{ flex: 1, pl: isMobile ? 0 : 3, pt: isMobile ? 2 : 0 }}>
-                  <Typography sx={{ display: 'flex', alignItems: 'center', justifyContent: 'flex-end', color: '#616161', fontWeight: 600, fontSize: 13, mb: 1 }}>
-                    <CalendarMonthIcon sx={{ fontSize: 16, mr: 0.5, mb: '1.5px' }} />
+                  <Typography sx={{ display: "flex", alignItems: "center", justifyContent: "flex-end", color: "#616161", fontWeight: 600, fontSize: 13, mb: 1 }}>
+                    <CalendarMonthIcon sx={{ fontSize: 16, mr: 0.5, mb: "1.5px" }} />
                     Ngày thành lập: {new Date(selectedStore.createdAt).toLocaleString()}
                   </Typography>
                   <Box mb={3}>
@@ -200,35 +196,57 @@ const StoreSection = () => {
                     </Box>
                     <TextField
                       value={nameValue}
-                      onChange={e => setNameValue(e.target.value.slice(0, 30))}
+                      onChange={(e) => setNameValue(e.target.value.slice(0, 30))}
                       fullWidth
                       disabled={!editingName || nameLoading}
                       variant="outlined"
                       size="small"
-                      sx={{ mt: 0.5, bgcolor: editingName ? "#fff" : "#f5f5f5", borderRadius: 2, '& .MuiOutlinedInput-root': { borderRadius: 2, fontSize: 16, height: 38, padding: '0 10px' } }}
-                      inputProps={{ style: { fontWeight: 700, fontSize: 16, color: '#e91e63', padding: '8px 10px' }, maxLength: 30 }}
+                      sx={{
+                        mt: 0.5,
+                        bgcolor: editingName ? "#fff" : "#f5f5f5",
+                        borderRadius: 2,
+                        "& .MuiOutlinedInput-root": { borderRadius: 2, fontSize: 16, height: 38, padding: "0 10px" },
+                      }}
+                      inputProps={{ style: { fontWeight: 700, fontSize: 16, color: "#e91e63", padding: "8px 10px" }, maxLength: 30 }}
                       helperText={editingName ? `${nameValue.length}/30 ký tự` : undefined}
                     />
                     {editingName && (
                       <Box display="flex" gap={2} mt={1}>
-                        <Button type="button" variant="contained" sx={{ bgcolor: "#e91e63", fontWeight: 600, borderRadius: 2, textTransform: "none" }} disabled={nameLoading || nameValue.length === 0 || nameValue.length > 30} onClick={async () => {
-                          setNameLoading(true);
-                          try {
-                            await storeApi.update(selectedStore.id, { name: nameValue, description: selectedStore.description });
-                            setSelectedStore({ ...selectedStore, name: nameValue });
-                            if (user && user.stores) {
-                              const storeList = Array.isArray(user.stores) ? user.stores : [user.stores];
-                              const updatedStores = storeList.map(s => s.id === selectedStore.id ? { ...s, name: nameValue } : s);
-                              setUser({ ...user, stores: Array.isArray(user.stores) ? updatedStores : updatedStores[0] });
+                        <Button
+                          type="button"
+                          variant="contained"
+                          sx={{ bgcolor: "#e91e63", fontWeight: 600, borderRadius: 2, textTransform: "none" }}
+                          disabled={nameLoading || nameValue.length === 0 || nameValue.length > 30}
+                          onClick={async () => {
+                            setNameLoading(true);
+                            try {
+                              await storeApi.update(selectedStore.id, { name: nameValue, description: selectedStore.description });
+                              setSelectedStore({ ...selectedStore, name: nameValue });
+                              if (user && user.stores) {
+                                const storeList = Array.isArray(user.stores) ? user.stores : [user.stores];
+                                const updatedStores = storeList.map((s) => (s.id === selectedStore.id ? { ...s, name: nameValue } : s));
+                                setUser({ ...user, stores: Array.isArray(user.stores) ? updatedStores : updatedStores[0] });
+                              }
+                              setEditingName(false);
+                            } catch {
+                              alert("Cập nhật tên thất bại");
+                            } finally {
+                              setNameLoading(false);
                             }
+                          }}>
+                          Lưu
+                        </Button>
+                        <Button
+                          type="button"
+                          variant="outlined"
+                          sx={{ borderRadius: 2, textTransform: "none" }}
+                          disabled={nameLoading}
+                          onClick={() => {
                             setEditingName(false);
-                          } catch {
-                            alert("Cập nhật tên thất bại");
-                          } finally {
-                            setNameLoading(false);
-                          }
-                        }}>Lưu</Button>
-                        <Button type="button" variant="outlined" sx={{ borderRadius: 2, textTransform: "none" }} disabled={nameLoading} onClick={() => { setEditingName(false); setNameValue(selectedStore.name || ""); }}>Hủy</Button>
+                            setNameValue(selectedStore.name || "");
+                          }}>
+                          Hủy
+                        </Button>
                       </Box>
                     )}
                   </Box>
@@ -238,7 +256,7 @@ const StoreSection = () => {
                       Địa chỉ
                     </Typography>
                     <Typography variant="body1" fontWeight={500}>
-                      {renderAddress(selectedStore.address)}
+                      {renderAddress(selectedStore.room)}
                     </Typography>
                   </Box>
                   {/* Mô tả */}
@@ -255,7 +273,7 @@ const StoreSection = () => {
                     </Box>
                     <TextField
                       value={descValue}
-                      onChange={e => setDescValue(e.target.value.slice(0, 500))}
+                      onChange={(e) => setDescValue(e.target.value.slice(0, 500))}
                       fullWidth
                       disabled={!editingDesc || descLoading}
                       variant="outlined"
@@ -263,26 +281,43 @@ const StoreSection = () => {
                       multiline
                       minRows={2}
                       maxRows={4}
-                      sx={{ mt: 0.5, bgcolor: editingDesc ? "#fff" : "#f5f5f5", borderRadius: 2, '& .MuiOutlinedInput-root': { borderRadius: 2, fontSize: 15, padding: '0 10px' } }}
-                      inputProps={{ style: { fontWeight: 500, fontSize: 15, padding: '8px 10px' }, maxLength: 500 }}
+                      sx={{ mt: 0.5, bgcolor: editingDesc ? "#fff" : "#f5f5f5", borderRadius: 2, "& .MuiOutlinedInput-root": { borderRadius: 2, fontSize: 15, padding: "0 10px" } }}
+                      inputProps={{ style: { fontWeight: 500, fontSize: 15, padding: "8px 10px" }, maxLength: 500 }}
                       placeholder="Chưa cập nhật"
                       helperText={editingDesc ? `${descValue.length}/500 ký tự` : undefined}
                     />
                     {editingDesc && (
                       <Box display="flex" gap={2} mt={1}>
-                        <Button type="button" variant="contained" sx={{ bgcolor: "#e91e63", fontWeight: 600, borderRadius: 2, textTransform: "none" }} disabled={descLoading || descValue.length > 500} onClick={async () => {
-                          setDescLoading(true);
-                          try {
-                            await storeApi.update(selectedStore.id, { name: selectedStore.name, description: descValue });
-                            setSelectedStore({ ...selectedStore, description: descValue });
+                        <Button
+                          type="button"
+                          variant="contained"
+                          sx={{ bgcolor: "#e91e63", fontWeight: 600, borderRadius: 2, textTransform: "none" }}
+                          disabled={descLoading || descValue.length > 500}
+                          onClick={async () => {
+                            setDescLoading(true);
+                            try {
+                              await storeApi.update(selectedStore.id, { name: selectedStore.name, description: descValue });
+                              setSelectedStore({ ...selectedStore, description: descValue });
+                              setEditingDesc(false);
+                            } catch {
+                              alert("Cập nhật mô tả thất bại");
+                            } finally {
+                              setDescLoading(false);
+                            }
+                          }}>
+                          Lưu
+                        </Button>
+                        <Button
+                          type="button"
+                          variant="outlined"
+                          sx={{ borderRadius: 2, textTransform: "none" }}
+                          disabled={descLoading}
+                          onClick={() => {
                             setEditingDesc(false);
-                          } catch {
-                            alert("Cập nhật mô tả thất bại");
-                          } finally {
-                            setDescLoading(false);
-                          }
-                        }}>Lưu</Button>
-                        <Button type="button" variant="outlined" sx={{ borderRadius: 2, textTransform: "none" }} disabled={descLoading} onClick={() => { setEditingDesc(false); setDescValue(selectedStore.description || ""); }}>Hủy</Button>
+                            setDescValue(selectedStore.description || "");
+                          }}>
+                          Hủy
+                        </Button>
                       </Box>
                     )}
                   </Box>
@@ -299,9 +334,8 @@ const StoreSection = () => {
                         fontSize: 16,
                         cursor: "pointer",
                         boxShadow: "0 2px 8px rgba(233,30,99,0.12)",
-                        transition: "background 0.2s"
-                      }}
-                    >
+                        transition: "background 0.2s",
+                      }}>
                       Đến trang cửa hàng
                     </button>
                   </Box>
@@ -315,4 +349,4 @@ const StoreSection = () => {
   );
 };
 
-export default StoreSection; 
+export default StoreSection;

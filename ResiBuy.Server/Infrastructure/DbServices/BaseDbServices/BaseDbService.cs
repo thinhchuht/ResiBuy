@@ -171,13 +171,13 @@ namespace ResiBuy.Server.Infrastructure.DbServices.BaseDbServices
         {
             try
             {
-                var entity = await GetByIdBaseAsync(id); // nếu không tìm thấy sẽ tự throw NotFound
+                var entity = await GetByIdBaseAsync(id); 
                 _dbSet.Remove(entity);
                 return entity;
             }
             catch (CustomException)
             {
-                throw; // giữ nguyên lỗi NotFound hoặc RepositoryError
+                throw; 
             }
             catch (Exception ex)
             {

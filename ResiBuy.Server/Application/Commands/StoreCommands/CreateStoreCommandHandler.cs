@@ -1,11 +1,3 @@
-using ResiBuy.Server.Exceptions;
-using ResiBuy.Server.Infrastructure.DbServices.StoreDbServices;
-using ResiBuy.Server.Infrastructure.DbServices.UserDbServices;
-using ResiBuy.Server.Infrastructure.Model;
-using System;
-using System.Threading;
-using System.Threading.Tasks;
-
 namespace ResiBuy.Server.Application.Commands.StoreCommands
 {
     public record CreateStoreCommand(
@@ -38,7 +30,7 @@ namespace ResiBuy.Server.Application.Commands.StoreCommands
                 throw new CustomException(ExceptionErrorCode.NotFound, "Người dùng không tồn tại");
             if (await _storeDbService.CheckRoomIsAvailable(command.RoomId))
                 throw new CustomException(ExceptionErrorCode.DuplicateValue, "Room đã có người sử dụng");
-
+            if (!(await _storeDbService.CheckStoreIsAvailable(command.Name))) throw new CustomException(ExceptionErrorCode.ValidationFailed, "Tên cửa hàng đã tồn tại, thử lại 1 tên khác.");
             var store = new Store
             {
                 Name = command.Name,

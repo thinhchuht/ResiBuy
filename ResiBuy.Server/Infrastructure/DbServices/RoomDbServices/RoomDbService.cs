@@ -205,12 +205,14 @@
                 if (pageNumber < 1 || pageSize < 1)
                     throw new CustomException(ExceptionErrorCode.ValidationFailed, "Số trang và số phần tử phải lớn hơn 0");
 
-                if (string.IsNullOrWhiteSpace(keyword))
-                    keyword = string.Empty;
 
                 var query = _context.Rooms
-                    .Where(r => r.BuildingId == buildingId && r.Name.Contains(keyword.Trim()))
+                    .Where(r => r.BuildingId == buildingId)
                     .AsQueryable();
+
+                if (!string.IsNullOrWhiteSpace(keyword))
+                    query.Where(r => r.Name.Contains(keyword.Trim()));
+
 
                 var totalCount = await query.CountAsync();
                 var items = await query
