@@ -461,7 +461,7 @@ export default function CreateProduct() {
                       onClick={() =>
                         removeclassifyValue(classifiesIndex, valueIndex)
                       }
-                      disabled={!data.isEdit}
+                      disabled={!classifyValue.isEdit}
                     >
                       <Delete />
                     </IconButton>
