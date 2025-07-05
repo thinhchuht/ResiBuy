@@ -7,6 +7,7 @@ public interface IOrderDbService : IBaseDbService<Order>
         PaymentMethod paymentMethod,
         PaymentStatus paymentStatus,
         Guid storeId,
+        Guid shipperId,
         string userId = null,
         int pageNumber = 1,
         int pageSize = 10,

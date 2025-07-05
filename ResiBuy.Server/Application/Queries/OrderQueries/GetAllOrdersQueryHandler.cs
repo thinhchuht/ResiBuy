@@ -7,6 +7,7 @@ namespace ResiBuy.Server.Application.Queries.OrderQueries
         PaymentMethod PaymentMethod,
         PaymentStatus PaymentStatus,
         Guid StoreId,
+        Guid ShipperId,
         string UserId = null,
         int PageNumber = 1,
         int PageSize = 10,
@@ -23,6 +24,7 @@ namespace ResiBuy.Server.Application.Queries.OrderQueries
                 request.PaymentMethod,
                 request.PaymentStatus,
                 request.StoreId,
+                request.ShipperId,
                 request.UserId,
                 request.PageNumber,
                 request.PageSize,
@@ -34,6 +36,7 @@ namespace ResiBuy.Server.Application.Queries.OrderQueries
             var items = result.Items.Select(item => new OrderQueryResult(
                 item.Id,
                 item.UserId,
+                item.ShipperId,
                 item.CreateAt,
                 item.UpdateAt,
                 item.Status,
