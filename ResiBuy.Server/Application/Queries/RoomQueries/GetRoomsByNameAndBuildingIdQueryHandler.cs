@@ -11,8 +11,8 @@
         {
             try
             {
-                if(string.IsNullOrWhiteSpace(query.Keyword))
-                throw new CustomException(ExceptionErrorCode.ValidationFailed, "Từ khóa tìm kiếm không được để trống.");
+                //if(string.IsNullOrWhiteSpace(query.Keyword))
+                //throw new CustomException(ExceptionErrorCode.ValidationFailed, "Từ khóa tìm kiếm không được để trống.");
 
                 var paged = await roomDbService.SearchRoomsByNameAndBuildingAsync(
                     query.BuildingId, query.Keyword, query.PageNumber, query.PageSize

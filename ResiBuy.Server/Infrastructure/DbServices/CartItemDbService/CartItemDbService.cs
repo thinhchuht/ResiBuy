@@ -85,7 +85,7 @@ namespace ResiBuy.Server.Infrastructure.DbServices.CartItemDbService
                 //if (productDetailIds == null || !productDetailIds.Any()) throw new CustomException(ExceptionErrorCode.InvalidInput, "Không có sản phẩm nào trong giỏ hàng");
                 var cartItems = await GetMatchingCartItemsAsync(cartId, productDetailIds);
                 _context.CartItems.RemoveRange(cartItems);
-                await _context.SaveChangesAsync();
+                //await _context.SaveChangesAsync();
                 return ResponseModel.SuccessResponse();
             }
 
