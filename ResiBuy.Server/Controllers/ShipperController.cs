@@ -47,10 +47,18 @@ namespace ResiBuy.Server.Controllers
             return Ok(result);
         }
 
-        [HttpGet]
-        public async Task<IActionResult> GetAllShippers([FromQuery] int pageSize = 5, [FromQuery] int pageNumber = 1)
+        [HttpPut("{id}/is-shipping")]
+        public async Task<IActionResult> UpdateShipperIsShipping(Guid id, [FromBody] UpdateShipperIsShippingCommand command)
         {
-            var result = await _mediator.Send(new GetAllShippersQuery(pageNumber, pageSize));
+            command = command with { ShipperId = id };
+            var result = await _mediator.Send(command);
+            return Ok(result);
+        }
+
+        [HttpGet]
+        public async Task<IActionResult> GetAllShippers([FromQuery] int pageSize = 5, [FromQuery] int pageNumber = 1, [FromQuery] bool? isShipping = null)
+        {
+            var result = await _mediator.Send(new GetAllShippersQuery(pageNumber, pageSize, isShipping));
             return Ok(result);
         }
 

@@ -42,7 +42,15 @@ namespace ResiBuy.Server.Infrastructure.DbServices.ShipperDbServices
             }
         }
 
-
+        public async Task<IEnumerable<Shipper>> GetAllShippersAsync(int pageNumber, int pageSize, bool? isShipping = null)
+        {
+            var query = _context.Shippers.AsQueryable();
+            if (isShipping.HasValue)
+            {
+                query = query.Where(s => s.IsShipping == isShipping.Value);
+            }
+            return await query.Skip((pageNumber - 1) * pageSize).Take(pageSize).ToListAsync();
+        }
 
         public async Task<Shipper> GetShipperByIdAsync(Guid id)
         {
@@ -120,6 +128,10 @@ namespace ResiBuy.Server.Infrastructure.DbServices.ShipperDbServices
             }
         }
 
-
+        public async Task UpdateShipperAsync(Shipper shipper)
+        {
+            _context.Shippers.Update(shipper);
+            await _context.SaveChangesAsync();
+        }
     }
 }
