@@ -13,6 +13,7 @@ using ResiBuy.Server.Services.ShippingCost;
 using ResiBuy.Server.Services.OpenRouteService;
 using ResiBuy.Server.Services.MyBackgroundService;
 
+
 namespace ResiBuy.Server.Extensions
 {
     public static class ServiceCollectionExtensions
@@ -49,6 +50,7 @@ namespace ResiBuy.Server.Extensions
             services.AddHttpClient<GoogleDistanceService>();
             services.AddHttpClient<OpenRouteService>();
             services.AddHostedService<AssignOrderForShipper>();
+
             return services;
         }
 
