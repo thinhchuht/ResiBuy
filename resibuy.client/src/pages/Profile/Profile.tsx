@@ -6,6 +6,8 @@ import ProfileSidebar from "./ProfileSidebar";
 import PersonalInfoSection from "./PersonalInfoSection";
 import PasswordChangeSection from "./PasswordChangeSection";
 import SecuritySection from "./SecuritySection";
+import ShipperSection from "./ShipperSection";
+import StoreSection from "./StoreSection";
 
 function maskMiddle(str: string | undefined) {
   if (!str || str.length < 3) return str || "";
@@ -58,6 +60,8 @@ const Profile: React.FC = () => {
               />
             )}
             {selected === 2 && <SecuritySection />}
+            {selected === 3 && user?.roles?.includes("SHIPPER") && <ShipperSection />}
+            {selected === 4 && user?.roles?.includes("SELLER") && <StoreSection />}
           </Paper>
         </Box>
       </Container>

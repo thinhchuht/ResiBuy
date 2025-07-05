@@ -12,8 +12,8 @@ using ResiBuy.Server.Infrastructure;
 namespace ResiBuy.Server.Infrastructure.Migrations
 {
     [DbContext(typeof(ResiBuyContext))]
-    [Migration("20250702154145_Init1")]
-    partial class Init1
+    [Migration("20250704094032_Init")]
+    partial class Init
     {
         /// <inheritdoc />
         protected override void BuildTargetModel(ModelBuilder modelBuilder)
@@ -57,6 +57,12 @@ namespace ResiBuy.Server.Infrastructure.Migrations
 
                     b.Property<bool>("IsActive")
                         .HasColumnType("bit");
+
+                    b.Property<double>("Latitude")
+                        .HasColumnType("float");
+
+                    b.Property<double>("Longitude")
+                        .HasColumnType("float");
 
                     b.Property<string>("Name")
                         .HasColumnType("nvarchar(max)");
@@ -565,18 +571,18 @@ namespace ResiBuy.Server.Infrastructure.Migrations
                         new
                         {
                             Id = "adm_df",
-                            CreatedAt = new DateTime(2025, 7, 2, 22, 41, 44, 884, DateTimeKind.Local).AddTicks(2404),
+                            CreatedAt = new DateTime(2025, 7, 4, 16, 40, 32, 616, DateTimeKind.Local).AddTicks(6818),
                             DateOfBirth = new DateTime(1990, 1, 1, 0, 0, 0, 0, DateTimeKind.Unspecified),
                             Email = "admin@123",
                             EmailConfirmed = true,
                             FullName = "Administrator",
                             IdentityNumber = "admin",
                             IsLocked = false,
-                            PasswordHash = "$2a$11$yiXSVhNIRQWM5CPNvXPgHuy41Y7iC9LaptFf4FHhUP1k4z83arpkG",
+                            PasswordHash = "$2a$11$f12JVdhsiatw5D53d/qdZe6q.vY5CWhM5/VJOeRj8osgh0GKddZA6",
                             PhoneNumber = "admin",
                             PhoneNumberConfirmed = true,
                             Roles = "[\"ADMIN\"]",
-                            UpdatedAt = new DateTime(2025, 7, 2, 22, 41, 44, 884, DateTimeKind.Local).AddTicks(2461)
+                            UpdatedAt = new DateTime(2025, 7, 4, 16, 40, 32, 616, DateTimeKind.Local).AddTicks(6837)
                         });
                 });
 

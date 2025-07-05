@@ -4,10 +4,10 @@
     {
         //User query result
         public record UserQueryResult(string Id, string IdentityNumber, string Email, string PhoneNumber, DateTime DateOfBirth, bool IsLocked, IEnumerable<string> Roles,
-            string FullName, DateTime CreatedAt, DateTime UpdatedAt, Guid? CartId, AvatarQueryResult? Avatar, IEnumerable<RoomQueryResult>? Rooms, IEnumerable<Guid> VoucherIds, IEnumerable<Report> Reports, IEnumerable<Store>? Stores);
+            string FullName, DateTime CreatedAt, DateTime UpdatedAt, Guid? CartId, AvatarQueryResult? Avatar, IEnumerable<RoomQueryResult>? Rooms, IEnumerable<Guid> VoucherIds, IEnumerable<object> Reports, IEnumerable<object>? Stores);
 
         public record AvatarQueryResult(string Id, string Name, string Url, string ThumbUrl);
-
+        public record StoreQueryResult(Guid Id, string Name, string Description, bool IsLocked, bool IsOpen, int ReportCount, DateTime CreatedAt, string OwnerId, object Room);
         //Room query result
         public record RoomQueryResult(Guid Id, string Name, string BuildingName, string AreaName);
 

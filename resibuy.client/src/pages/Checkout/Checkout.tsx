@@ -100,6 +100,7 @@ const Checkout: React.FC = () => {
       addressId,
     };
     try {
+      console.log("updateDto");
       const updated = await checkoutApi.updateTempOrder(user.id, updateDto);
       setTempOrderData(updated.data || updated);
       return true;

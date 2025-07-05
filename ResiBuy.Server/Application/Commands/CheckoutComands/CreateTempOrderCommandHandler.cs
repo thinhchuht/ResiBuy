@@ -12,9 +12,9 @@ namespace ResiBuy.Server.Application.Commands.CheckoutComands
             var dto = request.Dto;
             if (string.IsNullOrEmpty(request.UserId))
                 throw new CustomException(ExceptionErrorCode.ValidationFailed, "UserId không được để trống");
-
             var db = redisService.GetDatabase();
             var groupedCartItems = dto.CartItems.GroupBy(ci => ci.StoreId);
+            if(groupedCartItems.Count() > 10) throw new CustomException(ExceptionErrorCode.ValidationFailed, "Không thể tạo quá 10 đơn hàng 1 lần");
             var tempOrders = new List<TempOrderDto>();
             foreach (var group in groupedCartItems)
             {

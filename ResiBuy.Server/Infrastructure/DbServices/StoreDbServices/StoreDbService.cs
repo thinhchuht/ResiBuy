@@ -1,8 +1,3 @@
-using Microsoft.EntityFrameworkCore;
-using ResiBuy.Server.Exceptions;
-using ResiBuy.Server.Infrastructure.DbServices.BaseDbServices;
-using ResiBuy.Server.Infrastructure.Filter;
-
 namespace ResiBuy.Server.Infrastructure.DbServices.StoreDbServices
 {
     public class StoreDbService : BaseDbService<Store>, IStoreDbService
@@ -23,6 +18,9 @@ namespace ResiBuy.Server.Infrastructure.DbServices.StoreDbServices
                 var totalCount = await query.CountAsync();
                 var items = await query
                     .OrderBy(s => s.Id)
+                    .Include(s => s.Room)
+                    .ThenInclude(r => r.Building)
+                    .ThenInclude(b => b.Area)
                     .Skip((pageNumber - 1) * pageSize)
                     .Take(pageSize)
                     .ToListAsync();
@@ -44,7 +42,9 @@ namespace ResiBuy.Server.Infrastructure.DbServices.StoreDbServices
         {
             try
             {
-                var store = await _context.Stores
+                var store = await _context.Stores.Include(s => s.Room)
+                        .ThenInclude(r => r.Building)
+                        .ThenInclude(b => b.Area)
                     .FirstOrDefaultAsync(s => s.Id == id);
                 return store;
             }
@@ -54,16 +54,31 @@ namespace ResiBuy.Server.Infrastructure.DbServices.StoreDbServices
             }
         }
 
-        public async Task<IEnumerable<Store>> GetStoreByOwnerIdAsync(string ownerId, int pageNumber = 1, int pageSize = 5)
+        public async Task<PagedResult<Store>> GetStoreByOwnerIdAsync(string ownerId, int pageNumber = 1, int pageSize = 5)
         {
             try
             {
-                var store = await _context.Stores
-                    .Where(s => s.OwnerId == ownerId)
+                var query = _context.Stores
+                    .Where(s => s.OwnerId == ownerId) 
+                    .Include(s => s.Room)
+                        .ThenInclude(r => r.Building)
+                        .ThenInclude(b => b.Area);
+
+                var totalCount = await query.CountAsync();
+
+                var items = await query
+                    .OrderBy(s => s.Id)
                     .Skip((pageNumber - 1) * pageSize)
                     .Take(pageSize)
                     .ToListAsync();
-                return store;
+
+                return new PagedResult<Store>
+                {
+                    Items = items,
+                    TotalCount = totalCount,
+                    PageNumber = pageNumber,
+                    PageSize = pageSize
+                };
             }
             catch (Exception ex)
             {
@@ -98,15 +113,21 @@ namespace ResiBuy.Server.Infrastructure.DbServices.StoreDbServices
         {
             try
             {
-                var stores = await _context.Stores.ToListAsync(); 
-                if (stores == null || !stores.Any()) 
-                {
-                    return true;
-                }
-                else
-                {
-                    return !stores.Any(s => s.RoomId == roomId && s.IsLocked == false);
-                }
+                return await _context.Stores
+                    .AnyAsync(s => s.RoomId == roomId);
+            }
+            catch (Exception ex)
+            {
+                throw new CustomException(ExceptionErrorCode.RepositoryError, ex.Message);
+            }
+        }
+
+        public async Task<bool> CheckStoreIsAvailable(string name)
+        {
+            try
+            {
+                return await _context.Stores
+                    .AnyAsync(s => s.Name == name);
             }
             catch (Exception ex)
             {
