@@ -180,7 +180,7 @@ const AppBar: React.FC = () => {
     } else {
       const storeId = Array.isArray(user?.stores) ? user.stores[0]?.id : user?.stores?.id;
       if (storeId) {
-        navigate(`/seller`);
+        navigate(`/store/${storeId}`);
         handleProfileMenuClose();
       }
     }
@@ -192,7 +192,7 @@ const AppBar: React.FC = () => {
   };
 
   const handleStoreSelect = (storeId: string) => {
-    navigate(`/seller`);
+    navigate(`/store/${storeId}`);
     setStoreMenuAnchorEl(null);
     handleProfileMenuClose();
   };

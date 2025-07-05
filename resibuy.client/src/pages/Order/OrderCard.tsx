@@ -142,13 +142,18 @@ const OrderCard = ({ order, onUpdate, onAddressChange, onCancel }: OrderCardProp
     }
   };
 
-  const getPaymentStatusText = (status: PaymentStatus) => {
+  const getPaymentStatusText = (status: PaymentStatus, paymentMethod: number) => {
     switch (status) {
       case PaymentStatus.Paid:
         return "Đã thanh toán";
       case PaymentStatus.Pending:
         return "Chưa thanh toán";
       case PaymentStatus.Failed:
+        if (paymentMethod === 1) {
+          return "Thanh toán thất bại";
+        } else if (paymentMethod === 2) {
+          return "Chờ hoàn tiền";
+        }
         return "Thanh toán thất bại";
       case PaymentStatus.Refunded:
         return "Đã hoàn tiền";
@@ -368,7 +373,7 @@ const OrderCard = ({ order, onUpdate, onAddressChange, onCancel }: OrderCardProp
             }}
           />
           <Chip
-            label={getPaymentStatusText(order.paymentStatus)}
+            label={getPaymentStatusText(order.paymentStatus, order.paymentMethod)}
             sx={{
               backgroundColor: `${getPaymentStatusColor(order.paymentStatus)}30`,
               color: getPaymentStatusColor(order.paymentStatus),
