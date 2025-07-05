@@ -19,6 +19,10 @@ import {
   MenuItem,
   InputLabel,
   FormControl,
+  Card,
+  CardHeader,
+  CardContent,
+  Slider,
 } from "@mui/material";
 import SearchIcon from "@mui/icons-material/Search";
 import EditIcon from "@mui/icons-material/Edit";
@@ -26,7 +30,6 @@ import DeleteIcon from "@mui/icons-material/Delete";
 import CheckCircleIcon from "@mui/icons-material/CheckCircle";
 import axios from "../../api/base.api";
 import { useNavigate, useParams } from "react-router-dom";
-import { Slider } from "@mui/material";
 
 interface ProductDetail {
   id: number;
@@ -60,7 +63,7 @@ interface Product {
 interface Category {
   id: string;
   name: string;
-  status: string; // "true" hoặc "false" dạng chuỗi
+  status: string;
   image: {
     id: string;
     url: string;
@@ -127,14 +130,7 @@ const ProductPage: React.FC = () => {
 
   const handleFilterSubmit = (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
-    const min = priceRange[0];
-    const max = priceRange[1];
-    fetchProducts(
-      searchInput,
-      isNaN(min) ? undefined : min,
-      isNaN(max) ? undefined : max,
-      selectedCategory
-    );
+    fetchProducts(searchInput, priceRange[0], priceRange[1], selectedCategory);
   };
 
   const handleEdit = (id: number) => {
@@ -170,108 +166,103 @@ const ProductPage: React.FC = () => {
 
   return (
     <Box p={3}>
-      <Box
-        display="flex"
-        justifyContent="space-between"
-        alignItems="center"
-        mb={3}
-      >
-        <Typography variant="h5">Quản lý sản phẩm</Typography>
-        <Button variant="contained" color="primary" onClick={handleCreate}>
-          Thêm sản phẩm
-        </Button>
-      </Box>
-
-      {/* Bộ lọc */}
-      <Box component="form" onSubmit={handleFilterSubmit} mb={3}>
-        <Box
-          display="flex"
-          flexWrap="wrap"
-          gap={2}
-          justifyContent="space-between"
-        >
-          <TextField
-            sx={{ flex: 1, minWidth: "220px" }}
-            placeholder="Tìm kiếm sản phẩm..."
-            value={searchInput}
-            onChange={(e) => setSearchInput(e.target.value)}
-            InputProps={{
-              endAdornment: (
-                <InputAdornment position="end">
-                  <SearchIcon />
-                </InputAdornment>
-              ),
-            }}
-          />
-
-          <Box sx={{ minWidth: "300px", flex: 1 }}>
-            <Typography gutterBottom>Khoảng giá (₫)</Typography>
-            <Slider
-              value={priceRange}
-              min={0}
-              max={10000000}
-              step={10000}
-              onChange={(e, newValue) => setPriceRange(newValue as number[])}
-              valueLabelDisplay="auto"
-            />
-            <Box display="flex" gap={2} mt={1}>
+      <Card>
+        <CardHeader
+          title={<Typography variant="h5">Quản lý sản phẩm</Typography>}
+          action={
+            <Button variant="contained" color="primary" onClick={handleCreate}>
+              Thêm sản phẩm
+            </Button>
+          }
+        />
+        <CardContent>
+          <Box
+            component="form"
+            onSubmit={handleFilterSubmit}
+            mb={3}
+            display="flex"
+            flexDirection="column"
+            gap={3}
+          >
+            <Box display="grid" gridTemplateColumns="1fr 1fr 1fr auto" gap={2}>
               <TextField
-                label="Giá từ"
-                type="number"
-                value={priceRange[0]}
-                onChange={(e) => {
-                  const value = parseInt(e.target.value, 10) || 0;
-                  setPriceRange([value, Math.max(value, priceRange[1])]);
+                placeholder="Tìm kiếm sản phẩm..."
+                label="Tìm kiếm"
+                value={searchInput}
+                onChange={(e) => setSearchInput(e.target.value)}
+                InputProps={{
+                  endAdornment: (
+                    <InputAdornment position="end">
+                      <SearchIcon />
+                    </InputAdornment>
+                  ),
                 }}
-                sx={{ width: "140px" }}
               />
-              <TextField
-                label="Đến"
-                type="number"
-                value={priceRange[1]}
-                onChange={(e) => {
-                  const value = parseInt(e.target.value, 10) || 0;
-                  setPriceRange([Math.min(value, priceRange[0]), value]);
-                }}
-                sx={{ width: "140px" }}
+              <FormControl>
+                <InputLabel>Danh mục</InputLabel>
+                <Select
+                  value={selectedCategory}
+                  label="Danh mục"
+                  onChange={(e) => setSelectedCategory(e.target.value)}
+                >
+                  <MenuItem value="">Tất cả</MenuItem>
+                  {categories.map((cat) => (
+                    <MenuItem key={cat.id} value={cat.id}>
+                      {cat.name}
+                    </MenuItem>
+                  ))}
+                </Select>
+              </FormControl>
+              <Box display="flex" gap={2}>
+                <TextField
+                  label="Giá từ"
+                  type="number"
+                  value={priceRange[0]}
+                  onChange={(e) => {
+                    const value = parseInt(e.target.value, 10) || 0;
+                    setPriceRange([value, Math.max(value, priceRange[1])]);
+                  }}
+                />
+                <TextField
+                  label="Đến"
+                  type="number"
+                  value={priceRange[1]}
+                  onChange={(e) => {
+                    const value = parseInt(e.target.value, 10) || 0;
+                    setPriceRange([Math.min(value, priceRange[0]), value]);
+                  }}
+                />
+              </Box>
+              <Button
+                type="submit"
+                variant="contained"
+                color="primary"
+                sx={{ height: "56px", whiteSpace: "nowrap" }}
+              >
+                Lọc sản phẩm
+              </Button>
+            </Box>
+
+            <Box>
+              <Typography gutterBottom>Khoảng giá (₫)</Typography>
+              <Slider
+                value={priceRange}
+                min={0}
+                max={10000000}
+                step={10000}
+                onChange={(e, newValue) => setPriceRange(newValue as number[])}
+                valueLabelDisplay="auto"
               />
             </Box>
           </Box>
-
-          <FormControl sx={{ minWidth: "160px" }}>
-            <InputLabel>Danh mục</InputLabel>
-            <Select
-              value={selectedCategory}
-              label="Danh mục"
-              onChange={(e) => setSelectedCategory(e.target.value)}
-            >
-              <MenuItem value="">Tất cả</MenuItem>
-              {categories.map((cat) => (
-                <MenuItem key={cat.id} value={cat.id}>
-                  {cat.name}
-                </MenuItem>
-              ))}
-            </Select>
-          </FormControl>
-
-          <Button
-            type="submit"
-            variant="contained"
-            color="primary"
-            sx={{ height: "56px", whiteSpace: "nowrap" }}
-          >
-            Lọc
-          </Button>
-        </Box>
-      </Box>
-
-      {/* Bảng sản phẩm */}
+        </CardContent>
+      </Card>
       {loading ? (
         <Box display="flex" justifyContent="center" mt={5}>
           <CircularProgress />
         </Box>
       ) : (
-        <TableContainer component={Paper}>
+        <TableContainer component={Paper} sx={{ mt: 3, borderRadius: 2 }}>
           <Table>
             <TableHead>
               <TableRow>
@@ -293,11 +284,19 @@ const ProductPage: React.FC = () => {
                 products.map((product) => {
                   const detail = product.productDetails?.[0];
                   return (
-                    <TableRow key={product.id}>
+                    <TableRow
+                      key={product.id}
+                      sx={{
+                        "&:hover": {
+                          backgroundColor: "#f9f9f9",
+                        },
+                      }}
+                    >
                       <TableCell>
                         <Avatar
                           src={detail?.image?.thumbUrl || ""}
                           variant="rounded"
+                          sx={{ width: 56, height: 56 }}
                         />
                       </TableCell>
                       <TableCell>{product.name}</TableCell>
@@ -308,7 +307,12 @@ const ProductPage: React.FC = () => {
                       </TableCell>
                       <TableCell>
                         <Typography
-                          color={!product.isOutOfStock ? "green" : "gray"}
+                          sx={{
+                            fontWeight: 500,
+                            color: !product.isOutOfStock
+                              ? "success.main"
+                              : "text.secondary",
+                          }}
                         >
                           {!product.isOutOfStock ? "Đang bán" : "Tạm hết"}
                         </Typography>

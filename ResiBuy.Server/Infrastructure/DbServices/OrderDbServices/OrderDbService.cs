@@ -7,7 +7,7 @@ public class OrderDbService : BaseDbService<Order>, IOrderDbService
     {
         this._context = context;
     }
-    public async Task<PagedResult<Order>> GetAllAsync(OrderStatus orderStatus, PaymentMethod paymentMethod, PaymentStatus paymentStatus, Guid storeId, string userId = null, int pageNumber = 1, int pageSize = 10, DateTime? startDate = null, DateTime? endDate = null)
+    public async Task<PagedResult<Order>> GetAllAsync(OrderStatus orderStatus, PaymentMethod paymentMethod, PaymentStatus paymentStatus, Guid storeId, Guid shipperId, string userId = null, int pageNumber = 1, int pageSize = 10, DateTime? startDate = null, DateTime? endDate = null)
     {
         try
         {
@@ -25,6 +25,12 @@ public class OrderDbService : BaseDbService<Order>, IOrderDbService
             {
                 query = query.Where(o => o.UserId == userId);
             }
+
+            if (shipperId != Guid.Empty)
+            {
+                query = query.Where(o => o.ShipperId == shipperId);
+            }
+
 
 
             if (orderStatus != OrderStatus.None)
@@ -84,5 +90,16 @@ public class OrderDbService : BaseDbService<Order>, IOrderDbService
                 .Include(o => o.Voucher)
                 .Include(o => o.Shipper).ThenInclude(s => s.User)
                 .Include(o => o.Reports).FirstOrDefaultAsync(o => o.Id == id);
+    }
+    public async Task<List<Order>> getOrdersByStatus(OrderStatus orderStatus)
+    {
+        try
+        {
+            return await _context.Orders.Where(o => o.Status == orderStatus).ToListAsync();
+        }
+        catch (Exception ex)
+        {
+            throw new CustomException(ExceptionErrorCode.RepositoryError, ex.ToString());
+        }
     }
 }

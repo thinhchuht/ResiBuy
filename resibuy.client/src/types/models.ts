@@ -49,7 +49,7 @@ export interface User {
   cartId: string;
   roles: string[];
   rooms: RoomResult[];
-  stores: Store
+  stores: Store;
   refreshTokens: RefreshToken[];
   orders: Order[];
   userVouchers: UserVoucher[];
@@ -98,10 +98,10 @@ export interface ProductDetail {
 export interface Store {
   id: string;
   name: string;
-  address: RoomResult;
+  room: RoomResult;
   description: string;
   isLocked: boolean;
-  isOpen : boolean
+  isOpen: boolean;
   createdAt: string;
   updatedAt: string;
   products: Product[];
@@ -166,13 +166,13 @@ export interface Shipper {
   id: string;
   userId: string;
   isOnline: boolean;
-  isShipping: boolean
+  isShipping: boolean;
   orders: Order[];
   startWorkTime: number;
   endWorkTime: number;
   reportCount: number;
-  lastLocationId : string
-  lastLocation : Area
+  lastLocationId: string;
+  lastLocation: Area;
 }
 
 export interface Voucher {

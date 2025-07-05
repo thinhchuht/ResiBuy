@@ -65,6 +65,8 @@ export default function CreateProduct() {
       .catch((err) => console.error(err));
   }, []);
 
+  const { storeId } = useParams<{ storeId: string }>();
+
   const navigate = useNavigate();
 
   const [listCategory, setListCategory] = useState<Category[]>([]);
@@ -73,7 +75,7 @@ export default function CreateProduct() {
     name: "",
     describe: "",
     discount: 0,
-    storeId: "",
+    storeId: storeId || "",
     categoryId: "",
     productDetails: [],
   });
@@ -178,7 +180,7 @@ export default function CreateProduct() {
   async function uploadImg(file: File, index: number) {
     const formData = new FormData();
     const id = v4();
-      formData.append("id", id);
+    formData.append("id", id);
     // Append file:
     formData.append("file", file); // file binary
     // Gửi API:
@@ -206,9 +208,9 @@ export default function CreateProduct() {
       ...product,
       productDetails: listProductDetail,
     };
-    await axiosClient.post("api/Product", tempProduct).then(res =>{
-      if(res.status === 200){
-        navigate("/store/products");
+    await axiosClient.post("api/Product", tempProduct).then((res) => {
+      if (res.status === 200) {
+        navigate("productPage");
       }
     });
   };
