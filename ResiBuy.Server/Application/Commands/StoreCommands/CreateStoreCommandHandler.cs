@@ -30,7 +30,7 @@ namespace ResiBuy.Server.Application.Commands.StoreCommands
                 throw new CustomException(ExceptionErrorCode.NotFound, "Người dùng không tồn tại");
             if (await _storeDbService.CheckRoomIsAvailable(command.RoomId))
                 throw new CustomException(ExceptionErrorCode.DuplicateValue, "Room đã có người sử dụng");
-            if (!(await _storeDbService.CheckStoreIsAvailable(command.Name))) throw new CustomException(ExceptionErrorCode.ValidationFailed, "Tên cửa hàng đã tồn tại, thử lại 1 tên khác.");
+            if ((await _storeDbService.CheckStoreIsAvailable(command.Name))) throw new CustomException(ExceptionErrorCode.ValidationFailed, "Tên cửa hàng đã tồn tại, thử lại 1 tên khác.");
             var store = new Store
             {
                 Name = command.Name,

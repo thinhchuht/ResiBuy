@@ -2,6 +2,7 @@ using Microsoft.EntityFrameworkCore;
 using ResiBuy.Server.Exceptions;
 using ResiBuy.Server.Infrastructure.DbServices.BaseDbServices;
 using ResiBuy.Server.Infrastructure.Filter;
+using ResiBuy.Server.Services.OpenRouteService;
 using ResiBuy.Server.Services.ShippingCost;
 
 namespace ResiBuy.Server.Infrastructure.DbServices.ShipperDbServices
@@ -9,12 +10,12 @@ namespace ResiBuy.Server.Infrastructure.DbServices.ShipperDbServices
     public class ShipperDbService : BaseDbService<Shipper>, IShipperDbService
     {
         private readonly ResiBuyContext _context;
-        private readonly GoogleDistanceService _googleDistanceService;
+        private readonly OpenRouteService _openRouteService;
 
-        public ShipperDbService(ResiBuyContext context, GoogleDistanceService googleDistanceService) : base(context)
+        public ShipperDbService(ResiBuyContext context, OpenRouteService openRouteService) : base(context)
         {
             _context = context;
-            _googleDistanceService = googleDistanceService;
+            _openRouteService = openRouteService;
         }
 
         public async Task<PagedResult<Shipper>> GetAllShippersAsync(int pageNumber = 1, int pageSize = 5)
@@ -45,7 +46,7 @@ namespace ResiBuy.Server.Infrastructure.DbServices.ShipperDbServices
             }
         }
 
-        public Task<double> GetDistance(Guid curentAreaId, Guid destinationAreaId)
+        public async Task<ORSRouteResponse> GetDistanceAsync(Guid curentAreaId, Guid destinationAreaId)
         {
             try
             {
@@ -54,7 +55,7 @@ namespace ResiBuy.Server.Infrastructure.DbServices.ShipperDbServices
                 if (currentArea == null || destinationArea == null)
                     throw new CustomException(ExceptionErrorCode.NotFound, "Khu vực không tồn tại");
                 // Giả sử bạn có một phương thức tính khoảng cách giữa hai khu vực
-                return _googleDistanceService.GetDistanceInMetersAsync(currentArea.Latitude,currentArea.Longitude,destinationArea.Latitude,destinationArea.Longitude);
+                return await _openRouteService.GetRouteAsync(currentArea.Longitude,currentArea.Latitude,destinationArea.Longitude,destinationArea.Latitude);
             }
             catch (Exception ex)
             {
@@ -89,6 +90,20 @@ namespace ResiBuy.Server.Infrastructure.DbServices.ShipperDbServices
                 return shipper;
             }
             catch (Exception ex)
+            {
+                throw new CustomException(ExceptionErrorCode.RepositoryError, ex.Message);
+            }
+        }
+
+        public Task<List<Shipper>> GetShippersInAreaAsync(Guid areaId)
+        {
+            try
+            {
+                var shippers = _context.Shippers.Where(s => s.LastLocationId == areaId).ToListAsync();
+                return shippers;
+            }
+            catch
+            (Exception ex)
             {
                 throw new CustomException(ExceptionErrorCode.RepositoryError, ex.Message);
             }

@@ -15,4 +15,5 @@ public interface IOrderDbService : IBaseDbService<Order>
         DateTime? endDate = null
     );
     Task<Order> GetById(Guid id);
+    Task<List<Order>> getOrdersByStatus(OrderStatus orderStatus);
 }
