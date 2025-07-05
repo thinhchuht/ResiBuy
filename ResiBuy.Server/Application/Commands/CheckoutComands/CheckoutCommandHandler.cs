@@ -1,11 +1,13 @@
-﻿using ResiBuy.Server.Infrastructure.DbServices.VoucherDbServices;
+﻿using ResiBuy.Server.Infrastructure.DbServices.ProductDetailDbServices;
+using ResiBuy.Server.Infrastructure.DbServices.VoucherDbServices;
 using ResiBuy.Server.Infrastructure.Model.DTOs.CheckoutDtos;
 using ResiBuy.Server.Services.RedisServices;
 
 namespace ResiBuy.Server.Application.Commands.CheckoutComands
 {
     public record CheckoutCommand(string UserId, Guid CheckoutId) : IRequest<ResponseModel>;
-    public class CheckoutCommandHandler(IKafkaProducerService producer, IUserDbService userDbService, ICartDbService cartDbService, IVoucherDbService voucherDbService, IRedisService redisService) : IRequestHandler<CheckoutCommand, ResponseModel>
+    public class CheckoutCommandHandler(IKafkaProducerService producer, IProductDetailDbService productDetailDbService,
+        IUserDbService userDbService, ICartDbService cartDbService, IVoucherDbService voucherDbService, IRedisService redisService) : IRequestHandler<CheckoutCommand, ResponseModel>
     {
         public async Task<ResponseModel> Handle(CheckoutCommand request, CancellationToken cancellationToken)
         {
@@ -58,8 +60,13 @@ namespace ResiBuy.Server.Application.Commands.CheckoutComands
                     }).ToList()
                 }).ToList()
             };
-            var message = JsonSerializer.Serialize(checkoutDto);
-            producer.ProduceMessageAsync("checkout", message, "checkout-topic");
+            var productDetailIds = checkoutData.Orders.SelectMany(o => o.ProductDetails).Select(pd => pd.Id).ToList();
+            var rs = await productDetailDbService.CheckIsOutOfStock(productDetailIds);
+            if(rs.IsSuccess())
+            {
+                var message = JsonSerializer.Serialize(checkoutDto);
+                producer.ProduceMessageAsync("checkout", message, "checkout-topic");
+            }
             return ResponseModel.SuccessResponse();
         }
     }

@@ -1,6 +1,7 @@
 ﻿using Microsoft.EntityFrameworkCore.Storage;
 using ResiBuy.Server.Infrastructure.DbServices.CartItemDbService;
 using ResiBuy.Server.Infrastructure.DbServices.OrderDbServices;
+using ResiBuy.Server.Infrastructure.DbServices.ProductDetailDbServices;
 using ResiBuy.Server.Infrastructure.DbServices.VoucherDbServices;
 using ResiBuy.Server.Infrastructure.Model.DTOs.CheckoutDtos;
 using ResiBuy.Server.Infrastructure.Model.EventDataDto;
@@ -9,8 +10,8 @@ namespace ResiBuy.Server.Application.Commands.OrderCommands
 {
     public record CreateOrderCommand(CheckoutDto CheckoutDto) : IRequest<ResponseModel>;
     public class CreateOrderCommandHandler(IUserDbService userDbService, IOrderDbService orderDbService, IRoomDbService roomDbService,
-        IVoucherDbService voucherDbService, ICartDbService cartDbService, ICartItemDbService cartItemDbService,
-        IStoreDbService storeDbService,
+        IVoucherDbService voucherDbService, ICartDbService cartDbService, ICartItemDbService cartItemDbService, 
+        IProductDetailDbService productDetailDbService, IStoreDbService storeDbService,
         IMailBaseService mailBaseService, INotificationService notificationService
         ) : IRequestHandler<CreateOrderCommand, ResponseModel>
     {
@@ -46,6 +47,8 @@ namespace ResiBuy.Server.Application.Commands.OrderCommands
             {
                 throw new CustomException(ExceptionErrorCode.CreateFailed, "Có người khác đang thao tác với giỏ hàng này. Vui lòng thử lại sau vài phút.");
             }
+            var productDetailIds = dto.Orders.SelectMany(o => o.Items).Select(pd => pd.ProductDetailId).ToList();
+            var rs = await productDetailDbService.CheckIsOutOfStock(productDetailIds);
             IDbContextTransaction? transaction = null;
             try
             {
@@ -68,12 +71,12 @@ namespace ResiBuy.Server.Application.Commands.OrderCommands
                 //mailBaseService.SendEmailAsync(user.Email, "Hóa đơn thanh toán đơn hà ResiBuy",);
                 return ResponseModel.SuccessResponse();
             }
-            catch (Exception)
+            catch (Exception ex)
             {
                 if (transaction != null)
                     await transaction.RollbackAsync();
                 notificationService.SendNotification("OrderCreatedFailed", new {OrderIds = dto.Orders.Select(o => o.Id)}, "", [user.Id]);
-                throw;
+                throw new CustomException(ExceptionErrorCode.RepositoryError, ex.ToString());
             }
         }
     }
