@@ -3,10 +3,10 @@ using Microsoft.EntityFrameworkCore.Migrations;
 
 #nullable disable
 
-namespace ResiBuy.Server.Infrastructure.Migrations
+namespace ResiBuy.Server.Migrations
 {
     /// <inheritdoc />
-    public partial class Init : Migration
+    public partial class t1 : Migration
     {
         /// <inheritdoc />
         protected override void Up(MigrationBuilder migrationBuilder)
@@ -138,7 +138,8 @@ namespace ResiBuy.Server.Infrastructure.Migrations
                     ReportCount = table.Column<int>(type: "int", nullable: false),
                     StartWorkTime = table.Column<float>(type: "real", nullable: false),
                     EndWorkTime = table.Column<float>(type: "real", nullable: false),
-                    LastLocationId = table.Column<Guid>(type: "uniqueidentifier", nullable: false)
+                    LastLocationId = table.Column<Guid>(type: "uniqueidentifier", nullable: false),
+                    LastDelivered = table.Column<DateTime>(type: "datetime2", nullable: true)
                 },
                 constraints: table =>
                 {
@@ -328,7 +329,8 @@ namespace ResiBuy.Server.Infrastructure.Migrations
                     UserId = table.Column<string>(type: "nvarchar(450)", nullable: true),
                     StoreId = table.Column<Guid>(type: "uniqueidentifier", nullable: false),
                     ShipperId = table.Column<Guid>(type: "uniqueidentifier", nullable: true),
-                    VoucherId = table.Column<Guid>(type: "uniqueidentifier", nullable: true)
+                    VoucherId = table.Column<Guid>(type: "uniqueidentifier", nullable: true),
+                    ShippingFee = table.Column<decimal>(type: "decimal(18,2)", nullable: true)
                 },
                 constraints: table =>
                 {
@@ -526,7 +528,7 @@ namespace ResiBuy.Server.Infrastructure.Migrations
             migrationBuilder.InsertData(
                 table: "Users",
                 columns: new[] { "Id", "AvatarId", "CreatedAt", "DateOfBirth", "Email", "EmailConfirmed", "FullName", "IdentityNumber", "IsLocked", "PasswordHash", "PhoneNumber", "PhoneNumberConfirmed", "Roles", "UpdatedAt" },
-                values: new object[] { "adm_df", null, new DateTime(2025, 7, 4, 16, 40, 32, 616, DateTimeKind.Local).AddTicks(6818), new DateTime(1990, 1, 1, 0, 0, 0, 0, DateTimeKind.Unspecified), "admin@123", true, "Administrator", "admin", false, "$2a$11$f12JVdhsiatw5D53d/qdZe6q.vY5CWhM5/VJOeRj8osgh0GKddZA6", "admin", true, "[\"ADMIN\"]", new DateTime(2025, 7, 4, 16, 40, 32, 616, DateTimeKind.Local).AddTicks(6837) });
+                values: new object[] { "adm_df", null, new DateTime(2025, 7, 6, 16, 31, 34, 583, DateTimeKind.Local).AddTicks(4058), new DateTime(1990, 1, 1, 0, 0, 0, 0, DateTimeKind.Unspecified), "admin@123", true, "Administrator", "admin", false, "$2a$11$p5BtIMLHOFSJR6Ba3R5WD.fuTG/7QXWlhRSTO2u6jQPqvw4ZBOa5m", "admin", true, "[\"ADMIN\"]", new DateTime(2025, 7, 6, 16, 31, 34, 583, DateTimeKind.Local).AddTicks(4074) });
 
             migrationBuilder.CreateIndex(
                 name: "IX_AdditionalDatas_ProductDetailId",

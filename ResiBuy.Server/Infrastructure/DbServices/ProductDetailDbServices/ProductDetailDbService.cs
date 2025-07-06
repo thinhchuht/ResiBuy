@@ -1,4 +1,5 @@
-﻿namespace ResiBuy.Server.Infrastructure.DbServices.ProductDetailDbServices
+﻿
+namespace ResiBuy.Server.Infrastructure.DbServices.ProductDetailDbServices
 {
     public class ProductDetailDbService : BaseDbService<ProductDetail>, IProductDetailDbService
     {
@@ -7,6 +8,24 @@
         {
             this._context = context;
         }
+
+        public async Task<ResponseModel> CheckIsOutOfStock(List<int> ids)
+        {
+            var outOfStockProduct = await _context.ProductDetails.Include(pd => pd.Product)
+                .Where(p => ids.Contains(p.Id) && p.IsOutOfStock)
+                .FirstOrDefaultAsync();
+
+            if (outOfStockProduct != null)
+            {
+                throw new CustomException(
+                    ExceptionErrorCode.NotFound,
+                    $"Sản phẩm '{outOfStockProduct.Product.Name}' đã hết hàng"
+                );
+            }
+
+            return ResponseModel.SuccessResponse();
+        }
+
         public async Task<ProductDetail> GetByIdAsync(int id)
         {
             try

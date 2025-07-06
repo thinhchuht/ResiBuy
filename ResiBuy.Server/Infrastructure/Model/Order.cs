@@ -38,6 +38,7 @@
         public Guid StoreId { get; set; }
         public Guid? ShipperId { get; set; }
         public Guid? VoucherId { get; set; }
+        public decimal? ShippingFee { get; set; } = 0;
         public Room ShippingAddress { get; set; }
         public User User { get; set; }
         public Store Store { get; set; }

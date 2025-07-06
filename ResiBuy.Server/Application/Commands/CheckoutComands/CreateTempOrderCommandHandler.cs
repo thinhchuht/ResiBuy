@@ -24,8 +24,8 @@ namespace ResiBuy.Server.Application.Commands.CheckoutComands
                 {
                     var productDetail = await productDetailDbService.GetByIdAsync(ci.ProductDetailId);
                     if (productDetail == null)
-                        throw new CustomException(ExceptionErrorCode.NotFound, $"Không tìm thấy sản phẩm với ProductDetailId: {ci.ProductDetailId}");
-
+                        throw new CustomException(ExceptionErrorCode.NotFound, $"Không tìm thấy sản phẩm: {ci.ProductDetailId}");
+                    if(productDetail.IsOutOfStock) throw new CustomException(ExceptionErrorCode.NotFound, $"Sản phẩm {productDetail.Product.Name} đã hết hàng");
                     tempProductDetails.Add(new TempProductDetailDto(
                         productDetail.Id,
                         productDetail.Product.Name,

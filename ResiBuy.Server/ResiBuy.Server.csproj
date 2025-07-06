@@ -48,6 +48,8 @@
 
   <ItemGroup>
     <Folder Include="Application\Commands\CartitemCommands\" />
+    <Folder Include="Infrastructure\Migrations\" />
+    <Folder Include="Migrations\" />
     <Folder Include="Services\HttpServices\" />
   </ItemGroup>
 </Project>
