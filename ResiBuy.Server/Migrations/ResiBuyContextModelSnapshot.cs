@@ -223,6 +223,9 @@ namespace ResiBuy.Server.Migrations
                     b.Property<Guid>("ShippingAddressId")
                         .HasColumnType("uniqueidentifier");
 
+                    b.Property<decimal?>("ShippingFee")
+                        .HasColumnType("decimal(18,2)");
+
                     b.Property<int>("Status")
                         .HasColumnType("int");
 
@@ -454,6 +457,9 @@ namespace ResiBuy.Server.Migrations
                     b.Property<bool>("IsShipping")
                         .HasColumnType("bit");
 
+                    b.Property<DateTime?>("LastDelivered")
+                        .HasColumnType("datetime2");
+
                     b.Property<Guid>("LastLocationId")
                         .HasColumnType("uniqueidentifier");
 
@@ -568,18 +574,18 @@ namespace ResiBuy.Server.Migrations
                         new
                         {
                             Id = "adm_df",
-                            CreatedAt = new DateTime(2025, 7, 3, 22, 59, 35, 138, DateTimeKind.Local).AddTicks(8492),
+                            CreatedAt = new DateTime(2025, 7, 6, 16, 31, 34, 583, DateTimeKind.Local).AddTicks(4058),
                             DateOfBirth = new DateTime(1990, 1, 1, 0, 0, 0, 0, DateTimeKind.Unspecified),
                             Email = "admin@123",
                             EmailConfirmed = true,
                             FullName = "Administrator",
                             IdentityNumber = "admin",
                             IsLocked = false,
-                            PasswordHash = "$2a$11$W9PRWqgg4usea3yxTTW8que0XzrVilYoFuWU.QStY05KNbBjuI1jO",
+                            PasswordHash = "$2a$11$p5BtIMLHOFSJR6Ba3R5WD.fuTG/7QXWlhRSTO2u6jQPqvw4ZBOa5m",
                             PhoneNumber = "admin",
                             PhoneNumberConfirmed = true,
                             Roles = "[\"ADMIN\"]",
-                            UpdatedAt = new DateTime(2025, 7, 3, 22, 59, 35, 138, DateTimeKind.Local).AddTicks(8517)
+                            UpdatedAt = new DateTime(2025, 7, 6, 16, 31, 34, 583, DateTimeKind.Local).AddTicks(4074)
                         });
                 });
 
