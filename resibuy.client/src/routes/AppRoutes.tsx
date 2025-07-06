@@ -1,5 +1,10 @@
 import React from "react";
-import { BrowserRouter as Router, Routes, Route, Navigate } from "react-router-dom";
+import {
+  BrowserRouter as Router,
+  Routes,
+  Route,
+  Navigate,
+} from "react-router-dom";
 import { useAuth } from "../contexts/AuthContext";
 import Login from "../components/auth/Login";
 import ProtectedRoute from "../components/auth/ProtectedRoute";
@@ -27,6 +32,8 @@ import OverviewPage from "../pages/Admin/Resi/page";
 import BuildingsPage from "../components/admin/Building/BuildingPage";
 import RoomsPage from "../components/admin/Room/RoomPage";
 import ListStore from "../pages/Store/ListStore";
+import ShipperLayout from "../layouts/ShipperLayout/ShipperLayout";
+import OrdersPage from "../pages/Shipper/OrdersPage";
 const AppRoutes: React.FC = () => {
   const { user } = useAuth();
 
@@ -171,14 +178,19 @@ const AppRoutes: React.FC = () => {
             </ProtectedRoute>
           }
         />
+
         <Route
-          path="/shipper/*"
+          path="/shipper"
           element={
             <ProtectedRoute allowedRoles={["SHIPPER"]}>
-              <div>Shipper Dashboard</div>
+              <ShipperLayout />
             </ProtectedRoute>
           }
-        />
+        >
+          <Route index element={<Navigate to="orders" replace />} />
+          <Route path="orders" element={<OrdersPage />} />
+        </Route>
+
         <Route path="/unauthorized" element={<Unauthorized />} />
         <Route path="/forbidden" element={<Forbidden />} />
         <Route path="*" element={<Navigate to="/" replace />} />
