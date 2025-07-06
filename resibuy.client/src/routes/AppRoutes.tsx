@@ -34,6 +34,7 @@ import RoomsPage from "../components/admin/Room/RoomPage";
 import ListStore from "../pages/Store/ListStore";
 import ShipperLayout from "../layouts/ShipperLayout/ShipperLayout";
 import OrdersPage from "../pages/Shipper/OrdersPage";
+import HomePage from "../pages/Shipper/HomePage";
 const AppRoutes: React.FC = () => {
   const { user } = useAuth();
 
@@ -89,7 +90,7 @@ const AppRoutes: React.FC = () => {
         <Route
           path="/profile"
           element={
-            <ProtectedRoute allowedRoles={["CUSTOMER", "ADMIN"]}>
+            <ProtectedRoute allowedRoles={["CUSTOMER", "ADMIN", "SHIPPER"]}>
               <HomeLayout>
                 <Profile />
               </HomeLayout>
@@ -179,6 +180,7 @@ const AppRoutes: React.FC = () => {
           }
         />
 
+        {/* Shipper      */}
         <Route
           path="/shipper"
           element={
@@ -187,9 +189,16 @@ const AppRoutes: React.FC = () => {
             </ProtectedRoute>
           }
         >
-          <Route index element={<Navigate to="orders" replace />} />
+          <Route index element={<Navigate to="shipper" replace />} />
+          <Route path="shipper" element={<HomePage />} />
           <Route path="orders" element={<OrdersPage />} />
         </Route>
+
+
+
+
+
+
 
         <Route path="/unauthorized" element={<Unauthorized />} />
         <Route path="/forbidden" element={<Forbidden />} />

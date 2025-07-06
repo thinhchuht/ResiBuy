@@ -1,4 +1,4 @@
-import React from "react";
+import React, { useEffect, useState } from "react";
 import {
   Drawer,
   List,
@@ -12,15 +12,57 @@ import {
   Stack,
 } from "@mui/material";
 import { Link } from "react-router-dom";
+import { useAuth } from "../../../contexts/AuthContext";
+import userApi from "../../../api/user.api";
+import shipperApi from "../../../api/ship.api";
 
 const drawerWidth = 240;
 
-const ShipperSidebar: React.FC = () => {
-  const user = {
-    name: "Nguyễn Văn A",
-    status: "Đang hoạt động",
-    avatar: "https://i.pravatar.cc/100?img=3",
+interface ShipperUser {
+  fullName: string;
+  avatar?: {
+    url?: string;
   };
+}
+
+interface ShipperInfo {
+  isOnline: boolean;
+  user: ShipperUser;
+  // Add other fields from shipperRes.data if needed
+}
+
+const ShipperSidebar: React.FC = () => {
+  const { user } = useAuth();
+  const [shipperInfo, setShipperInfo] = useState<ShipperInfo | null>(null);
+
+  useEffect(() => {
+    const fetchData = async () => {
+      if (!user?.id) return;
+
+      const [shipperRes, userRes] = await Promise.all([
+        shipperApi.getByUserId(user.id),
+        userApi.getById(user.id),
+      ]);
+
+      if (!shipperRes.error && !userRes.error) {
+        setShipperInfo({
+          ...shipperRes.data,
+          user: {
+            ...shipperRes.data.user,
+            avatar: userRes.data.avatar, // Gộp avatar từ userApi
+          },
+        });
+      }
+    };
+
+    fetchData();
+  }, [user]);
+
+  if (!shipperInfo) return null;
+
+  const isOnline = shipperInfo.isOnline;
+  const avatarUrl = shipperInfo.user.avatar?.url;
+  const fullName = shipperInfo.user.fullName;
 
   return (
     <Drawer
@@ -35,28 +77,25 @@ const ShipperSidebar: React.FC = () => {
       }}
     >
       <Box sx={{ p: 2, textAlign: "center" }}>
-        {/* Logo App */}
         <Typography variant="h6" fontWeight="bold">
           ResiBuy Shipper
         </Typography>
 
-        {/* Avatar + Info */}
         <Stack alignItems="center" spacing={1} mt={2}>
           <Avatar
-            src={user.avatar}
-            alt={user.name}
+            src={avatarUrl}
+            alt={fullName}
             sx={{ width: 64, height: 64 }}
           />
-          <Typography variant="subtitle1">{user.name}</Typography>
-          <Typography variant="caption" color="green">
-            ● {user.status}
+          <Typography variant="subtitle1">{fullName}</Typography>
+          <Typography variant="caption" color={isOnline ? "green" : "gray"}>
+            ● {isOnline ? "Đang hoạt động" : "Ngoại tuyến"}
           </Typography>
         </Stack>
       </Box>
 
       <Divider />
 
-      {/* Menu */}
       <List>
         <ListItem disablePadding>
           <ListItemButton component={Link} to="/shipper">

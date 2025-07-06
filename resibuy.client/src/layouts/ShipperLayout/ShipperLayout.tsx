@@ -76,11 +76,9 @@ const ShipperLayout: React.FC = () => {
 function getPageTitle(path: string) {
   switch (path) {
     case "orders":
-      return "Đơn hàng cần giao";
-    case "profile":
-      return "Hồ sơ cá nhân";
+      return "Lịch sử đơn hàng";
     default:
-      return "Trang shipper";
+      return "Trang chủ";
   }
 }
 
