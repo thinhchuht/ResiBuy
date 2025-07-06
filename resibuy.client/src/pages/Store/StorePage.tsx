@@ -13,7 +13,14 @@ const StorePage: React.FC = () => {
   const { storeId } = useParams<{ storeId: string }>(); // lấy param
 
   return (
-    <Box sx={{ display: "flex" }}>
+    <Box
+      sx={{
+        display: "flex",
+        alignItems: "flex-start",
+        p: 2,
+        bgcolor: "#c9b6b2",
+      }}
+    >
       <Sidebar menuItems={menuItems(storeId!)} />
 
       {/* Content bên phải */}
