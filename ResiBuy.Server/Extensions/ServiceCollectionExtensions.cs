@@ -8,6 +8,11 @@ using ResiBuy.Server.Infrastructure.DbServices.CartItemDbService;
 using ResiBuy.Server.Infrastructure.DbServices.OrderDbServices;
 using ResiBuy.Server.Infrastructure.DbServices.OrderItemDbServices;
 using ResiBuy.Server.Services.CheckoutSessionService;
+using ResiBuy.Server.Infrastructure.DbServices.ProductDetailDbServices;
+using ResiBuy.Server.Services.ShippingCost;
+using ResiBuy.Server.Services.OpenRouteService;
+using ResiBuy.Server.Services.MyBackgroundService;
+
 
 namespace ResiBuy.Server.Extensions
 {
@@ -41,6 +46,11 @@ namespace ResiBuy.Server.Extensions
             services.AddScoped<ICartItemDbService, CartItemDbService>();
             services.AddScoped<IOrderDbService, OrderDbService>();
             services.AddScoped<IOrderItemDbService, OrderItemDbService>();
+            services.AddScoped<IProductDetailDbService, ProductDetailDbService>();
+            services.AddHttpClient<GoogleDistanceService>();
+            services.AddHttpClient<OpenRouteService>();
+            services.AddHostedService<AssignOrderForShipper>();
+
             return services;
         }
 

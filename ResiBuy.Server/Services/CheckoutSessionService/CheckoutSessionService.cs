@@ -1,3 +1,4 @@
+using ResiBuy.Server.Infrastructure.Model.DTOs.CheckoutDtos;
 using System.Collections.Concurrent;
 
 namespace ResiBuy.Server.Services.CheckoutSessionService;
@@ -25,7 +26,7 @@ public class CheckoutSessionService : ICheckoutSessionService
         }
     }
 
-    public void StoreCheckoutSession(Guid orderId, CheckoutDto checkoutDto)
+    public void StoreCheckoutSession(Guid orderId, TempCheckoutDto checkoutDto)
     {
         var jsonData = JsonSerializer.Serialize(checkoutDto, new JsonSerializerOptions
         {
@@ -40,7 +41,7 @@ public class CheckoutSessionService : ICheckoutSessionService
 
     }
 
-    public CheckoutDto GetCheckoutSession(string sessionId)
+    public TempCheckoutDto GetCheckoutSession(string sessionId)
     {
         if (_sessions.TryGetValue(sessionId, out var sessionData))
         {
@@ -48,7 +49,7 @@ public class CheckoutSessionService : ICheckoutSessionService
             {
                 try
                 {
-                    return JsonSerializer.Deserialize<CheckoutDto>(sessionData.JsonData);
+                    return JsonSerializer.Deserialize<TempCheckoutDto>(sessionData.JsonData);
                 }
                 catch
                 {

@@ -4,6 +4,7 @@ public enum OrderStatus
     None,
     Pending,
     Processing,
+    StoreAccepted,
     Shipped,
     Delivered,
     Cancelled

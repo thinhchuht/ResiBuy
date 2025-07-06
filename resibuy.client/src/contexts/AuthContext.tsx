@@ -23,7 +23,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const [userId, setUserId] = useState<string | null>(localStorage.getItem("userId"));
 
   useEffect(() => {
-    const fetchUser = async () => {
+    const fetchUser = async () => { 
       if (token && userId) {
         try {
           const response = await userApi.getById(userId);

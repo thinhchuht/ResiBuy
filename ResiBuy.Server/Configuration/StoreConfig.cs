@@ -10,6 +10,11 @@
                    .HasForeignKey(s => s.OwnerId)
                    .OnDelete(DeleteBehavior.Cascade);
 
+            builder.HasOne(s => s.Owner)
+                     .WithMany(u => u.Stores)
+                     .HasForeignKey(s => s.OwnerId)
+                     .OnDelete(DeleteBehavior.Cascade);
+
             builder.HasOne(s => s.Room)
                    .WithMany()
                    .HasForeignKey(s => s.RoomId)

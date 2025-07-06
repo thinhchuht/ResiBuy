@@ -1,4 +1,5 @@
 using MediatR;
+using Microsoft.AspNetCore.Components.Forms;
 using Microsoft.AspNetCore.Mvc;
 using ResiBuy.Server.Application.Commands.ShipperCommands;
 using ResiBuy.Server.Application.Queries.ShipperQueries;
@@ -66,6 +67,20 @@ namespace ResiBuy.Server.Controllers
         {
             var result = await _mediator.Send(new GetShipperByUserIdQuery(userId));
             return Ok(result);
+        }
+
+        [HttpGet("getDistance")]
+        public async Task<IActionResult> GetDistanceAsync([FromQuery] GetDistanceQuery query)
+        {
+            try
+            {
+                var result = await _mediator.Send(query);
+                return Ok(result);
+            }
+            catch (Exception ex)
+            {
+                throw new CustomException(ExceptionErrorCode.RepositoryError, ex.Message);
+            }
         }
     }
 }

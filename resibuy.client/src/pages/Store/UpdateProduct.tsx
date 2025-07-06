@@ -13,11 +13,13 @@ import {
   TableBody,
   Checkbox,
   MenuItem,
+  IconButton,
 } from "@mui/material";
 import { v4 } from "uuid";
 import axiosClient from "../../api/base.api";
 import type { Category } from "../../types/storeData";
 import { useNavigate, useParams } from "react-router-dom";
+import { Add, Delete } from "@mui/icons-material";
 
 interface AdditionalDataInput {
   id?: number;
@@ -35,7 +37,7 @@ interface ProductDetailInput {
   price: number;
   weight: number;
   isOutOfStock: boolean;
-  image: Image;
+  image?: Image;
   additionalData: AdditionalDataInput[];
 }
 interface ProductInput {
@@ -49,9 +51,27 @@ interface ProductInput {
 }
 // Interface dòng sản phẩm được sinh ra
 
+interface Classify {
+  key: string;
+  value: {
+    text: string;
+    isEdit: boolean;
+  }[];
+  isEdit: boolean;
+}
+
+interface TempAdditionalData {
+  key: string;
+  value: {
+    text: string;
+    isEdit: boolean;
+  };
+}
+
 // Main component
 export default function CreateProduct() {
-  const id = useParams();
+  const { id } = useParams<{ id: string }>();
+  const { storeId } = useParams<{ storeId: string }>();
   useEffect(() => {
     // lấy category
     axiosClient
@@ -68,7 +88,7 @@ export default function CreateProduct() {
     // set mặc định storeId
     setProduct((prev) => ({
       ...prev,
-      storeId: "b73f0821-21d6-4fa7-b61c-9b476977466c",
+      storeId: storeId || "",
     }));
 
     // lấy product
@@ -76,18 +96,36 @@ export default function CreateProduct() {
       .get(`api/Product/${id}`)
       .then((res) => {
         if (res.status === 200) {
-          const productData = res.data;
+          const productData = res.data.data;
           setProduct(productData);
 
           const tempProductDetails: ProductDetailInput[] =
             productData.productDetails || [];
           setListProductDetail(tempProductDetails);
+          // Chuyển đổi classify từ productDetails
+          const classifyMap: Record<string, Set<string>> = {};
 
-          // lấy danh sách key classify
-          const tempKeys =
-            tempProductDetails[0]?.additionalData?.map((data) => data.key) ||
-            [];
-          setClassify(tempKeys);
+          tempProductDetails.forEach((detail) => {
+            detail.additionalData.forEach((data) => {
+              if (!classifyMap[data.key]) {
+                classifyMap[data.key] = new Set();
+              }
+              classifyMap[data.key].add(data.value);
+            });
+          });
+
+          const newClassifies: Classify[] = Object.entries(classifyMap).map(
+            ([key, values]) => ({
+              key,
+              value: Array.from(values).map((val) => ({
+                text: val,
+                isEdit: false,
+              })),
+              isEdit: false,
+            })
+          );
+
+          setClassifies(newClassifies);
         }
       })
       .catch((err) => console.error(err));
@@ -95,9 +133,11 @@ export default function CreateProduct() {
 
   const navigate = useNavigate();
 
-  const [classify, setClassify] = useState<string[]>([]);
-
   const [listCategory, setListCategory] = useState<Category[]>([]);
+
+  const [newProductDetails, setNewProductDetails] = useState<
+    ProductDetailInput[]
+  >([]);
 
   const [product, setProduct] = useState<ProductInput>({
     name: "",
@@ -110,9 +150,130 @@ export default function CreateProduct() {
   const [listProductDetail, setListProductDetail] = useState<
     ProductDetailInput[]
   >([]);
-  async function uploadImg(file: File, index: number) {
+
+  const updateProductAsync = async () => {
+    const tempProduct: ProductInput = {
+      ...product,
+      productDetails: listProductDetail.concat(newProductDetails),
+    };
+    await axiosClient.put("api/Product", tempProduct).then((res) => {
+      if (res.status === 200) {
+        navigate(`/store/${storeId}/productPage`);
+      }
+    });
+  };
+
+  const [classifies, setClassifies] = useState<Classify[]>([]);
+
+  const removeClassify = (index: number) =>
+    setClassifies((prev) => prev.filter((_, i) => i !== index));
+  const removeclassifyValue = (classifyIndex: number, valueIndex: number) =>
+    setClassifies((prev) =>
+      prev.map((item, idx) =>
+        idx === classifyIndex
+          ? { ...item, value: item.value.filter((_, vi) => vi !== valueIndex) }
+          : item
+      )
+    );
+
+  const updateClassifyKey = (index: number, newKey: string) =>
+    setClassifies((prev) =>
+      prev.map((item, i) => (i === index ? { ...item, key: newKey } : item))
+    );
+
+  const updateClassifyValue = (
+    classifyIndex: number,
+    valueIndex: number,
+    newValue: string
+  ) =>
+    setClassifies((prev) =>
+      prev.map((item, i) =>
+        i === classifyIndex
+          ? {
+              ...item,
+              value: item.value.map((val, vi) =>
+                vi === valueIndex ? { ...val, text: newValue } : val
+              ),
+            }
+          : item
+      )
+    );
+
+  const addClassifyValue = (classifyIndex: number) =>
+    setClassifies((prev) =>
+      prev.map((item, i) =>
+        i === classifyIndex
+          ? { ...item, value: [...item.value, { text: "", isEdit: true }] }
+          : item
+      )
+    );
+
+  // HÀM sinh tổ hợp các thuộc tính
+  const generateProductDetail = () => {
+    if (classifies.length === 0) {
+      alert("Vui lòng nhập thông tin phân loại");
+      return;
+    }
+
+    // Bước 1: Sinh tổ hợp tất cả TempAdditionalData (không lọc isEdit)
+    let combinations: TempAdditionalData[][] = [[]];
+
+    classifies.forEach((classify) => {
+      const allValues = classify.value;
+      combinations = combinations.flatMap((combo) =>
+        allValues.map((val) => [
+          ...combo,
+          {
+            key: classify.key,
+            value: val,
+          },
+        ])
+      );
+    });
+
+    // Bước 2: Lọc bỏ tổ hợp mà tất cả value đều có isEdit = false
+    const filteredCombinations = combinations.filter((combo) =>
+      combo.some((item) => item.value.isEdit)
+    );
+
+    // Bước 3: Chuyển sang AdditionalDataInput[][]
+    const finalList: AdditionalDataInput[][] = filteredCombinations.map(
+      (combo) =>
+        combo.map((item) => ({
+          key: item.key,
+          value: item.value.text,
+        }))
+    );
+
+    console.log("Tổ hợp cuối cùng:", finalList);
+    addToProductDetail(finalList);
+  };
+
+  const addToProductDetail = (listAdditionalData: AdditionalDataInput[][]) => {
+    const newDetails: ProductDetailInput[] = listAdditionalData.map((data) => ({
+      price: 0,
+      weight: 0,
+      isOutOfStock: false,
+      image: { id: "", url: "", thumbUrl: "", name: "" },
+      additionalData: data,
+    }));
+    setNewProductDetails(newDetails);
+  };
+
+  function classyfyText(productDetail: ProductDetailInput) {
+    let text = "";
+    productDetail.additionalData.forEach((data) => {
+      if (text !== "") {
+        text = text + ", ";
+      }
+      text = text + `${data.key}: ${data.value}`;
+    });
+    return text;
+  }
+
+  async function uploadImg(file: File, img: Image | null, index: number) {
     const formData = new FormData();
-    const id = v4();
+    const id = img?.id || v4(); // Nếu không có id thì tạo mới
     formData.append("id", id);
     // Append file:
     formData.append("file", file); // file binary
@@ -136,17 +297,28 @@ export default function CreateProduct() {
     }
   }
 
-  const updateProductAsync = async () => {
-    const tempProduct: ProductInput = {
-      ...product,
-      productDetails: listProductDetail,
-    };
-    await axiosClient.put("api/Product", tempProduct).then((res) => {
-      if (res.status === 200) {
-        navigate("/store/products");
-      }
+  async function uploadImgForNewProduct(file: File, index: number) {
+    const formData = new FormData();
+    const id = v4();
+    formData.append("id", id);
+    formData.append("file", file);
+
+    const resp = await axiosClient.post("/api/Cloudinary/upload", formData, {
+      headers: { "Content-Type": "multipart/form-data" },
     });
-  };
+
+    if (resp.status === 200) {
+      const data = resp.data;
+      const newList = [...newProductDetails];
+      newList[index].image = {
+        id: data.id,
+        thumbUrl: data.thumbnailUrl,
+        url: data.url,
+        name: data.name,
+      };
+      setNewProductDetails(newList);
+    }
+  }
 
   return (
     <Box p={2} display="flex" flexDirection="column" gap={2}>
@@ -174,9 +346,16 @@ export default function CreateProduct() {
               label="Discount (%)"
               type="number"
               value={product.discount}
-              onChange={(e) =>
-                setProduct({ ...product, discount: Number(e.target.value) })
+              error={product.discount > 99}
+              helperText={
+                product.discount > 99 ? "Giảm giá không được vượt quá 99%" : ""
               }
+              onChange={(e) => {
+                const value = Number(e.target.value);
+                if (value <= 100) {
+                  setProduct({ ...product, discount: value });
+                }
+              }}
             />
             <TextField
               select
@@ -196,15 +375,135 @@ export default function CreateProduct() {
           </Box>
         </CardContent>
       </Card>
+
+      <Card>
+        <CardContent>
+          <Typography variant="h6">Phân loại sản phẩm</Typography>
+          {classifies.map((data, classifiesIndex) => (
+            <Box
+              key={classifiesIndex}
+              mt={2}
+              p={2}
+              border="1px solid #ccc"
+              borderRadius={2}
+              display="flex"
+              flexDirection="column"
+              gap={2}
+            >
+              <Box display="flex" gap={2} alignItems="center">
+                <TextField
+                  label={`Phân loại ${classifiesIndex + 1}`}
+                  value={data.key}
+                  required
+                  onChange={(e) => {
+                    const oldKey = data.key;
+                    const newKey = e.target.value;
+                    updateClassifyKey(classifiesIndex, newKey);
+                    // Update additionalData keys in listProductDetail
+                    if (!data.isEdit) {
+                      setListProductDetail((prev) =>
+                        prev.map((detail) => ({
+                          ...detail,
+                          additionalData: detail.additionalData.map(
+                            (additionalData) =>
+                              additionalData.key === oldKey
+                                ? { ...additionalData, key: newKey }
+                                : additionalData
+                          ),
+                        }))
+                      );
+                    }
+                  }}
+                />
+                <IconButton
+                  color="error"
+                  onClick={() => removeClassify(classifiesIndex)}
+                  disabled={!data.isEdit}
+                >
+                  <Delete />
+                </IconButton>
+              </Box>
+              <Box display="flex" gap={2} flexWrap="wrap" alignItems="center">
+                {data.value.map((classifyValue, valueIndex) => (
+                  <Box
+                    key={valueIndex}
+                    display="flex"
+                    gap={2}
+                    alignItems="center"
+                  >
+                    <TextField
+                      label="Thuộc tính"
+                      value={classifyValue.text}
+                      required
+                      onChange={(e) => {
+                        updateClassifyValue(
+                          classifiesIndex,
+                          valueIndex,
+                          e.target.value
+                        );
+                        if (!data.isEdit) {
+                          setListProductDetail((prev) =>
+                            prev.map((detail) => ({
+                              ...detail,
+                              additionalData: detail.additionalData.map(
+                                (additionalData) =>
+                                  additionalData.key === data.key
+                                    ? {
+                                        ...additionalData,
+                                        value:
+                                          additionalData.value ===
+                                          classifyValue.text
+                                            ? e.target.value
+                                            : additionalData.value,
+                                      }
+                                    : additionalData
+                              ),
+                            }))
+                          );
+                        }
+                      }}
+                    />
+                    <IconButton
+                      color="error"
+                      onClick={() =>
+                        removeclassifyValue(classifiesIndex, valueIndex)
+                      }
+                      disabled={!classifyValue.isEdit}
+                    >
+                      <Delete />
+                    </IconButton>
+                  </Box>
+                ))}
+                <Box flexBasis="25%">
+                  <Button
+                    variant="outlined"
+                    size="small"
+                    startIcon={<Add />}
+                    onClick={() => addClassifyValue(classifiesIndex)}
+                  >
+                    Thêm thuộc tính
+                  </Button>
+                </Box>
+              </Box>
+            </Box>
+          ))}
+        </CardContent>
+      </Card>
+      <Button
+        variant="contained"
+        color="primary"
+        onClick={generateProductDetail}
+        sx={{ alignSelf: "flex-end" }}
+      >
+        Xác nhận
+      </Button>
+
       {/* Render bảng */}
       {listProductDetail.length > 0 && (
         <Card>
           <Table sx={{ mt: 2 }}>
             <TableHead>
               <TableRow>
-                {classify.map((key) => (
-                  <TableCell>{key}</TableCell>
-                ))}
                 <TableCell>Phân loại</TableCell>
                 <TableCell>Giá</TableCell>
                 <TableCell>Cân nặng</TableCell>
@@ -215,35 +514,18 @@ export default function CreateProduct() {
             <TableBody>
               {listProductDetail.map((productDetail, index) => (
                 <TableRow key={index}>
-                  {classify.map((keyName) => {
-                    // tìm giá trị value hiện tại
-                    const additionalDataItem =
-                      productDetail.additionalData.find(
-                        (d) => d.key === keyName
-                      );
-
-                    return (
-                      <TableCell key={keyName}>
-                        <TextField
-                          size="small"
-                          type="text"
-                          value={additionalDataItem?.value || ""}
-                          onChange={(e) => {
-                            const newList = [...listProductDetail];
-                            newList[index].additionalData = newList[
-                              index
-                            ].additionalData.map((d) =>
-                              d.key === keyName
-                                ? { ...d, value: e.target.value }
-                                : d
-                            );
-
-                            setListProductDetail(newList); // cập nhật state
-                          }}
-                        />
-                      </TableCell>
-                    );
-                  })}
+                  <TableCell>
+                    {productDetail.additionalData.map((data) => {
+                      if (data.key && data.value) {
+                        return (
+                          <Typography key={data.key}>
+                            {data.key}: {data.value}
+                          </Typography>
+                        );
+                      }
+                      return null;
+                    })}
+                  </TableCell>
                   <TableCell>
                     <TextField
                       size="small"
@@ -289,12 +571,99 @@ export default function CreateProduct() {
                         type="file"
                         onChange={(e) => {
                           const file = e.target.files?.[0];
-                          if (file) uploadImg(file, index);
+                          if (file)
+                            uploadImg(
+                              file,
+                              productDetail?.image || null,
+                              index
+                            );
                         }}
                       />
                     </Button>
 
                     {/* Hiển thị ảnh nếu có */}
+                    {productDetail.image?.thumbUrl ? (
+                      <Box mt={1}>
+                        <img
+                          src={productDetail.image.thumbUrl}
+                          alt="Ảnh sản phẩm"
+                          style={{
+                            width: 64,
+                            height: 64,
+                            objectFit: "cover",
+                            borderRadius: 4,
+                          }}
+                        />
+                      </Box>
+                    ) : (
+                      <Typography mt={1} variant="body2" color="textSecondary">
+                        Chưa có ảnh
+                      </Typography>
+                    )}
+                  </TableCell>
+                </TableRow>
+              ))}
+              {newProductDetails.map((productDetail, index) => (
+                <TableRow key={`new-${index}`}>
+                  <TableCell>{classyfyText(productDetail)}</TableCell>
+                  <TableCell>
+                    <TextField
+                      size="small"
+                      type="number"
+                      value={productDetail.price}
+                      onChange={(e) => {
+                        const newList = [...newProductDetails];
+                        newList[index] = {
+                          ...newList[index],
+                          price: Number(e.target.value),
+                        };
+                        setNewProductDetails(newList);
+                      }}
+                    />
+                  </TableCell>
+                  <TableCell>
+                    <TextField
+                      size="small"
+                      type="number"
+                      value={productDetail.weight}
+                      onChange={(e) => {
+                        const newList = [...newProductDetails];
+                        newList[index] = {
+                          ...newList[index],
+                          weight: Number(e.target.value),
+                        };
+                        setNewProductDetails(newList);
+                      }}
+                    />
+                  </TableCell>
+                  <TableCell>
+                    <Checkbox
+                      checked={productDetail.isOutOfStock}
+                      onChange={(e) => {
+                        const newList = [...newProductDetails];
+                        newList[index] = {
+                          ...newList[index],
+                          isOutOfStock: e.target.checked,
+                        };
+                        setNewProductDetails(newList);
+                      }}
+                      color="primary"
+                    />
+                  </TableCell>
+                  <TableCell>
+                    <Button variant="outlined" component="label" size="small">
+                      Tải ảnh
+                      <input
+                        hidden
+                        accept="image/*"
+                        type="file"
+                        onChange={(e) => {
+                          const file = e.target.files?.[0];
+                          if (file) uploadImgForNewProduct(file, index); // cần tách hàm riêng cho newProduct
+                        }}
+                      />
+                    </Button>
+
                     {productDetail.image?.thumbUrl ? (
                       <Box mt={1}>
                         <img

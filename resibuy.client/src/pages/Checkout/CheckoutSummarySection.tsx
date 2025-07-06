@@ -20,23 +20,16 @@ import { Formik, Form, Field } from "formik";
 import type { FieldProps } from "formik";
 import * as Yup from "yup";
 import { useState, useMemo } from "react";
-import type { Room, Building, Area } from "../../types/models";
+import type { Area, TempOrderDto } from "../../types/models";
 import { useToastify } from "../../hooks/useToastify";
 import areaApi from "../../api/area.api";
 import buildingApi from "../../api/building.api";
 import roomApi from "../../api/room.api";
 import { debounce } from "lodash";
-
-interface OrderSummary {
-  totalBeforeDiscount: number;
-  totalAfterDiscount: number;
-  discount: number;
-  itemCount: number;
-  note?: string;
-}
+import type { BuildingDto, RoomDto } from "../../types/dtoModels";
 
 interface CheckoutSummarySectionProps {
-  orders: OrderSummary[];
+  orders: TempOrderDto[];
   grandTotal: number;
   PaperProps?: MuiPaperProps;
   onCheckout?: (info: {
@@ -99,14 +92,14 @@ const CheckoutSummarySection = ({ orders, grandTotal, onCheckout, userRooms = []
   const { error: showError } = useToastify();
 
   const [areasData, setAreasData] = useState<Area[]>([]);
-  const [buildingsData, setBuildingsData] = useState<Building[]>([]);
-  const [roomsData, setRoomsData] = useState<Room[]>([]);
+  const [buildingsData, setBuildingsData] = useState<BuildingDto[]>([]);
+  const [roomsData, setRoomsData] = useState<RoomDto[]>([]);
   const [fetchedAreas, setFetchedAreas] = useState<Set<string>>(new Set());
   const [areasLoaded, setAreasLoaded] = useState(false);
   const [roomPage, setRoomPage] = useState(1);
   const [roomHasMore, setRoomHasMore] = useState(true);
   const [roomLoadingMore, setRoomLoadingMore] = useState(false);
-  const [selectedOtherRoomObject, setSelectedOtherRoomObject] = useState<Room | null>(null);
+  const [selectedOtherRoomObject, setSelectedOtherRoomObject] = useState<RoomDto | null>(null);
   const [roomSearchText, setRoomSearchText] = useState("");
 
   const initialValues: FormValues = {
@@ -127,8 +120,9 @@ const CheckoutSummarySection = ({ orders, grandTotal, onCheckout, userRooms = []
       setBuildingsData([]);
       setRoomsData([]);
 
-      const buildingsData = await buildingApi.getByBuilingId(areaId);
-      setBuildingsData(buildingsData);
+      const buildingsData = await buildingApi.getByAreaId(areaId);
+      console.log("buildingsData", buildingsData);
+      setBuildingsData(buildingsData as BuildingDto[]);
       setFetchedAreas((prev) => new Set([...prev, areaId]));
     } catch (error) {
       console.error("Error fetching buildings:", error);
@@ -140,8 +134,8 @@ const CheckoutSummarySection = ({ orders, grandTotal, onCheckout, userRooms = []
     if (roomLoadingMore) return;
     setRoomLoadingMore(true);
     try {
-      const roomsRes = await roomApi.getByBuilingId(buildingId, page, pageSize, search);
-      const roomsWithBuildingId = roomsRes.items.map((room: Room) => ({
+      const roomsRes = await roomApi.searchInBuilding({ buildingId, pageNumber: page, pageSize, keyword: search });
+      const roomsWithBuildingId = roomsRes.items.map((room: RoomDto) => ({
         ...room,
         buildingId,
       }));
@@ -179,7 +173,7 @@ const CheckoutSummarySection = ({ orders, grandTotal, onCheckout, userRooms = []
   const displayAreas = areasData.length > 0 ? areasData : [];
   const displayBuildings = buildingsData.length > 0 ? buildingsData : [];
   const displayRooms = roomsData.length > 0 ? roomsData : [];
-
+  console.log("displayBuildings", displayBuildings);
   return (
     <Paper
       elevation={0}
@@ -216,9 +210,6 @@ const CheckoutSummarySection = ({ orders, grandTotal, onCheckout, userRooms = []
           onCheckout?.(formValues);
         }}>
         {({ values, errors, touched, handleChange, handleBlur, setFieldValue }) => {
-          const filteredBuildings = displayBuildings.filter((b) => b.areaId === values.selectedArea);
-          const filteredRooms = displayRooms.filter((r) => r.buildingId === values.selectedBuilding);
-
           const handleFieldBlur = (fieldName: string) => {
             handleBlur(fieldName);
             const fieldError = errors[fieldName as keyof typeof errors];
@@ -362,7 +353,7 @@ const CheckoutSummarySection = ({ orders, grandTotal, onCheckout, userRooms = []
                         }}
                         onBlur={() => handleFieldBlur("selectedBuilding")}
                         disabled={!values.selectedArea}>
-                        {filteredBuildings.map((building) => (
+                        {displayBuildings.map((building) => (
                           <MenuItem key={building.id} value={building.id}>
                             {building.name}
                           </MenuItem>
@@ -372,7 +363,7 @@ const CheckoutSummarySection = ({ orders, grandTotal, onCheckout, userRooms = []
                     </FormControl>
 
                     <Autocomplete
-                      options={filteredRooms}
+                      options={displayRooms}
                       getOptionLabel={(option) => option.name}
                       value={selectedOtherRoomObject}
                       onChange={(_, newValue) => {
@@ -401,62 +392,50 @@ const CheckoutSummarySection = ({ orders, grandTotal, onCheckout, userRooms = []
                 )}
               </Box>
 
-              <Box
-                sx={{
-                  maxHeight: "600px",
-                  overflowY: "auto",
-                  mb: 2,
-                  "&::-webkit-scrollbar": {
-                    width: "8px",
-                  },
-                  "&::-webkit-scrollbar-track": {
-                    background: "#f1f1f1",
-                    borderRadius: "4px",
-                  },
-                  "&::-webkit-scrollbar-thumb": {
-                    background: "#888",
-                    borderRadius: "4px",
-                    "&:hover": {
-                      background: "#555",
-                    },
-                  },
-                }}>
-                {orders.map((order, index) => (
-                  <Box key={index} sx={{ mb: 1, p: 1, borderRadius: 2, bgcolor: "#fafbfc" }}>
-                    <Typography variant="subtitle1" sx={{ fontWeight: 600, color: "#1976d2" }}>
-                      Đơn hàng {index + 1}
-                    </Typography>
-                    <Box
-                      sx={{
-                        display: "flex",
-                        justifyContent: "space-between",
-                        mt: 1,
-                      }}>
-                      <Typography variant="body2">Tổng sản phẩm:</Typography>
-                      <Typography variant="body2" sx={{ fontWeight: 500 }}>
-                        {order.itemCount}
+              <Box sx={{ mb: 2 }}>
+                {orders.map((order, index) => {
+                  const itemCount = Array.isArray(order.productDetails) ? order.productDetails.reduce((sum, pd) => sum + (pd.quantity || 0), 0) : 0;
+                  const totalBeforeDiscount = order.productDetails.reduce((sum, pd) => sum + pd.price * pd.quantity, 0);
+                  const discount = order.DiscountAmount ?? 0;
+                  const totalAfterDiscount = order.totalPrice;
+                  return (
+                    <Box key={index} sx={{ mb: 1, p: 2, borderRadius: 2, bgcolor: "#fafbfc" }}>
+                      <Typography variant="subtitle1" sx={{ fontWeight: 600, color: "#1976d2" }}>
+                        Đơn hàng {index + 1}
                       </Typography>
-                    </Box>
-                    <Box sx={{ display: "flex", justifyContent: "space-between" }}>
-                      <Typography variant="body2">Tổng tiền trước giảm:</Typography>
-                      <Typography variant="body2">{formatPrice(order.totalBeforeDiscount)}</Typography>
-                    </Box>
-                    <Box sx={{ display: "flex", justifyContent: "space-between" }}>
-                      <Typography variant="body2">Đã giảm:</Typography>
-                      <Typography variant="body2" color="success.main" sx={{ fontWeight: 600 }}>
-                        -{formatPrice(order.discount)}
-                      </Typography>
-                    </Box>
-                    <Box sx={{ display: "flex", justifyContent: "space-between" }}>
-                      <Typography variant="body2" sx={{ fontWeight: 600 }}>
-                        Cần thanh toán:
-                      </Typography>
-                      <Typography variant="body2" sx={{ fontWeight: 600, color: "red" }}>
-                        {formatPrice(order.totalAfterDiscount)}
-                      </Typography>
-                    </Box>
-                    {order.note && (
-                      <>
+                      <Box sx={{ display: "flex", justifyContent: "space-between", mt: 1 }}>
+                        <Typography variant="body2">Tổng sản phẩm:</Typography>
+                        <Typography variant="body2" sx={{ fontWeight: 500 }}>
+                          {itemCount}
+                        </Typography>
+                      </Box>
+                      <Box sx={{ display: "flex", justifyContent: "space-between" }}>
+                        <Typography variant="body2">Tổng tiền trước giảm:</Typography>
+                        <Typography variant="body2">{formatPrice(totalBeforeDiscount)}</Typography>
+                      </Box>
+                      <Box sx={{ display: "flex", justifyContent: "space-between" }}>
+                        <Typography variant="body2">Đã giảm:</Typography>
+                        <Typography variant="body2" color="success.main" sx={{ fontWeight: 600 }}>
+                          -{formatPrice(discount)}
+                        </Typography>
+                      </Box>
+                      <Box sx={{ display: "flex", justifyContent: "space-between" }}>
+                        <Typography variant="body2" sx={{ fontWeight: 600 }}>
+                          Cần thanh toán:
+                        </Typography>
+                        <Typography variant="body2" sx={{ fontWeight: 600, color: "red" }}>
+                          {formatPrice(totalAfterDiscount)}
+                        </Typography>
+                      </Box>
+                      {order.voucher && (
+                        <Box sx={{ display: "flex", justifyContent: "space-between" }}>
+                          <Typography variant="body2">Voucher:</Typography>
+                          <Typography variant="body2" color="primary.main">
+                            {order.voucher.type === "Percentage" ? `${order.voucher.discountAmount}%` : formatPrice(order.voucher.discountAmount)}
+                          </Typography>
+                        </Box>
+                      )}
+                      {order.note && (
                         <Box sx={{ mt: 1 }}>
                           <Typography variant="subtitle2" sx={{ fontWeight: 600, color: "#1976d2", mb: 1 }}>
                             Lời nhắn:
@@ -477,11 +456,11 @@ const CheckoutSummarySection = ({ orders, grandTotal, onCheckout, userRooms = []
                             {order.note}
                           </Typography>
                         </Box>
-                      </>
-                    )}
-                    <Divider sx={{ mt: 2 }} />
-                  </Box>
-                ))}
+                      )}
+                      {index < orders.length - 1 && <Divider sx={{ mt: 2 }} />}
+                    </Box>
+                  );
+                })}
               </Box>
 
               <Box

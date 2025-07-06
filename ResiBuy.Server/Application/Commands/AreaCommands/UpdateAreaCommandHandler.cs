@@ -21,7 +21,7 @@ namespace ResiBuy.Server.Application.Commands.AreaCommands
                 if (existingArea == null)
                     throw new CustomException(ExceptionErrorCode.NotFound, $"Area {dto.Id} không tồn tại");
 
-                existingArea.UpdateArea(dto.Name, dto.IsActive);
+                existingArea.UpdateArea(dto.Name, dto.Latitude, dto.Longitude,dto.IsActive);
                 var updateAreaResponse = await areaDbService.UpdateAsync(existingArea);
 
                 return ResponseModel.SuccessResponse(dto);

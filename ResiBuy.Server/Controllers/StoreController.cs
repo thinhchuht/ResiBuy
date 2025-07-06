@@ -1,7 +1,4 @@
-using MediatR;
-using Microsoft.AspNetCore.Mvc;
-using ResiBuy.Server.Application.Commands.StoreCommands;
-using ResiBuy.Server.Application.Queries.StoreQueries;
+using ResiBuy.Server.Application.Queriestore.StoreQueries;
 
 namespace ResiBuy.Server.Controllers
 {

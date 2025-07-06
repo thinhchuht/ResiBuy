@@ -24,7 +24,7 @@
                 room.Id,
                 room.Name,
                 room.IsActive,
-                UserRooms = room.UserRooms.Select(ur => new { ur.UserId, ur.RoomId })
+               
             });
 
             return ResponseModel.SuccessResponse(new PagedResult<object>(

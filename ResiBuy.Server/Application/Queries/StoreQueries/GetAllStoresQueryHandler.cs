@@ -1,5 +1,3 @@
-using ResiBuy.Server.Infrastructure.DbServices.StoreDbServices;
-
 namespace ResiBuy.Server.Application.Queries.StoreQueries
 {
     public record GetAllStoresQuery(int pageSize=5,int pageNumber=1) : IRequest<ResponseModel>;
@@ -15,8 +13,15 @@ namespace ResiBuy.Server.Application.Queries.StoreQueries
 
         public async Task<ResponseModel> Handle(GetAllStoresQuery query, CancellationToken cancellationToken)
         {
-            var stores = await _storeDbService.GetAllStoresAsync(query.pageSize,query.pageNumber);
-            return ResponseModel.SuccessResponse(stores);
+            var pagedResult = await _storeDbService.GetAllStoresAsync(query.pageSize,query.pageNumber);
+            var items = pagedResult.Items.Select(s => new StoreQueryResult(s.Id, s.Name, s.Description, s.IsLocked, s.IsOpen, s.ReportCount, s.CreatedAt, s.OwnerId, new
+            {
+                Id = s.RoomId,
+                Name = s.Room.Name,
+                BuildingName = s.Room.Building.Name,
+                AreaName = s.Room.Building.Area.Name,
+            })).ToList();
+            return ResponseModel.SuccessResponse(new PagedResult<StoreQueryResult>(items, pagedResult.TotalCount, pagedResult.PageNumber, pagedResult.PageSize));
         }
     }
 } 

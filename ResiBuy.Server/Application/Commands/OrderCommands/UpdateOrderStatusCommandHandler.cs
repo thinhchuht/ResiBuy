@@ -5,14 +5,15 @@ using ResiBuy.Server.Infrastructure.Model.EventDataDto;
 namespace ResiBuy.Server.Application.Commands.OrderCommands
 {
     public record UpdateOrderStatusCommand(UpdateOrderStatusDto Dto) : IRequest<ResponseModel>;
-    public class UpdateOrderStatusCommandHandler(IOrderDbService orderDbService, INotificationService notificationService) : IRequestHandler<UpdateOrderStatusCommand, ResponseModel>
+    public class UpdateOrderStatusCommandHandler(IOrderDbService orderDbService, IStoreDbService storeDbService, INotificationService notificationService) : IRequestHandler<UpdateOrderStatusCommand, ResponseModel>
     {
         public async Task<ResponseModel> Handle(UpdateOrderStatusCommand request, CancellationToken cancellationToken)
         {
             var dto = request.Dto;
-            var order = await orderDbService.GetByIdBaseAsync(dto.OrderId) ?? throw new CustomException(ExceptionErrorCode.ValidationFailed, "Không tìm thấy Order");
+            var order = await orderDbService.GetByIdBaseAsync(dto.OrderId) ?? throw new CustomException(ExceptionErrorCode.ValidationFailed, "Không tìm thấy đơn hàng");
+            var store = await storeDbService.GetByIdBaseAsync(order.StoreId) ?? throw new CustomException(ExceptionErrorCode.ValidationFailed, "Không tìm thấy cửa hàng");
             var oldStatus = order.Status;
-            if (order.UserId != order.UserId && order.UserId != order.StoreId.ToString() && dto.UserId != order.ShipperId.ToString())
+            if (order.UserId != order.UserId && order.UserId != store.OwnerId.ToString() && dto.UserId != order.ShipperId.ToString())
                 throw new CustomException(ExceptionErrorCode.ValidationFailed, "Người dùng không có quyền sửa đơn hàng này.");
             if (dto.OrderStatus.HasValue)
             {
@@ -39,10 +40,10 @@ namespace ResiBuy.Server.Application.Commands.OrderCommands
             await orderDbService.UpdateAsync(order);
             var userIds = new List<string>();
             if (dto.OrderStatus == OrderStatus.Processing) userIds.Add(order.UserId);
-            if (dto.OrderStatus == OrderStatus.Shipped) userIds.AddRange([order.UserId,order.StoreId.ToString()]);
-            if (dto.OrderStatus == OrderStatus.Delivered) userIds.AddRange([order.UserId, order.StoreId.ToString()]);
-            if (dto.OrderStatus == OrderStatus.Cancelled) userIds.AddRange([order.UserId, order.StoreId.ToString()]);
-            notificationService.SendNotification(Constants.OrderStatusChanged, new OrderStatusChangedDto(order.Id, order.Status, oldStatus, order.PaymentStatus, order.CreateAt), "", userIds);
+            if (dto.OrderStatus == OrderStatus.Shipped) userIds.AddRange([order.UserId,store.OwnerId.ToString()]);
+            if (dto.OrderStatus == OrderStatus.Delivered) userIds.AddRange([order.UserId, store.OwnerId.ToString()]);
+            if (dto.OrderStatus == OrderStatus.Cancelled) userIds.AddRange([order.UserId, store.OwnerId.ToString()]);
+            notificationService.SendNotification(Constants.OrderStatusChanged, new OrderStatusChangedDto(order.Id, order.StoreId, store.Name, order.Status, oldStatus, order.PaymentStatus, order.CreateAt), "", userIds);
             return ResponseModel.SuccessResponse();
         }
     }

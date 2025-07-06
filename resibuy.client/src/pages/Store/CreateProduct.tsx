@@ -19,7 +19,7 @@ import { Add, Delete } from "@mui/icons-material";
 import { v4 } from "uuid";
 import axiosClient from "../../api/base.api";
 import type { Category } from "../../types/storeData";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, useParams } from "react-router-dom";
 
 interface AdditionalDataInput {
   key: string;
@@ -56,16 +56,18 @@ interface Classify {
 // Main component
 export default function CreateProduct() {
   useEffect(() => {
-  axiosClient.get("api/Category/categories").then((res) => {
-    const templist: Category[] = res.data.data || []; 
-    setListCategory(templist);
-  }).catch((err) => console.error(err));
-  // set id store
-  // Example: set storeId to a value (replace 'yourStoreId' with actual value)
-  setProduct(prev => ({ ...prev, storeId: "b73f0821-21d6-4fa7-b61c-9b476977466c" }));
-}, []);
+    axiosClient
+      .get("api/Category/categories")
+      .then((res) => {
+        const templist: Category[] = res.data.data || [];
+        setListCategory(templist);
+      })
+      .catch((err) => console.error(err));
+  }, []);
 
-  const navigate = useNavigate()
+  const { storeId } = useParams<{ storeId: string }>();
+
+  const navigate = useNavigate();
 
   const [listCategory, setListCategory] = useState<Category[]>([]);
 
@@ -73,7 +75,7 @@ export default function CreateProduct() {
     name: "",
     describe: "",
     discount: 0,
-    storeId: "",
+    storeId: storeId || "",
     categoryId: "",
     productDetails: [],
   });
@@ -206,9 +208,9 @@ export default function CreateProduct() {
       ...product,
       productDetails: listProductDetail,
     };
-    await axiosClient.post("api/Product", tempProduct).then(res =>{
-      if(res.status === 200){
-        navigate("/store/products");
+    await axiosClient.post("api/Product", tempProduct).then((res) => {
+      if (res.status === 200) {
+        navigate("productPage");
       }
     });
   };
@@ -239,9 +241,17 @@ export default function CreateProduct() {
               label="Discount (%)"
               type="number"
               value={product.discount}
-              onChange={(e) =>
-                setProduct({ ...product, discount: Number(e.target.value) })
+              error={product.discount > 99}
+              helperText={
+                product.discount > 99 ? "Giảm giá không được vượt quá 99%" : ""
               }
+              inputProps={{ min: 0, max: 100 }}
+              onChange={(e) => {
+                const value = Number(e.target.value);
+                if (value >= 0 && value <= 100) {
+                  setProduct({ ...product, discount: value });
+                }
+              }}
             />
             <TextField
               select

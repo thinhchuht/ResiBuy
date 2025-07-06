@@ -3,16 +3,17 @@ import MessageIcon from "@mui/icons-material/Message";
 import { useState } from "react";
 
 interface NoteSectionProps {
-  onNoteSubmit: (note: string) => void;
+  orderId: string;
+  onNoteSubmit: (orderId: string, note: string) => void;
 }
 
 const MAX_LENGTH = 100;
 
-const NoteSection = ({ onNoteSubmit }: NoteSectionProps) => {
+const NoteSection = ({ orderId, onNoteSubmit }: NoteSectionProps) => {
   const [note, setNote] = useState("");
 
   const handleSubmit = () => {
-    onNoteSubmit(note);
+    onNoteSubmit(orderId, note);
     setNote("");
   };
 

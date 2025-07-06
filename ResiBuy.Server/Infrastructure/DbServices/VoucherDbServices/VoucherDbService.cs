@@ -92,7 +92,7 @@
                 }
 
                 context.Vouchers.UpdateRange(vouchers);
-                context.SaveChanges();
+                //context.SaveChanges();
 
                 return ResponseModel.SuccessResponse("Update voucher thành công.");
             }

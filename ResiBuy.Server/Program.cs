@@ -1,4 +1,6 @@
 ﻿using ResiBuy.Server.Infrastructure.DbServices.VoucherDbServices;
+using ResiBuy.Server.Services.RedisServices;
+using ResiBuy.Server.Services.ShippingCost;
 using ResiBuy.Server.Services.SMSServices;
 
 var builder = WebApplication.CreateBuilder(args);
@@ -17,7 +19,12 @@ services.AddScoped<IVoucherDbService, VoucherDbService>();
 services.AddMemoryCache();
 services.AddSignalR();
 services.AddMediatR(cfg => cfg.RegisterServicesFromAssemblyContaining(typeof(Program)));
-
+builder.Services.AddSingleton<IRedisService>(sp =>
+{
+    var config = sp.GetRequiredService<IConfiguration>();
+    var connStr = config.GetSection("Redis:ConnectionString").Value!;
+    return new RedisService(connStr);
+});
 services.AddCors(options =>
 {
     options.AddPolicy("AllowFrontend", policy =>

@@ -57,6 +57,7 @@ const AppBar: React.FC = () => {
   const [searchValue, setSearchValue] = useState("");
   const [notificationAnchorEl, setNotificationAnchorEl] = useState<null | HTMLElement>(null);
   const [notifications, setNotifications] = useState<Notification[]>([]);
+  const [storeMenuAnchorEl, setStoreMenuAnchorEl] = useState<null | HTMLElement>(null);
 
   const fetchItemCount = useCallback(async () => {
     if (user) {
@@ -75,28 +76,28 @@ const AppBar: React.FC = () => {
 
   const handleOrderCreated = useCallback(
     (data: OrderStatusChangedData) => {
-      console.log('hihehah súuus')
+      console.log("hihehah súuus");
       fetchItemCount();
-      const formattedTime = new Date(data.createdAt).toLocaleTimeString('vi-VN', { hour: '2-digit', minute: '2-digit' });
-      const formattedDate = new Date(data.createdAt).toLocaleDateString('vi-VN');
-      console.log(formattedDate , formattedTime)
-      const newNotifications ={
+      const formattedTime = new Date(data.createdAt).toLocaleTimeString("vi-VN", { hour: "2-digit", minute: "2-digit" });
+      const formattedDate = new Date(data.createdAt).toLocaleDateString("vi-VN");
+      console.log(formattedDate, formattedTime);
+      const newNotifications = {
         id: data.id,
         title: "Đơn hàng mới",
         message: `Đơn hàng #${data.id} đã được tạo`,
-        time: `${formattedTime} ${formattedDate}`
+        time: `${formattedTime} ${formattedDate}`,
       };
-      console.log('hhihi')
-      console.log(newNotifications)
+      console.log("hhihi");
+      console.log(newNotifications);
       setNotifications((prev) => [newNotifications, ...prev]);
     },
     [setNotifications, fetchItemCount]
   );
 
   const handleOrderStatusChanged = useCallback((data: OrderStatusChangedData) => {
-    console.log('hihehah')
-    const formattedTime = new Date(data.createdAt).toLocaleTimeString('vi-VN', { hour: '2-digit', minute: '2-digit' });
-    const formattedDate = new Date(data.createdAt).toLocaleDateString('vi-VN');
+    console.log("hihehah");
+    const formattedTime = new Date(data.createdAt).toLocaleTimeString("vi-VN", { hour: "2-digit", minute: "2-digit" });
+    const formattedDate = new Date(data.createdAt).toLocaleDateString("vi-VN");
     const newNotifications = {
       id: `order-${data.id}-${data.orderStatus}`,
       title:
@@ -110,7 +111,7 @@ const AppBar: React.FC = () => {
       message: `Đơn hàng #${data.id} ${
         data.orderStatus === "Processing" ? "đã được xử lý" : data.orderStatus === "Shipped" ? "đang được giao" : data.orderStatus === "Delivered" ? "đã được giao" : "đã bị hủy"
       }`,
-      time: `${formattedTime} ${formattedDate}`
+      time: `${formattedTime} ${formattedDate}`,
     };
     setNotifications((prev) => [newNotifications, ...prev]);
   }, []);
@@ -133,6 +134,8 @@ const AppBar: React.FC = () => {
   const handleSearch = () => {
     if (searchValue.trim()) {
       navigate(`/products?search=${encodeURIComponent(searchValue.trim())}`);
+    } else {
+      navigate(`/products`);
     }
   };
 
@@ -169,6 +172,29 @@ const AppBar: React.FC = () => {
 
   const handleNotificationClose = () => {
     setNotificationAnchorEl(null);
+  };
+
+  const handleStoreMenuClick = (event: React.MouseEvent<HTMLElement>) => {
+    if (user?.stores && Array.isArray(user.stores) && user.stores.length > 1) {
+      setStoreMenuAnchorEl(event.currentTarget);
+    } else {
+      const storeId = Array.isArray(user?.stores) ? user.stores[0]?.id : user?.stores?.id;
+      if (storeId) {
+        navigate(`/store/${storeId}`);
+        handleProfileMenuClose();
+      }
+    }
+  };
+
+  const handleStoreMenuClose = () => {
+    setStoreMenuAnchorEl(null);
+    handleProfileMenuClose();
+  };
+
+  const handleStoreSelect = (storeId: string) => {
+    navigate(`/store/${storeId}`);
+    setStoreMenuAnchorEl(null);
+    handleProfileMenuClose();
   };
 
   return (
@@ -449,8 +475,7 @@ const AppBar: React.FC = () => {
                     boxShadow: "0 2px 8px rgba(235, 92, 96, 0.3)",
                   },
                 }}
-                onClick={handleProfileMenuOpen}
-              >
+                onClick={handleProfileMenuOpen}>
                 {!user?.avatar?.thumbUrl && <Person />}
               </Avatar>
             </Tooltip>
@@ -519,7 +544,7 @@ const AppBar: React.FC = () => {
           )}
           {user?.roles?.includes("SELLER") && (
             <MenuItem
-              onClick={() => handleNavigation("/seller", handleProfileMenuClose)}
+              onClick={handleStoreMenuClick}
               sx={{
                 py: 1.5,
                 px: 2,
@@ -538,7 +563,11 @@ const AppBar: React.FC = () => {
               }}>
               <Store fontSize="small" sx={{ transition: "all 0.2s ease-in-out" }} />
               <Typography variant="body2" sx={{ fontWeight: 500 }}>
-                Cửa hàng của bạn
+                {Array.isArray(user?.stores) && user.stores.length === 1
+                  ? user.stores[0]?.name
+                  : !Array.isArray(user?.stores) && user?.stores?.name
+                  ? user.stores.name
+                  : "Cửa hàng của bạn"}
               </Typography>
             </MenuItem>
           )}
@@ -708,13 +737,14 @@ const AppBar: React.FC = () => {
                   transition: "all 0.2s ease-in-out",
                 }}>
                 <Box>
-                  <Box sx={{
-                    display: 'flex',
-                    justifyContent: 'space-between',
-                    alignItems: 'flex-end',
-                    mb: 0.5,
-                    gap: 2,
-                  }}>
+                  <Box
+                    sx={{
+                      display: "flex",
+                      justifyContent: "space-between",
+                      alignItems: "flex-end",
+                      mb: 0.5,
+                      gap: 2,
+                    }}>
                     <Typography variant="subtitle2" sx={{ fontWeight: 600, wordBreak: "break-word" }}>
                       {notification.title}
                     </Typography>
@@ -722,12 +752,11 @@ const AppBar: React.FC = () => {
                       <Typography
                         variant="caption"
                         sx={{
-                          fontStyle: 'italic',
-                          color: 'text.secondary',
-                          whiteSpace: 'nowrap',
-                          fontWeight: 600
-                        }}
-                      >
+                          fontStyle: "italic",
+                          color: "text.secondary",
+                          whiteSpace: "nowrap",
+                          fontWeight: 600,
+                        }}>
                         {notification.time}
                       </Typography>
                     )}
@@ -746,10 +775,48 @@ const AppBar: React.FC = () => {
             </Box>
           )}
         </Popover>
+
+        {/* Menu chọn store nếu có nhiều store */}
+        <Menu
+          anchorEl={storeMenuAnchorEl}
+          open={Boolean(storeMenuAnchorEl)}
+          onClose={handleStoreMenuClose}
+          PaperProps={{
+            sx: {
+              mt: 1,
+              borderRadius: 2,
+              boxShadow: "0 4px 20px rgba(0,0,0,0.1)",
+              minWidth: 220,
+              overflow: "hidden",
+            },
+          }}>
+          {Array.isArray(user?.stores) &&
+            user.stores.map((store) => (
+              <MenuItem
+                key={store.id}
+                onClick={() => handleStoreSelect(store.id)}
+                sx={{
+                  py: 1.5,
+                  px: 2,
+                  gap: 1.5,
+                  "&:hover": {
+                    backgroundColor: "rgba(235, 92, 96, 0.08)",
+                    "& .MuiTypography-root": {
+                      color: "#EB5C60",
+                    },
+                  },
+                  transition: "all 0.2s ease-in-out",
+                }}>
+                <Storefront fontSize="small" sx={{ color: "#e91e63", mr: 1 }} />
+                <Typography variant="body2" sx={{ fontWeight: 500 }}>
+                  {store.name}
+                </Typography>
+              </MenuItem>
+            ))}
+        </Menu>
       </Toolbar>
     </MuiAppBar>
   );
 };
 
 export default AppBar;
-

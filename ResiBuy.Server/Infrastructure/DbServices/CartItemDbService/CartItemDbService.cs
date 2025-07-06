@@ -1,3 +1,4 @@
+
 namespace ResiBuy.Server.Infrastructure.DbServices.CartItemDbService
 {
     public class CartItemDbService : BaseDbService<CartItem>, ICartItemDbService
@@ -84,7 +85,7 @@ namespace ResiBuy.Server.Infrastructure.DbServices.CartItemDbService
                 //if (productDetailIds == null || !productDetailIds.Any()) throw new CustomException(ExceptionErrorCode.InvalidInput, "Không có sản phẩm nào trong giỏ hàng");
                 var cartItems = await GetMatchingCartItemsAsync(cartId, productDetailIds);
                 _context.CartItems.RemoveRange(cartItems);
-                await _context.SaveChangesAsync();
+                //await _context.SaveChangesAsync();
                 return ResponseModel.SuccessResponse();
             }
 
@@ -100,6 +101,20 @@ namespace ResiBuy.Server.Infrastructure.DbServices.CartItemDbService
                  .Where(ci => ci.CartId == cartId)
                  .CountAsync();
             return count;
+        }
+
+        public async Task<IEnumerable<CartItem>> GetBatchCartItemsAsync(List<Guid> ids)
+        {
+            return await _context.CartItems
+                .Where(ci => ids.Contains(ci.Id))
+                .Include(ci => ci.ProductDetail)
+                    .ThenInclude(pd => pd.Image)
+                .Include(ci => ci.ProductDetail)
+                    .ThenInclude(pd => pd.Product)
+                .Include(ci => ci.ProductDetail)
+                    .ThenInclude(pd => pd.AdditionalData)
+                .Include(ci => ci.Cart)
+                .ToListAsync();
         }
     }
 }

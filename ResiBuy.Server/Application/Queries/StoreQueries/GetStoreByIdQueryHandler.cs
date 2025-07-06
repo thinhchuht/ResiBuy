@@ -1,7 +1,4 @@
-using ResiBuy.Server.Exceptions;
-using ResiBuy.Server.Infrastructure.DbServices.StoreDbServices;
-
-namespace ResiBuy.Server.Application.Queries.StoreQueries
+namespace ResiBuy.Server.Application.Queriestore.StoreQueries
 {
     public record GetStoreByIdQuery(Guid Id) : IRequest<ResponseModel>;
 
@@ -23,7 +20,13 @@ namespace ResiBuy.Server.Application.Queries.StoreQueries
             if (store == null)
                 throw new CustomException(ExceptionErrorCode.ValidationFailed, "Cửa hàng không tồn tại");
 
-            return ResponseModel.SuccessResponse(store); 
+            return ResponseModel.SuccessResponse(new StoreQueryResult(store.Id, store.Name, store.Description, store.IsLocked, store.IsOpen, store.ReportCount, store.CreatedAt, store.OwnerId, new
+            {
+                Id = store.RoomId,
+                Name = store.Room.Name,
+                BuildingName = store.Room.Building.Name,
+                AreaName = store.Room.Building.Area.Name,
+            })); 
         }
     }
 } 

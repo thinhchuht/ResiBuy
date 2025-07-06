@@ -6,7 +6,6 @@ import {
   TextField,
   InputAdornment,
   Button,
-  IconButton,
   Table,
   TableHead,
   TableBody,
@@ -17,6 +16,7 @@ import {
   MenuItem,
   FormControl,
   InputLabel,
+  Pagination,
 } from "@mui/material";
 import {
   Search,
@@ -32,7 +32,6 @@ interface ColumnDef<T> {
   render?: (item: T) => React.ReactNode;
   sortable?: boolean;
   filterable?: boolean;
-  
 }
 
 interface FilterOption {
@@ -42,12 +41,14 @@ interface FilterOption {
 
 interface TableProps<T> {
   data: T[];
+    totalCount?: number; // api sẽ trả về tổng số bản ghi, không phải độ dài của mảng data
   columns: ColumnDef<T>[];
   onDelete?: (item: T) => void;
   onUpdate?: (item: T) => void;
   onAddItem?: () => void;
   onBulkDelete?: (items: T[]) => void;
   onExport?: () => void;
+  onPageChange?: (pageNumber: number) => void; 
   headerTitle?: string;
   showSearch?: boolean;
   description?: string;
@@ -55,17 +56,19 @@ interface TableProps<T> {
   onFilterChange?: (filters: { [key: string]: string }) => void;
   showBulkActions?: boolean;
   showExport?: boolean;
-  itemsPerPage?: number;
+  itemsPerPage?: number; // pageSize mặc định
 }
 
 const CustomTable = <T extends { id?: number | string }>({
   data,
+  totalCount = data.length,
   columns,
   onDelete,
   onUpdate,
   onAddItem,
   onBulkDelete,
   onExport,
+  onPageChange,
   headerTitle = "Bảng Dữ Liệu",
   showSearch = true,
   description = "",
@@ -77,15 +80,13 @@ const CustomTable = <T extends { id?: number | string }>({
 }: TableProps<T>) => {
   const [searchTerm, setSearchTerm] = useState("");
   const [selectedItems, setSelectedItems] = useState<T[]>([]);
-  const [currentPage, setCurrentPage] = useState(1);
+  const [page, setPage] = useState(1); // pageNumber, bắt đầu từ 1
   const [sortConfig, setSortConfig] = useState<{
     key: keyof T;
     direction: "asc" | "desc";
   } | null>(null);
-  const [activeFilters, setActiveFilters] = useState<{ [key: string]: string }>(
-    {}
-  );
   const [showFilters, setShowFilters] = useState(false);
+  const [activeFilters, setActiveFilters] = useState<{ [key: string]: string }>({});
 
   // Filter data based on search and filters
   const filteredData = data.filter((row) => {
@@ -119,13 +120,7 @@ const CustomTable = <T extends { id?: number | string }>({
     });
   }, [filteredData, sortConfig]);
 
-  // Paginate data
-  const totalPages = Math.ceil(sortedData.length / itemsPerPage);
-  const paginatedData = sortedData.slice(
-    (currentPage - 1) * itemsPerPage,
-    currentPage * itemsPerPage
-  );
-
+  // Handle sort
   const handleSort = (key: keyof T) => {
     setSortConfig((current) => {
       if (current?.key === key) {
@@ -133,29 +128,44 @@ const CustomTable = <T extends { id?: number | string }>({
       }
       return { key, direction: "asc" };
     });
+    setPage(1); // Reset to first page on sort
+    onPageChange?.(1); // Notify parent
   };
 
+  // Handle select all
   const handleSelectAll = (checked: boolean) => {
-    setSelectedItems(checked ? paginatedData : []);
+    setSelectedItems(checked ? sortedData : []);
   };
 
+  // Handle select item
   const handleSelectItem = (item: T, checked: boolean) => {
     setSelectedItems((prev) =>
       checked ? [...prev, item] : prev.filter((i) => i.id !== item.id)
     );
   };
 
+  // Handle filter change
   const handleFilterChange = (key: string, value: string) => {
     const newFilters = { ...activeFilters, [key]: value };
     setActiveFilters(newFilters);
     onFilterChange?.(newFilters);
-    setCurrentPage(1);
+    setPage(1); // Reset to first page
+    onPageChange?.(1); // Notify parent
+  };
+
+  // Handle page change
+  const handleChangePage = (_event: React.ChangeEvent<unknown>, newPage: number) => {
+    setPage(newPage);
+    onPageChange?.(newPage); // Truyền pageNumber (bắt đầu từ 1)
   };
 
   const isAllSelected =
-    paginatedData.length > 0 && selectedItems.length === paginatedData.length;
+    sortedData.length > 0 && selectedItems.length === sortedData.length;
   const isIndeterminate =
-    selectedItems.length > 0 && selectedItems.length < paginatedData.length;
+    selectedItems.length > 0 && selectedItems.length < sortedData.length;
+
+  // Tính tổng số trang từ totalCount và itemsPerPage
+  const totalPages = Math.ceil(totalCount / itemsPerPage);
 
   return (
     <Paper
@@ -170,12 +180,12 @@ const CustomTable = <T extends { id?: number | string }>({
       {/* Header section */}
       <Box
         sx={{
-          p: 3, // Thay p-6
+          p: 3,
           borderBottom: 1,
           borderColor: "grey.200",
           display: "flex",
           flexDirection: "column",
-          gap: 2, // Thay space-y-4
+          gap: 2,
         }}
       >
         <Box
@@ -188,14 +198,14 @@ const CustomTable = <T extends { id?: number | string }>({
           <Box>
             <Typography
               variant="h6"
-              sx={{ color: "text.primary", fontWeight: "medium" }} // Thay text-lg font-semibold text-gray-800
+              sx={{ color: "text.primary", fontWeight: "medium" }}
             >
               {headerTitle}
             </Typography>
             {description && (
               <Typography
                 variant="body2"
-                sx={{ color: "text.secondary", mt: 0.5 }} // Thay text-sm text-gray-500 mt-1
+                sx={{ color: "text.secondary", mt: 0.5 }}
               >
                 {description}
               </Typography>
@@ -209,12 +219,12 @@ const CustomTable = <T extends { id?: number | string }>({
                 sx={{
                   bgcolor: "grey.100",
                   color: "grey.700",
-                  px: 1.5, // Thay px-3
-                  py: 1, // Thay py-2
+                  px: 1.5,
+                  py: 1,
                   fontSize: "0.875rem",
                   fontWeight: "medium",
                   borderRadius: 1,
-                  "&:hover": { bgcolor: "grey.200" }, // Thay hover:bg-gray-200
+                  "&:hover": { bgcolor: "grey.200" },
                 }}
               >
                 Xuất
@@ -245,12 +255,12 @@ const CustomTable = <T extends { id?: number | string }>({
                 sx={{
                   bgcolor: "primary.main",
                   color: "white",
-                  px: 2, // Thay px-4
-                  py: 1, // Thay py-2
+                  px: 2,
+                  py: 1,
                   fontSize: "0.875rem",
                   fontWeight: "medium",
                   borderRadius: 1,
-                  "&:hover": { bgcolor: "primary.dark" }, // Thay hover:bg-blue-700
+                  "&:hover": { bgcolor: "primary.dark" },
                 }}
               >
                 Thêm Mới
@@ -266,11 +276,11 @@ const CustomTable = <T extends { id?: number | string }>({
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
               size="small"
-              sx={{ maxWidth: 300, flex: 1 }} // Thay max-w-md
+              sx={{ maxWidth: 300, flex: 1 }}
               InputProps={{
                 startAdornment: (
                   <InputAdornment position="start">
-                    <Search sx={{ color: "grey.400" }} /> {/* Thay text-gray-400 */}
+                    <Search sx={{ color: "grey.400" }} />
                   </InputAdornment>
                 ),
               }}
@@ -303,10 +313,10 @@ const CustomTable = <T extends { id?: number | string }>({
               gridTemplateColumns: {
                 xs: "1fr",
                 md: "repeat(3, 1fr)",
-              }, // Thay grid-cols-1 md:grid-cols-3
-              gap: 2, // Thay gap-4
-              p: 2, // Thay p-4
-              bgcolor: "grey.50", // Thay bg-gray-50
+              },
+              gap: 2,
+              p: 2,
+              bgcolor: "grey.50",
               borderRadius: 1,
             }}
           >
@@ -349,14 +359,14 @@ const CustomTable = <T extends { id?: number | string }>({
                 <TableCell
                   key={String(col.key)}
                   sx={{
-                    px: 3, // Thay px-6
-                    py: 2.5, // Thay py-5
+                    px: 3,
+                    py: 2.5,
                     textAlign: "left",
                     fontSize: "0.875rem",
                     fontWeight: "medium",
                     color: "text.primary",
                     textTransform: "uppercase",
-                    letterSpacing: 0.5, // Thay tracking-wider
+                    letterSpacing: 0.5,
                     ...(col.sortable && {
                       cursor: "pointer",
                       "&:hover": { bgcolor: "grey.50" },
@@ -369,7 +379,7 @@ const CustomTable = <T extends { id?: number | string }>({
                     {col.sortable && (
                       <ArrowDropDown
                         sx={{
-                          fontSize: 16, // Thay w-4 h-4
+                          fontSize: 16,
                           transform:
                             sortConfig?.key === col.key &&
                             sortConfig.direction === "desc"
@@ -401,12 +411,12 @@ const CustomTable = <T extends { id?: number | string }>({
             </TableRow>
           </TableHead>
           <TableBody sx={{ bgcolor: "background.paper" }}>
-            {paginatedData.length > 0 ? (
-              paginatedData.map((item, idx) => (
+            {sortedData.length > 0 ? (
+              sortedData.map((item, idx) => (
                 <TableRow
                   key={item.id || idx}
                   sx={{
-                    "&:hover": { bgcolor: "grey.50" }, // Thay hover:bg-gray-50
+                    "&:hover": { bgcolor: "grey.50" },
                     transition: "background-color 0.2s",
                   }}
                 >
@@ -478,78 +488,27 @@ const CustomTable = <T extends { id?: number | string }>({
       </Box>
 
       {/* Pagination */}
-      {totalPages > 1 && (
+      {totalCount > 0 && (
         <Box
           sx={{
-            px: 3,
-            py: 2,
+            p: 2,
             borderTop: 1,
             borderColor: "grey.200",
             display: "flex",
-            alignItems: "center",
-            justifyContent: "space-between",
+            justifyContent: "flex-end",
           }}
         >
-          <Typography variant="body2" sx={{ color: "grey.700" }}>
-            Hiển thị {(currentPage - 1) * itemsPerPage + 1} đến{" "}
-            {Math.min(currentPage * itemsPerPage, sortedData.length)} của{" "}
-            {sortedData.length} kết quả
-          </Typography>
-          <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
-            <Button
-              onClick={() => setCurrentPage((prev) => Math.max(prev - 1, 1))}
-              disabled={currentPage === 1}
-              sx={{
-                px: 1.5,
-                py: 0.5,
-                border: 1,
-                borderColor: "grey.300",
-                borderRadius: 1,
-                fontSize: "0.875rem",
-                "&:hover": { bgcolor: "grey.50" },
-                "&:disabled": { opacity: 0.5, cursor: "not-allowed" },
-              }}
-            >
-              Trước
-            </Button>
-            {Array.from({ length: totalPages }, (_, i) => i + 1).map((page) => (
-              <Button
-                key={page}
-                onClick={() => setCurrentPage(page)}
-                sx={{
-                  px: 1.5,
-                  py: 0.5,
-                  border: 1,
-                  borderColor: currentPage === page ? "primary.main" : "grey.300",
-                  borderRadius: 1,
-                  fontSize: "0.875rem",
-                  bgcolor: currentPage === page ? "primary.main" : "transparent",
-                  color: currentPage === page ? "white" : "text.primary",
-                  "&:hover": {
-                    bgcolor: currentPage === page ? "primary.main" : "grey.50",
-                  },
-                }}
-              >
-                {page}
-              </Button>
-            ))}
-            <Button
-              onClick={() => setCurrentPage((prev) => Math.min(prev + 1, totalPages))}
-              disabled={currentPage === totalPages}
-              sx={{
-                px: 1.5,
-                py: 0.5,
-                border: 1,
-                borderColor: "grey.300",
-                borderRadius: 1,
-                fontSize: "0.875rem",
-                "&:hover": { bgcolor: "grey.50" },
-                "&:disabled": { opacity: 0.5, cursor: "not-allowed" },
-              }}
-            >
-              Tiếp
-            </Button>
-          </Box>
+          <Pagination
+            count={totalPages}
+            page={page}
+            onChange={handleChangePage}
+            color="primary"
+            sx={{
+              ".MuiPagination-ul": {
+                justifyContent: "flex-end",
+              },
+            }}
+          />
         </Box>
       )}
     </Paper>

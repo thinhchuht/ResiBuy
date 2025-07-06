@@ -3,7 +3,7 @@ import { formatPrice } from "../../utils/priceUtils";
 import type { SelectChangeEvent } from "@mui/material/Select";
 
 import { useNavigate } from "react-router-dom";
-import { OrderStatus, PaymentStatus, type Store, type Voucher, type Area, type Building, type Room } from "../../types/models";
+import { OrderStatus, PaymentStatus, type Store, type Voucher, type Area } from "../../types/models";
 import React, { useState, useCallback, useMemo } from "react";
 import orderApi from "../../api/order.api";
 import { useAuth } from "../../contexts/AuthContext";
@@ -23,6 +23,7 @@ import DialogActions from "@mui/material/DialogActions";
 import WarningAmberIcon from "@mui/icons-material/WarningAmber";
 import cartApi from "../../api/cart.api";
 import { debounce } from "lodash";
+import type { BuildingDto, RoomDto } from "../../types/dtoModels";
 
 // Define types matching API result
 interface RoomQueryResult {
@@ -75,11 +76,11 @@ const OrderCard = ({ order, onUpdate, onAddressChange, onCancel }: OrderCardProp
   const toast = useToastify();
   const [openAddressModal, setOpenAddressModal] = useState(false);
   const [areasData, setAreasData] = useState<Area[]>([]);
-  const [buildingsData, setBuildingsData] = useState<Building[]>([]);
-  const [roomsData, setRoomsData] = useState<Room[]>([]);
+  const [buildingsData, setBuildingsData] = useState<BuildingDto[]>([]);
+  const [roomsData, setRoomsData] = useState<RoomDto[]>([]);
   const [selectedArea, setSelectedArea] = useState("");
   const [selectedBuilding, setSelectedBuilding] = useState("");
-  const [selectedRoom, setSelectedRoom] = useState<Room | null>(null);
+  const [selectedRoom, setSelectedRoom] = useState<RoomDto | null>(null);
   const [editNote, setEditNote] = useState(false);
   const [noteValue, setNoteValue] = useState(order.note || "");
   const [localNote, setLocalNote] = useState(order.note || "");
@@ -141,13 +142,18 @@ const OrderCard = ({ order, onUpdate, onAddressChange, onCancel }: OrderCardProp
     }
   };
 
-  const getPaymentStatusText = (status: PaymentStatus) => {
+  const getPaymentStatusText = (status: PaymentStatus, paymentMethod: number) => {
     switch (status) {
       case PaymentStatus.Paid:
         return "Đã thanh toán";
       case PaymentStatus.Pending:
         return "Chưa thanh toán";
       case PaymentStatus.Failed:
+        if (paymentMethod === 1) {
+          return "Thanh toán thất bại";
+        } else if (paymentMethod === 2) {
+          return "Chờ hoàn tiền";
+        }
         return "Thanh toán thất bại";
       case PaymentStatus.Refunded:
         return "Đã hoàn tiền";
@@ -196,8 +202,8 @@ const OrderCard = ({ order, onUpdate, onAddressChange, onCancel }: OrderCardProp
     setSelectedBuilding("");
     setSelectedRoom(null);
     try {
-      const buildings = await buildingApi.getByBuilingId(e.target.value as string);
-      setBuildingsData(buildings);
+      const buildings = await buildingApi.getByAreaId(e.target.value as string);
+      setBuildingsData(buildings as BuildingDto[]);
     } catch {
       toast.error("Không thể tải danh sách tòa nhà");
     }
@@ -213,8 +219,8 @@ const OrderCard = ({ order, onUpdate, onAddressChange, onCancel }: OrderCardProp
       setRoomLoadingMore(true);
       setRoomPage(1);
       try {
-        const rooms = await roomApi.getByBuilingId(buildingId, 1, 6, "");
-        setRoomsData(rooms.items);
+        const rooms = await roomApi.searchInBuilding({ buildingId, pageNumber: 1, pageSize: 6, keyword: "" });
+        setRoomsData(rooms.items as RoomDto[]);
         setRoomHasMore(rooms.pageNumber < rooms.totalPages);
       } catch {
         toast.error("Không thể tải danh sách phòng");
@@ -234,7 +240,7 @@ const OrderCard = ({ order, onUpdate, onAddressChange, onCancel }: OrderCardProp
       setRoomLoadingMore(true);
       setRoomPage(1);
       try {
-        const rooms = await roomApi.getByBuilingId(selectedBuilding, 1, 6, text);
+        const rooms = await roomApi.searchInBuilding({ buildingId: selectedBuilding, pageNumber: 1, pageSize: 6, keyword: text });
         setRoomsData(rooms.items);
         setRoomHasMore(rooms.pageNumber < rooms.totalPages);
       } catch {
@@ -257,10 +263,10 @@ const OrderCard = ({ order, onUpdate, onAddressChange, onCancel }: OrderCardProp
       setRoomLoadingMore(true);
       try {
         const nextPage = roomPage + 1;
-        const rooms = await roomApi.getByBuilingId(selectedBuilding, nextPage, 6);
+        const rooms = await roomApi.searchInBuilding({ buildingId: selectedBuilding, pageNumber: nextPage, pageSize: 6, keyword: "" });
         setRoomsData((prev) => [...prev, ...rooms.items]);
         setRoomPage(nextPage);
-        setRoomHasMore(rooms.items.length >= 3);
+        setRoomHasMore(rooms.pageNumber < rooms.totalPages);
       } catch {
         setRoomHasMore(false);
       } finally {
@@ -275,12 +281,12 @@ const OrderCard = ({ order, onUpdate, onAddressChange, onCancel }: OrderCardProp
       return;
     }
     if (!user?.id) return;
-    await orderApi.updateOrder(user?.id, order.id, selectedRoom.id, noteValue);
+    await orderApi.updateOrder(user?.id, order.id, selectedRoom.id ?? "", noteValue);
     setOpenAddressModal(false);
     if (onAddressChange) {
       const areaObj = areasData.find((a) => a.id === selectedArea);
       const buildingObj = buildingsData.find((b) => b.id === selectedBuilding);
-      onAddressChange(order.id, areaObj?.name || "", buildingObj?.name || "", selectedRoom.name, selectedRoom.id);
+      onAddressChange(order.id, areaObj?.name ?? "", buildingObj?.name ?? "", selectedRoom.name ?? "", selectedRoom.id ?? "");
     }
     if (onUpdate) onUpdate();
   };
@@ -367,7 +373,7 @@ const OrderCard = ({ order, onUpdate, onAddressChange, onCancel }: OrderCardProp
             }}
           />
           <Chip
-            label={getPaymentStatusText(order.paymentStatus)}
+            label={getPaymentStatusText(order.paymentStatus, order.paymentMethod)}
             sx={{
               backgroundColor: `${getPaymentStatusColor(order.paymentStatus)}30`,
               color: getPaymentStatusColor(order.paymentStatus),
