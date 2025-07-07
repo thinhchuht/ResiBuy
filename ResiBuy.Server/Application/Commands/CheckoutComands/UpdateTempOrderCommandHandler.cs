@@ -1,4 +1,5 @@
 ﻿using ResiBuy.Server.Infrastructure.DbServices.CartItemDbService;
+using ResiBuy.Server.Infrastructure.DbServices.OrderDbServices;
 using ResiBuy.Server.Infrastructure.DbServices.VoucherDbServices;
 using ResiBuy.Server.Infrastructure.Model.DTOs.CheckoutDtos;
 using ResiBuy.Server.Services.RedisServices;
@@ -6,7 +7,8 @@ using ResiBuy.Server.Services.RedisServices;
 namespace ResiBuy.Server.Application.Commands.CheckoutComands
 {
     public record UpdateTempOrderCommand(string UserId, TempCheckoutDto Dto) : IRequest<ResponseModel>;
-    public class UpdateTempOrderCommandHandler(ICartItemDbService cartItemDbService, IVoucherDbService voucherDbService, IRedisService redisService) : IRequestHandler<UpdateTempOrderCommand, ResponseModel>
+    public class UpdateTempOrderCommandHandler(ICartItemDbService cartItemDbService, IStoreDbService storeDbService,
+        IVoucherDbService voucherDbService, IOrderDbService orderDbService, IRedisService redisService) : IRequestHandler<UpdateTempOrderCommand, ResponseModel>
     {
         public async Task<ResponseModel> Handle(UpdateTempOrderCommand request, CancellationToken cancellationToken)
         {
@@ -32,6 +34,12 @@ namespace ResiBuy.Server.Application.Commands.CheckoutComands
                 var order = checkoutData.Orders.FirstOrDefault(o => o.Id == updateOrder.Id);
                 if (order != null)
                 {
+                    var store = await storeDbService.GetStoreByIdAsync(order.StoreId);
+                    if (request.Dto.AddressId.HasValue)
+                    {
+                        var weight = updateOrder.ProductDetails.Select(pd => pd.Weight).Sum();
+                        updateOrder.ShippingFee = await orderDbService.ShippingFeeCharged(request.Dto.AddressId.Value, store.RoomId, weight);
+                    }
                     order.Note = updateOrder.Note;
                     if (updateOrder.VoucherId.HasValue && updateOrder.VoucherId != Guid.Empty)
                     {

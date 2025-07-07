@@ -24,6 +24,7 @@
         public DbSet<RefreshToken> RefreshTokens { get; set; }
         public DbSet<AdditionalData> AdditionalDatas { get; set; }
         public DbSet<ProductDetail> ProductDetails { get; set; }
+        public DbSet<Notification> Notifications { get; set; }
         public DbSet<Image> Images { get; set; }
 
         protected override void OnModelCreating(ModelBuilder modelBuilder)

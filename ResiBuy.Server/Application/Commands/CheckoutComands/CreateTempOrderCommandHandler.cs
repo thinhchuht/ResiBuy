@@ -1,17 +1,22 @@
-﻿using ResiBuy.Server.Infrastructure.DbServices.ProductDetailDbServices;
+﻿using ResiBuy.Server.Infrastructure.DbServices.OrderDbServices;
+using ResiBuy.Server.Infrastructure.DbServices.ProductDetailDbServices;
 using ResiBuy.Server.Infrastructure.Model.DTOs.CheckoutDtos;
 using ResiBuy.Server.Services.RedisServices;
 
 namespace ResiBuy.Server.Application.Commands.CheckoutComands
 {
     public record CreateTempOrderCommand(string UserId, CreateTempOrderDto Dto) : IRequest<ResponseModel>;
-    public class CreateTempOrderCommandHandler(IProductDetailDbService productDetailDbService, IRedisService redisService) : IRequestHandler<CreateTempOrderCommand, ResponseModel>
+    public class CreateTempOrderCommandHandler(IProductDetailDbService productDetailDbService, IOrderDbService orderDbService, IUserDbService userDbService,
+        IStoreDbService storeDbService, IRedisService redisService) : IRequestHandler<CreateTempOrderCommand, ResponseModel>
     {
         public async Task<ResponseModel> Handle(CreateTempOrderCommand request, CancellationToken cancellationToken)
         {
             var dto = request.Dto;
             if (string.IsNullOrEmpty(request.UserId))
                 throw new CustomException(ExceptionErrorCode.ValidationFailed, "UserId không được để trống");
+            var user = await userDbService.GetUserById(request.UserId);
+            if (user == null || !user.Roles.Contains(Constants.CustomerRole))
+                throw new CustomException(ExceptionErrorCode.ValidationFailed, "Chỉ có người mua hàng mới tạo được đơn hàng");
             var db = redisService.GetDatabase();
             var groupedCartItems = dto.CartItems.GroupBy(ci => ci.StoreId);
             if(groupedCartItems.Count() > 10) throw new CustomException(ExceptionErrorCode.ValidationFailed, "Không thể tạo quá 10 đơn hàng 1 lần");
@@ -19,6 +24,7 @@ namespace ResiBuy.Server.Application.Commands.CheckoutComands
             foreach (var group in groupedCartItems)
             {
                 var storeId = group.Key;
+                var store = await storeDbService.GetStoreByIdAsync(storeId);
                 var tempProductDetails = new List<TempProductDetailDto>();
                 foreach (var ci in group)
                 {
@@ -37,13 +43,15 @@ namespace ResiBuy.Server.Application.Commands.CheckoutComands
                         productDetail.AdditionalData.Select(ad => { ad.ProductDetail = null; return ad; }).ToList()
                     ));
                 }
-                var totalPrice = tempProductDetails.Sum(x => x.Price * x.Quantity);
+                var shippingFee = await orderDbService.ShippingFeeCharged(user.UserRooms.First().RoomId, store.RoomId, tempProductDetails.Sum(ci => ci.Weight));
+                var totalPrice = tempProductDetails.Sum(x => x.Price * x.Quantity) + shippingFee;
                 var tempOrder = new TempOrderDto
                 {
                     Id = Guid.NewGuid(),
                     StoreId = storeId,
                     TotalPrice = totalPrice,
-                    ProductDetails = tempProductDetails
+                    ProductDetails = tempProductDetails,
+                    ShippingFee = shippingFee,
                 };
                 tempOrders.Add(tempOrder);
             }
