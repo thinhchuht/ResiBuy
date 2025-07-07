@@ -8,6 +8,7 @@ const orderApi = {
     paymentMethod = "None",
     paymentStatus = "None",
     userId?: string,
+    shipperId?: string,
     pageNumber = 1,
     pageSize = 10,
     startDate?: string,
@@ -18,6 +19,7 @@ const orderApi = {
       paymentMethod,
       paymentStatus,
       userId,
+      shipperId,
       pageNumber,
       pageSize,
     };
