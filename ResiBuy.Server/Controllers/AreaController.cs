@@ -36,11 +36,11 @@ namespace ResiBuy.Server.Controllers
 
 
         [HttpPost("create")]
-        public async Task<IActionResult> CreateAsync([FromBody] CreateAreaCommand command)
+        public async Task<IActionResult> CreateAsync([FromBody] CommanAreaDto command)
         {
             try
             {
-                var result = await mediator.Send(command);
+                var result = await mediator.Send(new CreateAreaCommand(command));
                 return Ok(result);
             }
             catch (Exception ex)
