@@ -3,10 +3,10 @@
 namespace ResiBuy.Server.Application.Commands.NotificationCommands
 {
 
-    public record ReadNotificationCommandCommand(Guid Id, string UserId) : IRequest<ResponseModel>;
-    public class  ReadNotificationCommandCommandHandler(IUserDbService userDbService, INotificationDbService notificationDbService) : IRequestHandler< ReadNotificationCommandCommand, ResponseModel>
+    public record ReadNotificationCommand(Guid Id, string UserId) : IRequest<ResponseModel>;
+    public class  ReadNotificationCommandHandler(IUserDbService userDbService, INotificationDbService notificationDbService) : IRequestHandler< ReadNotificationCommand, ResponseModel>
     {
-        public async Task<ResponseModel> Handle( ReadNotificationCommandCommand command, CancellationToken cancellationToken)
+        public async Task<ResponseModel> Handle( ReadNotificationCommand command, CancellationToken cancellationToken)
         {
             try
             {

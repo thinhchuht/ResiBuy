@@ -1,4 +1,5 @@
-﻿using ResiBuy.Server.Application.Queries.NotificationQueries;
+﻿using ResiBuy.Server.Application.Commands.NotificationCommands;
+using ResiBuy.Server.Application.Queries.NotificationQueries;
 
 namespace ResiBuy.Server.Controllers
 {
@@ -25,7 +26,7 @@ namespace ResiBuy.Server.Controllers
         {
             try
             {
-                var result = await mediator.Send(new GetAllNotificationsQuery(id, pageNumber, pageSize));
+                var result = await mediator.Send(new ReadNotificationCommand(id, userId));
                 return Ok(result);
             }
             catch (Exception ex)

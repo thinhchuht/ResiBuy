@@ -2,6 +2,10 @@
 {
     public class Notification
     {
+        public Notification()
+        {
+            
+        }
         public Notification(Guid id, List<string> readBy, DateTime createdAt, string eventName, IEnumerable<UserNotification> userNotifications)
         {
             CreatedAt = createdAt;

@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useRef } from "react";
 import { useNavigate } from "react-router-dom";
 import { useFormik } from "formik";
 import * as Yup from "yup";
@@ -13,6 +13,8 @@ import {
   Alert,
   CircularProgress,
   Dialog,
+  MenuItem,
+  Autocomplete,
 } from "@mui/material";
 import { Visibility, VisibilityOff, Phone, Lock } from "@mui/icons-material";
 import { useToastify } from "../../hooks/useToastify";
@@ -21,6 +23,12 @@ import logo from "../../assets/images/Logo.png";
 import background from "../../assets/images/login-background.jpg";
 import ConfirmCodeModal from "../ConfirmCodeModal";
 import authApi from "../../api/auth.api";
+import areaApi from "../../api/area.api";
+import buildingApi from "../../api/building.api";
+import roomApi from "../../api/room.api";
+import userApi from "../../api/user.api";
+import type { Area, Building, Room } from "../../types/models";
+import type { RoomDto } from "../../types/dtoModels";
 
 interface LoginError {
   message?: string;
@@ -39,6 +47,41 @@ const Login: React.FC = () => {
   const [resetCode, setResetCode] = useState("");
   const [isSendingCode, setIsSendingCode] = useState(false);
   const [isVerifyingCode, setIsVerifyingCode] = useState(false);
+  const [registerModalOpen, setRegisterModalOpen] = useState(false);
+  const [areasData, setAreasData] = useState<Area[]>([]);
+  const [buildingsData, setBuildingsData] = useState<Building[]>([]);
+  const [roomsData, setRoomsData] = useState<(Room | RoomDto)[]>([]);
+  const [fetchedAreas, setFetchedAreas] = useState<Set<string>>(new Set());
+  const [areasLoaded, setAreasLoaded] = useState(false);
+  const [registerForm, setRegisterForm] = useState({
+    identityNumber: "",
+    phone: "",
+    email: "",
+    password: "",
+    fullName: "",
+    dateOfBirth: "",
+    areaId: "",
+    buildingId: "",
+    roomId: "",
+    roomIds: [] as string[],
+  });
+  const [registerTouched, setRegisterTouched] = useState({
+    identityNumber: false,
+    phone: false,
+    email: false,
+    password: false,
+    fullName: false,
+    dateOfBirth: false,
+    areaId: false,
+    buildingId: false,
+    roomId: false,
+    roomIds: false,
+  });
+  const [registerLoading, setRegisterLoading] = useState(false);
+  const [registerCodeModalOpen, setRegisterCodeModalOpen] = useState(false);
+  const [registerCode, setRegisterCode] = useState("");
+  // Debounce fetchRooms khi search phòng
+  const searchTimeout = useRef<NodeJS.Timeout | null>(null);
 
   const formik = useFormik({
     initialValues: {
@@ -106,6 +149,119 @@ const Login: React.FC = () => {
       setIsVerifyingCode(false);
     }
   };
+
+  const validateRegister = () => {
+    return {
+      fullName: !registerForm.fullName ? "Vui lòng nhập họ tên" : undefined,
+      dateOfBirth: !registerForm.dateOfBirth ? "Vui lòng nhập ngày sinh" : undefined,
+      identityNumber: !registerForm.identityNumber ? "Vui lòng nhập số identityNumber" : undefined,
+      phone: !registerForm.phone ? "Vui lòng nhập số điện thoại" : undefined,
+      email: !registerForm.email || !/^\S+@\S+\.\S+$/.test(registerForm.email) ? "Email không hợp lệ" : undefined,
+      password: !registerForm.password || registerForm.password.length < 6 ? "Mật khẩu phải ít nhất 6 ký tự" : undefined,
+      areaId: !registerForm.areaId ? "Vui lòng chọn khu vực" : undefined,
+      buildingId: !registerForm.buildingId ? "Vui lòng chọn tòa nhà" : undefined,
+      roomIds: !registerForm.roomIds || registerForm.roomIds.length === 0 ? "Vui lòng chọn phòng" : undefined,
+    };
+  };
+  const registerErrors = validateRegister();
+
+  const handleRegisterChange = (field: string, value: string | string[]) => {
+    setRegisterForm((prev) => ({ ...prev, [field]: value }));
+    setRegisterTouched((prev) => ({ ...prev, [field]: true }));
+  };
+
+  const handleRegister = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setRegisterTouched({ identityNumber: true, phone: true, email: true, password: true, fullName: true, dateOfBirth: true, areaId: true, buildingId: true, roomId: true, roomIds: true });
+    console.log("submit", registerForm, registerErrors);
+    if (Object.values(registerErrors).some(Boolean)) {
+      toast.error("Vui lòng nhập đầy đủ thông tin hợp lệ!");
+      return;
+    }
+    setRegisterLoading(true);
+    try {
+      const payload = {
+        identityNumber: registerForm.identityNumber,
+        phoneNumber: registerForm.phone,
+        email: registerForm.email,
+        password: registerForm.password,
+        fullName: registerForm.fullName,
+        dateOfBirth: new Date(registerForm.dateOfBirth),
+        roomIds: registerForm.roomIds,
+      };
+      console.log("call getCode", payload);
+      const res = await userApi.getCode(payload);
+      if (!res || res.error) {
+        toast.error(res?.error?.message || "Gửi mã xác nhận thất bại!");
+      } else {
+        setRegisterCodeModalOpen(true);
+      }
+    } finally {
+      setRegisterLoading(false);
+    }
+  };
+
+  const handleRegisterCodeSubmit = async () => {
+    setRegisterLoading(true);
+    try {
+      const payload = {
+        ...registerForm,
+        code: registerCode,
+        phoneNumber: registerForm.phone,
+        roomIds: registerForm.roomIds,
+        dateOfBirth: new Date(registerForm.dateOfBirth),
+      };
+      const res = await userApi.createUser(payload);
+      if (!res || res.error) {
+        toast.error(res?.error?.message || "Đăng ký thất bại!");
+      } else {
+        setRegisterCodeModalOpen(false);
+        setRegisterModalOpen(false);
+        setRegisterForm({ identityNumber: "", phone: "", email: "", password: "", fullName: "", dateOfBirth: "", areaId: "", buildingId: "", roomId: "", roomIds: [] });
+        setRegisterTouched({ identityNumber: false, phone: false, email: false, password: false, fullName: false, dateOfBirth: false, areaId: false, buildingId: false, roomId: false, roomIds: false });
+        setRegisterCode("");
+        toast.success("Đăng ký thành công! Vui lòng đăng nhập.");
+      }
+    } finally {
+      setRegisterLoading(false);
+    }
+  };
+
+  // Fetch logic cho area, building, room
+  const fetchBuildings = async (areaId: string) => {
+    if (fetchedAreas.has(areaId)) {
+      return;
+    }
+    try {
+      setBuildingsData([]);
+      const buildingsData = await buildingApi.getByAreaId(areaId);
+      setBuildingsData(buildingsData as Building[]);
+      setFetchedAreas((prev) => new Set([...prev, areaId]));
+    } catch {
+      toast.error("Không thể tải danh sách tòa nhà");
+    }
+  };
+  const fetchRooms = async (buildingId: string, page = 1, pageSize = 6, search = "") => {
+    try {
+      const roomsRes = await roomApi.searchInBuilding({ buildingId, pageNumber: page, pageSize, keyword: search });
+      setRoomsData((prev) => {
+        const newRooms = roomsRes.items.filter(r => !prev.some(p => p.id === r.id));
+        return [...prev, ...newRooms];
+      });
+    } catch {
+      toast.error("Không thể tải danh sách phòng");
+    }
+  };
+  React.useEffect(() => {
+    if (registerModalOpen && !areasLoaded) {
+      areaApi.getAll().then((areas) => {
+        setAreasData(areas);
+        setAreasLoaded(true);
+      });
+    }
+  }, [registerModalOpen, areasLoaded]);
+
+  const selectedRoomIds = Array.isArray(registerForm.roomIds) ? registerForm.roomIds.filter(Boolean).map(String) : [];
 
   return (
     <Box
@@ -244,16 +400,25 @@ const Login: React.FC = () => {
             )}
           </Button>
 
-          {/* Forgot password link */}
-          <Typography
-            variant="body2"
-            color="primary"
-            align="center"
-            sx={{ cursor: "pointer", textDecoration: "underline", mb: 1 }}
-            onClick={() => setForgotModalOpen(true)}
-          >
-            Quên mật khẩu?
-          </Typography>
+          {/* Forgot password and register links */}
+          <Box sx={{ display: 'flex', flexDirection: 'row', justifyContent: 'space-between', mb: 1, width: '100%' }}>
+            <Typography
+              variant="body2"
+              color="primary"
+              sx={{ cursor: "pointer", textDecoration: "underline" }}
+              onClick={() => setRegisterModalOpen(true)}
+            >
+              Đăng ký tài khoản
+            </Typography>
+            <Typography
+              variant="body2"
+              color="primary"
+              sx={{ cursor: "pointer", textDecoration: "underline" }}
+              onClick={() => setForgotModalOpen(true)}
+            >
+              Quên mật khẩu?
+            </Typography>
+          </Box>
 
           <Typography
             variant="body2"
@@ -263,7 +428,7 @@ const Login: React.FC = () => {
             fontSize={12}
             fontStyle={"italic"}
           >
-            Liên hệ với Ban quản lí tòa nhà của bạn để được tạo tài khoản
+            Liên hệ với Ban quản lí tòa nhà để được tạo tài khoản bán hàng
           </Typography>
         </Box>
       </Paper>
@@ -394,7 +559,6 @@ const Login: React.FC = () => {
         </Dialog>
       )}
 
-      {/* Modal nhập mã xác nhận */}
       <ConfirmCodeModal
         open={codeModalOpen}
         onClose={() => setCodeModalOpen(false)}
@@ -402,6 +566,253 @@ const Login: React.FC = () => {
         isSubmitting={isVerifyingCode}
         code={resetCode}
         setCode={setResetCode}
+      />
+
+      <Dialog
+        open={registerModalOpen}
+        onClose={() => {
+          setRegisterModalOpen(false);
+          setRegisterForm({ identityNumber: "", phone: "", email: "", password: "", fullName: "", dateOfBirth: "", areaId: "", buildingId: "", roomId: "", roomIds: [] });
+          setRegisterTouched({ identityNumber: false, phone: false, email: false, password: false, fullName: false, dateOfBirth: false, areaId: false, buildingId: false, roomId: false, roomIds: false });
+        }}
+        PaperProps={{
+          sx: {
+            borderRadius: 4,
+            p: 0,
+            boxShadow: "0 8px 40px rgba(0,0,0,0.18)",
+            background: "linear-gradient(135deg, #fff 80%, #ffe3ec 100%)",
+            minWidth: 700,
+            maxWidth: 900,
+            width: '100%',
+          },
+        }}
+      >
+        <Box
+          component="form"
+          onSubmit={handleRegister}
+          sx={{
+            p: 5,
+            display: "flex",
+            flexDirection: "column",
+            alignItems: "center",
+            justifyContent: "center",
+          }}
+        >
+          <Typography variant="h5" sx={{ mb: 3, fontWeight: 700, color: "#EB5C60", letterSpacing: 1, textAlign: 'center' }}>
+            Đăng ký tài khoản
+          </Typography>
+          <Box sx={{ display: 'flex', flexDirection: 'row', gap: 5, width: '100%', mb: 3, justifyContent: 'center' }}>
+            <Box sx={{ flex: 1, display: 'flex', flexDirection: 'column', minWidth: 0, maxWidth: 360 }}>
+              <Typography variant="subtitle2" sx={{ mb: 1, fontWeight: 600 }}>
+                Thông tin tài khoản
+              </Typography>
+              <TextField
+                fullWidth
+                label="Họ tên"
+                value={registerForm.fullName}
+                onChange={e => handleRegisterChange("fullName", e.target.value)}
+                onBlur={() => setRegisterTouched(prev => ({ ...prev, fullName: true }))}
+                error={registerTouched.fullName && Boolean(registerErrors.fullName)}
+                helperText={registerTouched.fullName && registerErrors.fullName}
+                sx={{ mb: 2, borderRadius: 2, background: "#fff" }}
+              />
+              <TextField
+                fullWidth
+                label="Ngày sinh"
+                type="date"
+                value={registerForm.dateOfBirth}
+                onChange={e => handleRegisterChange("dateOfBirth", e.target.value)}
+                onBlur={() => setRegisterTouched(prev => ({ ...prev, dateOfBirth: true }))}
+                error={registerTouched.dateOfBirth && Boolean(registerErrors.dateOfBirth)}
+                helperText={registerTouched.dateOfBirth && registerErrors.dateOfBirth}
+                sx={{ mb: 2, borderRadius: 2, background: "#fff" }}
+                InputLabelProps={{ shrink: true }}
+              />
+              <TextField
+                fullWidth
+                label="Số CCCD"
+                value={registerForm.identityNumber}
+                onChange={e => handleRegisterChange("identityNumber", e.target.value)}
+                onBlur={() => setRegisterTouched(prev => ({ ...prev, identityNumber: true }))}
+                error={registerTouched.identityNumber && Boolean(registerErrors.identityNumber)}
+                helperText={registerTouched.identityNumber && registerErrors.identityNumber}
+                sx={{ mb: 2, borderRadius: 2, background: "#fff" }}
+              />
+              <TextField
+                fullWidth
+                label="Số điện thoại"
+                value={registerForm.phone}
+                onChange={e => handleRegisterChange("phone", e.target.value)}
+                onBlur={() => setRegisterTouched(prev => ({ ...prev, phone: true }))}
+                error={registerTouched.phone && Boolean(registerErrors.phone)}
+                helperText={registerTouched.phone && registerErrors.phone}
+                sx={{ mb: 2, borderRadius: 2, background: "#fff" }}
+              />
+              <TextField
+                fullWidth
+                label="Email"
+                value={registerForm.email}
+                onChange={e => handleRegisterChange("email", e.target.value)}
+                onBlur={() => setRegisterTouched(prev => ({ ...prev, email: true }))}
+                error={registerTouched.email && Boolean(registerErrors.email)}
+                helperText={registerTouched.email && registerErrors.email}
+                sx={{ mb: 2, borderRadius: 2, background: "#fff" }}
+              />
+              <TextField
+                fullWidth
+                label="Mật khẩu"
+                type="password"
+                value={registerForm.password}
+                onChange={e => handleRegisterChange("password", e.target.value)}
+                onBlur={() => setRegisterTouched(prev => ({ ...prev, password: true }))}
+                error={registerTouched.password && Boolean(registerErrors.password)}
+                helperText={registerTouched.password && registerErrors.password}
+                sx={{ mb: 2, borderRadius: 2, background: "#fff" }}
+              />
+            </Box>
+            {/* Cột phải: thông tin phòng */}
+            <Box sx={{ flex: 1, display: 'flex', flexDirection: 'column', minWidth: 0, maxWidth: 360 }}>
+              <Typography variant="subtitle2" sx={{ mb: 1, fontWeight: 600 }}>
+                Thông tin phòng
+              </Typography>
+              <TextField
+                select
+                fullWidth
+                label="Khu vực"
+                value={registerForm.areaId}
+                onChange={e => {
+                  handleRegisterChange("areaId", e.target.value);
+                  handleRegisterChange("buildingId", "");
+                  if (e.target.value) fetchBuildings(e.target.value);
+                }}
+                onBlur={() => setRegisterTouched(prev => ({ ...prev, areaId: true }))}
+                error={registerTouched.areaId && Boolean(registerErrors.areaId)}
+                helperText={registerTouched.areaId && registerErrors.areaId}
+                sx={{ mb: 2, background: '#fff' }}
+                SelectProps={{ native: false }}
+                className="register-select-field"
+              >
+                <MenuItem value="" disabled>Chọn khu vực</MenuItem>
+                {areasData.map((area) => (
+                  <MenuItem key={area.id} value={area.id}>{area.name}</MenuItem>
+                ))}
+              </TextField>
+              <TextField
+                select
+                fullWidth
+                label="Tòa nhà"
+                value={registerForm.buildingId}
+                onChange={async e => {
+                  handleRegisterChange("buildingId", e.target.value);
+                  if (e.target.value) {
+                    await fetchRooms(e.target.value as string, 1, 6);
+                  }
+                }}
+                onBlur={() => setRegisterTouched(prev => ({ ...prev, buildingId: true }))}
+                error={registerTouched.buildingId && Boolean(registerErrors.buildingId)}
+                helperText={registerTouched.buildingId && registerErrors.buildingId}
+                sx={{ mb: 2, background: '#fff' }}
+                disabled={!registerForm.areaId}
+                SelectProps={{ native: false }}
+                className="register-select-field"
+              >
+                <MenuItem value="" disabled>Chọn tòa nhà</MenuItem>
+                {buildingsData.map((building) => (
+                  <MenuItem key={building.id} value={building.id}>{building.name}</MenuItem>
+                ))}
+              </TextField>
+              <Autocomplete
+                multiple
+                fullWidth
+                options={roomsData}
+                getOptionLabel={option => option.name || ''}
+                value={roomsData.filter(r => selectedRoomIds.includes(String(r.id)))}
+                onChange={(_, newValue) => {
+                  handleRegisterChange("roomIds", newValue.map(r => String(r.id)).filter((id): id is string => !!id));
+                }}
+                onInputChange={(_, newInputValue) => {
+                  if (!registerForm.buildingId) return;
+                  if (searchTimeout.current) clearTimeout(searchTimeout.current);
+                  searchTimeout.current = setTimeout(() => {
+                    fetchRooms(registerForm.buildingId, 1, 6, newInputValue);
+                  }, 500);
+                }}
+                disabled={!registerForm.buildingId}
+                renderInput={(params) => {
+                  return (
+                    <TextField
+                      {...params}
+                      label="Phòng"
+                      error={registerTouched.roomIds && Boolean(registerErrors.roomIds)}
+                      helperText={registerTouched.roomIds && registerErrors.roomIds}
+                      sx={{ mb: 2, background: '#fff' }}
+                      inputProps={{ ...params.inputProps, readOnly: !registerForm.buildingId }}
+                    />
+                  );
+                }}
+              />
+            </Box>
+          </Box>
+          <Box sx={{ display: "flex", flexDirection: "row", gap: 2, width: "100%", mt: 2, justifyContent: 'flex-end' }}>
+            <Button
+              variant="text"
+              color="secondary"
+              onClick={() => setRegisterModalOpen(false)}
+              sx={{
+                minWidth: 110,
+                px: 3,
+                py: 1.2,
+                fontWeight: 600,
+                fontSize: 15,
+                borderRadius: 15,
+                border: "2px solid #e91e63",
+                color: "#e91e63",
+                background: "#fff",
+                boxShadow: "none",
+                '&:hover': {
+                  background: "#ffe3ec",
+                  borderColor: "#FF6B6B",
+                  color: "#FF6B6B",
+                },
+              }}
+            >
+              Hủy
+            </Button>
+            <Button
+              variant="contained"
+              type="submit"
+              disabled={registerLoading}
+              sx={{
+                minWidth: 130,
+                px: 3,
+                py: 1.2,
+                fontWeight: 600,
+                fontSize: 15,
+                borderRadius: 15,
+                background: "linear-gradient(to right, #EB5C60, #F28B50, #FFD190)",
+                boxShadow: "0 3px 12px rgba(233, 30, 99, 0.13)",
+                '&:hover': {
+                  background: "linear-gradient(to right, #F28B50, #EB5C60, #FFD190)",
+                },
+              }}
+            >
+              {registerLoading ? <CircularProgress size={22} color="inherit" /> : "Đăng ký"}
+            </Button>
+          </Box>
+        </Box>
+      </Dialog>
+
+      {/* Modal nhập mã xác nhận đăng ký */}
+      <ConfirmCodeModal
+        open={registerCodeModalOpen}
+        onClose={() => {
+          setRegisterCodeModalOpen(false);
+          setRegisterCode("");
+        }}
+        onSubmit={handleRegisterCodeSubmit}
+        isSubmitting={registerLoading}
+        code={registerCode}
+        setCode={setRegisterCode}
       />
     </Box>
   );
