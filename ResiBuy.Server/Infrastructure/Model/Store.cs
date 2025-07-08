@@ -16,5 +16,6 @@
         public IEnumerable<Product> Products    { get; set; }
         public IEnumerable<Voucher> Vouchers    { get; set; }
         public IEnumerable<Order>   Orders      { get; set; }
+        public IEnumerable<Event>   Events      { get; set; }
     }
 }

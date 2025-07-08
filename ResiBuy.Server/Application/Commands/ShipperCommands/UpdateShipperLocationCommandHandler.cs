@@ -1,11 +1,4 @@
-﻿using ResiBuy.Server.Exceptions;
-using ResiBuy.Server.Infrastructure.DbServices.ShipperDbServices;
-using ResiBuy.Server.Infrastructure.Model;
-using System;
-using System.Threading;
-using System.Threading.Tasks;
-
-namespace ResiBuy.Server.Application.Commands.ShipperCommands
+﻿namespace ResiBuy.Server.Application.Commands.ShipperCommands
 {
     public record UpdateShipperLocationCommand(
         Guid ShipperId,

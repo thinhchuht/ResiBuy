@@ -9,9 +9,13 @@
   </PropertyGroup>
 
   <ItemGroup>
+    <Compile Remove="Application\Commands\CartitemCommands\**" />
     <Compile Remove="Infrastructure\Repositories\**" />
+    <Content Remove="Application\Commands\CartitemCommands\**" />
     <Content Remove="Infrastructure\Repositories\**" />
+    <EmbeddedResource Remove="Application\Commands\CartitemCommands\**" />
     <EmbeddedResource Remove="Infrastructure\Repositories\**" />
+    <None Remove="Application\Commands\CartitemCommands\**" />
     <None Remove="Infrastructure\Repositories\**" />
   </ItemGroup>
 
@@ -47,7 +51,6 @@
   </ItemGroup>
 
   <ItemGroup>
-    <Folder Include="Application\Commands\CartitemCommands\" />
     <Folder Include="Infrastructure\Migrations\" />
     <Folder Include="Migrations\" />
     <Folder Include="Services\HttpServices\" />
