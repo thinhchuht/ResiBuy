@@ -1,6 +1,8 @@
+using ResiBuy.Server.Infrastructure.DbServices.NotificationDbServices;
+
 namespace ResiBuy.Server.Services.HubServices;
 
-public class NotificationService(IHubContext<NotificationHub> hubContext, ILogger<NotificationService> logger) : INotificationService
+public class NotificationService(IHubContext<NotificationHub> hubContext, ILogger<NotificationService> logger, INotificationDbService notificationDbService) : INotificationService
 {
     public void SendNotification(string eventName, object data, string hubGroup = null, List<string> userIds = null)
     {
@@ -16,7 +18,11 @@ public class NotificationService(IHubContext<NotificationHub> hubContext, ILogge
                     foreach (var userId in userIds)
                     {
                         await hubContext.Clients.Group(userId).SendAsync(eventName, data, cts.Token);
+
                     }
+                    var notiId = Guid.NewGuid();
+                    var notification = new Notification(notiId, userIds, DateTime.UtcNow, eventName, userIds.Select(ui => new UserNotification(ui, notiId)));
+                    await notificationDbService.CreateAsync(notification);
                     //await hubContext.Clients.Users(userIds).SendAsync(eventName, data, cts.Token);
                 }
                 if(!string.IsNullOrEmpty(hubGroup))

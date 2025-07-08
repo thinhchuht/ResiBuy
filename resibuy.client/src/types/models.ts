@@ -17,6 +17,7 @@ export enum PaymentStatus {
 }
 
 export enum PaymentMethod {
+  None = "None",
   COD = "COD",
   BankTransfer = "BankTransfer",
 }

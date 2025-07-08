@@ -56,6 +56,7 @@ export interface OrderApiResult {
   paymentStatus: PaymentStatus;
   paymentMethod: number;
   totalPrice: number;
+  shippingFee: number
   note: string;
   roomQueryResult: RoomQueryResult;
   store: Store;
@@ -540,6 +541,9 @@ const OrderCard = ({ order, onUpdate, onAddressChange, onCancel }: OrderCardProp
           alignItems: "center",
         }}>
         <Box>
+          <Typography variant="body2" sx={{ color: '#666', mb: 0.5 }}>
+            Phí vận chuyển: <b>{formatPrice(order.shippingFee)}</b>
+          </Typography>
           <Typography variant="subtitle2" sx={{ color: "#666", mb: 0.5 }}>
             Tổng tiền:
           </Typography>

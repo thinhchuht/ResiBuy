@@ -14,7 +14,7 @@
 
         //Voucher query result 
         public record OrderQueryResult(Guid Id, string UserId, Guid? ShipperId, DateTime CreateAt, DateTime UpdateAt, OrderStatus Status, PaymentStatus PaymentStatus, PaymentMethod PaymentMethod,
-            decimal TotalPrice, string Note, RoomQueryResult RoomQueryResult, object Store, object? Voucher, IEnumerable<OrderItemQueryResult> OrderItems);
+            decimal TotalPrice, decimal? ShippingFee, string Note, RoomQueryResult RoomQueryResult, object Store, object? Voucher, IEnumerable<OrderItemQueryResult> OrderItems);
 
         public record OrderItemQueryResult(Guid Id,int ProductId, int ProductDetailId, string ProductName, int Quantity, decimal Price, object Image);
 

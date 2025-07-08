@@ -37,8 +37,9 @@ namespace ResiBuy.Server.Application.Commands.CheckoutComands
                     var store = await storeDbService.GetStoreByIdAsync(order.StoreId);
                     if (request.Dto.AddressId.HasValue)
                     {
-                        var weight = updateOrder.ProductDetails.Select(pd => pd.Weight).Sum();
-                        updateOrder.ShippingFee = await orderDbService.ShippingFeeCharged(request.Dto.AddressId.Value, store.RoomId, weight);
+                        var weight = order.ProductDetails.Select(pd => pd.Weight).Sum();
+                        //updateOrder.ShippingFee = await orderDbService.ShippingFeeCharged(request.Dto.AddressId.Value, store.RoomId, weight);
+                        updateOrder.ShippingFee = 10000;
                     }
                     order.Note = updateOrder.Note;
                     if (updateOrder.VoucherId.HasValue && updateOrder.VoucherId != Guid.Empty)
@@ -51,7 +52,7 @@ namespace ResiBuy.Server.Application.Commands.CheckoutComands
                             throw new CustomException(ExceptionErrorCode.ValidationFailed, "Voucher không hợp lệ hoặc không thuộc cửa hàng này");
                         order.VoucherId = voucher.Id;
                         var totalBeforeDiscount = order.ProductDetails.Sum(pd => pd.Price * pd.Quantity);
-                        order.TotalPrice = CalculatePrice.GetTotalPrice(totalBeforeDiscount, voucher);
+                        order.TotalPrice = CalculatePrice.GetTotalPrice(totalBeforeDiscount, voucher) - order.ShippingFee;
                         order.DiscountAmount = totalBeforeDiscount - order.TotalPrice;
                         order.Voucher = new VoucherDto(
                             voucher.Id,
