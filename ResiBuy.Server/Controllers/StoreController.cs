@@ -56,5 +56,18 @@ namespace ResiBuy.Server.Controllers
             var result = await _mediator.Send(new GetStoreByOwnerIdQuery(ownerId, pageSize, pageNumber));
             return Ok(result);
         }
+        [HttpGet("count")]
+        public async Task<IActionResult> CountAllStores()
+        {
+            var result = await _mediator.Send(new CountAllStoresQuery());
+            return Ok(result);
+        }
+
+        [HttpGet("count/status")]
+        public async Task<IActionResult> CountStoreStatus()
+        {
+            var result = await _mediator.Send(new CountStoreStatusQuery());
+            return Ok(result);
+        }
     }
 }

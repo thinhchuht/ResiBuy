@@ -8,5 +8,8 @@ namespace ResiBuy.Server.Infrastructure.DbServices.StoreDbServices
         Task<Store> UpdateStoreStatusAsync(Guid storeId, bool isLocked, bool isOpen);
         Task<bool> CheckRoomIsAvailable(Guid roomId);
         Task<bool> CheckStoreIsAvailable(string name);
+        Task<int> CountAllStoresAsync();
+        Task<int> CountStoresByIsOpenAsync(bool isOpen);
+        Task<int> CountStoresByIsLockedAsync(bool isLocked);
     }
 }
