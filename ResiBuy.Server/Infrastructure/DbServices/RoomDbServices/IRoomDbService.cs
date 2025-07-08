@@ -17,6 +17,7 @@
         Task<PagedResult<Room>> GetRoomsByStatusAsync(bool isActive, int pageNumber, int pageSize);
         Task<PagedResult<Room>> GetRoomsByStatusAndBuildingAsync(Guid buildingId, bool isActive, int pageNumber, int pageSize);
         Task<int> CountRoomsByBuildingIdAndStatusAsync(Guid buildingId, bool isActive);
+        Task<IEnumerable<Room>> GetRoomsByUserIdAsync(string userId);
 
     }
 }
