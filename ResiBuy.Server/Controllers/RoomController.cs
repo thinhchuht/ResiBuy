@@ -185,6 +185,12 @@ namespace ResiBuy.Server.Controllers
                 throw new CustomException(ExceptionErrorCode.RepositoryError, ex.Message);
             }
         }
+        [HttpGet("{userId}")]
+        public async Task<IActionResult> GetRoomsByUserId(string userId)
+        {
+            var result = await mediator.Send(new GetRoomsByUserIdQuery(userId));
+            return Ok(result);
+        }
 
     }
 

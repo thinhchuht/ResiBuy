@@ -10,6 +10,7 @@ const orderApi = {
     storeId?: string,
     shipperId?: string,
     userId?: string,
+    shipperId?: string,
     pageNumber = 1,
     pageSize = 10,
     startDate?: string,
@@ -22,6 +23,7 @@ const orderApi = {
       storeId,
       shipperId,
       userId,
+      shipperId,
       pageNumber,
       pageSize,
     };

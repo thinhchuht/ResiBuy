@@ -77,12 +77,13 @@ const Orders = () => {
     if (!user?.id) return;
     try {
       const data = await orderApi.getAll(
-        orderStatusTabs[currentTab],
+         orderStatusTabs[currentTab],
         PaymentMethod.None,
         PaymentStatus.None,
         undefined, // storeId
         undefined, // shipperId
         user.id,
+        undefined,
         page,
         ordersPerPage,
         startDate || undefined,

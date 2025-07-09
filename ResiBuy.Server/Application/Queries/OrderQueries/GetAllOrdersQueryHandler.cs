@@ -43,6 +43,7 @@ namespace ResiBuy.Server.Application.Queries.OrderQueries
                 item.PaymentStatus,
                 item.PaymentMethod,
                 item.TotalPrice,
+                item.ShippingFee,
                 item.Note,
                 new RoomQueryResult(
                     item.ShippingAddress.Id,

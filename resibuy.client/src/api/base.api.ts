@@ -113,7 +113,7 @@ axiosClient.interceptors.response.use(
         return Promise.reject(refreshError);
       }
     }
-
+    console.log('fsifdjhsa', error.response.data)
     if (error.response?.data?.message) {
       toast.error(error.response.data.message);
     } 

@@ -24,10 +24,14 @@
         public DbSet<RefreshToken> RefreshTokens { get; set; }
         public DbSet<AdditionalData> AdditionalDatas { get; set; }
         public DbSet<ProductDetail> ProductDetails { get; set; }
+        public DbSet<Notification> Notifications { get; set; }
+        public DbSet<UserNotification> UserNotifications { get; set; }
         public DbSet<Image> Images { get; set; }
 
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {
+            modelBuilder.ApplyConfiguration(new UserNotificationConfig());
+
             //Config cho từng bảng
             modelBuilder.ApplyConfiguration(new ReportConfig());
             modelBuilder.ApplyConfiguration(new UserConfig());
@@ -44,6 +48,7 @@
             modelBuilder.ApplyConfiguration(new AdditionalDataConfig());
             modelBuilder.ApplyConfiguration(new ProductDetailConfig());
             modelBuilder.ApplyConfiguration(new OrderItemConfig());
+
             modelBuilder.ApplyConfiguration(new RoomConfig());
             // default admin
             var admin = new User

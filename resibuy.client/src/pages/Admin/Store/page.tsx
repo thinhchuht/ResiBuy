@@ -1,149 +1,158 @@
-import { Box, Typography, IconButton } from "@mui/material";
+import { useState, useEffect } from "react";
+import { Box, Typography, IconButton, CircularProgress } from "@mui/material";
 import {
   CheckCircle,
   Edit,
   Visibility,
-  Inventory,
-  Store as StoreIcon,
   ToggleOff,
   Delete,
+  Store as StoreIcon,
 } from "@mui/icons-material";
 import CustomTable from "../../../components/CustomTable";
 import { AddStoreModal } from "../../../components/admin/Store/add-store-modal";
 import { StoreDetailModal } from "../../../components/admin/Store/store-detail-modal";
-import {
-  calculateStoreStats,
-  formatCurrency,
-  formatDate,
-  getStatusColor,
-  useStoresLogic,
-} from "../../../components/admin/Store/seg/utlis";
-import { StatsCard } from "../../../layouts/AdminLayout/components/StatsCard";
-import type { Store } from "../../../types/models";
-import { TrendingUp } from "@mui/icons-material";
+import { getStatusColor, useStoresLogic } from "../../../components/admin/Store/seg/utlis";
 
-function StoreStatsCards() {
-  const stats = calculateStoreStats(useStoresLogic().stores);
+function StoreStatsCards({ calculateStoreStats }) {
+  const [stats, setStats] = useState({
+    totalStores: 0,
+    activeStores: 0,
+    inactiveStores: 0,
+    openStore: 0,
+    closeStore: 0,
+  });
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
+
+  useEffect(() => {
+    const fetchStats = async () => {
+      setLoading(true);
+      try {
+        const result = await calculateStoreStats();
+        setStats(result);
+        setError(null);
+      } catch (err) {
+        console.error("Lỗi khi lấy thống kê:", err);
+        setError("Không thể tải thống kê cửa hàng");
+      } finally {
+        setLoading(false);
+      }
+    };
+    fetchStats();
+  }, [calculateStoreStats]);
 
   const cards = [
     {
       title: "Tổng Cửa Hàng",
       value: stats.totalStores.toString(),
       icon: StoreIcon,
-      iconColor: "#1976d2", // Xanh dương
-      iconBgColor: "#e3f2fd", // Xanh dương nhạt
+      iconColor: "#1976d2",
+      iconBgColor: "#e3f2fd",
       valueColor: "#1976d2",
-    },
-    {
-      title: "Chưa Kích Hoạt",
-      value: stats.inactiveStores.toString(),
-      icon: CheckCircle,
-      iconColor: "#2e7d32", // Xanh lá
-      iconBgColor: "#e8f5e9", // Xanh lá nhạt
-      valueColor: "#2e7d32",
     },
     {
       title: "Cửa Hàng Hoạt Động",
       value: stats.activeStores.toString(),
       icon: CheckCircle,
-      iconColor: "#7b1fa2", // Tím
-      iconBgColor: "#f3e5f5", // Tím nhạt
-      valueColor: "#7b1fa2",
-    },
-    {
-      title: "Tổng Sản Phẩm",
-      value: stats.totalProducts.toLocaleString(),
-      icon: Inventory,
-      iconColor: "#d81b60", // Hồng
-      iconBgColor: "#fce4ec", // Hồng nhạt
-      valueColor: "#d81b60",
-    },
-  ];
-
-  const miniCards = [
-    {
-      title: "Chờ Xác Nhận",
-      value: stats.activeStores.toString(),
-      icon: CheckCircle,
-      iconColor: "#2e7d32", // Xanh lá
-      iconBgColor: "#e8f5e9", // Xanh lá nhạt
+      iconColor: "#2e7d32",
+      iconBgColor: "#e8f5e9",
       valueColor: "#2e7d32",
     },
     {
-      title: "Đang Giao",
+      title: "Cửa Hàng Đang khóa",
       value: stats.inactiveStores.toString(),
-      icon: CheckCircle,
-      iconColor: "#dc2626", // Đỏ
-      iconBgColor: "#fee2e2", // Đỏ nhạt
+      icon: ToggleOff,
+      iconColor: "#dc2626",
+      iconBgColor: "#fee2e2",
       valueColor: "#dc2626",
     },
     {
-      title: "Đã Giao",
-      value: stats.totalProducts.toString(),
+      title: "Cửa Hàng Đang mở",
+      value: stats.openStore.toString(),
       icon: CheckCircle,
-      iconColor: "#1976d2", // Xanh dương
-      iconBgColor: "#e3f2fd", // Xanh dương nhạt
-      valueColor: "#1976d2",
+      iconColor: "#2e7d32",
+      iconBgColor: "#e8f5e9",
+      valueColor: "#2e7d32",
     },
-    {
-      title: "Đã Hủy",
-      value: stats.averageRevenue
-        ? Math.round(stats.averageRevenue).toString()
-        : "0",
-      icon: CheckCircle,
-      iconColor: "#7b1fa2", // Tím
-      iconBgColor: "#f3e5f5", // Tím nhạt
-      valueColor: "#7b1fa2",
+     {
+      title: "Cửa Hàng Đang Đóng",
+      value: stats.closeStore.toString(),
+      icon: ToggleOff,
+      iconColor: "#dc2626",
+      iconBgColor: "#fee2e2",
+      valueColor: "#dc2626",
     },
   ];
 
+  if (error) {
+    return (
+      <Box sx={{ p: 2, bgcolor: "error.light", borderRadius: 2 }}>
+        <Typography color="error.main">{error}</Typography>
+      </Box>
+    );
+  }
+
   return (
-    <>
-      <Box
-        sx={{
-          display: "grid",
-          gridTemplateColumns: {
-            xs: "1fr",
-            md: "1fr 1fr",
-            lg: "1fr 1fr 1fr 1fr",
-          },
-          gap: 3,
-          mb: 3,
-        }}
-      >
-        {cards.map((card, index) => (
-          <StatsCard
+    <Box
+      sx={{
+        display: "grid",
+        gridTemplateColumns: {
+          xs: "1fr",
+          md: "1fr 1fr",
+          lg: "1fr 1fr 1fr",
+        },
+        gap: 3,
+        mb: 3,
+      }}
+    >
+      {loading ? (
+        <Box sx={{ display: "flex", justifyContent: "center", py: 2 }}>
+          <CircularProgress />
+        </Box>
+      ) : (
+        cards.map((card, index) => (
+          <Box
             key={index}
-            title={card.title}
-            value={card.value}
-            icon={card.icon}
-            iconColor={card.iconColor}
-            iconBgColor={card.iconBgColor}
-            valueColor={card.valueColor}
-          />
-        ))}
-      </Box>
-      <Box
-        sx={{
-          display: "grid",
-          gridTemplateColumns: { xs: "1fr 1fr", md: "1fr 1fr 1fr 1fr" },
-          gap: 2,
-          mb: 3,
-        }}
-      >
-        {miniCards.map((card, index) => (
-          <StatsCard
-            key={index}
-            title={card.title}
-            value={card.value}
-            icon={card.icon}
-            iconColor={card.iconColor}
-            iconBgColor={card.iconBgColor}
-            valueColor={card.valueColor}
-          />
-        ))}
-      </Box>
-    </>
+            sx={{
+              bgcolor: "background.paper",
+              p: 2,
+              borderRadius: 2,
+              boxShadow: 1,
+              display: "flex",
+              alignItems: "center",
+              gap: 2,
+            }}
+          >
+            <Box
+              sx={{
+                bgcolor: card.iconBgColor,
+                p: 1,
+                borderRadius: "50%",
+                display: "flex",
+                alignItems: "center",
+                justifyContent: "center",
+              }}
+            >
+              <card.icon sx={{ color: card.iconColor, fontSize: 24 }} />
+            </Box>
+            <Box>
+              <Typography
+                variant="body2"
+                sx={{ color: "grey.600", fontWeight: "medium" }}
+              >
+                {card.title}
+              </Typography>
+              <Typography
+                variant="h6"
+                sx={{ color: card.valueColor, fontWeight: "bold" }}
+              >
+                {card.value}
+              </Typography>
+            </Box>
+          </Box>
+        ))
+      )}
+    </Box>
   );
 }
 
@@ -160,22 +169,17 @@ export default function StoresPage() {
     handleEditStore,
     handleCloseAddModal,
     handleSubmitStore,
-    handleDeleteStore,
     handleToggleStoreStatus,
     handleExportStores,
+    calculateStoreStats,
   } = useStoresLogic();
-
-  const storeStatusOptions = [
-    { value: "active", label: "Hoạt Động" },
-    { value: "inactive", label: "Không Hoạt Động" },
-  ];
 
   const columns = [
     {
       key: "id",
       label: "ID Cửa Hàng",
       sortable: true,
-      render: (store: Store) => (
+      render: (store) => (
         <Typography
           variant="body2"
           sx={{
@@ -192,46 +196,28 @@ export default function StoresPage() {
       key: "name",
       label: "Cửa Hàng",
       sortable: true,
-      render: (store: Store) => (
+      render: (store) => (
         <Box sx={{ display: "flex", alignItems: "center" }}>
-          <Box sx={{ width: 40, height: 40, mr: 1.5 }}>
-            {store.imageUrl ? (
-              <Box
-                component="img"
-                src={store.imageUrl}
-                alt={store.name}
-                sx={{
-                  width: "100%",
-                  height: "100%",
-                  objectFit: "cover",
-                  borderRadius: "50%",
-                }}
-                onError={(e) => {
-                  e.currentTarget.src = "/images/default-store.png";
-                }}
-              />
-            ) : (
-              <Box
-                sx={{
-                  width: "100%",
-                  height: "100%",
-                  bgcolor: "linear-gradient(135deg, #3b82f6 0%, #a855f7 100%)",
-                  borderRadius: "50%",
-                  display: "flex",
-                  alignItems: "center",
-                  justifyContent: "center",
-                  color: "white",
-                  fontSize: "0.875rem",
-                  fontWeight: "bold",
-                }}
-              >
-                {store.name
-                  .split(" ")
-                  .map((n) => n[0])
-                  .join("")
-                  .toUpperCase()}
-              </Box>
-            )}
+          <Box
+            sx={{
+              width: 40,
+              height: 40,
+              mr: 1.5,
+              bgcolor: "linear-gradient(135deg, #3b82f6 0%, #a855f7 100%)",
+              borderRadius: "50%",
+              display: "flex",
+              alignItems: "center",
+              justifyContent: "center",
+              color: "white",
+              fontSize: "0.875rem",
+              fontWeight: "bold",
+            }}
+          >
+            {store.name
+              .split(" ")
+              .map((n) => n[0])
+              .join("")
+              .toUpperCase()}
           </Box>
           <Box>
             <Typography
@@ -241,27 +227,17 @@ export default function StoresPage() {
               {store.name}
             </Typography>
             <Typography variant="caption" sx={{ color: "grey.500" }}>
-              {store.email}
+              {store.ownerId}
             </Typography>
           </Box>
         </Box>
       ),
     },
     {
-      key: "phoneNumber",
-      label: "Số Điện Thoại",
+      key: "isLocked",
+      label: "Hoạt Động",
       sortable: true,
-      render: (store: Store) => (
-        <Typography variant="body2" sx={{ color: "grey.900" }}>
-          {store.phoneNumber}
-        </Typography>
-      ),
-    },
-    {
-      key: "isActive",
-      label: "Trạng Thái",
-      filterable: true,
-      render: (store: Store) => (
+      render: (store) => (
         <Box
           sx={{
             display: "inline-flex",
@@ -272,44 +248,54 @@ export default function StoresPage() {
             fontSize: "0.75rem",
             fontWeight: "medium",
             borderRadius: 1,
-            bgcolor: "background.paper",
-            ...getStatusColor(store.isActive),
+            bgcolor: store.isLocked ? "error.light" : "success.light",
+            color: store.isLocked ? "error.dark" : "success.dark",
           }}
         >
-          {store.isActive ? (
-            <CheckCircle sx={{ fontSize: 12 }} />
-          ) : (
+          {store.isLocked ? (
             <ToggleOff sx={{ fontSize: 12 }} />
+          ) : (
+            <CheckCircle sx={{ fontSize: 12 }} />
           )}
-          {store.isActive ? "Hoạt Động" : "Không Hoạt Động"}
+          {store.isLocked ? "Khóa" : "Hoạt động"}
         </Box>
       ),
     },
     {
-      key: "products",
-      label: "Sản Phẩm",
+      key: "isOpen",
+      label: "Mở Cửa",
       sortable: true,
-      render: (store: Store) => (
-        <Typography variant="body2" sx={{ color: "grey.900" }}>
-          {store.products.length}
-        </Typography>
+      render: (store) => (
+        <Box
+          sx={{
+            display: "inline-flex",
+            alignItems: "center",
+            gap: 0.5,
+            px: 1,
+            py: 0.5,
+            fontSize: "0.75rem",
+            fontWeight: "medium",
+            borderRadius: 1,
+            bgcolor: store.isOpen ? "success.light" : "warning.light",
+            color: store.isOpen ? "success.dark" : "warning.dark",
+          }}
+        >
+          {store.isOpen ? (
+            <CheckCircle sx={{ fontSize: 12 }} />
+          ) : (
+            <ToggleOff sx={{ fontSize: 12 }} />
+          )}
+          {store.isOpen ? "Mở" : "Đóng"}
+        </Box>
       ),
     },
     {
-      key: "totalRevenue",
-      label: "Tổng Doanh Thu",
+      key: "reportCount",
+      label: "Số Báo Cáo",
       sortable: true,
-      render: (store: Store) => (
-        <Typography
-          variant="body2"
-          sx={{ fontWeight: "medium", color: "grey.900" }}
-        >
-          {formatCurrency(
-            store.products.reduce(
-              (sum, product) => sum + product.price * product.sold,
-              0
-            )
-          )}
+      render: (store) => (
+        <Typography variant="body2" sx={{ color: "grey.900" }}>
+          {store.reportCount || 0}
         </Typography>
       ),
     },
@@ -317,16 +303,20 @@ export default function StoresPage() {
       key: "createdAt",
       label: "Ngày Tạo",
       sortable: true,
-      render: (store: Store) => (
+      render: (store) => (
         <Typography variant="body2" sx={{ color: "grey.900" }}>
-          {formatDate(store.createdAt)}
+          {new Date(store.createdAt).toLocaleDateString("vi-VN", {
+            year: "numeric",
+            month: "short",
+            day: "numeric",
+          })}
         </Typography>
       ),
     },
     {
       key: "actions",
       label: "Hành Động",
-      render: (store: Store) => (
+      render: (store) => (
         <Box sx={{ display: "flex", alignItems: "center", gap: 0.5 }}>
           <IconButton
             onClick={() => {
@@ -366,47 +356,28 @@ export default function StoresPage() {
           <IconButton
             onClick={() => handleToggleStoreStatus(store.id)}
             sx={{
-              color: store.isActive ? "warning.main" : "success.main",
+              color: store.isLocked ? "success.main" : "error.main",
               p: 0.5,
               bgcolor: "background.paper",
               borderRadius: 1,
               "&:hover": {
-                color: store.isActive ? "warning.dark" : "success.dark",
-                bgcolor: store.isActive ? "yellow[50]" : "green[50]",
+                color: store.isLocked ? "success.dark" : "error.dark",
+                bgcolor: store.isLocked ? "green[50]" : "red[50]",
               },
             }}
-            title={store.isActive ? "Vô Hiệu Hóa" : "Kích Hoạt"}
+            title={store.isLocked ? "Mở Khóa" : "Khóa"}
           >
-            {store.isActive ? (
-              <ToggleOff sx={{ fontSize: 16 }} />
-            ) : (
+            {store.isLocked ? (
               <CheckCircle sx={{ fontSize: 16 }} />
+            ) : (
+              <ToggleOff sx={{ fontSize: 16 }} />
             )}
           </IconButton>
-          <IconButton
-            onClick={() => handleDeleteStore(store.id)}
-            sx={{
-              color: "error.main",
-              p: 0.5,
-              bgcolor: "background.paper",
-              borderRadius: 1,
-              "&:hover": {
-                color: "error.dark",
-                bgcolor: "red[50]",
-              },
-            }}
-            title="Xóa Cửa Hàng"
-          >
-            <Delete sx={{ fontSize: 16 }} />
-          </IconButton>
+          
         </Box>
       ),
     },
   ];
-
-  const filters = {
-    isActive: storeStatusOptions,
-  };
 
   return (
     <Box
@@ -434,7 +405,7 @@ export default function StoresPage() {
           variant="h6"
           sx={(theme) => ({
             color: theme.palette.grey[700],
-            fontWeight: theme.typography.fontWeightMedium, // hoặc số: 500
+            fontWeight: theme.typography.fontWeightMedium,
           })}
         >
           Quản Lý Cửa Hàng
@@ -452,17 +423,12 @@ export default function StoresPage() {
         }}
       >
         <Box>
-          <Typography
-            variant="body2"
-            sx={(theme) => ({
-              color: theme.palette.grey[600],
-            })}
-          >
+          <Typography variant="body2" sx={(theme) => ({ color: theme.palette.grey[600] })}>
             Quản lý cửa hàng, đơn hàng, sản phẩm
           </Typography>
         </Box>
 
-        <StoreStatsCards />
+        <StoreStatsCards calculateStoreStats={calculateStoreStats} />
 
         <CustomTable
           data={stores}
@@ -471,21 +437,20 @@ export default function StoresPage() {
           onExport={handleExportStores}
           headerTitle="Tất Cả Cửa Hàng"
           description="Quản lý cửa hàng, đơn hàng, sản phẩm"
-          filters={filters}
           showExport={true}
           showBulkActions={false}
           itemsPerPage={15}
         />
       </Box>
-
-      <StoreDetailModal
+   <StoreDetailModal
         isOpen={isDetailModalOpen}
         onClose={handleCloseDetailModal}
         store={selectedStore}
         onEdit={handleEditStore}
-        onDelete={handleDeleteStore}
+        
         onToggleStatus={handleToggleStoreStatus}
       />
+     
 
       <AddStoreModal
         isOpen={isAddModalOpen}
@@ -493,6 +458,7 @@ export default function StoresPage() {
         onSubmit={handleSubmitStore}
         editStore={editingStore}
       />
+      
     </Box>
   );
 }

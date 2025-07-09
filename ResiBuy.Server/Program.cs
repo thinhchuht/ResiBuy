@@ -1,6 +1,6 @@
-﻿using ResiBuy.Server.Infrastructure.DbServices.VoucherDbServices;
+﻿using ResiBuy.Server.Infrastructure.DbServices.NotificationDbServices;
+using ResiBuy.Server.Infrastructure.DbServices.VoucherDbServices;
 using ResiBuy.Server.Services.RedisServices;
-using ResiBuy.Server.Services.ShippingCost;
 using ResiBuy.Server.Services.SMSServices;
 
 var builder = WebApplication.CreateBuilder(args);
@@ -16,6 +16,7 @@ services.AddSqlDb(builder.Configuration)
 services.AddScoped<ICodeGeneratorSerivce, CodeGeneratorSerivce>();
 services.AddScoped<ISMSService, SMSService>();
 services.AddScoped<IVoucherDbService, VoucherDbService>();
+services.AddScoped<INotificationDbService, NotificationDbService>();
 services.AddMemoryCache();
 services.AddSignalR();
 services.AddMediatR(cfg => cfg.RegisterServicesFromAssemblyContaining(typeof(Program)));
