@@ -1,4 +1,5 @@
-﻿using ResiBuy.Server.Services.OpenRouteService;
+﻿using ResiBuy.Server.Services.MapBoxService;
+using ResiBuy.Server.Services.OpenRouteService;
 
 namespace ResiBuy.Server.Application.Queries.ShipperQueries
 {
@@ -9,7 +10,7 @@ namespace ResiBuy.Server.Application.Queries.ShipperQueries
         {
             if(string.IsNullOrEmpty(request.currentArea.ToString()) || string.IsNullOrEmpty(request.destinationArea.ToString()))
                 return ResponseModel.FailureResponse("Current area and destination area are required");
-            ORSRouteResponse distance = await shipperDbService.GetDistanceAsync(request.currentArea, request.destinationArea);
+            DirectionsResponse distance = await shipperDbService.GetDistanceAsync(request.currentArea, request.destinationArea);
             return ResponseModel.SuccessResponse(new
             {
                 Distance = distance
