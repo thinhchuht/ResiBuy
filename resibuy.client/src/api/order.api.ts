@@ -7,6 +7,8 @@ const orderApi = {
     orderStatus = "None",
     paymentMethod = "None",
     paymentStatus = "None",
+    storeId?: string,
+    shipperId?: string,
     userId?: string,
     pageNumber = 1,
     pageSize = 10,
@@ -17,6 +19,8 @@ const orderApi = {
       orderStatus,
       paymentMethod,
       paymentStatus,
+      storeId,
+      shipperId,
       userId,
       pageNumber,
       pageSize,
@@ -27,11 +31,10 @@ const orderApi = {
     return response.data.data;
   },
   updateOrder: async (
-    userId : string,
+    userId: string,
     orderId: string,
     shippingAddressId: string,
-    note : string,
-
+    note: string
   ) => {
     const body = {
       userId,
@@ -43,7 +46,7 @@ const orderApi = {
     return response.data;
   },
   updateOrderSatus: async (
-    userId : string,
+    userId: string,
     orderId: string,
     orderStatus: string
   ) => {
@@ -51,10 +54,10 @@ const orderApi = {
       userId,
       orderId,
       orderStatus,
-    }
+    };
     const response = await axiosClient.put(`/api/order/order-status`, body);
     return response.data;
-  }
+  },
 };
 
 export default orderApi;
