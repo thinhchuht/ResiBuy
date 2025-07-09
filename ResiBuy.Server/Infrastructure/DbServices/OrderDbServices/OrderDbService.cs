@@ -109,52 +109,45 @@ public class OrderDbService : BaseDbService<Order>, IOrderDbService
             throw new CustomException(ExceptionErrorCode.RepositoryError, ex.ToString());
         }
     }
-
-    public async Task<decimal> ShippingFeeCharged(Guid orderId)
+    public async Task<decimal> ShippingFeeCharged(Guid ShippingAddress,Guid storeAddress, float weight)
     {
         try
         {
-            var order = _context.Orders
-                        .Include(o => o.ShippingAddress)
-                            .ThenInclude(sa => sa.Building)
-                                .ThenInclude(b => b.Area)
-                        .Include(o => o.Store)
-                            .ThenInclude(s => s.Room)
-                                .ThenInclude(r => r.Building)
-                                    .ThenInclude(b => b.Area)
-                        .Include(o => o.Items)
-                            .ThenInclude(oi => oi.ProductDetail)
-                        .FirstOrDefault(o => o.Id == orderId);
-            if (order == null)
+            var shippingRoom = await _context.Rooms
+                .Include(r => r.Building).ThenInclude(b => b.Area)
+                .FirstOrDefaultAsync(r => r.Id == ShippingAddress);
+            if (shippingRoom == null)
             {
-                throw new CustomException(ExceptionErrorCode.NotFound, "Đơn hàng không tồn tại");
+                throw new CustomException(ExceptionErrorCode.NotFound, "Địa chỉ giao hàng không tồn tại");
             }
-            if (order.ShippingAddress == null || order.ShippingAddress.Building == null || order.ShippingAddress.Building.Area == null)
+            var storeRoom = await _context.Rooms
+                .Include(r => r.Building).ThenInclude(b => b.Area)
+                .FirstOrDefaultAsync(r => r.Id == storeAddress);
+            if (storeRoom == null)
             {
-                throw new CustomException(ExceptionErrorCode.ValidationFailed, "Địa chỉ giao hàng không hợp lệ");
+                throw new CustomException(ExceptionErrorCode.NotFound, "Địa chỉ cửa hàng không tồn tại");
             }
-            var route = await _openRouteService.GetRouteAsync(
-                order.ShippingAddress.Building.Area.Latitude,
-                order.ShippingAddress.Building.Area.Longitude,
-                order.Store.Room.Building.Area.Latitude,
-                order.Store.Room.Building.Area.Longitude
-            );
-            if (route == null || route.Routes == null || route.Routes.Count == 0)
-            {
-                throw new CustomException(ExceptionErrorCode.ValidationFailed, "Không thể tính toán khoảng cách giao hàng");
-            }
-            var distance = route.Routes[0].Summary.Distance; // distance in meters
             decimal distanceFee = 0;
-            if (distance > 200)
+            if (shippingRoom.Building.AreaId != storeRoom.Building.AreaId)
             {
-                distanceFee = (decimal)(Math.Round(distance / 500) * 5000); // 5000đ/500m
+               var route = await _openRouteService.GetRouteAsync(
+                       shippingRoom.Building.Area.Latitude,
+                       shippingRoom.Building.Area.Longitude,
+                       storeRoom.Building.Area.Latitude,
+                       storeRoom.Building.Area.Longitude
+                       );
+                if (route == null || route.Routes == null || route.Routes.Count == 0)
+                {
+                    throw new CustomException(ExceptionErrorCode.ValidationFailed, "Không thể tính toán khoảng cách giao hàng");
+                }
+                var distance = route.Routes[0].Summary.Distance; // distance in meters
+                if (distance > 200)
+                {
+                    distanceFee = (decimal)(Math.Round(distance / 500) * 5000); // 5000đ/500m
+                }
             }
-            float weight = 0;
             decimal weightFee = 0;
-            foreach ( OrderItem item in order.Items)
-            {
-                weight += item.ProductDetail.Weight * item.Quantity;
-            }
+
             if (weight > 2)
             {
                 weightFee = (decimal)(Math.Round((weight-2) / 2) * 1000); // 1000đ/2kg

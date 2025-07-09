@@ -203,6 +203,17 @@ const roomApi = {
       throw new Error(error.message || "Lỗi khi gọi API đếm phòng không hoạt động");
     }
   },
+  getByUserId: async (userId: string): Promise<RoomDto[]> => {
+  try {
+    const response = await axiosClient.get(`${roomUrl}/${userId}`);
+    if (response.data.code !== 0) {
+      throw new Error(response.data.message || "Lỗi khi lấy danh sách phòng theo userId");
+    }
+    return response.data.data;
+  } catch (error: any) {
+    throw new Error(error.message || "Lỗi khi gọi API lấy phòng theo userId");
+  }
+},
 };
 
 

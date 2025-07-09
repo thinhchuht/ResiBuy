@@ -43,6 +43,10 @@ const ConfirmCodeModal: React.FC<ConfirmCodeModalProps> = ({
     };
   }, [open]);
 
+  useEffect(() => {
+    if (!open) setCode("");
+  }, [open, setCode]);
+
   const isExpired = timer === 0;
 
   return (
