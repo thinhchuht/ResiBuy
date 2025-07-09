@@ -110,7 +110,6 @@ public class OrderDbService : BaseDbService<Order>, IOrderDbService
             throw new CustomException(ExceptionErrorCode.RepositoryError, ex.ToString());
         }
     }
-
     public async Task<decimal> ShippingFeeCharged(Guid ShippingAddress,Guid storeAddress, float weight)
     {
         try
@@ -149,6 +148,7 @@ public class OrderDbService : BaseDbService<Order>, IOrderDbService
                 }
             }
             decimal weightFee = 0;
+
             if (weight > 2)
             {
                 weightFee = (decimal)(Math.Round((weight-2) / 2) * 1000); // 1000đ/2kg
