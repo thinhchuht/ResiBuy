@@ -13,7 +13,7 @@ namespace ResiBuy.Server.Application.Commands.CartCommands
                 var user = await userDbService.GetUserById(command.Dto.UserId)?? throw new CustomException(ExceptionErrorCode.NotFound,"Không tồn tại người dùng");
                 if(user.Cart.IsCheckingOut) throw new CustomException(ExceptionErrorCode.ValidationFailed, "Không thể xóa sản phẩm khi đang trong quá trình thanh toán.");
                 var cartItem = await cartItemDbService.DeleteBatchAsync(command.Dto.CartItemIds);
-                notificationService.SendNotification(Constants.CartItemDeleted, new { CartItemIds = command.Dto.CartItemIds }, "", [command.Dto.UserId]);
+                await notificationService.SendNotificationAsync(Constants.CartItemDeleted, new { CartItemIds = command.Dto.CartItemIds }, "", [command.Dto.UserId]);
                 return ResponseModel.SuccessResponse();
             }
             catch (Exception ex)

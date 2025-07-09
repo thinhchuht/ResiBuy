@@ -21,18 +21,25 @@ namespace ResiBuy.Server.Controllers
             }
         }
 
-        [HttpPut("{id}")]
-        public async Task<IActionResult> ReadAsync(Guid id, string userId)
+        [HttpGet("user/{id}/count")]
+        public async Task<IActionResult> CountUnreadAsync(string id)
         {
             try
             {
-                var result = await mediator.Send(new ReadNotificationCommand(id, userId));
+                var result = await mediator.Send(new CountUnreadNotificationQuery(id));
                 return Ok(result);
             }
             catch (Exception ex)
             {
                 throw new CustomException(ExceptionErrorCode.RepositoryError, ex.Message);
             }
+        }
+
+        [HttpPut("{id}")]
+        public async Task<IActionResult> ReadAsync(Guid id, string userId)
+        {
+            var result = await mediator.Send(new ReadNotificationCommand(id, userId));
+            return Ok(result);
         }
 
     }

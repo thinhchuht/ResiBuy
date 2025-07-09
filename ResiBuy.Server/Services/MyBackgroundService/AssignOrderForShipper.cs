@@ -46,7 +46,7 @@ namespace ResiBuy.Server.Services.MyBackgroundService
                                 {
                                     var shipper = shippers[shipperIndex];
 
-                                    notificationService.SendNotification("ReceiveOrderNotification", new
+                                    await notificationService.SendNotificationAsync("ReceiveOrderNotification", new
                                     {
                                         OrderId = order.Id,
                                         TotalPrice = order.TotalPrice,

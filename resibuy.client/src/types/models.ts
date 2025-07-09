@@ -338,6 +338,7 @@ export interface TempOrderDto {
   voucherId?: string;
   note: string;
   totalPrice: number;
+  totalBeforeDiscount : number
   productDetails: TempProductDetailDto[];
   voucher?: Voucher;
   discountAmount?: number;

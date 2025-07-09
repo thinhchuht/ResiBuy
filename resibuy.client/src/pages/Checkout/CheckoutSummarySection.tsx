@@ -398,7 +398,6 @@ const CheckoutSummarySection = ({ orders, grandTotal, onCheckout, userRooms = []
               <Box sx={{ mb: 2 }}>
                 {orders.map((order, index) => {
                   const itemCount = Array.isArray(order.productDetails) ? order.productDetails.reduce((sum, pd) => sum + (pd.quantity || 0), 0) : 0;
-                  const totalBeforeDiscount = order.productDetails.reduce((sum, pd) => sum + pd.price * pd.quantity, 0);
                   const discount = order.discountAmount ?? 0;
                   const totalAfterDiscount = order.totalPrice;
                   return (
@@ -414,7 +413,7 @@ const CheckoutSummarySection = ({ orders, grandTotal, onCheckout, userRooms = []
                       </Box>
                       <Box sx={{ display: "flex", justifyContent: "space-between" }}>
                         <Typography variant="body2">Tổng tiền trước giảm:</Typography>
-                        <Typography variant="body2">{formatPrice(totalBeforeDiscount)}</Typography>
+                        <Typography variant="body2">{formatPrice(order.totalBeforeDiscount)}</Typography>
                       </Box>
                       <Box sx={{ display: "flex", justifyContent: "space-between" }}>
                         <Typography variant="body2">Đã giảm:</Typography>

@@ -43,7 +43,7 @@ namespace ResiBuy.Server.Application.Commands.OrderCommands
             if (dto.OrderStatus == OrderStatus.Shipped) userIds.AddRange([order.UserId,store.OwnerId.ToString()]);
             if (dto.OrderStatus == OrderStatus.Delivered) userIds.AddRange([order.UserId, store.OwnerId.ToString()]);
             if (dto.OrderStatus == OrderStatus.Cancelled) userIds.AddRange([order.UserId, store.OwnerId.ToString()]);
-            notificationService.SendNotification(Constants.OrderStatusChanged, new OrderStatusChangedDto(order.Id, order.StoreId, store.Name, order.Status, oldStatus, order.PaymentStatus, order.CreateAt), "", userIds);
+            await notificationService.SendNotificationAsync(Constants.OrderStatusChanged, new OrderStatusChangedDto(order.Id, order.StoreId, store.Name, order.Status, oldStatus, order.PaymentStatus, order.CreateAt), "", userIds);
             return ResponseModel.SuccessResponse();
         }
     }

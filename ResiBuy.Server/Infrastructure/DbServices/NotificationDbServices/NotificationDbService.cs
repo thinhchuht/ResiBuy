@@ -9,6 +9,15 @@
             this.context = context;
         }
 
+        public async Task<int> CountUnreadNotification(string userId)
+        {
+            var notifications = await context.Notifications
+                .Include(n => n.UserNotifications)
+                .Where(n => n.UserNotifications.Any(un => un.UserId == userId))
+                .ToListAsync();
+            return notifications.Count(n => !n.ReadBy.Contains(userId));
+        }
+
         public async Task<PagedResult<Notification>> GetAllNotifications(string userId, int pageNumber = 1, int pageSize = 10)
         {
             var query = context.Notifications
@@ -28,12 +37,12 @@
 
         public async Task<ResponseModel> ReadNotify( Guid notificationId, string userId)
         {
-            var notification = await context.Notifications.FindAsync(userId) ?? throw new CustomException(ExceptionErrorCode.NotFound, "Không tồn tại thông báo");
+            var notification = await context.Notifications.FindAsync(notificationId) ?? throw new CustomException(ExceptionErrorCode.NotFound, "Không tồn tại thông báo");
             if (notification.ReadBy.Contains(userId))
                 return ResponseModel.SuccessResponse();
             notification.ReadBy.Add(userId);
             context.Notifications.Update(notification);
-
+            await context.SaveChangesAsync();
             return ResponseModel.SuccessResponse();
         }
     }

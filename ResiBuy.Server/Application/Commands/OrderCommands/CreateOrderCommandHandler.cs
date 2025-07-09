@@ -65,7 +65,7 @@ namespace ResiBuy.Server.Application.Commands.OrderCommands
                 {
                     var store = await storeDbService.GetByIdBaseAsync(order.StoreId);
                     var notiUserIds = new List<string> { store.OwnerId, user.Id };
-                    notificationService.SendNotification("OrderCreated", new OrderStatusChangedDto(order.Id, order.StoreId, store.Name, order.Status, order.Status, order.PaymentStatus, order.CreateAt), "", notiUserIds);
+                    await notificationService.SendNotificationAsync("OrderCreated", new OrderStatusChangedDto(order.Id, order.StoreId, store.Name, order.Status, order.Status, order.PaymentStatus, order.CreateAt), "", notiUserIds);
                 }
 
                 //mailBaseService.SendEmailAsync(user.Email, "Hóa đơn thanh toán đơn hà ResiBuy",);
@@ -75,7 +75,7 @@ namespace ResiBuy.Server.Application.Commands.OrderCommands
             {
                 if (transaction != null)
                     await transaction.RollbackAsync();
-                notificationService.SendNotification("OrderCreatedFailed", new {OrderIds = dto.Orders.Select(o => o.Id)}, "", [user.Id]);
+                await notificationService.SendNotificationAsync("OrderCreatedFailed", new {OrderIds = dto.Orders.Select(o => o.Id)}, "", [user.Id]);
                 throw new CustomException(ExceptionErrorCode.RepositoryError, ex.ToString());
             }
         }

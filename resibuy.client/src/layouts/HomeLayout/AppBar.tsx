@@ -1,4 +1,4 @@
-import React, { useEffect, useMemo, useState, useCallback } from "react";
+import React, { useEffect, useMemo, useState, useCallback, useRef } from "react";
 import {
   AppBar as MuiAppBar,
   Toolbar,
@@ -39,12 +39,65 @@ import logo from "../../assets/Images/Logo.png";
 import cartApi from "../../api/cart.api";
 import { HubEventType, useEventHub, type HubEventHandler } from "../../hooks/useEventHub";
 import type { OrderStatusChangedData } from "../../types/hubData";
+import notificationApi from "../../api/notification.api";
 
 interface Notification {
   id: string | number;
   title: string;
   message: string;
   time?: string;
+  isRead?: boolean;
+}
+
+interface NotificationApiItem {
+  id: string;
+  eventName: string;
+  createdAt: string;
+  isRead: boolean;
+  [key: string]: unknown;
+}
+
+function notifiConvert(item: NotificationApiItem): Notification {
+  const formattedTime = new Date(item.createdAt).toLocaleTimeString("vi-VN", { hour: "2-digit", minute: "2-digit" });
+  const formattedDate = new Date(item.createdAt).toLocaleDateString("vi-VN");
+  let title = "";
+  let message = "";
+
+  switch (item.eventName) {
+    case "OrderCreated":
+      title = "Đơn hàng mới";
+      message = `Đơn hàng #${item.orderId ?? item.id} đã được tạo`;
+      break;
+    case "OrderStatusChanged":
+      title =
+        item.orderStatus === "Processing"
+          ? "Đơn hàng đã được xử lý"
+          : item.orderStatus === "Shipped"
+          ? "Đơn hàng đang được giao"
+          : item.orderStatus === "Delivered"
+          ? "Đơn hàng đã được giao"
+          : "Đơn hàng đã bị hủy";
+      message = `Đơn hàng #${item.orderId ?? item.id} ` +
+        (item.orderStatus === "Processing"
+          ? "đã được xử lý"
+          : item.orderStatus === "Shipped"
+          ? "đang được giao"
+          : item.orderStatus === "Delivered"
+          ? "đã được giao"
+          : "đã bị hủy");
+      break;
+    default:
+      title = "Thông báo";
+      message = item.eventName;
+  }
+
+  return {
+    id: item.id,
+    title,
+    message,
+    time: `${formattedTime} ${formattedDate}`,
+    isRead: item.isRead,
+  };
 }
 
 const AppBar: React.FC = () => {
@@ -57,7 +110,13 @@ const AppBar: React.FC = () => {
   const [searchValue, setSearchValue] = useState("");
   const [notificationAnchorEl, setNotificationAnchorEl] = useState<null | HTMLElement>(null);
   const [notifications, setNotifications] = useState<Notification[]>([]);
+  const [loadingNotifications, setLoadingNotifications] = useState(false);
   const [storeMenuAnchorEl, setStoreMenuAnchorEl] = useState<null | HTMLElement>(null);
+  const [unreadCount, setUnreadCount] = useState(0);
+  const [pageNumber, setPageNumber] = useState(1);
+  const [hasMore, setHasMore] = useState(true);
+  const pageSize = 3;
+  const notificationListRef = useRef<HTMLDivElement>(null);
 
   const fetchItemCount = useCallback(async () => {
     if (user) {
@@ -66,9 +125,48 @@ const AppBar: React.FC = () => {
     }
   }, [user]);
 
+  const fetchUnreadCount = useCallback(async () => {
+    if (user) {
+      try {
+        const count = await notificationApi.getUnreadCountNotification(user.id);
+        setUnreadCount(count);
+      } catch {
+        setUnreadCount(0);
+      }
+    }
+  }, [user]);
+
+  const fetchNotifications = useCallback(async (page = 1) => {
+    if (user) {
+      setLoadingNotifications(true);
+      try {
+        const data = await notificationApi.getByUserId(user.id, page, pageSize);
+        if (page === 1) {
+          setNotifications((data.items || []).map(notifiConvert));
+        } else {
+          setNotifications((prev) => [...prev, ...(data.items || []).map(notifiConvert)]);
+        }
+        setHasMore(page < data.totalPages);
+      } catch {
+        if (page === 1) setNotifications([]);
+      } finally {
+        setLoadingNotifications(false);
+      }
+    }
+  }, [user]);
+
+  const loadMore = () => {
+    if (hasMore && !loadingNotifications) {
+      const nextPage = pageNumber + 1;
+      setPageNumber(nextPage);
+      fetchNotifications(nextPage);
+    }
+  };
+
   useEffect(() => {
     fetchItemCount();
-  }, [fetchItemCount]);
+    fetchUnreadCount();
+  }, [fetchItemCount, fetchUnreadCount]);
 
   const handleCartItemAdded = useCallback(() => {
     fetchItemCount();
@@ -86,12 +184,14 @@ const AppBar: React.FC = () => {
         title: "Đơn hàng mới",
         message: `Đơn hàng #${data.id} đã được tạo`,
         time: `${formattedTime} ${formattedDate}`,
+        isRead : false
       };
       console.log("hhihi");
       console.log(newNotifications);
       setNotifications((prev) => [newNotifications, ...prev]);
+      fetchUnreadCount();
     },
-    [setNotifications, fetchItemCount]
+    [setNotifications, fetchItemCount, fetchUnreadCount]
   );
 
   const handleOrderStatusChanged = useCallback((data: OrderStatusChangedData) => {
@@ -112,9 +212,11 @@ const AppBar: React.FC = () => {
         data.orderStatus === "Processing" ? "đã được xử lý" : data.orderStatus === "Shipped" ? "đang được giao" : data.orderStatus === "Delivered" ? "đã được giao" : "đã bị hủy"
       }`,
       time: `${formattedTime} ${formattedDate}`,
+      isRead : false
     };
     setNotifications((prev) => [newNotifications, ...prev]);
-  }, []);
+    fetchUnreadCount(); // cập nhật badge khi có notification mới
+  }, [fetchUnreadCount]);
 
   const eventHandlers = useMemo(
     () => ({
@@ -168,6 +270,8 @@ const AppBar: React.FC = () => {
 
   const handleNotificationOpen = (event: React.MouseEvent<HTMLElement>) => {
     setNotificationAnchorEl(event.currentTarget);
+    setPageNumber(1);
+    fetchNotifications(1);
   };
 
   const handleNotificationClose = () => {
@@ -195,6 +299,23 @@ const AppBar: React.FC = () => {
     navigate(`/store/${storeId}`);
     setStoreMenuAnchorEl(null);
     handleProfileMenuClose();
+  };
+
+  const handleNotificationClick = async (notification: Notification) => {
+    handleNotificationClose();
+    if (notification.isRead === false && user) {
+      try {
+        await notificationApi.readNotification(notification.id as string, user.id);
+        setUnreadCount((prev) => Math.max(0, prev - 1));
+        setNotifications((prev) =>
+          prev.map((n) =>
+            n.id === notification.id ? { ...n, isRead: true } : n
+          )
+        );
+      } catch {
+        // Xử lý lỗi nếu cần
+      }
+    }
   };
 
   return (
@@ -437,7 +558,7 @@ const AppBar: React.FC = () => {
         <Box sx={{ display: "flex", alignItems: "center", gap: 2 }}>
           <SearchBase value={searchValue} onChange={handleSearchChange} onSearch={handleSearch} sx={{ width: "300px" }} inputSx={{ width: "100%" }} />
           {user && (
-            <Tooltip title="Thông báo">
+            <Tooltip title="Thông báo" >
               <IconButton
                 color="inherit"
                 onClick={handleNotificationOpen}
@@ -451,7 +572,7 @@ const AppBar: React.FC = () => {
                     },
                   },
                 }}>
-                <Badge badgeContent={notifications.length} color="error">
+                <Badge badgeContent={unreadCount} color="error">
                   <Notifications />
                 </Badge>
               </IconButton>
@@ -714,7 +835,7 @@ const AppBar: React.FC = () => {
               borderRadius: 2,
               boxShadow: "0 4px 20px rgba(0,0,0,0.1)",
               width: 320,
-              maxHeight: 320,
+              maxHeight: 3250,
               overflowY: "auto",
             },
           }}>
@@ -723,57 +844,115 @@ const AppBar: React.FC = () => {
               Thông báo
             </Typography>
           </Box>
-          {notifications.length > 0 ? (
-            notifications.map((notification) => (
-              <MenuItem
-                key={notification.id}
-                onClick={handleNotificationClose}
-                sx={{
-                  py: 1.5,
-                  px: 2,
-                  "&:hover": {
-                    backgroundColor: "rgba(235, 92, 96, 0.08)",
-                  },
-                  transition: "all 0.2s ease-in-out",
-                }}>
-                <Box>
-                  <Box
+          <Box
+            ref={notificationListRef}
+            sx={{ maxHeight: 260, overflowY: "auto" }}
+            onScroll={() => {
+              const el = notificationListRef.current;
+              if (el && el.scrollTop + el.clientHeight >= el.scrollHeight - 10) {
+                loadMore();
+              }
+            }}
+          >
+            {loadingNotifications && pageNumber === 1 ? (
+              <Box sx={{ p: 2, textAlign: "center" }}>
+                <Typography variant="body2" color="text.secondary">
+                  Đang tải thông báo...
+                </Typography>
+              </Box>
+            ) : notifications.length > 0 ? (
+              <>
+                {notifications.map((notification) => (
+                  <MenuItem
+                    key={notification.id}
+                    onClick={() => handleNotificationClick(notification)}
                     sx={{
-                      display: "flex",
-                      justifyContent: "space-between",
-                      alignItems: "flex-end",
-                      mb: 0.5,
-                      gap: 2,
+                      py: 1.5,
+                      px: 2,
+                      backgroundColor: notification.isRead === false ? 'rgba(33,150,243,0.10)' : undefined,
+                      borderBottom: '1px solid #e3e8ef',
+                      '&:hover': {
+                        backgroundColor: notification.isRead === false ? 'rgba(33,150,243,0.18)' : 'rgba(235, 92, 96, 0.08)',
+                      },
+                      transition: 'all 0.2s ease-in-out',
                     }}>
-                    <Typography variant="subtitle2" sx={{ fontWeight: 600, wordBreak: "break-word" }}>
-                      {notification.title}
-                    </Typography>
-                    {notification.time && (
-                      <Typography
-                        variant="caption"
+                    <Box>
+                      <Box
                         sx={{
-                          fontStyle: "italic",
-                          color: "text.secondary",
-                          whiteSpace: "nowrap",
-                          fontWeight: 600,
+                          display: "flex",
+                          justifyContent: "space-between",
+                          alignItems: "flex-end",
+                          mb: 0.5,
+                          gap: 2,
                         }}>
-                        {notification.time}
+                        <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                          <Typography
+                            variant="subtitle2"
+                            sx={{
+                              fontWeight: notification.isRead === false ? 700 : 400,
+                              wordBreak: "break-word",
+                            }}>
+                            {notification.title}
+                          </Typography>
+                          {notification.isRead === false && (
+                            <Box
+                              component="span"
+                              sx={{
+                                width: 10,
+                                height: 10,
+                                borderRadius: '50%',
+                                bgcolor: '#1ecb4f',
+                                display: 'inline-block',
+                                ml: 0.5,
+                              }}
+                            />
+                          )}
+                        </Box>
+                        {notification.time && (
+                          <Typography
+                            variant="caption"
+                            sx={{
+                              fontStyle: "italic",
+                              color: "text.secondary",
+                              whiteSpace: "nowrap",
+                              fontWeight: 600,
+                            }}>
+                            {notification.time}
+                          </Typography>
+                        )}
+                      </Box>
+                      <Typography
+                        variant="body2"
+                        color="text.secondary"
+                        sx={{ wordBreak: "break-word", whiteSpace: "break-spaces" }}>
+                        {notification.message}
                       </Typography>
-                    )}
+                    </Box>
+                  </MenuItem>
+                ))}
+                {loadingNotifications && pageNumber > 1 && (
+                  <Box sx={{ p: 1, textAlign: "center" }}>
+                    <Typography variant="body2" color="text.secondary">
+                      Đang tải thêm...
+                    </Typography>
                   </Box>
-                  <Typography variant="body2" color="text.secondary" sx={{ wordBreak: "break-word", whiteSpace: "break-spaces" }}>
-                    {notification.message}
-                  </Typography>
-                </Box>
-              </MenuItem>
-            ))
-          ) : (
-            <Box sx={{ p: 2, textAlign: "center" }}>
-              <Typography variant="body2" color="text.secondary">
-                Không có thông báo mới
-              </Typography>
-            </Box>
-          )}
+                )}
+                {!hasMore && notifications.length > 0 && (
+                  <Box sx={{ p: 1, textAlign: "center",  }}>
+                    <Typography variant="body2" color="#676767" sx={{ fontWeight : 600, fontSize: '14px'}}>
+                      Đã hiển thị tất cả thông báo
+                    </Typography>
+                  </Box>
+                )}
+              </>
+            ) : (
+              <Box sx={{ p: 2, textAlign: "center" }}>
+                <Typography variant="body2" color="text.secondary">
+                  Không có thông báo mới
+                </Typography>
+              </Box>
+            )}
+          </Box>
         </Popover>
 
         {/* Menu chọn store nếu có nhiều store */}

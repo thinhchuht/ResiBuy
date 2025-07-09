@@ -2,5 +2,5 @@
 
 public interface INotificationService
 {
-    void SendNotification(string eventName, object data, string hubGroup = null, List<string> userIds = null);
+    Task SendNotificationAsync(string eventName, object data, string hubGroup = null, List<string> userIds = null);
 }
