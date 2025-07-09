@@ -2,13 +2,14 @@
 {
     public class Order
     {
-        public Order(Guid id, decimal totalPrice, PaymentMethod paymentMethod, string note, Guid shippingAddressId, string userId, Guid storeId, IEnumerable<OrderItem> items, Guid? voucherId)
+        public Order(Guid id, decimal totalPrice, decimal shippingFee, PaymentMethod paymentMethod, string note, Guid shippingAddressId, string userId, Guid storeId, IEnumerable<OrderItem> items, Guid? voucherId)
         {
             Id = id;
-            TotalPrice = totalPrice >-1000 ? totalPrice : totalPrice;
-                //throw new CustomException(ExceptionErrorCode.ValidationFailed, "Đơn hàng phải có giá trị tối thiểu 5000Đ.") ;
+            TotalPrice = totalPrice > -1000 ? totalPrice : totalPrice;
+            //throw new CustomException(ExceptionErrorCode.ValidationFailed, "Đơn hàng phải có giá trị tối thiểu 5000Đ.") ;
+            ShippingFee = shippingFee;
             Status = OrderStatus.Pending;
-            PaymentStatus = paymentMethod == PaymentMethod.COD ?  PaymentStatus.Pending : PaymentStatus.Paid;
+            PaymentStatus = paymentMethod == PaymentMethod.COD ? PaymentStatus.Pending : PaymentStatus.Paid;
             PaymentMethod = paymentMethod;
             CreateAt = DateTime.Now;
             UpdateAt = DateTime.Now;
@@ -22,7 +23,7 @@
 
         public Order()
         {
-            
+
         }
 
         public Guid Id { get; set; }

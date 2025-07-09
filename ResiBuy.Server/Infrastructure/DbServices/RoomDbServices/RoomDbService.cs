@@ -292,6 +292,27 @@
                 throw new CustomException(ExceptionErrorCode.RepositoryError, ex.Message);
             }
         }
+        public async Task<IEnumerable<Room>> GetRoomsByUserIdAsync(string userId)
+        {
+            try
+            {
+                if (string.IsNullOrWhiteSpace(userId))
+                    throw new CustomException(ExceptionErrorCode.ValidationFailed, "UserId không được để trống.");
+
+                var rooms = await _context.UserRooms
+                    .Where(ur => ur.UserId == userId)
+                    .Include(ur => ur.Room)
+                        .ThenInclude(r => r.Building)
+                    .Select(ur => ur.Room)
+                    .ToListAsync();
+
+                return rooms;
+            }
+            catch (Exception ex)
+            {
+                throw new CustomException(ExceptionErrorCode.RepositoryError, ex.Message);
+            }
+        }
 
     }
 

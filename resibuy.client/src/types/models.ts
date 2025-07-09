@@ -17,6 +17,7 @@ export enum PaymentStatus {
 }
 
 export enum PaymentMethod {
+  None = "None",
   COD = "COD",
   BankTransfer = "BankTransfer",
 }
@@ -339,7 +340,8 @@ export interface TempOrderDto {
   totalPrice: number;
   productDetails: TempProductDetailDto[];
   voucher?: Voucher;
-  DiscountAmount?: number;
+  discountAmount?: number;
+  shippingFee: number;
 }
 
 export interface TempCheckoutDto {

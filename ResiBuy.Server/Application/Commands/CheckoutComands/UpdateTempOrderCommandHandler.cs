@@ -1,4 +1,5 @@
 ﻿using ResiBuy.Server.Infrastructure.DbServices.CartItemDbService;
+using ResiBuy.Server.Infrastructure.DbServices.OrderDbServices;
 using ResiBuy.Server.Infrastructure.DbServices.VoucherDbServices;
 using ResiBuy.Server.Infrastructure.Model.DTOs.CheckoutDtos;
 using ResiBuy.Server.Services.RedisServices;
@@ -6,7 +7,8 @@ using ResiBuy.Server.Services.RedisServices;
 namespace ResiBuy.Server.Application.Commands.CheckoutComands
 {
     public record UpdateTempOrderCommand(string UserId, TempCheckoutDto Dto) : IRequest<ResponseModel>;
-    public class UpdateTempOrderCommandHandler(ICartItemDbService cartItemDbService, IVoucherDbService voucherDbService, IRedisService redisService) : IRequestHandler<UpdateTempOrderCommand, ResponseModel>
+    public class UpdateTempOrderCommandHandler(ICartItemDbService cartItemDbService, IStoreDbService storeDbService,
+        IVoucherDbService voucherDbService, IOrderDbService orderDbService, IRedisService redisService) : IRequestHandler<UpdateTempOrderCommand, ResponseModel>
     {
         public async Task<ResponseModel> Handle(UpdateTempOrderCommand request, CancellationToken cancellationToken)
         {
@@ -32,6 +34,13 @@ namespace ResiBuy.Server.Application.Commands.CheckoutComands
                 var order = checkoutData.Orders.FirstOrDefault(o => o.Id == updateOrder.Id);
                 if (order != null)
                 {
+                    var store = await storeDbService.GetStoreByIdAsync(order.StoreId);
+                    if (request.Dto.AddressId.HasValue)
+                    {
+                        var weight = order.ProductDetails.Select(pd => pd.Weight).Sum();
+                        //updateOrder.ShippingFee = await orderDbService.ShippingFeeCharged(request.Dto.AddressId.Value, store.RoomId, weight);
+                        updateOrder.ShippingFee = 10000;
+                    }
                     order.Note = updateOrder.Note;
                     if (updateOrder.VoucherId.HasValue && updateOrder.VoucherId != Guid.Empty)
                     {
@@ -43,7 +52,7 @@ namespace ResiBuy.Server.Application.Commands.CheckoutComands
                             throw new CustomException(ExceptionErrorCode.ValidationFailed, "Voucher không hợp lệ hoặc không thuộc cửa hàng này");
                         order.VoucherId = voucher.Id;
                         var totalBeforeDiscount = order.ProductDetails.Sum(pd => pd.Price * pd.Quantity);
-                        order.TotalPrice = CalculatePrice.GetTotalPrice(totalBeforeDiscount, voucher);
+                        order.TotalPrice = CalculatePrice.GetTotalPrice(totalBeforeDiscount, voucher) - order.ShippingFee;
                         order.DiscountAmount = totalBeforeDiscount - order.TotalPrice;
                         order.Voucher = new VoucherDto(
                             voucher.Id,

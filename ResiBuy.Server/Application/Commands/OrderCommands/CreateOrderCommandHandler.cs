@@ -53,7 +53,7 @@ namespace ResiBuy.Server.Application.Commands.OrderCommands
             try
             {
                 transaction = await userDbService.BeginTransactionAsync();
-                var orders = dto.Orders.Select(o => new Order(o.Id, o.TotalPrice, dto.PaymentMethod, o.Note, dto.AddressId, dto.UserId, o.StoreId, o.Items.Select(i => new OrderItem(i.Quantity, i.Price, o.Id, i.ProductDetailId)).ToList(), o.VoucherId));
+                var orders = dto.Orders.Select(o => new Order(o.Id, o.TotalPrice, o.ShippingFee, dto.PaymentMethod, o.Note, dto.AddressId, dto.UserId, o.StoreId, o.Items.Select(i => new OrderItem(i.Quantity, i.Price, o.Id, i.ProductDetailId)).ToList(), o.VoucherId));
                 var createdOrders = await orderDbService.CreateBatchTransactionAsync(orders);
                 if (createdOrders == null || !createdOrders.Any()) throw new CustomException(ExceptionErrorCode.CreateFailed, "Không thể tạo đơn hàng");
                 if (voucherIds.Any()) await voucherDbService.UpdateQuantityBatchAsync(voucherIds);

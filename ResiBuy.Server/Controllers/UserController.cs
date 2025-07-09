@@ -2,7 +2,7 @@
 {
     [Route("api/[controller]")]
     [ApiController]
-    public class UserController(IMediator mediator) : ControllerBase
+    public class UserController(IMediator mediator,ICodeGeneratorSerivce codeGeneratorSerivce) : ControllerBase
     {
         [HttpGet("{id}")]
         public async Task<IActionResult> GetByIdAsync(string id)
@@ -34,6 +34,13 @@
         {
             var command = new CreatUserCustomerCommand(dto);
             var result = await mediator.Send(command);
+            return Ok(result);
+        }
+
+        [HttpPost("code")]
+        public async Task<IActionResult> GenCodeAsync([FromBody] RegisterDto dto)
+        {
+            var result = await mediator.Send(new GenerateCreateUserCodeCommand(dto));
             return Ok(result);
         }
 

@@ -19,5 +19,5 @@ public interface IOrderDbService : IBaseDbService<Order>
     Task<Order> GetById(Guid id);
     Task<List<Order>> getOrdersByStatus(OrderStatus orderStatus);
     Task<Order> UpdateOrderStatus(Guid orderId, OrderStatus orderStatus);
-    Task<decimal> ShippingFeeCharged(Guid orderId);
+    Task<decimal> ShippingFeeCharged(Guid ShippingAddress, Guid storeAddress, float weight);
 }
