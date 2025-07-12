@@ -35,6 +35,7 @@ interface ProductDetail {
   id: number;
   price: number;
   weight: number;
+  quantity: number;
   isOutOfStock: boolean;
   sold: number;
   image?: {

@@ -36,6 +36,7 @@ interface ProductDetailInput {
   id?: number;
   price: number;
   weight: number;
+  quantity: number;
   isOutOfStock: boolean;
   image?: Image;
   additionalData: AdditionalDataInput[];
@@ -253,6 +254,7 @@ export default function CreateProduct() {
     const newDetails: ProductDetailInput[] = listAdditionalData.map((data) => ({
       price: 0,
       weight: 0,
+      quantity: 0,
       isOutOfStock: false,
       image: { id: "", url: "", thumbUrl: "", name: "" },
       additionalData: data,
@@ -350,9 +352,10 @@ export default function CreateProduct() {
               helperText={
                 product.discount > 99 ? "Giảm giá không được vượt quá 99%" : ""
               }
+              inputProps={{ min: 0, max: 100 }}
               onChange={(e) => {
                 const value = Number(e.target.value);
-                if (value <= 100) {
+                if (value >= 0 && value <= 100) {
                   setProduct({ ...product, discount: value });
                 }
               }}
@@ -507,6 +510,7 @@ export default function CreateProduct() {
                 <TableCell>Phân loại</TableCell>
                 <TableCell>Giá</TableCell>
                 <TableCell>Cân nặng</TableCell>
+                <TableCell>Số lượng</TableCell>
                 <TableCell>Hết hàng</TableCell>
                 <TableCell>Ảnh sản phẩm</TableCell>
               </TableRow>
@@ -543,6 +547,18 @@ export default function CreateProduct() {
                       size="small"
                       type="number"
                       value={productDetail.weight}
+                      onChange={(e) => {
+                        const newList = [...listProductDetail];
+                        newList[index].weight = Number(e.target.value);
+                        setListProductDetail(newList);
+                      }}
+                    />
+                  </TableCell>
+                  <TableCell>
+                    <TextField
+                      size="small"
+                      type="number"
+                      value={productDetail.quantity}
                       onChange={(e) => {
                         const newList = [...listProductDetail];
                         newList[index].weight = Number(e.target.value);
