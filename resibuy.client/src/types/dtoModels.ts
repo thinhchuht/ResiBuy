@@ -69,3 +69,19 @@ export interface RoomFilter {
   keyword?: string;
   buildingId?: string;
 }
+export interface CategoryImage {
+  id: string;
+  url: string;
+  thumbUrl: string;
+  name: string;
+}
+
+export interface CreateCategoryDto {
+  name: string;
+  status: string;
+  image: CategoryImage;
+}
+
+export interface UpdateCategoryDto extends CreateCategoryDto {
+  id: string;
+}
