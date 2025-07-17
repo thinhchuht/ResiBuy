@@ -53,6 +53,7 @@ namespace ResiBuy.Server.Application.Queries.ProductQueries
                     Sold = d.Sold,
                     Price = d.Price,
                     Weight = d.Weight,
+                    Quantity = d.Quantity,
                     Image = d.Image != null ? new ImageQueriesDto
                     {
                         Id = d.Image.Id,

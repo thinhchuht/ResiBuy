@@ -20,7 +20,7 @@ namespace ResiBuy.Server.Application.Commands.ProductCommands
 
                 foreach (var detailDto in dto.ProductDetails)
                 {
-                    var detail = new ProductDetail(detailDto.Price, detailDto.Weight, detailDto.IsOutOfStock);
+                    var detail = new ProductDetail(detailDto.Price, detailDto.Weight, detailDto.Quantity, detailDto.IsOutOfStock);
                     var dataSet = new HashSet<string>();
 
                     if (detailDto.AdditionalData != null && detailDto.AdditionalData.Any())

@@ -11,24 +11,26 @@
         public decimal Price { get; set; }
         public float Weight { get; set; }
         public Image Image { get; set; }
+        public int Quantity { get; set; } = 0;
         public IEnumerable<CartItem> CartItems { get; set; }
         public IEnumerable<OrderItem> OrderItems { get; set; }
         public List<AdditionalData> AdditionalData { get; set; } = new List<AdditionalData>();
 
-        public ProductDetail(decimal price, float weight, bool isOutOfStock = false)
-
+        public ProductDetail(decimal price, float weight, int quantity, bool isOutOfStock = false)
         {
             Price = price;
             Weight = weight;
             IsOutOfStock = isOutOfStock;
             Sold = 0;
+            Quantity = quantity;
         }
 
-        public void UpdateProductDetail(decimal price, float weight, bool isOutOfStock)
+        public void UpdateProductDetail(decimal price, float weight, bool isOutOfStock, int quantity)
         {
             Price = price;
             Weight = weight;
             IsOutOfStock = isOutOfStock;
+            Quantity = quantity;
         }
 
         public void UpdateStatusProductDetail( bool isOutOfStock)
