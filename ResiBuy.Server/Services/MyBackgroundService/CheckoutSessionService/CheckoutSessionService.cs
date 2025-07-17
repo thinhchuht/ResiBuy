@@ -1,7 +1,7 @@
 using ResiBuy.Server.Infrastructure.Model.DTOs.CheckoutDtos;
 using System.Collections.Concurrent;
 
-namespace ResiBuy.Server.Services.CheckoutSessionService;
+namespace ResiBuy.Server.Services.MyBackgroundService.CheckoutSessionService;
 
 public class CheckoutSessionService : ICheckoutSessionService
 {
@@ -126,7 +126,7 @@ public class CheckoutSessionService : ICheckoutSessionService
     }
 
     // Trigger cleanup if interval has passed
-    private void TriggerCleanupIfNeeded()   
+    private void TriggerCleanupIfNeeded()
     {
         if (DateTime.UtcNow - _lastCleanup > _cleanupInterval)
         {

@@ -85,6 +85,7 @@ public class OrderDbService : BaseDbService<Order>, IOrderDbService
         }
 
     }
+
     public async Task<Order> GetById(Guid id)
     {
         return await _context.Orders.Include(o => o.ShippingAddress).ThenInclude(sa => sa.Building).ThenInclude(b => b.Area)
@@ -95,11 +96,33 @@ public class OrderDbService : BaseDbService<Order>, IOrderDbService
                 .Include(o => o.Shipper).ThenInclude(s => s.User)
                 .Include(o => o.Reports).FirstOrDefaultAsync(o => o.Id == id);
     }
+
+    public async Task<List<Order>> GetCancelledOrders()
+    {
+        return await _context.Orders.Where(o => o.Status == OrderStatus.Cancelled && o.PaymentMethod == PaymentMethod.BankTransfer && o.PaymentStatus == PaymentStatus.Paid).ToListAsync();
+    }
+
+    public async Task<decimal> GetMonthlyBankRevenue(Guid storeId, int month)
+    {
+        var now = DateTime.Now;
+        int year = now.Month == month ? now.Year : (now.Month < month ? now.Year - 1 : now.Year);
+        var startDate = new DateTime(year, month, 1);
+        var endDate = startDate.AddMonths(1);
+        return await _context.Orders
+            .Where(o => o.Status == OrderStatus.Delivered
+                && o.PaymentMethod == PaymentMethod.BankTransfer
+                && o.PaymentStatus == PaymentStatus.Paid
+                && o.StoreId == storeId
+                && o.UpdateAt >= startDate
+                && o.UpdateAt < endDate)
+            .SumAsync(o => o.TotalPrice);
+    }
+
     public async Task<List<Order>> getOrdersByStatus(OrderStatus orderStatus)
     {
         try
         {
-            return await _context.Orders.Where(o => o.Status == orderStatus)
+            return await _context.Orders.Where(o => o.Status == orderStatus && o.PaymentMethod == PaymentMethod.BankTransfer)
                 .Include(o => o.Store).ThenInclude(s => s.Room)
                 .ThenInclude(r => r.Building).ThenInclude(b => b.Area)
                 .ToListAsync();

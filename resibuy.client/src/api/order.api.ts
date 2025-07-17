@@ -47,12 +47,14 @@ const orderApi = {
   updateOrderSatus: async (
     userId : string,
     orderId: string,
-    orderStatus: string
+    orderStatus: string,
+    reason: string
   ) => {
     const body = {
       userId,
       orderId,
       orderStatus,
+      reason
     }
     const response = await axiosClient.put(`/api/order/order-status`, body);
     return response.data;

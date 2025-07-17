@@ -2,6 +2,15 @@
 {
     public class Report
     {
+        public Report(string title, string description, string createdById, Guid orderId)
+        {
+            Title = title;
+            Description = description;
+            CreatedAt = DateTime.Now;
+            CreatedById = createdById;
+            OrderId = orderId;
+        }
+
         public Guid       Id          { get; set; }
         public string     Title       { get; set; }
         public string     Description { get; set; }

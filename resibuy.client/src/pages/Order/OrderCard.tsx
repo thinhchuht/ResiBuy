@@ -95,6 +95,11 @@ const OrderCard = ({ order, onUpdate, onAddressChange, onCancel }: OrderCardProp
   const [roomPage, setRoomPage] = useState(1);
   const [roomHasMore, setRoomHasMore] = useState(true);
   const [roomLoadingMore, setRoomLoadingMore] = useState(false);
+  const [cancelOpen, setCancelOpen] = useState(false);
+  const [cancelReason, setCancelReason] = useState("");
+  const [cancelOtherReason, setCancelOtherReason] = useState("");
+  const [cancelLoading, setCancelLoading] = useState(false);
+  const cancelReasons = ["Đổi ý", "Tìm được giá tốt hơn", "Thời gian giao hàng lâu", "Lý do khác"];
 
   const getStatusColor = (status: OrderStatus) => {
     switch (status) {
@@ -178,9 +183,9 @@ const OrderCard = ({ order, onUpdate, onAddressChange, onCancel }: OrderCardProp
     }
   };
 
-  const handleCancelOrder = async () => {
+  const handleCancelOrder = async (reason: string) => {
     if (user) {
-      await orderApi.updateOrderSatus(user?.id, order.id, OrderStatus.Cancelled);
+      await orderApi.updateOrderSatus(user?.id, order.id, OrderStatus.Cancelled, reason);
       if (onCancel) onCancel(order.id);
       if (onUpdate) onUpdate();
     }
@@ -553,7 +558,7 @@ const OrderCard = ({ order, onUpdate, onAddressChange, onCancel }: OrderCardProp
         </Box>
         <Box sx={{ display: "flex", gap: 2 }}>
           {order.status === OrderStatus.Pending && (
-            <Button variant="outlined" color="error" sx={{ borderRadius: 2, textTransform: "none", px: 3 }} onClick={handleCancelOrder}>
+            <Button variant="outlined" color="error" sx={{ borderRadius: 2, textTransform: "none", px: 3 }} onClick={() => setCancelOpen(true)}>
               Hủy đơn
             </Button>
           )}
@@ -762,6 +767,81 @@ const OrderCard = ({ order, onUpdate, onAddressChange, onCancel }: OrderCardProp
             disabled={reportLoading || !reportTitle || !reportReason || (reportReason === "Khác" && !reportOtherReason)}
             sx={{ borderRadius: 2, fontWeight: 700, boxShadow: "0 2px 8px #ff980033" }}>
             Gửi báo cáo
+          </Button>
+        </DialogActions>
+      </Dialog>
+
+      <Dialog
+        open={cancelOpen}
+        onClose={() => setCancelOpen(false)}
+        maxWidth="xs"
+        fullWidth
+        PaperProps={{
+          sx: { borderRadius: 3, p: 1 },
+        }}>
+        <DialogTitle sx={{ display: "flex", alignItems: "center", gap: 1, fontWeight: 700, color: "#f44336", pb: 0 }}>
+          <ReportIcon color="error" sx={{ fontSize: 28 }} />
+          Lý do hủy đơn
+        </DialogTitle>
+        <DialogContent sx={{ display: "flex", flexDirection: "column", gap: 2, mt: 1, pb: 0 }}>
+          <Typography variant="body2" sx={{ color: "#666", mb: 1, fontStyle: "italic" }}>
+            Vui lòng chọn lý do hủy đơn để chúng tôi phục vụ tốt hơn.
+          </Typography>
+          <TextField
+            select
+            label="Lý do hủy"
+            value={cancelReason}
+            onChange={(e) => setCancelReason(e.target.value)}
+            fullWidth
+            variant="outlined"
+            size="small"
+            sx={{ borderRadius: 2, background: "#fafafa" }}
+            helperText={cancelReason.length === 0 ? "Vui lòng chọn lý do" : ""}
+            error={cancelReason.length === 0}>
+            {cancelReasons.map((reason) => (
+              <MenuItem key={reason} value={reason}>
+                {reason}
+              </MenuItem>
+            ))}
+          </TextField>
+          {cancelReason === "Lý do khác" && (
+            <TextField
+              label="Lý do khác"
+              value={cancelOtherReason}
+              onChange={(e) => {
+                if (e.target.value.length <= 200) setCancelOtherReason(e.target.value);
+              }}
+              fullWidth
+              variant="outlined"
+              size="small"
+              multiline
+              minRows={3}
+              maxRows={6}
+              inputProps={{ maxLength: 200 }}
+              sx={{ borderRadius: 2, background: "#fafafa" }}
+              helperText={cancelOtherReason.length === 0 ? "Vui lòng nhập lý do khác" : `${cancelOtherReason.length}/200 ký tự`}
+              error={cancelOtherReason.length === 0}
+            />
+          )}
+        </DialogContent>
+        <DialogActions sx={{ px: 3, pb: 2, pt: 1 }}>
+          <Button onClick={() => setCancelOpen(false)} color="inherit" disabled={cancelLoading} sx={{ borderRadius: 2 }}>
+            Hủy
+          </Button>
+          <Button
+            onClick={async () => {
+              setCancelLoading(true);
+              await handleCancelOrder(cancelReason === "Lý do khác" ? cancelOtherReason : cancelReason);
+              setCancelOpen(false);
+              setCancelReason("");
+              setCancelOtherReason("");
+              setCancelLoading(false);
+            }}
+            color="error"
+            variant="contained"
+            disabled={cancelLoading || !cancelReason || (cancelReason === "Lý do khác" && !cancelOtherReason)}
+            sx={{ borderRadius: 2, fontWeight: 700, boxShadow: "0 2px 8px #f4433333" }}>
+            Xác nhận hủy
           </Button>
         </DialogActions>
       </Dialog>
