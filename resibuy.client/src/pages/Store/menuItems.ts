@@ -5,7 +5,9 @@ export interface MenuItem {
 
 export const menuItems = (storeId: string) => [
   { label: "Dashboard", path: `/store/${storeId}` },
-  { label: "ProductPage", path: `/store/${storeId}/productPage` },
+  { label: "Product Page", path: `/store/${storeId}/productPage` },
   { label: "Orders", path: `/store/${storeId}/orders` },
-  { label: "Create Product", path: `/store/${storeId}/create` },
+  { label: "Create Product", path: `/store/${storeId}/product-create` },
+  { label: "Voucher Page", path: `/store/${storeId}/vouchers` },
+  { label: "Create Voucher", path: `/store/${storeId}/voucher-create` },
 ];

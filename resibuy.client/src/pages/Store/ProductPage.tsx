@@ -162,7 +162,7 @@ const ProductPage: React.FC = () => {
   };
 
   const handleCreate = () => {
-    navigate(`/store/${storeId}/create`);
+    navigate(`/store/${storeId}/product-create`);
   };
 
   return (
