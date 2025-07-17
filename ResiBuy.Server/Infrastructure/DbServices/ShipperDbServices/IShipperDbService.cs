@@ -1,3 +1,4 @@
+using ResiBuy.Server.Services.MapBoxService;
 using ResiBuy.Server.Services.OpenRouteService;
 
 namespace ResiBuy.Server.Infrastructure.DbServices.ShipperDbServices
@@ -9,7 +10,7 @@ namespace ResiBuy.Server.Infrastructure.DbServices.ShipperDbServices
         Task<Shipper> GetShipperByUserIdAsync(string userId);
         Task<Shipper> UpdateShipperLocationAsync(Guid shipperId, Guid locationId);
         Task<Shipper> UpdateShipperStatusAsync(Guid shipperId, bool isOnline);
-        Task<ORSRouteResponse> GetDistanceAsync(Guid curentAreaId, Guid destinationAreaId);
+        Task<DirectionsResponse> GetDistanceAsync(Guid curentAreaId, Guid destinationAreaId);
         Task<List<Shipper>> GetShippersInAreaAsync(Guid areaId);
     }
 }
