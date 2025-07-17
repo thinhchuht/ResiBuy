@@ -83,8 +83,15 @@ const ProductInfoSection: React.FC<ProductInfoSectionProps> = ({ product, quanti
 
   const handleAddToCart = () => {
     if (!selectedDetail || !user) return;
-    cartApi.addToCart(user?.cartId, selectedDetail.id, quantity);
-    toast.success(`Đã thêm sản phẩm vào giỏ hàng!`);
+    cartApi.addToCart(user?.cartId, selectedDetail.id, quantity)
+      .then(response => {
+        if(response.data.code !== -1) {
+          toast.success(`Đã thêm sản phẩm vào giỏ hàng!`);
+        }
+      })
+      .catch(error => {
+        console.error(error);
+      });
   };
 
   const handleBuy = async () => {

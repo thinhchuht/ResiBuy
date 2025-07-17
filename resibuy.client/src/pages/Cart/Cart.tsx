@@ -92,6 +92,8 @@ const Cart = () => {
         setSelectedCartItems((prevSelected) => prevSelected.map((item) => (item.productDetailId === productDetailId ? { ...item, quantity: newQuantity } : item)));
       }
     } catch (error) {
+      toast.error("Cập nhật số lượng thất bại!");
+      // Không update state, giữ nguyên số lượng cũ
       console.error("Error updating quantity:", error);
     }
   };

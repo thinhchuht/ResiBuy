@@ -12,7 +12,7 @@ namespace ResiBuy.Server.Infrastructure.DbServices.ProductDetailDbServices
         public async Task<ResponseModel> CheckIsOutOfStock(List<int> ids)
         {
             var outOfStockProduct = await _context.ProductDetails.Include(pd => pd.Product)
-                .Where(p => ids.Contains(p.Id) && p.IsOutOfStock)
+                .Where(p => ids.Contains(p.Id) && (p.IsOutOfStock || p.Quantity <= 0))
                 .FirstOrDefaultAsync();
 
             if (outOfStockProduct != null)

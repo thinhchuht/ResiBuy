@@ -33,8 +33,8 @@ namespace ResiBuy.Server.Application.Commands.OrderCommands
                 throw new CustomException(ExceptionErrorCode.ValidationFailed, "Không có tồn tại giỏ hàng.");
             var cart = await cartDbService.GetByIdAsync(user.Cart.Id);
             if (!cart.CartItems.Any() && !dto.IsInstance) throw new CustomException(ExceptionErrorCode.ValidationFailed, "Giỏ hàng không có sản phẩm nào.");
-            if (!cart.IsCheckingOut)
-                throw new CustomException(ExceptionErrorCode.ValidationFailed, "Giỏ hàng chưa ở trạng thái thanh toán.");
+            //if (!cart.IsCheckingOut)
+            //    throw new CustomException(ExceptionErrorCode.ValidationFailed, "Giỏ hàng chưa ở trạng thái thanh toán.");
             var voucherIds = dto.Orders.Select(o => o.VoucherId);
             var checkVoucherRs = await voucherDbService.CheckIsActiveVouchers(voucherIds);
             if (!checkVoucherRs.IsSuccess()) throw new CustomException(ExceptionErrorCode.ValidationFailed, checkVoucherRs.Message);
@@ -75,7 +75,7 @@ namespace ResiBuy.Server.Application.Commands.OrderCommands
             {
                 if (transaction != null)
                     await transaction.RollbackAsync();
-                await notificationService.SendNotificationAsync(Constants.OrderCreatedFailed, new {OrderIds = dto.Orders.Select(o => o.Id)}, Constants.NoHubGroup, [user.Id]);
+                await notificationService.SendNotificationAsync(Constants.OrderCreatedFailed, new OrderCreateFailedDto(dto.Orders.Select(o => o.Id), ex.Message), Constants.NoHubGroup, [user.Id]);
                 throw new CustomException(ExceptionErrorCode.RepositoryError, ex.ToString());
             }
         }

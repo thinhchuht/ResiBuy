@@ -4,7 +4,7 @@ namespace ResiBuy.Server.Services.HubServices;
 
 public class NotificationService(IHubContext<NotificationHub> hubContext, ILogger<NotificationService> logger, INotificationDbService notificationDbService) : INotificationService
 {
-    public async Task SendNotificationAsync(string eventName, object data, string hubGroup = null, List<string> userIds = null)
+    public async Task SendNotificationAsync(string eventName, object data, string hubGroup = null, List<string> userIds = null, bool shoudSave = true)
     {
         if (string.IsNullOrEmpty(hubGroup) && (userIds == null || !userIds.Any()))
             throw new ArgumentException("Either hubGroup or userIds must be provided");
@@ -15,7 +15,7 @@ public class NotificationService(IHubContext<NotificationHub> hubContext, ILogge
             {
                 var notiId = Guid.NewGuid();
                 var notification = new Notification(notiId, [], DateTime.Now, eventName, userIds.Select(ui => new UserNotification(ui, notiId)));
-                await notificationDbService.CreateAsync(notification);
+                if(shoudSave) await notificationDbService.CreateAsync(notification);
                 foreach (var userId in userIds)
                 {
                     await hubContext.Clients.Group(userId).SendAsync(eventName, data, cts.Token);
