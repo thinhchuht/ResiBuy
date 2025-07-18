@@ -6,6 +6,9 @@ using ResiBuy.Server.Services.MyBackgroundService;
 using ResiBuy.Server.Services.MyBackgroundService.CheckoutSessionService;
 using ResiBuy.Server.Services.OpenRouteService;
 using ResiBuy.Server.Services.ShippingCost;
+using ResiBuy.Server.Services.OpenRouteService;
+using ResiBuy.Server.Services.MyBackgroundService;
+using ResiBuy.Server.Services.MapBoxService;
 
 
 namespace ResiBuy.Server.Extensions
@@ -43,6 +46,7 @@ namespace ResiBuy.Server.Extensions
             services.AddScoped<IProductDetailDbService, ProductDetailDbService>();
             services.AddHttpClient<GoogleDistanceService>();
             services.AddHttpClient<OpenRouteService>();
+            services.AddHttpClient<MapBoxService>();
             services.AddHostedService<AssignOrderForShipper>();
 
             return services;

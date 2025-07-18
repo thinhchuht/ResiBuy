@@ -1,15 +1,16 @@
-﻿using ResiBuy.Server.Services.OpenRouteService;
+﻿using ResiBuy.Server.Services.MapBoxService;
+using ResiBuy.Server.Services.OpenRouteService;
 
 namespace ResiBuy.Server.Infrastructure.DbServices.OrderDbServices;
 
 public class OrderDbService : BaseDbService<Order>, IOrderDbService
 {
     private readonly ResiBuyContext _context;
-    private readonly OpenRouteService _openRouteService;
-    public OrderDbService(ResiBuyContext context, OpenRouteService openRouteService) : base(context)
+    private readonly MapBoxService _mapBoxService;
+    public OrderDbService(ResiBuyContext context, MapBoxService mapBoxService) : base(context)
     {
         this._context = context;
-        this._openRouteService = openRouteService;
+        this._mapBoxService = mapBoxService;
     }
     public async Task<PagedResult<Order>> GetAllAsync(OrderStatus orderStatus, PaymentMethod paymentMethod, PaymentStatus paymentStatus, Guid storeId, Guid shipperId, string userId = null, int pageNumber = 1, int pageSize = 10, DateTime? startDate = null, DateTime? endDate = null)
     {
@@ -153,7 +154,7 @@ public class OrderDbService : BaseDbService<Order>, IOrderDbService
             decimal distanceFee = 0;
             if (shippingRoom.Building.AreaId != storeRoom.Building.AreaId)
             {
-               var route = await _openRouteService.GetRouteAsync(
+               var route = await _mapBoxService.GetDirectionsAsync(
                        shippingRoom.Building.Area.Latitude,
                        shippingRoom.Building.Area.Longitude,
                        storeRoom.Building.Area.Latitude,
@@ -163,7 +164,7 @@ public class OrderDbService : BaseDbService<Order>, IOrderDbService
                 {
                     throw new CustomException(ExceptionErrorCode.ValidationFailed, "Không thể tính toán khoảng cách giao hàng");
                 }
-                var distance = route.Routes[0].Summary.Distance; // distance in meters
+                var distance = route.Routes[0].Distance; // distance in meters
                 if (distance > 200)
                 {
                     distanceFee = (decimal)(Math.Round(distance / 500) * 5000); // 5000đ/500m
