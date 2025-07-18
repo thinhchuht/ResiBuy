@@ -81,9 +81,8 @@ const Orders = () => {
         PaymentMethod.None,
         PaymentStatus.None,
         undefined, // storeId
-        undefined, // shipperId
         user.id,
-        undefined,
+        undefined, // shipperId
         page,
         ordersPerPage,
         startDate || undefined,

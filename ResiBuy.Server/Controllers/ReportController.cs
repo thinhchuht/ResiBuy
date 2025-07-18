@@ -10,11 +10,25 @@ namespace ResiBuy.Server.Controllers
     {
 
         [HttpGet]
-        public async Task<IActionResult> GetAllReport(string userId)
+        public async Task<IActionResult> GetAllReport(GetReportDto dto)
         {
             try
             {
-                var result = await mediator.Send(new GetAllReportQuery(userId));
+                var result = await mediator.Send(new GetAllReportQuery(dto));
+                return Ok(result);
+            }
+            catch (Exception ex)
+            {
+                return BadRequest(ResponseModel.ExceptionResponse(ex.ToString()));
+            }
+        }
+
+        [HttpGet("{id}")]
+        public async Task<IActionResult> GetReportById(Guid id)
+        {
+            try
+            {
+                var result = await mediator.Send(new GetReportByIdQuery(id));
                 return Ok(result);
             }
             catch (Exception ex)

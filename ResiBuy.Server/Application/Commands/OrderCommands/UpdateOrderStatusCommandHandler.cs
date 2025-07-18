@@ -37,6 +37,7 @@ namespace ResiBuy.Server.Application.Commands.OrderCommands
                 order.Status = dto.OrderStatus.Value;
             }
             order.UpdateAt = DateTime.Now;
+            if(dto.OrderStatus == OrderStatus.Cancelled)
             order.CancelReason = dto.Reason;
             await orderDbService.UpdateAsync(order);
             var userIds = new List<string>();

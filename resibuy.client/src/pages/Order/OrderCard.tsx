@@ -24,6 +24,7 @@ import WarningAmberIcon from "@mui/icons-material/WarningAmber";
 import cartApi from "../../api/cart.api";
 import { debounce } from "lodash";
 import type { BuildingDto, RoomDto } from "../../types/dtoModels";
+import reportApi from "../../api/report.api";
 
 // Define types matching API result
 interface RoomQueryResult {
@@ -58,10 +59,12 @@ export interface OrderApiResult {
   totalPrice: number;
   shippingFee: number
   note: string;
+  cancelReason: string;
   roomQueryResult: RoomQueryResult;
   store: Store;
   voucher: Voucher;
   orderItems: OrderItemQueryResult[];
+  shipperId?: string;
 }
 
 interface OrderCardProps {
@@ -100,6 +103,7 @@ const OrderCard = ({ order, onUpdate, onAddressChange, onCancel }: OrderCardProp
   const [cancelOtherReason, setCancelOtherReason] = useState("");
   const [cancelLoading, setCancelLoading] = useState(false);
   const cancelReasons = ["Đổi ý", "Tìm được giá tốt hơn", "Thời gian giao hàng lâu", "Lý do khác"];
+  const [reportTargetType, setReportTargetType] = useState<"store" | "user" | "shipper">("store");
 
   const getStatusColor = (status: OrderStatus) => {
     switch (status) {
@@ -326,11 +330,32 @@ const OrderCard = ({ order, onUpdate, onAddressChange, onCancel }: OrderCardProp
   const handleCloseReport = () => setReportOpen(false);
   const handleSubmitReport = async () => {
     setReportLoading(true);
-    setTimeout(() => {
+    let targetId = "";
+    if (reportTargetType === "store") targetId = order.store.id;
+    else if (reportTargetType === "user") targetId = order.userId;
+    else if (reportTargetType === "shipper") targetId = order.shipperId || "";
+    if (!user) {
       setReportLoading(false);
       setReportOpen(false);
-      toast.error("Đã gửi báo cáo (demo)");
-    }, 1000);
+      toast.error("Bạn cần đăng nhập để gửi báo cáo!");
+      return;
+    }
+    try {
+      await reportApi.create({
+        orderId: order.id,
+        userId: user.id,
+        targetId,
+        title: reportTitle,
+        description: reportReason === "Khác" ? reportOtherReason : reportReason,
+      });
+      setReportLoading(false);
+      setReportOpen(false);
+      toast.success("Đã gửi báo cáo thành công!");
+    } catch {
+      setReportLoading(false);
+      setReportOpen(false);
+      toast.error("Gửi báo cáo thất bại!");
+    }
   };
 
   return (
@@ -366,6 +391,11 @@ const OrderCard = ({ order, onUpdate, onAddressChange, onCancel }: OrderCardProp
               minute: "2-digit",
             })} - ${new Date(order.updateAt).toLocaleDateString("vi-VN")}`}
           </Typography>
+          {order.status === OrderStatus.Cancelled && order.cancelReason && (
+            <Typography variant="body2" sx={{ color: 'red', fontWeight: 600, mt: 0.5 }}>
+              Lý do hủy đơn: {order.cancelReason}
+            </Typography>
+          )}
         </Box>
         <Box sx={{ display: "flex", gap: 1 }}>
           <Chip
@@ -700,6 +730,20 @@ const OrderCard = ({ order, onUpdate, onAddressChange, onCancel }: OrderCardProp
           <Typography variant="body2" sx={{ color: "#666", mb: 1, fontStyle: "italic" }}>
             Nếu bạn gặp vấn đề với đơn hàng, hãy gửi báo cáo để chúng tôi hỗ trợ nhanh nhất.
           </Typography>
+          <TextField
+            select
+            label="Đối tượng báo cáo"
+            value={reportTargetType}
+            onChange={e => setReportTargetType(e.target.value as "store" | "user" | "shipper")}
+            fullWidth
+            variant="outlined"
+            size="small"
+            sx={{ borderRadius: 2, background: "#fafafa" }}
+          >
+            <MenuItem value="store">Cửa hàng</MenuItem>
+            <MenuItem value="user">Người dùng</MenuItem>
+            <MenuItem value="shipper" disabled={!order.shipperId}>Shipper</MenuItem>
+          </TextField>
           <TextField
             label="Tiêu đề báo cáo"
             value={reportTitle}
