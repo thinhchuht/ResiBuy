@@ -839,14 +839,34 @@ const AppBar: React.FC = () => {
               overflowY: "auto",
             },
           }}>
-          <Box sx={{ p: 2, borderBottom: "1px solid rgba(0,0,0,0.1)" }}>
+          <Box sx={{ p: 2, borderBottom: "1px solid rgba(0,0,0,0.1)", display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
             <Typography variant="h6" sx={{ fontWeight: 600 }}>
               Thông báo
             </Typography>
+            {notifications.length > 0 && unreadCount > 0 && (
+              <Button
+                size="small"
+                color="primary"
+                sx={{ textTransform: 'none', fontWeight: 500, fontSize: 13, ml: 1, minWidth: 0, p: 0.5 }}
+                onClick={async () => {
+                  if (user) {
+                    try {
+                      await notificationApi.readAllNotification(user.id);
+                      setNotifications((prev) => prev.map(n => ({ ...n, isRead: true })));
+                      setUnreadCount(0);
+                    } catch {
+                      // Xử lý lỗi nếu cần
+                    }
+                  }
+                }}
+              >
+                Đánh dấu đã đọc
+              </Button>
+            )}
           </Box>
           <Box
             ref={notificationListRef}
-            sx={{ maxHeight: 260, overflowY: "auto" }}
+            sx={{ maxHeight: 210, overflowY: "auto" }}
             onScroll={() => {
               const el = notificationListRef.current;
               if (el && el.scrollTop + el.clientHeight >= el.scrollHeight - 10) {

@@ -12,7 +12,11 @@ const notificationApi = {
   },
   
   readNotification: async (id: string, userId: string) => {
-    const response = await axiosClient.put(`${notificationUrl}/${id}?userId=${userId}`);
+    const response = await axiosClient.put(`${notificationUrl}/${id}/read?userId=${userId}`);
+    return response.data.data
+  },
+  readAllNotification: async (userId: string) => {
+    const response = await axiosClient.put(`${notificationUrl}/user/${userId}/read-all`);
     return response.data.data
   },
 };

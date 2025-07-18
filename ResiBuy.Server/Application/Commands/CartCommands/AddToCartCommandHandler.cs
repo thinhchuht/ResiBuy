@@ -32,7 +32,7 @@ namespace ResiBuy.Server.Application.Commands.CartCommands
                         throw new CustomException(ExceptionErrorCode.ValidationFailed, $"Chỉ còn {productDetail.Quantity} sản phẩm có sẵn");
                     }
                     await cartItemDbService.UpdateAsync(existingItem);
-                    await notificationService.SendNotificationAsync(Constants.CartItemAdded, new { Id = existingItem.Id, existingItem.Quantity, CartId = cart.Id,  command.AddToCartDto.ProductDetailId }, "", [cart.UserId]);
+                    await notificationService.SendNotificationAsync(Constants.CartItemAdded, new { Id = existingItem.Id, existingItem.Quantity, CartId = cart.Id,  command.AddToCartDto.ProductDetailId }, "", [cart.UserId], false);
                     return ResponseModel.SuccessResponse(existingItem);
                 }
 

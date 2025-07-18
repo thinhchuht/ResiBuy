@@ -45,5 +45,31 @@
             await context.SaveChangesAsync();
             return ResponseModel.SuccessResponse();
         }
+
+        public async Task<ResponseModel> ReadAllNotify(string userId)
+        {
+            try
+            {
+                var notifications = await context.Notifications
+                    .Include(n => n.UserNotifications)
+                    .Where(n => !n.ReadBy.Contains(userId))
+                    .Where(n => n.UserNotifications.Any(un => un.UserId == userId))
+                    .ToListAsync();
+
+                foreach (var notification in notifications)
+                {
+                        notification.ReadBy.Add(userId);
+                }
+
+                context.Notifications.UpdateRange(notifications);
+                await context.SaveChangesAsync();
+
+                return ResponseModel.SuccessResponse();
+            }
+            catch (Exception ex)
+            {
+                throw new CustomException(ExceptionErrorCode.RepositoryError, ex.Message);
+            }
+        }
     }
 }

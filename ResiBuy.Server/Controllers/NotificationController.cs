@@ -35,10 +35,17 @@ namespace ResiBuy.Server.Controllers
             }
         }
 
-        [HttpPut("{id}")]
+        [HttpPut("{id}/read")]
         public async Task<IActionResult> ReadAsync(Guid id, string userId)
         {
             var result = await mediator.Send(new ReadNotificationCommand(id, userId));
+            return Ok(result);
+        }
+
+        [HttpPut("user/{userId}/read-all")]
+        public async Task<IActionResult> ReadAllAsync(string userId)
+        {
+            var result = await mediator.Send(new ReadAllNotificationsCommand(userId));
             return Ok(result);
         }
 
