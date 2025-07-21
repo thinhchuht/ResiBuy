@@ -1,5 +1,3 @@
-using ResiBuy.Server.Services.OpenRouteService;
-
 namespace ResiBuy.Server.Infrastructure.DbServices.OrderDbServices;
 
 public interface IOrderDbService : IBaseDbService<Order>
@@ -18,6 +16,8 @@ public interface IOrderDbService : IBaseDbService<Order>
     );
     Task<Order> GetById(Guid id);
     Task<List<Order>> getOrdersByStatus(OrderStatus orderStatus);
+    Task<List<Order>> GetCancelledOrders();
     Task<Order> UpdateOrderStatus(Guid orderId, OrderStatus orderStatus);
     Task<decimal> ShippingFeeCharged(Guid ShippingAddress, Guid storeAddress, float weight);
+    Task<decimal> GetMonthlyBankRevenue(Guid storeId, int month);
 }

@@ -24,26 +24,23 @@ namespace ResiBuy.Server.Controllers
             return Ok(result);
         }
 
-        [HttpPut("{id}")]
-        public async Task<IActionResult> UpdateShipper(Guid id, [FromBody] UpdateShipperCommand command)
+        [HttpPut]
+        public async Task<IActionResult> UpdateShipper([FromBody] UpdateShipperCommand command)
         {
-            command = command with { Id = id };
             var result = await _mediator.Send(command);
             return Ok(result);
         }
 
-        [HttpPut("{id}/location")]
-        public async Task<IActionResult> UpdateShipperLocation(Guid id, [FromBody] UpdateShipperLocationCommand command)
+        [HttpPut("location")]
+        public async Task<IActionResult> UpdateShipperLocation( [FromBody] UpdateShipperLocationCommand command)
         {
-            command = command with { ShipperId = id };
             var result = await _mediator.Send(command);
             return Ok(result);
         }
 
-        [HttpPut("{id}/status")]
-        public async Task<IActionResult> UpdateShipperStatus(Guid id, [FromBody] UpdateShipperStatusCommand command)
+        [HttpPut("status")]
+        public async Task<IActionResult> UpdateShipperStatus( [FromBody] UpdateShipperStatusCommand command)
         {
-            command = command with { ShipperId = id };
             var result = await _mediator.Send(command);
             return Ok(result);
         }

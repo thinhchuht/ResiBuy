@@ -16,22 +16,45 @@ import {
   useCategoriesLogic,
 } from "../../../components/admin/Category/seg/utlis";
 import { StatsCard } from "../../../layouts/AdminLayout/components/StatsCard";
-import type { Category } from "../../../types/models";
 
-interface ApiResponse<T> {
-  code: number;
-  message: string;
-  data: {
-    items: T[];
-    totalCount: number;
-    pageNumber: number;
-    pageSize: number;
-    totalPages: number;
+// Định nghĩa interface inline dựa trên dữ liệu API
+interface Category {
+  id: string;
+  name: string;
+  status: string;
+  image?: {
+    id: string;
+    url: string;
+    thumbUrl: string;
+    name: string;
+    categoryId: string;
   };
 }
 
-function CategoryStatsCards({ categories }: { categories: Category[] }) {
-  const stats = calculateCategoryStats(categories);
+function CategoryStatsCards() {
+  const [stats, setStats] = useState<{
+    totalCategories: number;
+    totalProducts: number;
+    totalRevenue: number;
+  }>({ totalCategories: 0, totalProducts: 0, totalRevenue: 0 });
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+
+  useEffect(() => {
+    setLoading(true);
+    setError(null);
+    calculateCategoryStats()
+      .then((data) => {
+        setStats(data);
+        setLoading(false);
+      })
+      .catch((err: any) => {
+        console.error("Error in calculateCategoryStats:", err);
+        setError(err.message || "Lỗi khi tải thống kê");
+        setStats({ totalCategories: 0, totalProducts: 0, totalRevenue: 0 });
+        setLoading(false);
+      });
+  }, []);
 
   const cards = [
     {
@@ -41,14 +64,6 @@ function CategoryStatsCards({ categories }: { categories: Category[] }) {
       iconColor: "#1976d2",
       iconBgColor: "#e3f2fd",
       valueColor: "#1976d2",
-    },
-    {
-      title: "Tổng Sản Phẩm",
-      value: stats.totalProducts.toLocaleString(),
-      icon: Inventory,
-      iconColor: "#d81b60",
-      iconBgColor: "#fce4ec",
-      valueColor: "#d81b60",
     },
   ];
 
@@ -65,17 +80,21 @@ function CategoryStatsCards({ categories }: { categories: Category[] }) {
         mb: 3,
       }}
     >
-      {cards.map((card, index) => (
-        <StatsCard
-          key={index}
-          title={card.title}
-          value={card.value}
-          icon={card.icon}
-          iconColor={card.iconColor}
-          iconBgColor={card.iconBgColor}
-          valueColor={card.valueColor}
-        />
-      ))}
+      {loading && <Typography>Đang tải thống kê...</Typography>}
+      {error && <Typography color="error">{error}</Typography>}
+      {!loading && !error && (
+        cards.map((card, index) => (
+          <StatsCard
+            key={index}
+            title={card.title}
+            value={card.value}
+            icon={card.icon}
+            iconColor={card.iconColor}
+            iconBgColor={card.iconBgColor}
+            valueColor={card.valueColor}
+          />
+        ))
+      )}
     </Box>
   );
 }
@@ -95,6 +114,8 @@ export default function CategoriesPage() {
     handleSubmitCategory,
     handleDeleteCategory,
     handleExportCategories,
+    countProductsByCategoryId,
+    calculateCategoryRevenue,
   } = useCategoriesLogic();
 
   const [pageNumber, setPageNumber] = useState(1); // 1-based, khớp với API
@@ -104,56 +125,32 @@ export default function CategoriesPage() {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
-  // Hàm giả lập gọi API
-  const fetchCategories = async (pageNum: number, size: number) => {
+  // Lấy danh sách danh mục
+  useEffect(() => {
+    console.log("Categories in useEffect:", categories);
     setLoading(true);
     setError(null);
     try {
-      console.log(`Fetching page ${pageNum}, size ${size}, total categories: ${categories.length}`);
-
-      // Thay bằng API thực tế, ví dụ: axios.get('/api/categories')
-      const response: ApiResponse<Category> = await new Promise((resolve) => {
-        setTimeout(() => {
-          const start = (pageNum - 1) * size;
-          const end = pageNum * size;
-          const items = categories.slice(start, end);
-          console.log(`Sliced items: start=${start}, end=${end}, items=`, items);
-
-          const fakeResponse: ApiResponse<Category> = {
-            code: 0,
-            message: "Thành công",
-            data: {
-              items,
-              totalCount: categories.length,
-              pageNumber: pageNum,
-              pageSize: size,
-              totalPages: Math.ceil(categories.length / size),
-            },
-          };
-          resolve(fakeResponse);
-        }, 500);
-      });
-
-      if (response.code === 0) {
-        console.log("API response:", response.data);
-        setFetchedCategories(response.data.items);
-        setTotalCount(response.data.totalCount);
-      } else {
-        setError(response.message);
+      if (!categories || categories.length === 0) {
+        setError("Không tìm thấy danh mục nào");
         setFetchedCategories([]);
+        setTotalCount(0);
+      } else {
+        const start = (pageNumber - 1) * pageSize;
+        const end = pageNumber * pageSize;
+        const slicedCategories = categories.slice(start, end);
+        console.log("Fetched categories:", slicedCategories);
+        setFetchedCategories(slicedCategories);
+        setTotalCount(categories.length);
       }
-    } catch (err) {
-      console.error("Fetch error:", err);
-      setError("Lỗi khi gọi API");
+      setLoading(false);
+    } catch (err: any) {
+      console.error("Error in CategoriesPage useEffect:", err);
+      setError("Lỗi khi xử lý danh sách danh mục: " + (err.message || "Không xác định"));
       setFetchedCategories([]);
-    } finally {
+      setTotalCount(0);
       setLoading(false);
     }
-  };
-
-  // Gọi API khi pageNumber thay đổi
-  useEffect(() => {
-    fetchCategories(pageNumber, pageSize);
   }, [pageNumber, pageSize, categories]);
 
   const columns = [
@@ -181,26 +178,39 @@ export default function CategoriesPage() {
       render: (category: Category) => (
         <Box sx={{ display: "flex", alignItems: "center" }}>
           <Box sx={{ width: 40, height: 40, mr: 1.5 }}>
-            <Box
-              sx={{
-                width: "100%",
-                height: "100%",
-                bgcolor: "linear-gradient(135deg, #3b82f6 0%, #a855f7 100%)",
-                borderRadius: "50%",
-                display: "flex",
-                alignItems: "center",
-                justifyContent: "center",
-                color: "white",
-                fontSize: "0.875rem",
-                fontWeight: "bold",
-              }}
-            >
-              {category.name
-                .split(" ")
-                .map((n) => n[0])
-                .join("")
-                .toUpperCase()}
-            </Box>
+            {category.image?.thumbUrl && category.image.thumbUrl !== "string" ? (
+              <img
+                src={category.image.thumbUrl}
+                alt={category.image.name || "Category Image"}
+                style={{
+                  width: "100%",
+                  height: "100%",
+                  borderRadius: "50%",
+                  objectFit: "cover",
+                }}
+              />
+            ) : (
+              <Box
+                sx={{
+                  width: "100%",
+                  height: "100%",
+                  background: "linear-gradient(135deg, #3b82f6 0%, #a855f7 100%)",
+                  borderRadius: "50%",
+                  display: "flex",
+                  alignItems: "center",
+                  justifyContent: "center",
+                  color: "white",
+                  fontSize: "0.875rem",
+                  fontWeight: "bold",
+                }}
+              >
+                {category.name
+                  .split(" ")
+                  .map((n) => n[0])
+                  .join("")
+                  .toUpperCase()}
+              </Box>
+            )}
           </Box>
           <Typography
             variant="body2"
@@ -212,12 +222,19 @@ export default function CategoriesPage() {
       ),
     },
     {
-      key: "products" as keyof Category,
-      label: "Sản Phẩm",
+      key: "status" as keyof Category,
+      label: "Trạng thái",
       sortable: true,
       render: (category: Category) => (
-        <Typography variant="body2" sx={{ color: "grey.900" }}>
-          {category.products.length}
+        <Typography
+          variant="body2"
+          sx={{
+            fontFamily: "monospace",
+            fontWeight: "medium",
+            color: "primary.main",
+          }}
+        >
+          {category.status}
         </Typography>
       ),
     },
@@ -230,12 +247,7 @@ export default function CategoriesPage() {
           variant="body2"
           sx={{ fontWeight: "medium", color: "grey.900" }}
         >
-          {formatCurrency(
-            category.products.reduce(
-              (sum, product) => sum + product.price * (product.sold || 0),
-              0
-            )
-          )}
+          {formatCurrency(0)}
         </Typography>
       ),
     },
@@ -245,10 +257,7 @@ export default function CategoriesPage() {
       render: (category: Category) => (
         <Box sx={{ display: "flex", alignItems: "center", gap: 0.5 }}>
           <IconButton
-            onClick={() => {
-              handleViewCategory(category);
-              console.log("Category data:", category);
-            }}
+            onClick={() => handleViewCategory(category.id)}
             sx={{
               color: "primary.main",
               p: 0.5,
@@ -354,10 +363,13 @@ export default function CategoriesPage() {
           </Typography>
         </Box>
 
-        {loading && <Typography>Đang tải...</Typography>}
+        {loading && <Typography>Đang tải danh sách danh mục...</Typography>}
         {error && <Typography color="error">{error}</Typography>}
+        {!loading && !error && fetchedCategories.length === 0 && (
+          <Typography>Không tìm thấy danh mục nào</Typography>
+        )}
 
-        <CategoryStatsCards categories={fetchedCategories} />
+        <CategoryStatsCards />
 
         <CustomTable
           data={fetchedCategories}
@@ -367,7 +379,7 @@ export default function CategoriesPage() {
           onExport={handleExportCategories}
           onPageChange={setPageNumber}
           headerTitle="Tất Cả Danh Mục"
-          description="Quản lý danh mục và sản phẩm"
+          description="Quản lý danh mục"
           showExport={true}
           showBulkActions={false}
           itemsPerPage={pageSize}

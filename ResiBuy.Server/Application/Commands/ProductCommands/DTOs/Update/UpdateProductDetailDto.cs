@@ -8,6 +8,7 @@ namespace ResiBuy.Server.Application.Commands.ProductCommands.DTOs.Update
         public decimal Price { get; set; }
         public float Weight { get; set; }
         public bool IsOutOfStock { get; set; }
+        public int Quantity { get; set; } = 0;
         public UpdateImageForProductDetail Image { get; set; } = new();
         public List<UpdateAdditionalDataDto> AdditionalData { get; set; } = new();
     }

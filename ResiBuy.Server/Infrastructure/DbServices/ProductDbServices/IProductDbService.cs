@@ -1,6 +1,4 @@
-﻿using ResiBuy.Server.Infrastructure.Filter;
-
-namespace ResiBuy.Server.Infrastructure.DbServices.ProductDbServices
+﻿namespace ResiBuy.Server.Infrastructure.DbServices.ProductDbServices
 {
     public interface IProductDbService : IBaseDbService<Product>
     {

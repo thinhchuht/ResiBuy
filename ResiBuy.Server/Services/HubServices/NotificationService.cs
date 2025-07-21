@@ -4,40 +4,35 @@ namespace ResiBuy.Server.Services.HubServices;
 
 public class NotificationService(IHubContext<NotificationHub> hubContext, ILogger<NotificationService> logger, INotificationDbService notificationDbService) : INotificationService
 {
-    public void SendNotification(string eventName, object data, string hubGroup = null, List<string> userIds = null)
+    public async Task SendNotificationAsync(string eventName, object data, string hubGroup = null, List<string> userIds = null, bool shoudSave = true)
     {
         if (string.IsNullOrEmpty(hubGroup) && (userIds == null || !userIds.Any()))
             throw new ArgumentException("Either hubGroup or userIds must be provided");
-        _ = Task.Run(async () =>
+        try
         {
-            try
+            using var cts = new CancellationTokenSource(TimeSpan.FromSeconds(30));
+            if (userIds != null && userIds.Any())
             {
-                using var cts = new CancellationTokenSource(TimeSpan.FromSeconds(30));
-                if (userIds != null && userIds.Any())
+                var notiId = Guid.NewGuid();
+                var notification = new Notification(notiId, [], DateTime.Now, eventName, userIds.Select(ui => new UserNotification(ui, notiId)), JsonSerializer.Serialize(data));
+                if(shoudSave) await notificationDbService.CreateAsync(notification);
+                foreach (var userId in userIds)
                 {
-                    foreach (var userId in userIds)
-                    {
-                        await hubContext.Clients.Group(userId).SendAsync(eventName, data, cts.Token);
-
-                    }
-                    var notiId = Guid.NewGuid();
-                    var notification = new Notification(notiId, userIds, DateTime.UtcNow, eventName, userIds.Select(ui => new UserNotification(ui, notiId)));
-                    await notificationDbService.CreateAsync(notification);
-                    //await hubContext.Clients.Users(userIds).SendAsync(eventName, data, cts.Token);
-                }
-                if(!string.IsNullOrEmpty(hubGroup))
-                {
-                    await hubContext.Clients.Group(hubGroup).SendAsync(eventName, data, cts.Token);
+                    await hubContext.Clients.Group(userId).SendAsync(eventName, data, cts.Token);
                 }
             }
-            catch (OperationCanceledException)
+            if(!string.IsNullOrEmpty(hubGroup))
             {
-                logger.LogInformation($"Notification was cancelled due to timeout");
+                await hubContext.Clients.Group(hubGroup).SendAsync(eventName, data, cts.Token);
             }
-            catch (Exception ex)
-            {
-                logger.LogError($"Error sending notification: {ex.Message}");
-            }
-        });
+        }
+        catch (OperationCanceledException)
+        {
+            logger.LogInformation($"Notification was cancelled due to timeout");
+        }
+        catch (Exception ex)
+        {
+            logger.LogError($"Error sending notification: {ex.Message}");
+        }
     }
 }
