@@ -5,8 +5,8 @@ public enum OrderStatus
     Pending, // Chờ store xác nhận
     Processing, // Spore đã xác nhận, đang đợi ship
     Shipped, //Shipper đang cầm hàng và đang giao
-    CustomerNotAvailable, // Khách không có mặt để nhận hàng
     Delivered, // Đã giao hàng
+    CustomerNotAvailable, // Khách không có mặt để nhận hàng
     Cancelled // Hủy đơn hàng
 }
 

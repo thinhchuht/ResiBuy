@@ -51,6 +51,10 @@ interface OrderItemQueryResult {
 export interface OrderApiResult {
   id: string;
   userId: string;
+  shipper : {
+    id : string;
+    phoneNumber : string
+  }
   createAt: string;
   updateAt: string;
   status: OrderStatus;
@@ -333,7 +337,7 @@ const OrderCard = ({ order, onUpdate, onAddressChange, onCancel }: OrderCardProp
     let targetId = "";
     if (reportTargetType === "store") targetId = order.store.id;
     else if (reportTargetType === "user") targetId = order.userId;
-    else if (reportTargetType === "shipper") targetId = order.shipperId || "";
+    else if (reportTargetType === "shipper") targetId = order.shipper?.id || "";
     if (!user) {
       setReportLoading(false);
       setReportOpen(false);
@@ -378,19 +382,16 @@ const OrderCard = ({ order, onUpdate, onAddressChange, onCancel }: OrderCardProp
             Mã đơn hàng: #{order.id}
           </Typography>
           <Typography variant="subtitle2" sx={{ color: "#666" }}>
-            Ngày đặt:{" "}
-            {`${new Date(order.createAt).toLocaleTimeString("vi-VN", {
-              hour: "2-digit",
-              minute: "2-digit",
-            })} - ${new Date(order.createAt).toLocaleDateString("vi-VN")}`}
+            Ngày đặt: {`${new Date(order.createAt).toLocaleTimeString("vi-VN", { hour: "2-digit", minute: "2-digit" })} - ${new Date(order.createAt).toLocaleDateString("vi-VN")}`}
           </Typography>
           <Typography variant="subtitle2" sx={{ color: "#666" }}>
-            Ngày cập nhật:{" "}
-            {`${new Date(order.updateAt).toLocaleTimeString("vi-VN", {
-              hour: "2-digit",
-              minute: "2-digit",
-            })} - ${new Date(order.updateAt).toLocaleDateString("vi-VN")}`}
+            Ngày cập nhật: {`${new Date(order.updateAt).toLocaleTimeString("vi-VN", { hour: "2-digit", minute: "2-digit" })} - ${new Date(order.updateAt).toLocaleDateString("vi-VN")}`}
           </Typography>
+          {order.shipper && order.shipper.phoneNumber && (
+            <Typography variant="subtitle2" sx={{ color: '#1976d2', fontWeight: 600, mt: 0.5 }}>
+              SĐT người giao hàng: {order.shipper.phoneNumber}
+            </Typography>
+          )}
           {order.status === OrderStatus.Cancelled && order.cancelReason && (
             <Typography variant="body2" sx={{ color: 'red', fontWeight: 600, mt: 0.5 }}>
               Lý do hủy đơn: {order.cancelReason}
@@ -741,8 +742,8 @@ const OrderCard = ({ order, onUpdate, onAddressChange, onCancel }: OrderCardProp
             sx={{ borderRadius: 2, background: "#fafafa" }}
           >
             <MenuItem value="store">Cửa hàng</MenuItem>
-            <MenuItem value="user">Người dùng</MenuItem>
-            <MenuItem value="shipper" disabled={!order.shipperId}>Shipper</MenuItem>
+            <MenuItem value="user" disabled={user?.id === order?.userId} >Người dùng</MenuItem>
+            <MenuItem value="shipper" disabled={!order.shipper?.id}>Người giao</MenuItem>
           </TextField>
           <TextField
             label="Tiêu đề báo cáo"

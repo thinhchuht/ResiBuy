@@ -13,7 +13,11 @@ namespace ResiBuy.Server.Application.Queries.OrderQueries
             var orderRs = new OrderQueryResult(
                 order.Id,
                 order.UserId,
-                order.ShipperId,
+                order.Shipper == null ? null : new
+                {
+                    Id = order.ShipperId,
+                    PhoneNumber = order.Shipper.User.PhoneNumber
+                },
                 order.CreateAt,
                 order.UpdateAt,
                 order.Status,

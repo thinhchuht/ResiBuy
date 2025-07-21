@@ -13,7 +13,7 @@
         public record ReportQueryResult(Guid Id, string Title, string Description, DateTime CreatedAt, string CreatedById, string TargetId, Guid OrderId);
         public record RoomQueryResult(Guid Id, string Name, string BuildingName, string AreaName);
         //Voucher query result 
-        public record OrderQueryResult(Guid Id, string UserId, Guid? ShipperId, DateTime CreateAt, DateTime UpdateAt, OrderStatus Status, PaymentStatus PaymentStatus, PaymentMethod PaymentMethod,
+        public record OrderQueryResult(Guid Id, string UserId, object? Shipper, DateTime CreateAt, DateTime UpdateAt, OrderStatus Status, PaymentStatus PaymentStatus, PaymentMethod PaymentMethod,
             decimal TotalPrice, decimal? ShippingFee, string Note, string CancelReason, object Report, RoomQueryResult RoomQueryResult, object Store, object? Voucher, IEnumerable<OrderItemQueryResult> OrderItems);
 
         public record OrderItemQueryResult(Guid Id,int ProductId, int ProductDetailId, string ProductName, int Quantity, decimal Price, object Image);
