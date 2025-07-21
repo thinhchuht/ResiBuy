@@ -13,6 +13,7 @@
                 {
                     s.Id,
                     s.Name,
+                    s.PhoneNumber,
                 })));
         }
     }

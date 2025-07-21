@@ -2,25 +2,28 @@
 {
     public class CalculatePrice
     {
-        public static decimal GetTotalPrice(decimal originalTotal, Voucher voucher)
+        public static decimal GetDiscountAmount(decimal originalTotal, Voucher voucher)
         {
             if (voucher == null)
-                return originalTotal;
+                return 0;
 
-            decimal discount = 0;
             if (voucher.Type == VoucherType.Amount)
             {
-                discount = voucher.DiscountAmount;
+                return voucher.DiscountAmount;
             }
-            else if (voucher.Type == VoucherType.Percentage)
+
+            if (voucher.Type == VoucherType.Percentage)
             {
-                discount = originalTotal * (voucher.DiscountAmount / 100);
-                if (discount > voucher.MaxDiscountPrice)
-                {
-                    discount = voucher.MaxDiscountPrice;
-                }
+                var percentageDiscount = originalTotal * (voucher.DiscountAmount / 100);
+                return Math.Min(percentageDiscount, voucher.MaxDiscountPrice);
             }
-            decimal finalTotal = originalTotal - discount;
+
+            return 0;
+        }
+        public static decimal GetFinalTotal(decimal originalTotal, Voucher voucher)
+        {
+            var discount = GetDiscountAmount(originalTotal, voucher);
+            var finalTotal = Math.Round(originalTotal - discount, MidpointRounding.AwayFromZero);
             return finalTotal > 0 ? finalTotal : 0;
         }
     }

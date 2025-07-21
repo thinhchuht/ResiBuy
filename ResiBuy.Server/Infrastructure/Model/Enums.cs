@@ -2,12 +2,12 @@
 public enum OrderStatus
 {
     None,
-    Pending,
-    Processing,
-    StoreAccepted,
-    Shipped,
-    Delivered,
-    Cancelled
+    Pending, // Chờ store xác nhận
+    Processing, // Spore đã xác nhận, đang đợi ship
+    Shipped, //Shipper đang cầm hàng và đang giao
+    CustomerNotAvailable, // Khách không có mặt để nhận hàng
+    Delivered, // Đã giao hàng
+    Cancelled // Hủy đơn hàng
 }
 
 [JsonConverter(typeof(JsonStringEnumConverter))]
@@ -22,8 +22,8 @@ public enum PaymentMethod
 public enum PaymentStatus
 {
     None,
-    Pending ,
-    Paid,
-    Failed,
-    Refunded,
+    Pending, // Chưa thanh toán
+    Paid, // Đã thanh tonas
+    Failed, // Thanh toán thất bại
+    Refunded, // Đã hoàn tiền
 }

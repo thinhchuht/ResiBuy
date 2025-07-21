@@ -28,7 +28,7 @@ namespace ResiBuy.Server.Services.MyBackgroundService
 
                     try
                     {
-                        var orders = await orderDbService.getOrdersByStatus(OrderStatus.StoreAccepted);
+                        var orders = await orderDbService.getOrdersByStatus(OrderStatus.Processing);
                         if (orders.Any())
                         {
                             foreach (var orderGroup in orders.GroupBy(o => o.Store.Room.Building.AreaId))
@@ -46,7 +46,7 @@ namespace ResiBuy.Server.Services.MyBackgroundService
                                 {
                                     var shipper = shippers[shipperIndex];
 
-                                    notificationService.SendNotification("ReceiveOrderNotification", new
+                                    await notificationService.SendNotificationAsync("ReceiveOrderNotification", new
                                     {
                                         OrderId = order.Id,
                                         TotalPrice = order.TotalPrice,

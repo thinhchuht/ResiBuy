@@ -28,6 +28,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         try {
           const response = await userApi.getById(userId);
           if (response.data) {
+            console.log(response.data)
             setUser(response.data);
           }
         } catch (error) {

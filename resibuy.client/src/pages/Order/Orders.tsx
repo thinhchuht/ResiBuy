@@ -53,6 +53,7 @@ const orderStatusTabs = [
   OrderStatus.Pending,
   OrderStatus.Processing,
   OrderStatus.Shipped,
+  OrderStatus.CustomerNotAvailable,
   OrderStatus.Delivered,
   OrderStatus.Cancelled,
 ];
@@ -81,9 +82,8 @@ const Orders = () => {
         PaymentMethod.None,
         PaymentStatus.None,
         undefined, // storeId
-        undefined, // shipperId
         user.id,
-        undefined,
+        undefined, // shipperId
         page,
         ordersPerPage,
         startDate || undefined,
@@ -239,6 +239,7 @@ const Orders = () => {
               <StyledTab label="Chờ xác nhận" />
               <StyledTab label="Đang xử lý" />
               <StyledTab label="Đang giao" />
+              <StyledTab label="Chờ nhận" />
               <StyledTab label="Đã giao" />
               <StyledTab label="Đã hủy" />
             </StyledTabs>

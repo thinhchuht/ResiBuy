@@ -1,6 +1,6 @@
 using ResiBuy.Server.Infrastructure.Model.DTOs.CheckoutDtos;
 
-namespace ResiBuy.Server.Services.CheckoutSessionService;
+namespace ResiBuy.Server.Services.MyBackgroundService.CheckoutSessionService;
 
 public interface ICheckoutSessionService
 {

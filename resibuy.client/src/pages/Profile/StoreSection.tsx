@@ -258,6 +258,12 @@ const StoreSection = () => {
                     <Typography variant="body1" fontWeight={500}>
                       {renderAddress(selectedStore.room)}
                     </Typography>
+                    <Typography variant="subtitle2" color="text.secondary" mb={0.5} mt={1}>
+                      Số điện thoại
+                    </Typography>
+                    <Typography variant="body1" fontWeight={600} color="#e91e63">
+                      {selectedStore.phoneNumber || <span style={{ color: '#bdbdbd' }}>Chưa cập nhật</span>}
+                    </Typography>
                   </Box>
                   {/* Mô tả */}
                   <Box mb={3}>

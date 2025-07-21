@@ -68,7 +68,7 @@ const CartItemSection = ({
     if (value > 10) {
       value = 10;
     }
-    setLocalQuantities((prev) => ({ ...prev, [productDetailId]: value }));
+    // Không setLocalQuantities ở đây nữa
     getDebouncedChange(productDetailId)(productDetailId, value);
   };
 
@@ -76,7 +76,7 @@ const CartItemSection = ({
   const handleQuantityButton = (productDetailId: number, newQuantity: number) => {
     if (newQuantity < 1) newQuantity = 1;
     if (newQuantity > 10) newQuantity = 10;
-    setLocalQuantities((prev) => ({ ...prev, [productDetailId]: newQuantity }));
+    // Không setLocalQuantities ở đây nữa
     getDebouncedChange(productDetailId)(productDetailId, newQuantity);
   };
 
