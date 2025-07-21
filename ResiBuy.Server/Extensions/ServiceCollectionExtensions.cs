@@ -1,17 +1,14 @@
-
-using ResiBuy.Server.Infrastructure.DbServices.CategoryDbServices;
-using ResiBuy.Server.Infrastructure.DbServices.ProductDbServices;
-using ResiBuy.Server.Infrastructure.DbServices.ShipperDbServices;
-using ResiBuy.Server.Infrastructure.DbServices.StoreDbServices;
-using ResiBuy.Server.Services.MailServices;
 using ResiBuy.Server.Infrastructure.DbServices.CartItemDbService;
 using ResiBuy.Server.Infrastructure.DbServices.OrderDbServices;
 using ResiBuy.Server.Infrastructure.DbServices.OrderItemDbServices;
-using ResiBuy.Server.Services.CheckoutSessionService;
 using ResiBuy.Server.Infrastructure.DbServices.ProductDetailDbServices;
+using ResiBuy.Server.Services.MyBackgroundService;
+using ResiBuy.Server.Services.MyBackgroundService.CheckoutSessionService;
+using ResiBuy.Server.Services.OpenRouteService;
 using ResiBuy.Server.Services.ShippingCost;
 using ResiBuy.Server.Services.OpenRouteService;
 using ResiBuy.Server.Services.MyBackgroundService;
+using ResiBuy.Server.Services.MapBoxService;
 
 
 namespace ResiBuy.Server.Extensions
@@ -49,6 +46,7 @@ namespace ResiBuy.Server.Extensions
             services.AddScoped<IProductDetailDbService, ProductDetailDbService>();
             services.AddHttpClient<GoogleDistanceService>();
             services.AddHttpClient<OpenRouteService>();
+            services.AddHttpClient<MapBoxService>();
             services.AddHostedService<AssignOrderForShipper>();
 
             return services;

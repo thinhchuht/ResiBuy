@@ -6,6 +6,7 @@
         public Guid StoreId { get; set; }
         public Guid? VoucherId { get; set; }
         public string Note { get; set; }
+        public decimal TotalBeforeDiscount { get; set; }
         public decimal TotalPrice { get; set; }
         public decimal ShippingFee { get; set; } = 0;
         public decimal DiscountAmount { get; set; }

@@ -1,30 +1,80 @@
-import { useState } from "react";
-import type { Category, Product } from "../../../../types/models";
-import { fakeCategories } from "../../../../fakeData/fakeCategoryData";
-import { fakeProducts } from "../../../../fakeData/fakeProductData";
+import { useState, useEffect, useCallback } from "react";
+import categoryApi from "../../../../api/category.api";
+import productApi from "../../../../api/product.api";
 import { useToastify } from "../../../../hooks/useToastify";
+import type { CategoryImage, CreateCategoryDto, UpdateCategoryDto } from "../../../../types/dtoModels";
 
-// Định nghĩa interface cho dữ liệu form danh mục
-export interface CategoryFormData {
+
+export interface Category {
+  id: string;
   name: string;
+  status: string;
+  image: CategoryImage & { categoryId?: string };
 }
 
-// Hook quản lý danh mục
+
+export interface CategoryFormData {
+  name: string;
+  status?: string; // Thêm status vào form
+  image?: CategoryImage;
+}
+
+
 export function useCategoriesLogic() {
-  const [categories, setCategories] = useState<Category[]>(fakeCategories);
+  const [categories, setCategories] = useState<Category[]>([]);
   const [selectedCategory, setSelectedCategory] = useState<Category | null>(null);
   const [isDetailModalOpen, setIsDetailModalOpen] = useState(false);
   const [isAddModalOpen, setIsAddModalOpen] = useState(false);
   const [editingCategory, setEditingCategory] = useState<Category | null>(null);
 
-  const toast = useToastify();
+  const { toast } = useToastify();
 
-  const handleViewCategory = (category: Category) => {
-    setSelectedCategory(category);
-    setIsDetailModalOpen(true);
+
+  const fetchCategories = useCallback(async () => {
+    try {
+      const response = await categoryApi.getAll();
+      console.log("API response in fetchCategories:", response);
+      if (response?.code === 0 && Array.isArray(response.data)) {
+        setCategories(response.data);
+      } else {
+        throw new Error(response?.message || "Dữ liệu danh mục không hợp lệ");
+      }
+    } catch (err: any) {
+      console.error("Fetch categories error:", err);
+      toast.error(err.message || "Lỗi khi lấy danh sách danh mục");
+      setCategories([]);
+    }
+  }, [toast]);
+
+  // Gọi API khi component mount
+  useEffect(() => {
+    fetchCategories();
+  }, [fetchCategories]);
+
+  const handleViewCategory = async (categoryId: string) => {
+    if (!categoryId) {
+      console.error("handleViewCategory: Invalid categoryId", categoryId);
+      toast.error("ID danh mục không hợp lệ");
+      return;
+    }
+    try {
+      const response = await categoryApi.getById(categoryId);
+      console.log("View category response:", response);
+      if (response?.code === 0 && response.data?.id) {
+        setSelectedCategory(response.data);
+        setIsDetailModalOpen(true);
+        console.log("setIsDetailModalOpen(true) called, selectedCategory:", response.data);
+      } else {
+        throw new Error("Danh mục không hợp lệ");
+      }
+    } catch (err: any) {
+      console.error("View category error:", err);
+      toast.error(err.message || "Lỗi khi lấy chi tiết danh mục");
+    }
   };
 
   const handleCloseDetailModal = () => {
+    console.log("handleCloseDetailModal called, isDetailModalOpen:", false);
     setIsDetailModalOpen(false);
     setSelectedCategory(null);
   };
@@ -44,91 +94,149 @@ export function useCategoriesLogic() {
     setEditingCategory(null);
   };
 
-  const handleSubmitCategory = (categoryData: Category) => {
-    if (editingCategory) {
-      // Cập nhật danh mục hiện tại
-      setCategories((prev) =>
-        prev.map((category) =>
-          category.id === categoryData.id ? categoryData : category
-        )
-      );
-      // Cập nhật selectedCategory nếu đang xem chi tiết
-      if (selectedCategory && selectedCategory.id === categoryData.id) {
-        setSelectedCategory(categoryData);
-        toast.success("Cập nhật danh mục thành công!");
+  const handleSubmitCategory = async (categoryData: CategoryFormData) => {
+    try {
+      if (editingCategory) {
+        const updateData: UpdateCategoryDto = {
+          id: editingCategory.id,
+          name: categoryData.name,
+          status: categoryData.status || editingCategory.status || "active",
+          image: categoryData.image || editingCategory.image || { id: "", url: "", thumbUrl: "", name: "" },
+        };
+        console.log("Calling categoryApi.update with:", updateData);
+        await categoryApi.update(updateData);
+        console.log("Update successful");
+        await fetchCategories();
+      } else {
+        const createData: CreateCategoryDto = {
+          name: categoryData.name,
+          status: categoryData.status || "", // Sử dụng status từ form, mặc định là "active"
+          image: categoryData.image || { id: "", url: "", thumbUrl: "", name: "" },
+        };
+        console.log("Calling categoryApi.create with:", createData);
+        await categoryApi.create(createData);
+        console.log("Create successful");
+        await fetchCategories();
       }
-    } else {
-      // Thêm danh mục mới
-      setCategories((prev) => [...prev, categoryData]);
-      toast.success("Thêm danh mục mới thành công!");
+      setIsAddModalOpen(false);
+      setEditingCategory(null);
+    } catch (err: any) {
+      console.error("Submit category error:", err);
+      toast.error(err.message || "Lỗi khi lưu danh mục");
     }
-    setIsAddModalOpen(false);
-    setEditingCategory(null);
   };
 
-  const handleDeleteCategory = (categoryId: string) => {
+  const handleDeleteCategory = async (categoryId: string) => {
+    if (!categoryId) {
+      toast.error("ID danh mục không hợp lệ");
+      return;
+    }
     if (
       confirm(
         "Bạn có chắc chắn muốn xóa danh mục này? Hành động này không thể hoàn tác."
       )
     ) {
-      setCategories((prev) => prev.filter((category) => category.id !== categoryId));
-      if (selectedCategory && selectedCategory.id === categoryId) {
-        handleCloseDetailModal();
+      try {
+        await categoryApi.delete(categoryId);
+        console.log("Delete successful for category:", categoryId);
+        await fetchCategories();
+        if (selectedCategory && selectedCategory.id === categoryId) {
+          handleCloseDetailModal();
+        }
+        toast.success("Xóa danh mục thành công!");
+      } catch (err: any) {
+        console.error("Delete category error:", err);
+        toast.error(err.message || "Lỗi khi xóa danh mục");
       }
-      toast.success("Xóa danh mục thành công!");
     }
   };
 
-  const handleExportCategories = () => {
-    const headers = [
-      "Category ID",
-      "Name",
-      "Total Products",
-    ];
-    const csvContent = [
-      headers.join(","),
-      ...categories.map((category) =>
-        [
-          category.id,
-          `"${category.name}"`,
-          category.products.length,
-        ].join(",")
-      ),
-    ].join("\n");
+  const handleExportCategories = async () => {
+    try {
+      const response = await categoryApi.getAll();
+      const categories = response?.code === 0 ? response.data : [];
+      console.log("Export categories:", categories);
+      const headers = ["Category ID", "Name", "Total Products"];
+      const csvContent = [
+        headers.join(","),
+        ...(await Promise.all(
+          categories.map(async (category: Category) => {
+            const totalProducts = await countProductsByCategoryId(category.id);
+            return [category.id, `"${category.name}"`, totalProducts].join(",");
+          })
+        )),
+      ].join("\n");
 
-    const blob = new Blob([csvContent], { type: "text/csv" });
-    const url = window.URL.createObjectURL(blob);
-    const a = document.createElement("a");
-    a.href = url;
-    a.download = `categories_${new Date().toISOString().split("T")[0]}.csv`;
-    a.click();
-    window.URL.revokeObjectURL(url);
-    toast.success("Export danh sách danh mục thành công!");
+      const blob = new Blob([csvContent], { type: "text/csv" });
+      const url = window.URL.createObjectURL(blob);
+      const a = document.createElement("a");
+      a.href = url;
+      a.download = `categories_${new Date().toISOString().split("T")[0]}.csv`;
+      a.click();
+      window.URL.revokeObjectURL(url);
+      toast.success("Export danh sách danh mục thành công!");
+    } catch (err: any) {
+      console.error("Export categories error:", err);
+      toast.error(err.message || "Lỗi khi xuất danh sách danh mục");
+    }
   };
 
-  // Hàm đếm số sản phẩm của một danh mục theo categoryId
-  const countProductsByCategoryId = (categoryId: string): number => {
-    const category = categories.find((category) => category.id === categoryId);
-    return category ? category.products.length : 0;
-  };
 
-  // Hàm đếm tổng số sản phẩm đã bán của một danh mục
-  const countSoldProductsByCategoryId = (categoryId: string): number => {
-    const category = categories.find((category) => category.id === categoryId);
-    if (!category) return 0;
-    return category.products.reduce((sum, product) => sum + (product.sold || 0), 0);
-  };
+  const countProductsByCategoryId = useCallback(async (categoryId: string): Promise<number> => {
+    if (!categoryId) {
+      console.error("countProductsByCategoryId: Invalid categoryId", categoryId);
+      return 0;
+    }
+    try {
+      const response = await categoryApi.countProductsByCategoryId(categoryId);
+      console.log(`Count products for ${categoryId} - Full response:`, response);
+      console.log(`Count products for ${categoryId}:`, response.data.count);
+      return Number(response.data.count) || 0; // Lấy response.data.count
+    } catch (err: any) {
+      console.error(`Count products error for ${categoryId}:`, err);
+      toast.error(err.message || "Lỗi khi đếm sản phẩm theo danh mục");
+      return 0;
+    }
+  }, [toast]);
+ const getProductsByCategoryId = useCallback(async (categoryId) => {
+    try {
+      const response = await productApi.getAll({ categoryId, pageNumber: 1, pageSize: 100 });
+      return response.items || [];
+    } catch (err) {
+      toast.error(err.message || "Lỗi khi lấy danh sách sản phẩm");
+      return [];
+    }
+  }, [toast]);
 
-  // Hàm tính tổng doanh thu của một danh mục
-  const calculateCategoryRevenue = (categoryId: string): number => {
-    const category = categories.find((category) => category.id === categoryId);
-    if (!category) return 0;
-    return category.products.reduce(
-      (sum, product) => sum + product.price * (product.sold || 0),
-      0
-    );
-  };
+  const countSoldProductsByCategoryId = useCallback(async (categoryId: string): Promise<number> => {
+    if (!categoryId) {
+      console.error("countSoldProductsByCategoryId: Invalid categoryId", categoryId);
+      return 0;
+    }
+    try {
+      toast.info("API đếm sản phẩm đã bán theo danh mục chưa được triển khai");
+      return 0;
+    } catch (err: any) {
+      console.error(`Count sold products error for ${categoryId}:`, err);
+      toast.error(err.message || "Lỗi khi đếm sản phẩm đã bán theo danh mục");
+      return 0;
+    }
+  }, [toast]);
+
+  const calculateCategoryRevenue = useCallback(async (categoryId: string): Promise<number> => {
+    if (!categoryId) {
+      console.error("calculateCategoryRevenue: Invalid categoryId", categoryId);
+      return 0;
+    }
+    try {
+      toast.info("API tính doanh thu theo danh mục chưa được triển khai");
+      return 0;
+    } catch (err: any) {
+      console.error(`Calculate revenue error for ${categoryId}:`, err);
+      toast.error(err.message || "Lỗi khi tính doanh thu theo danh mục");
+      return 0;
+    }
+  }, [toast]);
 
   return {
     categories,
@@ -145,32 +253,56 @@ export function useCategoriesLogic() {
     handleDeleteCategory,
     handleExportCategories,
     countProductsByCategoryId,
+    getProductsByCategoryId,
     countSoldProductsByCategoryId,
     calculateCategoryRevenue,
+    fetchCategories,
   };
 };
 
-// Hook quản lý form danh mục
+
 export const useCategoryForm = (editCategory?: Category | null) => {
   const [formData, setFormData] = useState<CategoryFormData>({
     name: editCategory?.name || "",
+    status: editCategory?.status || "active",
+    image: editCategory?.image || undefined,
   });
 
-  const [errors, setErrors] = useState<any>({});
+  const [errors, setErrors] = useState<Partial<CategoryFormData>>({});
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const { toast } = useToastify();
 
-  const handleInputChange = (field: string, value: any) => {
+  useEffect(() => {
+    if (editCategory) {
+      setFormData({
+        name: editCategory.name || "",
+        status: editCategory.status || "active",
+        image: editCategory.image || undefined,
+      });
+    } else {
+      setFormData({
+        name: "",
+        status: "active",
+        image: undefined,
+      });
+    }
+  }, [editCategory]);
+
+  const handleInputChange = (field: keyof CategoryFormData, value: any) => {
     setFormData((prev) => ({ ...prev, [field]: value }));
     if (errors[field]) {
-      setErrors((prev: any) => ({ ...prev, [field]: "" }));
+      setErrors((prev) => ({ ...prev, [field]: undefined }));
     }
   };
 
   const validateForm = (data: CategoryFormData) => {
-    const errors: any = {};
+    const errors: Partial<CategoryFormData> = {};
 
     if (!data.name?.trim()) {
       errors.name = "Tên danh mục là bắt buộc";
+    }
+    if (!data.status?.trim()) {
+      errors.status = "Trạng thái là bắt buộc";
     }
 
     return errors;
@@ -178,34 +310,28 @@ export const useCategoryForm = (editCategory?: Category | null) => {
 
   const handleSubmit = async (
     e: React.FormEvent,
-    onSubmit: (data: Category) => void
+    onSubmit: (data: CategoryFormData) => void
   ) => {
     e.preventDefault();
     setIsSubmitting(true);
     setErrors({});
 
+    console.log("useCategoryForm handleSubmit called with:", formData);
     const validationErrors = validateForm(formData);
 
     if (Object.keys(validationErrors).length > 0) {
+      console.log("Validation errors:", validationErrors);
       setErrors(validationErrors);
       setIsSubmitting(false);
       return;
     }
 
-    const categoryData: Category = {
-      ...formData,
-      id:
-        editCategory?.id ||
-        `CATEGORY-${Math.floor(Math.random() * 10000)
-          .toString()
-          .padStart(3, "0")}`,
-      products: editCategory?.products || [],
-    };
-
     try {
-      await onSubmit(categoryData);
-    } catch (error) {
-      console.error("Lỗi khi submit danh mục:", error);
+      await onSubmit(formData);
+      toast.success(editCategory ? "Cập nhật danh mục thành công!" : "Thêm danh mục mới thành công!");
+    } catch (error: any) {
+      console.error("Submit form error:", error);
+      toast.error("Lỗi khi submit danh mục");
     } finally {
       setIsSubmitting(false);
     }
@@ -221,31 +347,23 @@ export const useCategoryForm = (editCategory?: Category | null) => {
 };
 
 // Hàm tính thống kê danh mục
-export const calculateCategoryStats = (categories: Category[]) => {
-  const totalCategories = categories.length;
-  const totalProducts = categories.reduce(
-    (sum, category) => sum + category.products.length,
-    0
-  );
-  const totalRevenue = categories.reduce(
-    (sum, category) =>
-      sum +
-      category.products.reduce(
-        (productSum, product) => productSum + product.price * (product.sold || 0),
-        0
-      ),
-    0
-  );
-
- 
-
-  return {
-    totalCategories,
-    totalProducts,
-    totalRevenue,
-
-    
-  };
+export const calculateCategoryStats = async () => {
+  try {
+    const response = await categoryApi.countAll();
+    const count = response?.data?.count ?? 0;
+    return {
+      totalCategories: count,
+      totalProducts: 0,
+      totalRevenue: 0,
+    };
+  } catch (err: any) {
+    console.error("Error in calculateCategoryStats:", err);
+    return {
+      totalCategories: 0,
+      totalProducts: 0,
+      totalRevenue: 0,
+    };
+  }
 };
 
 // Hàm định dạng tiền tệ

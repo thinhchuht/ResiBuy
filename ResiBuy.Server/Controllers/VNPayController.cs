@@ -1,6 +1,6 @@
 ﻿using ResiBuy.Server.Infrastructure.DbServices.VoucherDbServices;
 using ResiBuy.Server.Infrastructure.Model.DTOs.CheckoutDtos;
-using ResiBuy.Server.Services.CheckoutSessionService;
+using ResiBuy.Server.Services.MyBackgroundService.CheckoutSessionService;
 using ResiBuy.Server.Services.RedisServices;
 
 namespace ResiBuy.Server.Controllers

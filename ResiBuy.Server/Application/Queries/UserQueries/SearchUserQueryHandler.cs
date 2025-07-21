@@ -41,6 +41,7 @@
                 {
                      s.Id,
                      s.Name,
+                     s.PhoneNumber,
                 })
             )).ToList();
             return ResponseModel.SuccessResponse(new PagedResult<UserQueryResult>(items, pagedResult.TotalCount, pagedResult.PageNumber, pagedResult.PageSize));

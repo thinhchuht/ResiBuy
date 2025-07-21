@@ -72,7 +72,7 @@
                 []
             );
 
-            notificationService.SendNotification("UserUpdated", updatedUser, Constants.AdminHubGroup, [updatedUser.Id]);
+            await notificationService.SendNotificationAsync("UserUpdated", updatedUser, Constants.AdminHubGroup, [updatedUser.Id]);
             return ResponseModel.SuccessResponse(userResult);
         }
     }

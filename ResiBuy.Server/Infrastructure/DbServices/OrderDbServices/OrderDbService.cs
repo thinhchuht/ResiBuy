@@ -1,15 +1,16 @@
-﻿using ResiBuy.Server.Services.OpenRouteService;
+﻿using ResiBuy.Server.Services.MapBoxService;
+using ResiBuy.Server.Services.OpenRouteService;
 
 namespace ResiBuy.Server.Infrastructure.DbServices.OrderDbServices;
 
 public class OrderDbService : BaseDbService<Order>, IOrderDbService
 {
     private readonly ResiBuyContext _context;
-    private readonly OpenRouteService _openRouteService;
-    public OrderDbService(ResiBuyContext context, OpenRouteService openRouteService) : base(context)
+    private readonly MapBoxService _mapBoxService;
+    public OrderDbService(ResiBuyContext context, MapBoxService mapBoxService) : base(context)
     {
         this._context = context;
-        this._openRouteService = openRouteService;
+        this._mapBoxService = mapBoxService;
     }
     public async Task<PagedResult<Order>> GetAllAsync(OrderStatus orderStatus, PaymentMethod paymentMethod, PaymentStatus paymentStatus, Guid storeId, Guid shipperId, string userId = null, int pageNumber = 1, int pageSize = 10, DateTime? startDate = null, DateTime? endDate = null)
     {
@@ -85,6 +86,7 @@ public class OrderDbService : BaseDbService<Order>, IOrderDbService
         }
 
     }
+
     public async Task<Order> GetById(Guid id)
     {
         return await _context.Orders.Include(o => o.ShippingAddress).ThenInclude(sa => sa.Building).ThenInclude(b => b.Area)
@@ -95,11 +97,33 @@ public class OrderDbService : BaseDbService<Order>, IOrderDbService
                 .Include(o => o.Shipper).ThenInclude(s => s.User)
                 .Include(o => o.Reports).FirstOrDefaultAsync(o => o.Id == id);
     }
+
+    public async Task<List<Order>> GetCancelledOrders()
+    {
+        return await _context.Orders.Where(o => o.Status == OrderStatus.Cancelled && o.PaymentMethod == PaymentMethod.BankTransfer && o.PaymentStatus == PaymentStatus.Paid).ToListAsync();
+    }
+
+    public async Task<decimal> GetMonthlyBankRevenue(Guid storeId, int month)
+    {
+        var now = DateTime.Now;
+        int year = now.Month == month ? now.Year : (now.Month < month ? now.Year - 1 : now.Year);
+        var startDate = new DateTime(year, month, 1);
+        var endDate = startDate.AddMonths(1);
+        return await _context.Orders
+            .Where(o => o.Status == OrderStatus.Delivered
+                && o.PaymentMethod == PaymentMethod.BankTransfer
+                && o.PaymentStatus == PaymentStatus.Paid
+                && o.StoreId == storeId
+                && o.UpdateAt >= startDate
+                && o.UpdateAt < endDate)
+            .SumAsync(o => o.TotalPrice);
+    }
+
     public async Task<List<Order>> getOrdersByStatus(OrderStatus orderStatus)
     {
         try
         {
-            return await _context.Orders.Where(o => o.Status == orderStatus)
+            return await _context.Orders.Where(o => o.Status == orderStatus && o.PaymentMethod == PaymentMethod.BankTransfer)
                 .Include(o => o.Store).ThenInclude(s => s.Room)
                 .ThenInclude(r => r.Building).ThenInclude(b => b.Area)
                 .ToListAsync();
@@ -130,7 +154,7 @@ public class OrderDbService : BaseDbService<Order>, IOrderDbService
             decimal distanceFee = 0;
             if (shippingRoom.Building.AreaId != storeRoom.Building.AreaId)
             {
-               var route = await _openRouteService.GetRouteAsync(
+               var route = await _mapBoxService.GetDirectionsAsync(
                        shippingRoom.Building.Area.Latitude,
                        shippingRoom.Building.Area.Longitude,
                        storeRoom.Building.Area.Latitude,
@@ -140,7 +164,7 @@ public class OrderDbService : BaseDbService<Order>, IOrderDbService
                 {
                     throw new CustomException(ExceptionErrorCode.ValidationFailed, "Không thể tính toán khoảng cách giao hàng");
                 }
-                var distance = route.Routes[0].Summary.Distance; // distance in meters
+                var distance = route.Routes[0].Distance; // distance in meters
                 if (distance > 200)
                 {
                     distanceFee = (decimal)(Math.Round(distance / 500) * 5000); // 5000đ/500m

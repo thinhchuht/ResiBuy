@@ -6,5 +6,8 @@ namespace ResiBuy.Server.Infrastructure.DbServices.CategoryDbServices
     {
         Task<Category> GetByIdAsync(Guid id);
         Task<IEnumerable<Category>> GetAllCategoryAsync();
+        Task<int> CountAllCategoriesAsync();
+        Task<int> CountProductsByCategoryIdAsync(Guid categoryId);
+
     }
 }

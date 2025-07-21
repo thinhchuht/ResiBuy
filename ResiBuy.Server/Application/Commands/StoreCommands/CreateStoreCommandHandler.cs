@@ -3,6 +3,7 @@ namespace ResiBuy.Server.Application.Commands.StoreCommands
     public record CreateStoreCommand(
         string Name,
         string Description,
+        string PhoneNumber,
         string OwnerId,
         Guid RoomId
     ) : IRequest<ResponseModel>;
@@ -31,10 +32,13 @@ namespace ResiBuy.Server.Application.Commands.StoreCommands
             if (await _storeDbService.CheckRoomIsAvailable(command.RoomId))
                 throw new CustomException(ExceptionErrorCode.DuplicateValue, "Room đã có người sử dụng");
             if ((await _storeDbService.CheckStoreIsAvailable(command.Name))) throw new CustomException(ExceptionErrorCode.ValidationFailed, "Tên cửa hàng đã tồn tại, thử lại 1 tên khác.");
+            //if ((await _storeDbService.CheckStorePhoneIsAvailable(command.PhoneNumber))) throw new CustomException(ExceptionErrorCode.ValidationFailed, "Số điện thoại cửa hàng đã tồn tại, thử lại 1 số khác.");
+            if (!Regex.IsMatch(command.PhoneNumber, Constants.PhoneNumberPattern)) throw new CustomException(ExceptionErrorCode.ValidationFailed, "Số điện thoại không hợp lệ");
             var store = new Store
             {
                 Name = command.Name,
                 Description = command.Description,
+                PhoneNumber = command.PhoneNumber,
                 IsLocked = false,
                 IsOpen = true,
                 ReportCount = 0,

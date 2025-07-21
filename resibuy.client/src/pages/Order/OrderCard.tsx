@@ -24,6 +24,7 @@ import WarningAmberIcon from "@mui/icons-material/WarningAmber";
 import cartApi from "../../api/cart.api";
 import { debounce } from "lodash";
 import type { BuildingDto, RoomDto } from "../../types/dtoModels";
+import reportApi from "../../api/report.api";
 
 // Define types matching API result
 interface RoomQueryResult {
@@ -50,6 +51,10 @@ interface OrderItemQueryResult {
 export interface OrderApiResult {
   id: string;
   userId: string;
+  shipper : {
+    id : string;
+    phoneNumber : string
+  }
   createAt: string;
   updateAt: string;
   status: OrderStatus;
@@ -58,10 +63,12 @@ export interface OrderApiResult {
   totalPrice: number;
   shippingFee: number
   note: string;
+  cancelReason: string;
   roomQueryResult: RoomQueryResult;
   store: Store;
   voucher: Voucher;
   orderItems: OrderItemQueryResult[];
+  shipperId?: string;
 }
 
 interface OrderCardProps {
@@ -95,6 +102,12 @@ const OrderCard = ({ order, onUpdate, onAddressChange, onCancel }: OrderCardProp
   const [roomPage, setRoomPage] = useState(1);
   const [roomHasMore, setRoomHasMore] = useState(true);
   const [roomLoadingMore, setRoomLoadingMore] = useState(false);
+  const [cancelOpen, setCancelOpen] = useState(false);
+  const [cancelReason, setCancelReason] = useState("");
+  const [cancelOtherReason, setCancelOtherReason] = useState("");
+  const [cancelLoading, setCancelLoading] = useState(false);
+  const cancelReasons = ["Đổi ý", "Tìm được giá tốt hơn", "Thời gian giao hàng lâu", "Lý do khác"];
+  const [reportTargetType, setReportTargetType] = useState<"store" | "user" | "shipper">("store");
 
   const getStatusColor = (status: OrderStatus) => {
     switch (status) {
@@ -178,9 +191,9 @@ const OrderCard = ({ order, onUpdate, onAddressChange, onCancel }: OrderCardProp
     }
   };
 
-  const handleCancelOrder = async () => {
+  const handleCancelOrder = async (reason: string) => {
     if (user) {
-      await orderApi.updateOrderSatus(user?.id, order.id, OrderStatus.Cancelled);
+      await orderApi.updateOrderSatus(user?.id, order.id, OrderStatus.Cancelled, reason);
       if (onCancel) onCancel(order.id);
       if (onUpdate) onUpdate();
     }
@@ -321,11 +334,32 @@ const OrderCard = ({ order, onUpdate, onAddressChange, onCancel }: OrderCardProp
   const handleCloseReport = () => setReportOpen(false);
   const handleSubmitReport = async () => {
     setReportLoading(true);
-    setTimeout(() => {
+    let targetId = "";
+    if (reportTargetType === "store") targetId = order.store.id;
+    else if (reportTargetType === "user") targetId = order.userId;
+    else if (reportTargetType === "shipper") targetId = order.shipper?.id || "";
+    if (!user) {
       setReportLoading(false);
       setReportOpen(false);
-      toast.error("Đã gửi báo cáo (demo)");
-    }, 1000);
+      toast.error("Bạn cần đăng nhập để gửi báo cáo!");
+      return;
+    }
+    try {
+      await reportApi.create({
+        orderId: order.id,
+        userId: user.id,
+        targetId,
+        title: reportTitle,
+        description: reportReason === "Khác" ? reportOtherReason : reportReason,
+      });
+      setReportLoading(false);
+      setReportOpen(false);
+      toast.success("Đã gửi báo cáo thành công!");
+    } catch {
+      setReportLoading(false);
+      setReportOpen(false);
+      toast.error("Gửi báo cáo thất bại!");
+    }
   };
 
   return (
@@ -348,19 +382,21 @@ const OrderCard = ({ order, onUpdate, onAddressChange, onCancel }: OrderCardProp
             Mã đơn hàng: #{order.id}
           </Typography>
           <Typography variant="subtitle2" sx={{ color: "#666" }}>
-            Ngày đặt:{" "}
-            {`${new Date(order.createAt).toLocaleTimeString("vi-VN", {
-              hour: "2-digit",
-              minute: "2-digit",
-            })} - ${new Date(order.createAt).toLocaleDateString("vi-VN")}`}
+            Ngày đặt: {`${new Date(order.createAt).toLocaleTimeString("vi-VN", { hour: "2-digit", minute: "2-digit" })} - ${new Date(order.createAt).toLocaleDateString("vi-VN")}`}
           </Typography>
           <Typography variant="subtitle2" sx={{ color: "#666" }}>
-            Ngày cập nhật:{" "}
-            {`${new Date(order.updateAt).toLocaleTimeString("vi-VN", {
-              hour: "2-digit",
-              minute: "2-digit",
-            })} - ${new Date(order.updateAt).toLocaleDateString("vi-VN")}`}
+            Ngày cập nhật: {`${new Date(order.updateAt).toLocaleTimeString("vi-VN", { hour: "2-digit", minute: "2-digit" })} - ${new Date(order.updateAt).toLocaleDateString("vi-VN")}`}
           </Typography>
+          {order.shipper && order.shipper.phoneNumber && (
+            <Typography variant="subtitle2" sx={{ color: '#1976d2', fontWeight: 600, mt: 0.5 }}>
+              SĐT người giao hàng: {order.shipper.phoneNumber}
+            </Typography>
+          )}
+          {order.status === OrderStatus.Cancelled && order.cancelReason && (
+            <Typography variant="body2" sx={{ color: 'red', fontWeight: 600, mt: 0.5 }}>
+              Lý do hủy đơn: {order.cancelReason}
+            </Typography>
+          )}
         </Box>
         <Box sx={{ display: "flex", gap: 1 }}>
           <Chip
@@ -553,7 +589,7 @@ const OrderCard = ({ order, onUpdate, onAddressChange, onCancel }: OrderCardProp
         </Box>
         <Box sx={{ display: "flex", gap: 2 }}>
           {order.status === OrderStatus.Pending && (
-            <Button variant="outlined" color="error" sx={{ borderRadius: 2, textTransform: "none", px: 3 }} onClick={handleCancelOrder}>
+            <Button variant="outlined" color="error" sx={{ borderRadius: 2, textTransform: "none", px: 3 }} onClick={() => setCancelOpen(true)}>
               Hủy đơn
             </Button>
           )}
@@ -696,6 +732,20 @@ const OrderCard = ({ order, onUpdate, onAddressChange, onCancel }: OrderCardProp
             Nếu bạn gặp vấn đề với đơn hàng, hãy gửi báo cáo để chúng tôi hỗ trợ nhanh nhất.
           </Typography>
           <TextField
+            select
+            label="Đối tượng báo cáo"
+            value={reportTargetType}
+            onChange={e => setReportTargetType(e.target.value as "store" | "user" | "shipper")}
+            fullWidth
+            variant="outlined"
+            size="small"
+            sx={{ borderRadius: 2, background: "#fafafa" }}
+          >
+            <MenuItem value="store">Cửa hàng</MenuItem>
+            <MenuItem value="user" disabled={user?.id === order?.userId} >Người dùng</MenuItem>
+            <MenuItem value="shipper" disabled={!order.shipper?.id}>Người giao</MenuItem>
+          </TextField>
+          <TextField
             label="Tiêu đề báo cáo"
             value={reportTitle}
             onChange={(e) => setReportTitle(e.target.value)}
@@ -762,6 +812,81 @@ const OrderCard = ({ order, onUpdate, onAddressChange, onCancel }: OrderCardProp
             disabled={reportLoading || !reportTitle || !reportReason || (reportReason === "Khác" && !reportOtherReason)}
             sx={{ borderRadius: 2, fontWeight: 700, boxShadow: "0 2px 8px #ff980033" }}>
             Gửi báo cáo
+          </Button>
+        </DialogActions>
+      </Dialog>
+
+      <Dialog
+        open={cancelOpen}
+        onClose={() => setCancelOpen(false)}
+        maxWidth="xs"
+        fullWidth
+        PaperProps={{
+          sx: { borderRadius: 3, p: 1 },
+        }}>
+        <DialogTitle sx={{ display: "flex", alignItems: "center", gap: 1, fontWeight: 700, color: "#f44336", pb: 0 }}>
+          <ReportIcon color="error" sx={{ fontSize: 28 }} />
+          Lý do hủy đơn
+        </DialogTitle>
+        <DialogContent sx={{ display: "flex", flexDirection: "column", gap: 2, mt: 1, pb: 0 }}>
+          <Typography variant="body2" sx={{ color: "#666", mb: 1, fontStyle: "italic" }}>
+            Vui lòng chọn lý do hủy đơn để chúng tôi phục vụ tốt hơn.
+          </Typography>
+          <TextField
+            select
+            label="Lý do hủy"
+            value={cancelReason}
+            onChange={(e) => setCancelReason(e.target.value)}
+            fullWidth
+            variant="outlined"
+            size="small"
+            sx={{ borderRadius: 2, background: "#fafafa" }}
+            helperText={cancelReason.length === 0 ? "Vui lòng chọn lý do" : ""}
+            error={cancelReason.length === 0}>
+            {cancelReasons.map((reason) => (
+              <MenuItem key={reason} value={reason}>
+                {reason}
+              </MenuItem>
+            ))}
+          </TextField>
+          {cancelReason === "Lý do khác" && (
+            <TextField
+              label="Lý do khác"
+              value={cancelOtherReason}
+              onChange={(e) => {
+                if (e.target.value.length <= 200) setCancelOtherReason(e.target.value);
+              }}
+              fullWidth
+              variant="outlined"
+              size="small"
+              multiline
+              minRows={3}
+              maxRows={6}
+              inputProps={{ maxLength: 200 }}
+              sx={{ borderRadius: 2, background: "#fafafa" }}
+              helperText={cancelOtherReason.length === 0 ? "Vui lòng nhập lý do khác" : `${cancelOtherReason.length}/200 ký tự`}
+              error={cancelOtherReason.length === 0}
+            />
+          )}
+        </DialogContent>
+        <DialogActions sx={{ px: 3, pb: 2, pt: 1 }}>
+          <Button onClick={() => setCancelOpen(false)} color="inherit" disabled={cancelLoading} sx={{ borderRadius: 2 }}>
+            Hủy
+          </Button>
+          <Button
+            onClick={async () => {
+              setCancelLoading(true);
+              await handleCancelOrder(cancelReason === "Lý do khác" ? cancelOtherReason : cancelReason);
+              setCancelOpen(false);
+              setCancelReason("");
+              setCancelOtherReason("");
+              setCancelLoading(false);
+            }}
+            color="error"
+            variant="contained"
+            disabled={cancelLoading || !cancelReason || (cancelReason === "Lý do khác" && !cancelOtherReason)}
+            sx={{ borderRadius: 2, fontWeight: 700, boxShadow: "0 2px 8px #f4433333" }}>
+            Xác nhận hủy
           </Button>
         </DialogActions>
       </Dialog>

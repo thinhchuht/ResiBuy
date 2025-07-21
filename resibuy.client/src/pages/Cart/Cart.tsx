@@ -155,7 +155,7 @@ const Cart = () => {
         toast.error("Không lấy được mã đơn hàng, thử lại sau");
       }
     } catch (error) {
-      toast.error("Có lỗi khi tạo đơn hàng");
+      // toast.error("Có lỗi khi tạo đơn hàng");
       console.error(error);
     }
   };
