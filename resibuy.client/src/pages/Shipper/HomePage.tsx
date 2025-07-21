@@ -1,6 +1,7 @@
 import React from "react";
 import { Card, CardContent, Typography, Button, Box } from "@mui/material";
 import LocalShippingIcon from "@mui/icons-material/LocalShipping";
+import { useNavigate } from "react-router-dom";
 
 const HomePage: React.FC = () => {
   // Giả lập có đơn hàng đang giao
@@ -12,7 +13,7 @@ const HomePage: React.FC = () => {
   };
 
   // const currentOrder = null; // Mở dòng này nếu bạn muốn test khi không có đơn
-
+  const navigate = useNavigate();
   return (
     <Box>
       <Typography variant="h5" fontWeight={600} gutterBottom>
@@ -27,13 +28,21 @@ const HomePage: React.FC = () => {
               <Typography variant="h6">Đơn hàng đang giao</Typography>
             </Box>
 
-            <Typography><strong>Mã đơn:</strong> #{currentOrder.id}</Typography>
-            <Typography><strong>Khách hàng:</strong> {currentOrder.customerName}</Typography>
-            <Typography><strong>Địa chỉ:</strong> {currentOrder.address}</Typography>
-            <Typography><strong>Trạng thái:</strong> {currentOrder.status}</Typography>
+            <Typography>
+              <strong>Mã đơn:</strong> #{currentOrder.id}
+            </Typography>
+            <Typography>
+              <strong>Khách hàng:</strong> {currentOrder.customerName}
+            </Typography>
+            <Typography>
+              <strong>Địa chỉ:</strong> {currentOrder.address}
+            </Typography>
+            <Typography>
+              <strong>Trạng thái:</strong> {currentOrder.status}
+            </Typography>
 
             <Box mt={2}>
-              <Button variant="contained" color="primary">
+              <Button variant="outlined" onClick={() => navigate("/shipper/order/123")}>
                 Xem chi tiết
               </Button>
             </Box>
