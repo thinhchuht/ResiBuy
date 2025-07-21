@@ -64,6 +64,7 @@ interface NotificationApiItem {
   eventName: string;
   createdAt: string;
   isRead: boolean;
+  data : object
   [key: string]: unknown;
 }
 
@@ -73,10 +74,21 @@ function notifiConvert(item: NotificationApiItem): Notification {
     minute: "2-digit",
   });
   const formattedDate = new Date(item.createdAt).toLocaleDateString("vi-VN");
+console.log('item', item)
+
+  // Parse data
+  let dataObj: Record<string, unknown> = {};
+  try {
+    dataObj = item.data ? JSON.parse(item.data as unknown as string) : {};
+  } catch {
+    dataObj = {};
+  }
+
+ 
+  console.log('dataObj', dataObj)
   let title = "";
   let message = "";
-  // Tách status từ eventName nếu có dạng OrderStatusChanged-status
-  let status = item.orderStatus;
+  let status = dataObj.orderStatus;
   const match = item.eventName.match(/^OrderStatusChanged-(.+)$/);
   if (match) status = match[1];
 
@@ -93,7 +105,7 @@ function notifiConvert(item: NotificationApiItem): Notification {
           ? "Khách chưa nhận hàng"
           : "Đơn hàng đã bị hủy";
       message =
-        `Đơn hàng #${item.orderId ?? item.id} ` +
+        `Đơn hàng #${dataObj.orderId ?? item.id} ` +
         (status === "Processing"
           ? "đã được xử lý"
           : status === "Shipped"
@@ -106,7 +118,7 @@ function notifiConvert(item: NotificationApiItem): Notification {
       break;
     case item.eventName === "OrderCreated":
       title = "Đơn hàng mới";
-      message = `Đơn hàng #${item.orderId ?? item.id} đã được tạo`;
+      message = `Đơn hàng #${dataObj.orderId ?? item.id} đã được tạo`;
       break;
     default:
       title = "Thông báo";
