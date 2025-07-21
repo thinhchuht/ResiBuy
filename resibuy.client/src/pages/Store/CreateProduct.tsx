@@ -34,6 +34,7 @@ interface Image {
 interface ProductDetailInput {
   price: number;
   weight: number;
+  quantity: number;
   isOutOfStock: boolean;
   image: Image;
   additionalData: AdditionalDataInput[];
@@ -154,6 +155,7 @@ export default function CreateProduct() {
         const productDetail: ProductDetailInput = {
           price: 0,
           weight: 0,
+          quantity: 0,
           isOutOfStock: false,
           image: { id: "", url: "", thumbUrl: "", name: "" },
           additionalData: data,
@@ -372,6 +374,7 @@ export default function CreateProduct() {
                 <TableCell>Phân loại</TableCell>
                 <TableCell>Giá</TableCell>
                 <TableCell>Cân nặng</TableCell>
+                <TableCell>Số lượng</TableCell>
                 <TableCell>Hết hàng</TableCell>
                 <TableCell>Ảnh sản phẩm</TableCell>
               </TableRow>
@@ -400,6 +403,18 @@ export default function CreateProduct() {
                       onChange={(e) => {
                         const newList = [...listProductDetail];
                         newList[index].weight = Number(e.target.value);
+                        setListProductDetail(newList);
+                      }}
+                    />
+                  </TableCell>
+                  <TableCell>
+                    <TextField
+                      size="small"
+                      type="number"
+                      value={productDetail.quantity}
+                      onChange={(e) => {
+                        const newList = [...listProductDetail];
+                        newList[index].quantity = Number(e.target.value);
                         setListProductDetail(newList);
                       }}
                     />

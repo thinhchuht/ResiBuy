@@ -7,6 +7,7 @@
         public int Sold { get; set; }
         public decimal Price { get; set; }
         public float Weight { get; set; }
+        public int Quantity { get; set; } 
         public ImageQueriesDto Image { get; set; }
         public List<AdditionalDataQueriesDto> AdditionalData { get; set; }
     }

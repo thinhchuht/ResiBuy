@@ -11,7 +11,7 @@ namespace ResiBuy.Server.Application.Commands.OrderCommands
     public record CreateOrderCommand(CheckoutDto CheckoutDto) : IRequest<ResponseModel>;
     public class CreateOrderCommandHandler(IUserDbService userDbService, IOrderDbService orderDbService, IRoomDbService roomDbService,
         IVoucherDbService voucherDbService, ICartDbService cartDbService, ICartItemDbService cartItemDbService, 
-        IProductDetailDbService productDetailDbService, IStoreDbService storeDbService,
+        IProductDetailDbService productDetailDbService, IStoreDbService storeDbService, IProductDbService productDbService,
         IMailBaseService mailBaseService, INotificationService notificationService
         ) : IRequestHandler<CreateOrderCommand, ResponseModel>
     {
@@ -33,8 +33,8 @@ namespace ResiBuy.Server.Application.Commands.OrderCommands
                 throw new CustomException(ExceptionErrorCode.ValidationFailed, "Không có tồn tại giỏ hàng.");
             var cart = await cartDbService.GetByIdAsync(user.Cart.Id);
             if (!cart.CartItems.Any() && !dto.IsInstance) throw new CustomException(ExceptionErrorCode.ValidationFailed, "Giỏ hàng không có sản phẩm nào.");
-            if (!cart.IsCheckingOut)
-                throw new CustomException(ExceptionErrorCode.ValidationFailed, "Giỏ hàng chưa ở trạng thái thanh toán.");
+            //if (!cart.IsCheckingOut)
+            //    throw new CustomException(ExceptionErrorCode.ValidationFailed, "Giỏ hàng chưa ở trạng thái thanh toán.");
             var voucherIds = dto.Orders.Select(o => o.VoucherId);
             var checkVoucherRs = await voucherDbService.CheckIsActiveVouchers(voucherIds);
             if (!checkVoucherRs.IsSuccess()) throw new CustomException(ExceptionErrorCode.ValidationFailed, checkVoucherRs.Message);
@@ -53,19 +53,48 @@ namespace ResiBuy.Server.Application.Commands.OrderCommands
             try
             {
                 transaction = await userDbService.BeginTransactionAsync();
-                var orders = dto.Orders.Select(o => new Order(o.Id, o.TotalPrice, dto.PaymentMethod, o.Note, dto.AddressId, dto.UserId, o.StoreId, o.Items.Select(i => new OrderItem(i.Quantity, i.Price, o.Id, i.ProductDetailId)).ToList(), o.VoucherId));
+                var notiProductDetails = new List<ProductDetail>();
+                var orders = dto.Orders.Select(o => new Order(o.Id, o.TotalPrice, o.ShippingFee, dto.PaymentMethod, o.Note, dto.AddressId, dto.UserId, o.StoreId, o.Items.Select(i => new OrderItem(i.Quantity, i.Price, o.Id, i.ProductDetailId)).ToList(), o.VoucherId));
                 var createdOrders = await orderDbService.CreateBatchTransactionAsync(orders);
                 if (createdOrders == null || !createdOrders.Any()) throw new CustomException(ExceptionErrorCode.CreateFailed, "Không thể tạo đơn hàng");
                 if (voucherIds.Any()) await voucherDbService.UpdateQuantityBatchAsync(voucherIds);
                 if (!dto.IsInstance)
                     await cartItemDbService.DeleteBatchByProductDetailIdAsync(cart.Id, createdOrders.SelectMany(o => o.Items).Select(ci => ci.ProductDetailId));
+                var productDetails = await productDetailDbService.GetBatchAsync(productDetailIds);
+                foreach (var productDetail in productDetails)
+                {
+                    var totalOrderedQuantity = createdOrders
+                        .SelectMany(o => o.Items)
+                        .Where(oi => oi.ProductDetailId == productDetail.Id)
+                        .Sum(oi => oi.Quantity);
+
+                    if (productDetail.Quantity < totalOrderedQuantity)
+                        throw new CustomException(ExceptionErrorCode.CreateFailed,
+                            $"Số lượng tồn kho không đủ cho sản phẩm ID {productDetail.Id}");
+
+                    productDetail.Quantity -= totalOrderedQuantity;
+                    if (productDetail.Quantity == 0)
+                    { 
+                        productDetail.IsOutOfStock = true;
+                        notiProductDetails.Add(productDetail);
+                        var allDetails = await productDetailDbService.GetByProductIdAsync(productDetail.ProductId);
+                        if (allDetails.All(pd => pd.IsOutOfStock || pd.Quantity == 0))
+                        {
+                            productDetail.Product.IsOutOfStock = true;
+                        }
+                    }
+                }
                 await userDbService.SaveChangesAsync();
                 await transaction.CommitAsync();
                 foreach (var order in createdOrders)
                 {
                     var store = await storeDbService.GetByIdBaseAsync(order.StoreId);
                     var notiUserIds = new List<string> { store.OwnerId, user.Id };
-                    notificationService.SendNotification("OrderCreated", new OrderStatusChangedDto(order.Id, order.StoreId, store.Name, order.Status, order.Status, order.PaymentStatus, order.CreateAt), "", notiUserIds);
+                    await notificationService.SendNotificationAsync(Constants.OrderCreated, new OrderStatusChangedDto(order.Id, order.StoreId, store.Name, order.Status, order.Status, order.PaymentStatus, order.CreateAt), Constants.NoHubGroup, notiUserIds);
+                }
+                foreach (var productDetail in notiProductDetails)
+                {
+                    await notificationService.SendNotificationAsync(Constants.ProductOutOfStock, new ProductOutOfStockDto(productDetail.Id, productDetail.Product.Name, productDetail.Product.Store.Name, productDetail.Product.StoreId), Constants.NoHubGroup, [productDetail.Product.Store.OwnerId.ToString()]);
                 }
 
                 //mailBaseService.SendEmailAsync(user.Email, "Hóa đơn thanh toán đơn hà ResiBuy",);
@@ -75,7 +104,7 @@ namespace ResiBuy.Server.Application.Commands.OrderCommands
             {
                 if (transaction != null)
                     await transaction.RollbackAsync();
-                notificationService.SendNotification("OrderCreatedFailed", new {OrderIds = dto.Orders.Select(o => o.Id)}, "", [user.Id]);
+                await notificationService.SendNotificationAsync(Constants.OrderCreatedFailed, new OrderCreateFailedDto(dto.Orders.Select(o => o.Id), ex.Message), Constants.NoHubGroup, [user.Id]);
                 throw new CustomException(ExceptionErrorCode.RepositoryError, ex.ToString());
             }
         }

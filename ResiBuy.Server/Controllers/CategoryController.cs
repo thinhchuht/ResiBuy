@@ -39,6 +39,19 @@ namespace ResiBuy.Server.Controllers
                 var result = await mediator.Send(new GetAllCategoriesQuery());
                 return Ok(result);
         }
+        [HttpGet("countAll")]
+        public async Task<IActionResult> CountAllCategories()
+        {
 
+            var result = await mediator.Send(new CountAllCategoriesQuery());
+            return Ok(result);
+        }
+        [HttpGet("countProducts/{categoryId}")]
+        public async Task<IActionResult> CountProductsByCategoryId(Guid categoryId)
+        {
+           
+                var result = await mediator.Send(new CountProductsByCategoryIdQuery(categoryId));
+                return Ok(result);
+        }
     }
 }

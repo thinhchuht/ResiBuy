@@ -1,4 +1,4 @@
-namespace ResiBuy.Server.Services.CheckoutSessionService;
+namespace ResiBuy.Server.Services.MyBackgroundService.CheckoutSessionService;
 
 public class CheckoutSessionCleanupService(
     ICheckoutSessionService sessionService,

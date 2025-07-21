@@ -194,6 +194,22 @@ const Checkout: React.FC = () => {
                 <CheckoutVoucherSection selectedVoucher={selectedVoucher} onOpenVoucherModal={() => handleOpenVoucherModal(order.storeId)} />
                 <NoteSection orderId={order.id} onNoteSubmit={handleNoteSubmit} />
                 <Divider sx={{ my: 3 }} />
+                {/* Shipping Fee */}
+                <Box
+                  sx={{
+                    display: "flex",
+                    justifyContent: "flex-end",
+                    alignItems: "center",
+                    gap: 2,
+                    mb: 1,
+                  }}>
+                  <Typography variant="body1" sx={{ fontWeight: 500, color: "#555" }}>
+                    Phí vận chuyển:
+                  </Typography>
+                  <Typography variant="body1" sx={{ fontWeight: 500, color: "#1976d2" }}>
+                    {formatPrice(order.shippingFee ?? 0)}
+                  </Typography>
+                </Box>
                 <Box
                   sx={{
                     display: "flex",

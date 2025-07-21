@@ -2,7 +2,7 @@
 {
     [ApiController]
     [Route("api/[controller]")]
-    public class AuthController(ResiBuyContext context, IConfiguration configuration) : ControllerBase
+    public class AuthController(ResiBuyContext context, IConfiguration configuration, ICodeGeneratorSerivce codeGeneratorSerivce) : ControllerBase
     {
         [HttpPost("login")]
         public async Task<IActionResult> Login([FromBody] LoginDto model)
@@ -138,6 +138,31 @@
             await context.SaveChangesAsync();
 
             return Ok(new { message = "Logged out successfully" });
+        }
+
+        [HttpPost("forget-pass")]
+        public async Task<IActionResult> ForgetPassword([FromBody] string phoneNumber)
+        {
+            var user = await context.Users.FirstOrDefaultAsync(x => x.PhoneNumber == phoneNumber);
+            if (user == null)
+            {
+                return NotFound(new { message = "Không tồn tại số điện thoại không đúng" });
+            }
+            var code  = codeGeneratorSerivce.GenerateCodeAndCache(user.PhoneNumber);
+            //await context.SaveChangesAsync();
+
+            return Ok(ResponseModel.SuccessResponse(code));
+        }
+
+        [HttpPost("confirm-code")]
+        public async Task<IActionResult> ConfirmCode([FromBody] string code)
+        {
+            var rs = codeGeneratorSerivce.TryGetCachedData<string>(code, out var phoneNumer);
+            if(!rs) return NotFound(new { message = "Mã xác nhận không chính xác" });
+            var user = await context.Users.FirstOrDefaultAsync(x => x.PhoneNumber == phoneNumer);
+            user.PasswordHash = CustomPasswordHasher.HashPassword(Constants.DefaulAccountPassword);
+            await context.SaveChangesAsync();
+            return Ok(ResponseModel.SuccessResponse());
         }
 
         private string GenerateJwtToken(User user, IEnumerable<string> roles)

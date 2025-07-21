@@ -79,14 +79,17 @@ const validationSchema = Yup.object().shape({
   paymentMethod: Yup.string().required("Vui lòng chọn phương thức thanh toán"),
 });
 
-const formatPrice = (price: number) => (
-  <Box component="span" sx={{ display: "inline-flex", alignItems: "baseline" }}>
-    {price.toLocaleString()}
-    <Box component="span" sx={{ fontSize: "0.7em", ml: 0.5 }}>
-      đ
+const formatPrice = (price?: number | null) => {
+  const safePrice = typeof price === "number" && !isNaN(price) ? price : 0;
+  return (
+    <Box component="span" sx={{ display: "inline-flex", alignItems: "baseline" }}>
+      {safePrice.toLocaleString()}
+      <Box component="span" sx={{ fontSize: "0.7em", ml: 0.5 }}>
+        đ
+      </Box>
     </Box>
-  </Box>
-);
+  );
+};
 
 const CheckoutSummarySection = ({ orders, grandTotal, onCheckout, userRooms = [], isLoading = false }: CheckoutSummarySectionProps) => {
   const { error: showError } = useToastify();
@@ -395,8 +398,7 @@ const CheckoutSummarySection = ({ orders, grandTotal, onCheckout, userRooms = []
               <Box sx={{ mb: 2 }}>
                 {orders.map((order, index) => {
                   const itemCount = Array.isArray(order.productDetails) ? order.productDetails.reduce((sum, pd) => sum + (pd.quantity || 0), 0) : 0;
-                  const totalBeforeDiscount = order.productDetails.reduce((sum, pd) => sum + pd.price * pd.quantity, 0);
-                  const discount = order.DiscountAmount ?? 0;
+                  const discount = order.discountAmount ?? 0;
                   const totalAfterDiscount = order.totalPrice;
                   return (
                     <Box key={index} sx={{ mb: 1, p: 2, borderRadius: 2, bgcolor: "#fafbfc" }}>
@@ -411,12 +413,19 @@ const CheckoutSummarySection = ({ orders, grandTotal, onCheckout, userRooms = []
                       </Box>
                       <Box sx={{ display: "flex", justifyContent: "space-between" }}>
                         <Typography variant="body2">Tổng tiền trước giảm:</Typography>
-                        <Typography variant="body2">{formatPrice(totalBeforeDiscount)}</Typography>
+                        <Typography variant="body2">{formatPrice(order.totalBeforeDiscount)}</Typography>
                       </Box>
                       <Box sx={{ display: "flex", justifyContent: "space-between" }}>
                         <Typography variant="body2">Đã giảm:</Typography>
                         <Typography variant="body2" color="success.main" sx={{ fontWeight: 600 }}>
                           -{formatPrice(discount)}
+                        </Typography>
+                      </Box>
+                      {/* Shipping Fee */}
+                      <Box sx={{ display: "flex", justifyContent: "space-between" }}>
+                        <Typography variant="body2">Phí vận chuyển:</Typography>
+                        <Typography variant="body2" sx={{ fontWeight: 500, color: "#1976d2" }}>
+                          {formatPrice(order.shippingFee)}
                         </Typography>
                       </Box>
                       <Box sx={{ display: "flex", justifyContent: "space-between" }}>

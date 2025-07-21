@@ -4,7 +4,7 @@ namespace ResiBuy.Server.Application.Commands.UserCommands
 {
     public record UpdateUserRoleCommand(string Id, UpdateRolesDto Dto) : IRequest<ResponseModel>;
     public class UpdateUserRoleCommandHandler(
-        IUserDbService userDbService, IShipperDbService shipperDbService, IStoreDbService storeDbService, IRoomDbService roomDbService, IAreaDbService areaDbService) 
+        IUserDbService userDbService, IShipperDbService shipperDbService, IStoreDbService storeDbService, IRoomDbService roomDbService, IAreaDbService areaDbService)
         : IRequestHandler<UpdateUserRoleCommand, ResponseModel>
     {
         public async Task<ResponseModel> Handle(UpdateUserRoleCommand command, CancellationToken cancellationToken)
@@ -40,7 +40,7 @@ namespace ResiBuy.Server.Application.Commands.UserCommands
                 var missingRoles = existingUser.Roles.Except(dto.Roles).ToList();
                 if (missingRoles.Any()) throw new CustomException(ExceptionErrorCode.ValidationFailed, "Không được xóa các role cũ: " + string.Join(", ", missingRoles));
                 var nonExistingRoles = dto.Roles.Except(existingUser.Roles).ToList();
-
+                if (nonExistingRoles.Any()) ResponseModel.SuccessResponse();
                 if (nonExistingRoles.Contains(Constants.ShipperRole))
                 {
                     if (dto.Shipper == null)
@@ -58,7 +58,7 @@ namespace ResiBuy.Server.Application.Commands.UserCommands
                     if (dto.Shipper.EndWorkTime is < 0 or > 24)
                         throw new CustomException(ExceptionErrorCode.ValidationFailed, "Thời gian kết thúc làm việc phải nằm trong khoảng từ 0 đến 24 giờ.");
 
-                    
+
                     var shipper = new Shipper
                     {
                         Id = Guid.Parse(existingUser.Id),
@@ -130,8 +130,8 @@ namespace ResiBuy.Server.Application.Commands.UserCommands
 
                 existingUser.Roles = dto.Roles;
                 await userDbService.UpdateTransactionAsync(existingUser);
-                await userDbService.SaveChangesAsync(); 
-                await transaction.CommitAsync();       
+                await userDbService.SaveChangesAsync();
+                await transaction.CommitAsync();
 
                 return ResponseModel.SuccessResponse(existingUser);
             }
@@ -139,9 +139,8 @@ namespace ResiBuy.Server.Application.Commands.UserCommands
             {
                 if (transaction != null)
                     await transaction.RollbackAsync();
-                throw ;
+                throw;
             }
         }
     }
 }
- 

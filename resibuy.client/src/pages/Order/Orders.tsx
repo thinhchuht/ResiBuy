@@ -17,13 +17,17 @@ import OrderCard, { type OrderApiResult } from "./OrderCard";
 import { OrderStatus, PaymentMethod, PaymentStatus } from "../../types/models";
 import orderApi from "../../api/order.api";
 import { useAuth } from "../../contexts/AuthContext";
-import { HubEventType, useEventHub, type HubEventHandler } from "../../hooks/useEventHub";
+import {
+  HubEventType,
+  useEventHub,
+  type HubEventHandler,
+} from "../../hooks/useEventHub";
 import { Link } from "react-router-dom";
-import Breadcrumbs from '@mui/material/Breadcrumbs';
-import HomeIcon from '@mui/icons-material/Home';
-import NavigateNextIcon from '@mui/icons-material/NavigateNext';
+import Breadcrumbs from "@mui/material/Breadcrumbs";
+import HomeIcon from "@mui/icons-material/Home";
+import NavigateNextIcon from "@mui/icons-material/NavigateNext";
 import type { OrderStatusChangedData } from "../../types/hubData";
-import CalendarTodayIcon from '@mui/icons-material/CalendarToday';
+import CalendarTodayIcon from "@mui/icons-material/CalendarToday";
 
 const StyledTabs = styled(Tabs)({
   borderBottom: "1px solid #e8e8e8",
@@ -49,6 +53,7 @@ const orderStatusTabs = [
   OrderStatus.Pending,
   OrderStatus.Processing,
   OrderStatus.Shipped,
+  OrderStatus.CustomerNotAvailable,
   OrderStatus.Delivered,
   OrderStatus.Cancelled,
 ];
@@ -73,10 +78,12 @@ const Orders = () => {
     if (!user?.id) return;
     try {
       const data = await orderApi.getAll(
-        orderStatusTabs[currentTab],
+         orderStatusTabs[currentTab],
         PaymentMethod.None,
         PaymentStatus.None,
+        undefined, // storeId
         user.id,
+        undefined, // shipperId
         page,
         ordersPerPage,
         startDate || undefined,
@@ -145,7 +152,9 @@ const Orders = () => {
               : order
           )
         );
-      } else if (orderStatusTabs[currentTabRef.current] === data.oldOrderStatus) {
+      } else if (
+        orderStatusTabs[currentTabRef.current] === data.oldOrderStatus
+      ) {
         setOrders((prevOrders) =>
           prevOrders.filter((order) => order.id !== data.id)
         );
@@ -174,17 +183,17 @@ const Orders = () => {
           fontSize: 20,
           color: "#2c3e50",
           fontWeight: 500,
-          '& .MuiBreadcrumbs-separator': { color: '#bdbdbd' }
+          "& .MuiBreadcrumbs-separator": { color: "#bdbdbd" },
         }}
       >
         <Link
           to="/"
           style={{
-            display: 'flex',
-            alignItems: 'center',
-            textDecoration: 'none',
-            color: '#1976d2',
-            fontWeight: 600
+            display: "flex",
+            alignItems: "center",
+            textDecoration: "none",
+            color: "#1976d2",
+            fontWeight: 600,
           }}
         >
           <HomeIcon sx={{ mr: 0.5 }} fontSize="inherit" />
@@ -205,17 +214,17 @@ const Orders = () => {
       >
         <Box
           sx={{
-            display: 'flex',
-            flexDirection: 'row',
-            alignItems: 'center',
+            display: "flex",
+            flexDirection: "row",
+            alignItems: "center",
             px: { xs: 1, sm: 3 },
             pt: 3,
             pb: 0,
-            background: '#fafbfc',
-            borderBottom: '1px solid #f0f0f0',
+            background: "#fafbfc",
+            borderBottom: "1px solid #f0f0f0",
             mb: 1,
             gap: 2,
-            overflowX: 'auto',
+            overflowX: "auto",
           }}
         >
           <Box sx={{ flexGrow: 1, minWidth: 0 }}>
@@ -230,6 +239,7 @@ const Orders = () => {
               <StyledTab label="Chờ xác nhận" />
               <StyledTab label="Đang xử lý" />
               <StyledTab label="Đang giao" />
+              <StyledTab label="Chờ nhận" />
               <StyledTab label="Đã giao" />
               <StyledTab label="Đã hủy" />
             </StyledTabs>
@@ -237,39 +247,51 @@ const Orders = () => {
         </Box>
         <Box
           sx={{
-            display: 'flex',
-            flexDirection: 'row',
-            alignItems: 'center',
-            justifyContent: 'flex-end',
+            display: "flex",
+            flexDirection: "row",
+            alignItems: "center",
+            justifyContent: "flex-end",
             px: { xs: 1, sm: 3 },
             py: 2,
             borderRadius: 3,
-            boxShadow: '0 2px 12px 0 rgba(33,150,243,0.07)',
+            boxShadow: "0 2px 12px 0 rgba(33,150,243,0.07)",
             mb: 2,
             gap: 2,
-            overflowX: 'auto',
+            overflowX: "auto",
           }}
         >
-          <Stack direction="row" spacing={2} alignItems="center" justifyContent="flex-end" sx={{ minWidth: 0, flexShrink: 0 }}>
+          <Stack
+            direction="row"
+            spacing={2}
+            alignItems="center"
+            justifyContent="flex-end"
+            sx={{ minWidth: 0, flexShrink: 0 }}
+          >
             <TextField
               label="Từ ngày"
               type="date"
               size="small"
-              InputLabelProps={{ shrink: true, sx: { fontWeight: 500, color: '#1976d2' } }}
+              InputLabelProps={{
+                shrink: true,
+                sx: { fontWeight: 500, color: "#1976d2" },
+              }}
               value={startDate}
-              onChange={e => setStartDate(e.target.value)}
+              onChange={(e) => setStartDate(e.target.value)}
               sx={{
                 minWidth: 140,
                 borderRadius: 3,
-                background: '#fff',
-                boxShadow: '0 1px 6px 0 #e3f2fd',
-                '& .MuiOutlinedInput-root': { borderRadius: 3 }
+                background: "#fff",
+                boxShadow: "0 1px 6px 0 #e3f2fd",
+                "& .MuiOutlinedInput-root": { borderRadius: 3 },
               }}
               inputProps={{ style: { borderRadius: 12 } }}
               InputProps={{
                 startAdornment: (
                   <InputAdornment position="start">
-                    <CalendarTodayIcon fontSize="small" sx={{ color: '#1976d2' }} />
+                    <CalendarTodayIcon
+                      fontSize="small"
+                      sx={{ color: "#1976d2" }}
+                    />
                   </InputAdornment>
                 ),
               }}
@@ -278,21 +300,27 @@ const Orders = () => {
               label="Đến ngày"
               type="date"
               size="small"
-              InputLabelProps={{ shrink: true, sx: { fontWeight: 500, color: '#1976d2' } }}
+              InputLabelProps={{
+                shrink: true,
+                sx: { fontWeight: 500, color: "#1976d2" },
+              }}
               value={endDate}
-              onChange={e => setEndDate(e.target.value)}
+              onChange={(e) => setEndDate(e.target.value)}
               sx={{
                 minWidth: 140,
                 borderRadius: 3,
-                background: '#fff',
-                boxShadow: '0 1px 6px 0 #e3f2fd',
-                '& .MuiOutlinedInput-root': { borderRadius: 3 }
+                background: "#fff",
+                boxShadow: "0 1px 6px 0 #e3f2fd",
+                "& .MuiOutlinedInput-root": { borderRadius: 3 },
               }}
               inputProps={{ style: { borderRadius: 12 } }}
               InputProps={{
                 startAdornment: (
                   <InputAdornment position="start">
-                    <CalendarTodayIcon fontSize="small" sx={{ color: '#1976d2' }} />
+                    <CalendarTodayIcon
+                      fontSize="small"
+                      sx={{ color: "#1976d2" }}
+                    />
                   </InputAdornment>
                 ),
               }}
@@ -306,17 +334,20 @@ const Orders = () => {
                 minWidth: 90,
                 fontWeight: 600,
                 ml: 1,
-                whiteSpace: 'nowrap',
-                background: '#e3f2fd',
-                borderColor: '#90caf9',
-                color: '#1976d2',
-                transition: 'all 0.2s',
-                '&:hover': {
-                  background: '#bbdefb',
-                  borderColor: '#42a5f5',
-                }
+                whiteSpace: "nowrap",
+                background: "#e3f2fd",
+                borderColor: "#90caf9",
+                color: "#1976d2",
+                transition: "all 0.2s",
+                "&:hover": {
+                  background: "#bbdefb",
+                  borderColor: "#42a5f5",
+                },
               }}
-              onClick={() => { setStartDate(""); setEndDate(""); }}
+              onClick={() => {
+                setStartDate("");
+                setEndDate("");
+              }}
               disabled={!startDate && !endDate}
             >
               Xóa lọc

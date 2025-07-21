@@ -33,6 +33,17 @@ const storeApi = {
     const response = await axiosClient.put(`${storeUrl}/${id}/status`, { isLocked, isOpen });
     return response.data;
   },
+
+count: async () => {
+  const response = await axiosClient.get(`${storeUrl}/count`);
+  return response.data.data.count;
+},
+
+countByIsOpenAndIsLoc: async () => {
+  const response = await axiosClient.get(`${storeUrl}/count/status`);
+  return response.data.data;
+},
+
 };
 
 export default storeApi;

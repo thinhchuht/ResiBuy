@@ -4,6 +4,7 @@ export enum OrderStatus {
   Pending = "Pending",
   Processing = "Processing",
   Shipped = "Shipped",
+  CustomerNotAvailable = "CustomerNotAvailable",
   Delivered = "Delivered",
   Cancelled = "Cancelled",
 }
@@ -17,6 +18,7 @@ export enum PaymentStatus {
 }
 
 export enum PaymentMethod {
+  None = "None",
   COD = "COD",
   BankTransfer = "BankTransfer",
 }
@@ -86,6 +88,7 @@ export interface ProductDetail {
   isOutOfStock: boolean;
   productId: number;
   product: Product;
+  quantity : number;
   weight: number;
   sold: number;
   price: number;
@@ -98,6 +101,7 @@ export interface ProductDetail {
 export interface Store {
   id: string;
   name: string;
+  phoneNumber: string;
   room: RoomResult;
   description: string;
   isLocked: boolean;
@@ -337,9 +341,11 @@ export interface TempOrderDto {
   voucherId?: string;
   note: string;
   totalPrice: number;
+  totalBeforeDiscount : number
   productDetails: TempProductDetailDto[];
   voucher?: Voucher;
-  DiscountAmount?: number;
+  discountAmount?: number;
+  shippingFee: number;
 }
 
 export interface TempCheckoutDto {

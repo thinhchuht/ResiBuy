@@ -60,7 +60,7 @@ namespace ResiBuy.Server.Application.Commands.ProductCommands
 
                     if (detailDto.Id == 0 || !existingDetails.ContainsKey(detailDto.Id))
                     {
-                        detail = new ProductDetail(detailDto.Price, detailDto.Weight, detailDto.IsOutOfStock);
+                        detail = new ProductDetail(detailDto.Price, detailDto.Weight, detailDto.Quantity, detailDto.IsOutOfStock);
                         detail.AdditionalData = detailDto.AdditionalData?
                             .Select(a => new AdditionalData(a.Key, a.Value))
                             .ToList();
@@ -69,7 +69,7 @@ namespace ResiBuy.Server.Application.Commands.ProductCommands
                     }
 
                     detail = existingDetails[detailDto.Id];
-                    detail.UpdateProductDetail(detailDto.Price, detailDto.Weight, detailDto.IsOutOfStock);
+                    detail.UpdateProductDetail(detailDto.Price, detailDto.Weight, detailDto.IsOutOfStock, detailDto.Quantity);
 
                     if (detailDto.AdditionalData != null)
                     {

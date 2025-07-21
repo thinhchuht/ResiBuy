@@ -52,6 +52,7 @@ namespace ResiBuy.Server.Application.Commands.CheckoutComands
                     VoucherId = order.VoucherId,
                     Note = order.Note,
                     TotalPrice = order.TotalPrice,
+                    ShippingFee = order.ShippingFee,
                     Items = order.ProductDetails.Select(pd => new OrderItemDto
                     {
                         ProductDetailId = pd.Id,
