@@ -166,9 +166,16 @@ const ProductInfoSection: React.FC<ProductInfoSectionProps> = ({ product, quanti
         {/* Stock progress bar below price */}
         <Box mb={2}>
           <Typography variant="body2" color="text.secondary">
-            {product.isOutOfStock ? "Hết hàng" : "Số lượng có hạn"}
+            {product.isOutOfStock || (selectedDetail && selectedDetail.quantity)  === 0 ? "Hết hàng" : "Số lượng có hạn"}
           </Typography>
-          <Slider value={product.isOutOfStock ? 0 : 40} max={100} min={0} sx={{ width: "80%" }} disabled aria-label="Stock progress" />
+          <Slider
+            value={selectedDetail ? (selectedDetail.quantity > 100 ? 100 : selectedDetail.quantity) : 0}
+            max={100}
+            min={0}
+            sx={{ width: "80%" }}
+            disabled
+            aria-label="Stock progress"
+          />
         </Box>
 
         <Box mb={2}>

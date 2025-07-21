@@ -27,6 +27,8 @@ namespace ResiBuy.Server.Application.Commands.OrderCommands
                     throw new CustomException(ExceptionErrorCode.ValidationFailed, "Trạng thái đơn hàng không tồn tại.");
                 if (order.Status == OrderStatus.Cancelled)
                     throw new CustomException(ExceptionErrorCode.ValidationFailed, "Đơn hàng đã bị hủy trước đó.");
+                if (order.Status != OrderStatus.Shipped && dto.OrderStatus == OrderStatus.CustomerNotAvailable)
+                    throw new CustomException(ExceptionErrorCode.ValidationFailed, "Đơn hàng chưa ở trong trạng thái giao hàng.");
                 if (order.Status == OrderStatus.Pending && dto.OrderStatus != OrderStatus.Cancelled && dto.OrderStatus != OrderStatus.Processing)
                     throw new CustomException(ExceptionErrorCode.ValidationFailed, "Đơn hàng chưa xử lý chỉ được xử lý hoặc hủy.");
                 //if (order.Status != OrderStatus.Pending && dto.OrderStatus == OrderStatus.Cancelled)
@@ -44,6 +46,7 @@ namespace ResiBuy.Server.Application.Commands.OrderCommands
             if (dto.OrderStatus == OrderStatus.Processing) userIds.Add(order.UserId);
             if (dto.OrderStatus == OrderStatus.Shipped) userIds.AddRange([order.UserId,store.OwnerId.ToString()]);
             if (dto.OrderStatus == OrderStatus.Delivered) userIds.AddRange([order.UserId, store.OwnerId.ToString()]);
+            if (dto.OrderStatus == OrderStatus.CustomerNotAvailable) userIds.AddRange([order.UserId, store.OwnerId.ToString()]);
             if (dto.OrderStatus == OrderStatus.Cancelled) userIds.AddRange([order.UserId, store.OwnerId.ToString()]);
             await notificationService.SendNotificationAsync(Constants.OrderStatusChanged, new OrderStatusChangedDto(order.Id, order.StoreId, store.Name, order.Status, oldStatus, order.PaymentStatus, order.CreateAt), "", userIds);
             return ResponseModel.SuccessResponse();

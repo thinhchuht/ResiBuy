@@ -1,11 +1,4 @@
-﻿using Microsoft.EntityFrameworkCore.Update.Internal;
-using ResiBuy.Server.Exceptions;
-using ResiBuy.Server.Infrastructure.DbServices.StoreDbServices;
-using System;
-using System.Threading;
-using System.Threading.Tasks;
-
-namespace ResiBuy.Server.Application.Commands.StoreCommands
+﻿namespace ResiBuy.Server.Application.Commands.StoreCommands
 {
     public record UpdateStoreStatusCommand(
         Guid StoreId,
@@ -42,7 +35,5 @@ namespace ResiBuy.Server.Application.Commands.StoreCommands
                 throw new CustomException(ExceptionErrorCode.UpdateFailed, $"Không thể cập nhật trạng thái cửa hàng: {ex.Message}");
             }
         }
-
-        
     }
 }

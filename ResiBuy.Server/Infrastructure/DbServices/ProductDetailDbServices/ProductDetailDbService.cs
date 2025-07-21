@@ -26,6 +26,13 @@ namespace ResiBuy.Server.Infrastructure.DbServices.ProductDetailDbServices
             return ResponseModel.SuccessResponse();
         }
 
+        public async Task<List<ProductDetail>> GetBatchAsync(List<int> ids)
+        {
+            return await _context.ProductDetails.Include(pd => pd.Product).Include(pd => pd.Product.Store)
+                .Where(pd => ids.Contains(pd.Id))
+                .ToListAsync();
+        }
+
         public async Task<ProductDetail> GetByIdAsync(int id)
         {
             try
@@ -40,5 +47,16 @@ namespace ResiBuy.Server.Infrastructure.DbServices.ProductDetailDbServices
             }
         }
 
+        public async Task<ResponseModel> UpdateQuantityOutOfStock(int pdId, int quantity)
+        {
+            var pd = await _context.ProductDetails.Include(pd => pd.Product).FirstOrDefaultAsync(p => p.Id == pdId);
+
+            return ResponseModel.SuccessResponse();
+        }
+
+        public async Task<List<ProductDetail>> GetByProductIdAsync(int productId)
+        {
+            return await _context.ProductDetails.Where(pd => pd.ProductId == productId).ToListAsync();
+        }
     }
 }

@@ -4,6 +4,7 @@ export enum OrderStatus {
   Pending = "Pending",
   Processing = "Processing",
   Shipped = "Shipped",
+  CustomerNotAvailable = "CustomerNotAvailable",
   Delivered = "Delivered",
   Cancelled = "Cancelled",
 }
@@ -87,6 +88,7 @@ export interface ProductDetail {
   isOutOfStock: boolean;
   productId: number;
   product: Product;
+  quantity : number;
   weight: number;
   sold: number;
   price: number;
@@ -99,6 +101,7 @@ export interface ProductDetail {
 export interface Store {
   id: string;
   name: string;
+  phoneNumber: string;
   room: RoomResult;
   description: string;
   isLocked: boolean;

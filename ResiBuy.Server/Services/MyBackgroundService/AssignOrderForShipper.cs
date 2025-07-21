@@ -28,7 +28,7 @@ namespace ResiBuy.Server.Services.MyBackgroundService
 
                     try
                     {
-                        var orders = await orderDbService.getOrdersByStatus(OrderStatus.StoreAccepted);
+                        var orders = await orderDbService.getOrdersByStatus(OrderStatus.Processing);
                         if (orders.Any())
                         {
                             foreach (var orderGroup in orders.GroupBy(o => o.Store.Room.Building.AreaId))

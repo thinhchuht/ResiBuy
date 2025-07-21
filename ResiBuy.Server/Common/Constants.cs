@@ -40,6 +40,7 @@
         public const string MonthlyPaymentSettled = "MonthlyPaymentSettled";
         public const string MonthlyPaymentSettlFailed = "MonthlyPaymentSettlFailed";
         public const string ReportCreated = "ReportCreated";
+        public const string ProductOutOfStock = "ProductOutOfStock";
 
         //regex pattern
         public const string EmailPattern           = @"^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$";
