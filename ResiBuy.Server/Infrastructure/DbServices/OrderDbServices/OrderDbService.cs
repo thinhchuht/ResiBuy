@@ -1,5 +1,4 @@
 ﻿using ResiBuy.Server.Services.MapBoxService;
-using ResiBuy.Server.Services.OpenRouteService;
 
 namespace ResiBuy.Server.Infrastructure.DbServices.OrderDbServices;
 
@@ -151,7 +150,7 @@ public class OrderDbService : BaseDbService<Order>, IOrderDbService
             {
                 throw new CustomException(ExceptionErrorCode.NotFound, "Địa chỉ cửa hàng không tồn tại");
             }
-            decimal distanceFee = 0;
+            decimal distanceFee = 5000;
             if (shippingRoom.Building.AreaId != storeRoom.Building.AreaId)
             {
                var route = await _mapBoxService.GetDirectionsAsync(

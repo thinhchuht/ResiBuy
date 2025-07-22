@@ -635,6 +635,9 @@ const OrderCard = ({ order, onUpdate, onAddressChange, onCancel }: OrderCardProp
             <EditIcon sx={{ color: "#1976d2", fontSize: 28 }} />
             Đổi địa chỉ giao hàng
           </Typography>
+          <Typography variant="body2" sx={{ mb: 2, color: "red", fontWeight: 700 }}>
+            Lưu ý : Đổi địa chỉ có thể làm thay đổi phí vận chuyển
+          </Typography>
           <Typography variant="body2" sx={{ mb: 2, color: "#666", fontStyle: "italic" }}>
             Vui lòng chọn khu vực, tòa nhà và phòng mới cho đơn hàng này.
           </Typography>

@@ -10,6 +10,7 @@
             CreatedById = createdById;
             TargetId = targetId;
             OrderId = orderId;
+            IsResolved = false;
         }
 
         public Guid       Id          { get; set; }
@@ -18,9 +19,10 @@
         public DateTime   CreatedAt   { get; set; }
         public string     CreatedById { get; set; }
         public string     TargetId    { get; set; }
+        public bool       IsResolved  { get; set; } = false;
         public Guid       OrderId     { get; set; }
         public User       CreatedBy   { get; set; }
-        public User       Target    { get; set; }
+        public User       Target      { get; set; }
         public Order      Order       { get; set; }
     }
 }

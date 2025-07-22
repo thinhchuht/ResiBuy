@@ -31,6 +31,10 @@ namespace ResiBuy.Server.Application.Commands.OrderCommands
                 if (order.Status != OrderStatus.Pending)
                     throw new CustomException(ExceptionErrorCode.ValidationFailed, "Chỉ được đổi địa chỉ giao khi đơn hàng chưa được xử lý.");
                 order.ShippingAddressId = dto.ShippingAddressId;
+                var oldShippingFee = order.ShippingFee;
+                //order.ShippingFee = await orderDbService.ShippingFeeCharged(dto.ShippingAddressId, order.StoreId, order.ProductDetails.Select(pd => pd.Weight).Sum());
+                order.ShippingFee = 7000;
+                order.TotalPrice = order.TotalPrice - oldShippingFee.Value + 7000;
             }
 
             if (!string.IsNullOrEmpty(dto.Note))

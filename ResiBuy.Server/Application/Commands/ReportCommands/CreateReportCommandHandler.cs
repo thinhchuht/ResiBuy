@@ -14,7 +14,8 @@ namespace ResiBuy.Server.Application.Commands.ReportCommands
             {
                 var user = await userDbService.GetUserById(command.Dto.UserId) ?? throw new CustomException(ExceptionErrorCode.ValidationFailed, "Không tồn tại người dùng");
                 var order = await orderDbService.GetById(command.Dto.OrderId) ?? throw new CustomException(ExceptionErrorCode.ValidationFailed, "Không tồn tại đơn hàng");
-                var report = new Report(command.Dto.Title, command.Dto.Description, command.Dto.UserId, command.Dto.TargetId, command.Dto.OrderId);
+                if(command.Dto.UserId == command.Dto.TargetId) throw new CustomException(ExceptionErrorCode.ValidationFailed, "Không thể tự báo cáo chính mình");
+                var report = new Report(command.Dto.Title, command.Dto.Description, command.Dto.UserId, command.Dto.TargetId.ToString(), command.Dto.OrderId);
                 var createdReport = await reportDbService.CreateAsync(report);
                 await notificationService.SendNotificationAsync(Constants.Refunded, 
                     new ReportCreatedDto(createdReport.Id, createdReport.Title, createdReport.Description, createdReport.CreatedAt, createdReport.CreatedById, createdReport.TargetId, createdReport.OrderId),
