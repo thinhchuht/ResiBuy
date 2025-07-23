@@ -7,6 +7,7 @@ export enum OrderStatus {
   CustomerNotAvailable = "CustomerNotAvailable",
   Delivered = "Delivered",
   Cancelled = "Cancelled",
+  Reported = "Reported", // Thêm trạng thái bị tố cáo
 }
 
 export enum PaymentStatus {

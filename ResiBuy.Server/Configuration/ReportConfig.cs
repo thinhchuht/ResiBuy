@@ -8,11 +8,11 @@
             builder.HasOne(r => r.CreatedBy)
                    .WithMany(u => u.Reports)
                    .HasForeignKey(r => r.CreatedById)
-                   .OnDelete(DeleteBehavior.Cascade); // Xóa User sẽ xóa Report
+                   .OnDelete(DeleteBehavior.Cascade); 
 
             builder.HasOne(r => r.Order)
-                   .WithMany(o => o.Reports) 
-                   .HasForeignKey(r => r.OrderId)
+                   .WithOne(o => o.Report)
+                   .HasForeignKey<Report>(r => r.OrderId)
                    .OnDelete(DeleteBehavior.Restrict); // Sửa thành Restrict để tránh lỗi
         }
     }

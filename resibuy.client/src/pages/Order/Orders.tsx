@@ -56,6 +56,7 @@ const orderStatusTabs = [
   OrderStatus.CustomerNotAvailable,
   OrderStatus.Delivered,
   OrderStatus.Cancelled,
+  OrderStatus.Reported, // Thêm trạng thái bị tố cáo
 ];
 
 const Orders = () => {
@@ -242,6 +243,7 @@ const Orders = () => {
               <StyledTab label="Chờ nhận" />
               <StyledTab label="Đã giao" />
               <StyledTab label="Đã hủy" />
+              <StyledTab label="Bị tố cáo" /> {/* Thêm label cho tab mới */}
             </StyledTabs>
           </Box>
         </Box>
