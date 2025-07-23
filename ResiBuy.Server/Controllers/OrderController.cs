@@ -45,5 +45,21 @@ namespace ResiBuy.Server.Controllers
             var result = await mediator.Send(new UpdateOrderStatusCommand(dto));
             return Ok(result);
         }
+        [HttpGet("count")]
+        public async Task<IActionResult> CountOrders( Guid? shipperId,  Guid? storeId,  string? userId,  OrderStatus? status)
+        {
+            var query = new CountOrdersQuery(shipperId, storeId, userId, status);
+            var result = await mediator.Send(query);
+            return Ok(result);
+        }
+
+       
+        [HttpGet("total-shipping-fee")]
+        public async Task<IActionResult> GetTotalShippingFee(Guid shipperId,  DateTime? startDate,  DateTime? endDate)
+        {
+            var query = new GetTotalShippingFeeQuery(shipperId, startDate, endDate);
+            var result = await mediator.Send(query);
+            return Ok(result);
+        }
     }
 }
