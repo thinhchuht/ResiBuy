@@ -23,7 +23,29 @@ namespace ResiBuy.Server.Application.Queries.ShipperQueries
             if (shipper == null)
                 throw new CustomException(ExceptionErrorCode.ValidationFailed, "Shipper không tồn tại");
 
-            return ResponseModel.SuccessResponse(shipper);
+            var result = new
+            {
+                shipper.Id,
+                shipper.IsOnline,
+                shipper.IsShipping,
+                shipper.ReportCount,
+                shipper.StartWorkTime,
+                shipper.EndWorkTime,
+                shipper.LastLocationId,
+                shipper.LastDelivered,
+                LastLocationName = shipper.LastLocation?.Name,
+
+                Email = shipper.User?.Email,
+                PhoneNumber = shipper.User?.PhoneNumber,
+                IdentityNumber = shipper.User?.IdentityNumber,
+                DateOfBirth = shipper.User?.DateOfBirth,
+                IsLocked = shipper.User?.IsLocked,
+                FullName = shipper.User?.FullName,
+                CreatedAt = shipper.User?.CreatedAt,
+                UpdatedAt = shipper.User?.UpdatedAt
+            };
+
+            return ResponseModel.SuccessResponse(result);
         }
     }
 } 

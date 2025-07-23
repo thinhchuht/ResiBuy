@@ -35,6 +35,7 @@ import ListStore from "../pages/Store/ListStore";
 import ShipperLayout from "../layouts/ShipperLayout/ShipperLayout";
 import OrdersPage from "../pages/Shipper/OrdersPage";
 import HomePage from "../pages/Shipper/HomePage";
+import OrderDetailPage from "../pages/Shipper/OrderDetailPage";
 const AppRoutes: React.FC = () => {
   const { user } = useAuth();
 
@@ -192,13 +193,8 @@ const AppRoutes: React.FC = () => {
           <Route index element={<Navigate to="shipper" replace />} />
           <Route path="shipper" element={<HomePage />} />
           <Route path="orders" element={<OrdersPage />} />
+          <Route path="order/123" element={<OrderDetailPage />} />
         </Route>
-
-
-
-
-
-
 
         <Route path="/unauthorized" element={<Unauthorized />} />
         <Route path="/forbidden" element={<Forbidden />} />
