@@ -12,12 +12,16 @@ namespace ResiBuy.Server.Application.Queries.ReportQueries
             var report = await reportDbService.GetByIdBaseAsync(query.Id);
 
             return ResponseModel.SuccessResponse(
-                new ReportQueryResult(report.Id, report.Title,
-                report.Description,
-                report.CreatedAt,
-                report.CreatedById,
-                report.TargetId,
-                report.OrderId));
+                new ReportQueryResult(
+                    report.Id,
+                    report.IsResolved,
+                    report.Title,
+                    report.Description,
+                    report.CreatedAt,
+                    report.CreatedById,
+                    report.ReportTarget,
+                    report.TargetId,
+                    report.OrderId));
         }
     }
 }

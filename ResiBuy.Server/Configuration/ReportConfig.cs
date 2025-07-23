@@ -11,8 +11,8 @@
                    .OnDelete(DeleteBehavior.Cascade); 
 
             builder.HasOne(r => r.Order)
-                   .WithMany(o => o.Reports) 
-                   .HasForeignKey(r => r.OrderId)
+                   .WithOne(o => o.Report)
+                   .HasForeignKey<Report>(r => r.OrderId)
                    .OnDelete(DeleteBehavior.Restrict); // Sửa thành Restrict để tránh lỗi
         }
     }

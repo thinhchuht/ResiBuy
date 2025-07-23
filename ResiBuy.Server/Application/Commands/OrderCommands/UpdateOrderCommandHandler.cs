@@ -10,6 +10,7 @@ namespace ResiBuy.Server.Application.Commands.OrderCommands
         {
             var dto = request.Dto;
             var order = await orderDbService.GetByIdBaseAsync(dto.OrderId) ?? throw new CustomException(ExceptionErrorCode.ValidationFailed, "Không tìm thấy Order");
+            if(order.Status == OrderStatus.Reported) throw new CustomException(ExceptionErrorCode.ValidationFailed, "Đơn hàng bị tạm dừng do đã bị tố cáo");
             if (order.UserId != dto.UserId && dto.UserId != order.StoreId.ToString() && dto.UserId != order.ShipperId.ToString())
                 throw new CustomException(ExceptionErrorCode.ValidationFailed, "Người dùng không có quyền sửa đơn hàng này.");
 

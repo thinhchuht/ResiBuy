@@ -44,7 +44,7 @@ namespace ResiBuy.Server.Services.MyBackgroundService
                                 }
                                 catch (Exception ex)
                                 {
-                                    await notificationService.SendNotificationAsync(Constants.ReportCreated, new { StoreId = store.Id, StoreName = store.Name }, Constants.NoHubGroup, [store.OwnerId]);
+                                    await notificationService.SendNotificationAsync(Constants.MonthlyPaymentSettlFailed, new { StoreId = store.Id, StoreName = store.Name }, Constants.NoHubGroup, [store.OwnerId]);
                                     logger.LogError(ex, $"MonthlyPayService: Error getting revenue for store {store.Id}");
                                 }
                             }

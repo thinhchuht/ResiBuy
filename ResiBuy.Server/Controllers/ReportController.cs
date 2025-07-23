@@ -10,7 +10,7 @@ namespace ResiBuy.Server.Controllers
     {
 
         [HttpGet]
-        public async Task<IActionResult> GetAllReport(GetReportDto dto)
+        public async Task<IActionResult> GetAllReport([FromQuery] GetReportDto dto)
         {
             var result = await mediator.Send(new GetAllReportQuery(dto));
             return Ok(result);
@@ -23,10 +23,25 @@ namespace ResiBuy.Server.Controllers
             return Ok(result);
 
         }
+
+        [HttpGet("order/{id}")]
+        public async Task<IActionResult> GetReportByOrderId(Guid id)
+        {
+            var result = await mediator.Send(new GetReportByOrderIdQuery(id));
+            return Ok(result);
+
+        }
         [HttpPost]
         public async Task<IActionResult> CreateReport([FromBody] CreateReportDto dto)
         {
             var result = await mediator.Send(new CreateReportCommand(dto));
+            return Ok(result);
+        }
+
+        [HttpPut("{id}/resolve")]
+        public async Task<IActionResult> UpdateReport([FromBody] Guid id, bool isAddReportTarget)
+        {
+            var result = await mediator.Send(new ResolveReportCommand(id, isAddReportTarget));
             return Ok(result);
         }
     }
