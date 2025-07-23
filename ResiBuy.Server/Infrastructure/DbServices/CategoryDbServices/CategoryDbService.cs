@@ -38,6 +38,31 @@ namespace ResiBuy.Server.Infrastructure.DbServices.CategoryDbServices
                 throw new CustomException(ExceptionErrorCode.RepositoryError, ex.Message);
             }
         }
+        public async Task<int> CountAllCategoriesAsync()
+        {
+            try
+            {
+                return await _context.Categories.CountAsync();
+            }
+            catch (Exception ex)
+            {
+                throw new CustomException(ExceptionErrorCode.RepositoryError, ex.Message);
+            }
+        }
+        public async Task<int> CountProductsByCategoryIdAsync(Guid categoryId)
+        {
+            try
+            {
+                if (categoryId == Guid.Empty)
+                    throw new CustomException(ExceptionErrorCode.ValidationFailed, "Id danh mục không hợp lệ.");
+
+                return await _context.Products.CountAsync(p => p.CategoryId == categoryId);
+            }
+            catch (Exception ex)
+            {
+                throw new CustomException(ExceptionErrorCode.RepositoryError, ex.Message);
+            }
+        }
 
     }
 }

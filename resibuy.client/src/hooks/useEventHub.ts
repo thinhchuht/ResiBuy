@@ -99,9 +99,35 @@ class HubEventsManager {
     if (!this.hub) return;
 
     console.log("Setting up event subscriptions...");
-    Object.entries(this.eventHandlers).forEach(([event, handler]) => {
+    // Lấy tất cả event từ this.hub nếu có (giả sử hub có thuộc tính eventNames hoặc connection có thể lấy được)
+    // Nếu không, vẫn subscribe các event mặc định như cũ
+    const knownEvents = Object.keys(this.eventHandlers);
+    knownEvents.forEach((event) => {
+      // Đăng ký event gốc
       console.log(`Subscribing to ${event} event...`);
-      this.hub?.subscribe(event, handler);
+      this.hub?.subscribe(event, this.eventHandlers[event as HubEventType]);
+      // Đăng ký các event bắt đầu bằng OrderStatusChanged-
+      if (event === 'OrderStatusChanged') {
+        // Đăng ký wildcard cho các event bắt đầu bằng OrderStatusChanged-
+        // Giả sử backend sẽ gửi event dạng OrderStatusChanged-status
+        // Đăng ký handler cho các event này
+        const subscribeWildcard = (evt: string) => {
+          if (evt.startsWith('OrderStatusChanged-')) {
+            this.hub?.subscribe(evt, this.eventHandlers[HubEventType.OrderStatusChanged]);
+            console.log(`Subscribing to ${evt} event as OrderStatusChanged`);
+          }
+        };
+        // Nếu hub có danh sách eventNames thì lặp qua, nếu không thì cứ đăng ký một số event phổ biến
+        // (hoặc backend có thể gửi danh sách eventNames khi connect)
+        // Ví dụ đăng ký sẵn các trạng thái phổ biến
+        [
+          'OrderStatusChanged-Processing',
+          'OrderStatusChanged-Shipped',
+          'OrderStatusChanged-Delivered',
+          'OrderStatusChanged-CustomerNotAvailable',
+          'OrderStatusChanged-Cancelled',
+        ].forEach(subscribeWildcard);
+      }
     });
     console.log("Event subscriptions setup complete");
   }

@@ -1,5 +1,4 @@
-﻿using ResiBuy.Server.Services.MapBoxService;
-using ResiBuy.Server.Services.OpenRouteService;
+﻿using ResiBuy.Server.Services.OpenRouteService;
 
 namespace ResiBuy.Server.Infrastructure.DbServices.OrderDbServices;
 
@@ -64,16 +63,16 @@ public class OrderDbService : BaseDbService<Order>, IOrderDbService
             }
 
             var totalCount = await query.CountAsync();
-
             var orders = await query
-                .OrderByDescending(o => o.UpdateAt)
+                .OrderBy(o => o.Status != OrderStatus.Reported) 
+                .ThenByDescending(o => o.UpdateAt)
                 .Include(o => o.ShippingAddress).ThenInclude(sa => sa.Building).ThenInclude(b => b.Area)
                 .Include(o => o.Store)
                 .Include(o => o.Items).ThenInclude(oi => oi.ProductDetail).ThenInclude(pd => pd.Image)
                 .Include(o => o.Items).ThenInclude(oi => oi.ProductDetail).ThenInclude(pd => pd.Product)
                 .Include(o => o.Voucher)
                 .Include(o => o.Shipper).ThenInclude(s => s.User)
-                .Include(o => o.Reports)
+                .Include(o => o.Report)
                 .Skip((pageNumber - 1) * pageSize)
                 .Take(pageSize)
                 .ToListAsync();
@@ -86,6 +85,7 @@ public class OrderDbService : BaseDbService<Order>, IOrderDbService
         }
 
     }
+
     public async Task<Order> GetById(Guid id)
     {
         return await _context.Orders.Include(o => o.ShippingAddress).ThenInclude(sa => sa.Building).ThenInclude(b => b.Area)
@@ -94,13 +94,35 @@ public class OrderDbService : BaseDbService<Order>, IOrderDbService
                 .Include(o => o.Items).ThenInclude(oi => oi.ProductDetail).ThenInclude(pd => pd.Product)
                 .Include(o => o.Voucher)
                 .Include(o => o.Shipper).ThenInclude(s => s.User)
-                .Include(o => o.Reports).FirstOrDefaultAsync(o => o.Id == id);
+                .Include(o => o.Report).FirstOrDefaultAsync(o => o.Id == id);
     }
+
+    public async Task<List<Order>> GetCancelledOrders()
+    {
+        return await _context.Orders.Where(o => o.Status == OrderStatus.Cancelled && o.PaymentMethod == PaymentMethod.BankTransfer && o.PaymentStatus == PaymentStatus.Paid).ToListAsync();
+    }
+
+    public async Task<decimal> GetMonthlyBankRevenue(Guid storeId, int month)
+    {
+        var now = DateTime.Now;
+        int year = now.Month == month ? now.Year : (now.Month < month ? now.Year - 1 : now.Year);
+        var startDate = new DateTime(year, month, 1);
+        var endDate = startDate.AddMonths(1);
+        return await _context.Orders
+            .Where(o => o.Status == OrderStatus.Delivered
+                && o.PaymentMethod == PaymentMethod.BankTransfer
+                && o.PaymentStatus == PaymentStatus.Paid
+                && o.StoreId == storeId
+                && o.UpdateAt >= startDate
+                && o.UpdateAt < endDate)
+            .SumAsync(o => (o.TotalPrice - o.ShippingFee.Value) * 90 / 100);
+    }
+
     public async Task<List<Order>> getOrdersByStatus(OrderStatus orderStatus)
     {
         try
         {
-            return await _context.Orders.Where(o => o.Status == orderStatus)
+            return await _context.Orders.Where(o => o.Status == orderStatus && o.PaymentMethod == PaymentMethod.BankTransfer)
                 .Include(o => o.Store).ThenInclude(s => s.Room)
                 .ThenInclude(r => r.Building).ThenInclude(b => b.Area)
                 .ToListAsync();
@@ -110,7 +132,7 @@ public class OrderDbService : BaseDbService<Order>, IOrderDbService
             throw new CustomException(ExceptionErrorCode.RepositoryError, ex.ToString());
         }
     }
-    public async Task<decimal> ShippingFeeCharged(Guid ShippingAddress,Guid storeAddress, float weight)
+    public async Task<decimal> ShippingFeeCharged(Guid ShippingAddress, Guid storeAddress, float weight)
     {
         try
         {
@@ -128,15 +150,15 @@ public class OrderDbService : BaseDbService<Order>, IOrderDbService
             {
                 throw new CustomException(ExceptionErrorCode.NotFound, "Địa chỉ cửa hàng không tồn tại");
             }
-            decimal distanceFee = 0;
+            decimal distanceFee = 5000;
             if (shippingRoom.Building.AreaId != storeRoom.Building.AreaId)
             {
-               var route = await _mapBoxService.GetDirectionsAsync(
-                       shippingRoom.Building.Area.Latitude,
-                       shippingRoom.Building.Area.Longitude,
-                       storeRoom.Building.Area.Latitude,
-                       storeRoom.Building.Area.Longitude
-                       );
+                var route = await _mapBoxService.GetDirectionsAsync(
+                        shippingRoom.Building.Area.Latitude,
+                        shippingRoom.Building.Area.Longitude,
+                        storeRoom.Building.Area.Latitude,
+                        storeRoom.Building.Area.Longitude
+                        );
                 if (route == null || route.Routes == null || route.Routes.Count == 0)
                 {
                     throw new CustomException(ExceptionErrorCode.ValidationFailed, "Không thể tính toán khoảng cách giao hàng");
@@ -151,7 +173,7 @@ public class OrderDbService : BaseDbService<Order>, IOrderDbService
 
             if (weight > 2)
             {
-                weightFee = (decimal)(Math.Round((weight-2) / 2) * 1000); // 1000đ/2kg
+                weightFee = (decimal)(Math.Round((weight - 2) / 2) * 1000); // 1000đ/2kg
             }
             return distanceFee + weightFee;
         }

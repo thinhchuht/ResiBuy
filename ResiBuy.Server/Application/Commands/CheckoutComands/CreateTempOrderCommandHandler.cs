@@ -31,7 +31,9 @@ namespace ResiBuy.Server.Application.Commands.CheckoutComands
                     var productDetail = await productDetailDbService.GetByIdAsync(ci.ProductDetailId);
                     if (productDetail == null)
                         throw new CustomException(ExceptionErrorCode.NotFound, $"Không tìm thấy sản phẩm: {ci.ProductDetailId}");
-                    if(productDetail.IsOutOfStock) throw new CustomException(ExceptionErrorCode.NotFound, $"Sản phẩm {productDetail.Product.Name} đã hết hàng");
+                    if(productDetail.IsOutOfStock || productDetail.Quantity <= 0) throw new CustomException(ExceptionErrorCode.NotFound, $"Sản phẩm {productDetail.Product.Name} đã hết hàng");
+                    if (productDetail.Quantity < ci.Quantity)
+                        throw new CustomException(ExceptionErrorCode.ValidationFailed, $"Mặt hàng {productDetail.Product.Name} chỉ còn {productDetail.Quantity} sản phẩm có sẵn");
                     tempProductDetails.Add(new TempProductDetailDto(
                         productDetail.Id,
                         productDetail.Product.Name,
@@ -44,14 +46,15 @@ namespace ResiBuy.Server.Application.Commands.CheckoutComands
                     ));
                 }
                 //var shippingFee = await orderDbService.ShippingFeeCharged(user.UserRooms.First().RoomId, store.RoomId, tempProductDetails.Sum(ci => ci.Weight));
-                var totalPrice = tempProductDetails.Sum(x => x.Price * x.Quantity) + 10000;
+                var totalPrice = tempProductDetails.Sum(x => x.Price * x.Quantity) + 5000;
                 var tempOrder = new TempOrderDto
                 {
                     Id = Guid.NewGuid(),
                     StoreId = storeId,
-                    TotalPrice = totalPrice,
+                    TotalBeforeDiscount = Math.Round(tempProductDetails.Sum(x => x.Price * x.Quantity), MidpointRounding.AwayFromZero),
+                    TotalPrice = Math.Round(tempProductDetails.Sum(x => x.Price * x.Quantity), MidpointRounding.AwayFromZero),
                     ProductDetails = tempProductDetails,
-                    ShippingFee = 10000,
+                    ShippingFee = 5000,
                 };
                 tempOrders.Add(tempOrder);
             }

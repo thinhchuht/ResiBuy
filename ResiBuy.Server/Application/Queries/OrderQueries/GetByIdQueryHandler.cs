@@ -13,7 +13,11 @@ namespace ResiBuy.Server.Application.Queries.OrderQueries
             var orderRs = new OrderQueryResult(
                 order.Id,
                 order.UserId,
-                order.ShipperId,
+                order.Shipper == null ? null : new
+                {
+                    Id = order.ShipperId,
+                    PhoneNumber = order.Shipper.User.PhoneNumber
+                },
                 order.CreateAt,
                 order.UpdateAt,
                 order.Status,
@@ -22,6 +26,14 @@ namespace ResiBuy.Server.Application.Queries.OrderQueries
                 order.TotalPrice,
                 order.ShippingFee,
                 order.Note,
+                order.CancelReason,
+                order.Report == null ? null : new
+                {
+                    order.Report.Id,
+                    order.Report.Title,
+                    order.Report.Description,
+                    order.Report.IsResolved
+                },
                 new RoomQueryResult(
                     order.ShippingAddress.Id,
                     order.ShippingAddress.Name,
@@ -31,6 +43,7 @@ namespace ResiBuy.Server.Application.Queries.OrderQueries
                 {
                     Id = order.StoreId,
                     Name = order.Store.Name,
+                    PhoneNumber = order.Store.PhoneNumber,
                 },
                 order.Voucher == null ? null : new { order.Voucher.Id, order.Voucher.DiscountAmount, order.Voucher.Type, order.Voucher.MinOrderPrice, order.Voucher.MaxDiscountPrice },
                 order.Items.Select(oi => new OrderItemQueryResult(

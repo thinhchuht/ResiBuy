@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import {
   Dialog,
   DialogTitle,
@@ -14,6 +14,7 @@ import {
   TableBody,
   TableRow,
   TableCell,
+  CircularProgress,
 } from "@mui/material";
 import {
   Close,
@@ -26,7 +27,8 @@ import {
   formatCurrency,
   useCategoriesLogic,
 } from "./seg/utlis";
-import type { Category } from "../../../types/models";
+import type { Category, Product } from "../../../types/models";
+import { useNavigate } from "react-router-dom";
 
 interface CategoryDetailModalProps {
   isOpen: boolean;
@@ -44,17 +46,91 @@ export function CategoryDetailModal({
   onDelete,
 }: CategoryDetailModalProps) {
   const [activeTab, setActiveTab] = useState<"overview" | "products">("overview");
+  const [products, setProducts] = useState<Product[]>([]);
+  const [loadingProducts, setLoadingProducts] = useState(false);
+  const [totalProducts, setTotalProducts] = useState<number>(0);
+  const [totalSoldProducts, setTotalSoldProducts] = useState<number>(0);
+  const [totalRevenue, setTotalRevenue] = useState<number>(0);
+  const [loadingStats, setLoadingStats] = useState(false);
+  const [error, setError] = useState<string | null>(null);
   const {
+    getProductsByCategoryId,
     countProductsByCategoryId,
     countSoldProductsByCategoryId,
     calculateCategoryRevenue,
   } = useCategoriesLogic();
+  const navigate = useNavigate();
 
-  if (!isOpen || !category) return null;
+  // Log props để debug
+  useEffect(() => {
+    console.log("CategoryDetailModal props:", { isOpen, category });
+  }, [isOpen, category]);
 
-  const totalProducts = countProductsByCategoryId(category.id);
-  const totalSoldProducts = countSoldProductsByCategoryId(category.id);
-  const totalRevenue = calculateCategoryRevenue(category.id);
+  // Fetch sản phẩm khi tab "products" được chọn
+  useEffect(() => {
+    if (isOpen && category?.id && activeTab === "products") {
+      setLoadingProducts(true);
+      getProductsByCategoryId(category.id)
+        .then((productsData) => {
+          console.log("Products fetched:", productsData);
+          setProducts(productsData);
+          setLoadingProducts(false);
+        })
+        .catch((err) => {
+          console.error("Error fetching products:", err);
+          setProducts([]);
+          setLoadingProducts(false);
+          setError("Lỗi khi tải danh sách sản phẩm");
+        });
+    }
+  }, [isOpen, category, activeTab, getProductsByCategoryId]);
+
+  // Fetch thống kê danh mục
+  useEffect(() => {
+    if (isOpen && category?.id) {
+      console.log("useEffect for stats triggered with category.id:", category.id);
+      setLoadingStats(true);
+      setError(null);
+
+      // Thử gọi countProductsByCategoryId độc lập để kiểm tra
+      countProductsByCategoryId(category.id)
+        .then((count) => {
+          console.log("Direct countProductsByCategoryId result:", count);
+          setTotalProducts(Number(count) || 0);
+        })
+        .catch((err) => {
+          console.error("Direct countProductsByCategoryId error:", err);
+          setTotalProducts(0);
+        });
+
+      Promise.all([
+        countProductsByCategoryId(category.id),
+        countSoldProductsByCategoryId(category.id),
+        calculateCategoryRevenue(category.id),
+      ])
+        .then(([productsCount, soldProductsCount, revenue]) => {
+          console.log("Before setting totalProducts:", productsCount);
+          console.log("Stats fetched:", { productsCount, soldProductsCount, revenue });
+          setTotalProducts(Number(productsCount) || 0);
+          setTotalSoldProducts(Number(soldProductsCount) || 0);
+          setTotalRevenue(Number(revenue) || 0);
+          setLoadingStats(false);
+        })
+        .catch((err) => {
+          console.error("Error fetching category stats:", err);
+          setError("Lỗi khi tải thống kê danh mục");
+          setTotalProducts(0);
+          setTotalSoldProducts(0);
+          setTotalRevenue(0);
+          setLoadingStats(false);
+        });
+    }
+  }, [isOpen, category, countProductsByCategoryId, countSoldProductsByCategoryId, calculateCategoryRevenue]);
+
+  if (!isOpen || !category || !category.id) {
+    console.log("CategoryDetailModal not rendered due to:", { isOpen, category });
+    return null;
+  }
 
   return (
     <Dialog
@@ -65,7 +141,7 @@ export function CategoryDetailModal({
       sx={{
         "& .MuiDialog-paper": {
           maxWidth: "80rem",
-          height: "90vh", // Giới hạn chiều cao modal
+          height: "90vh",
           margin: 0,
           borderRadius: 0,
           boxShadow: 24,
@@ -162,83 +238,104 @@ export function CategoryDetailModal({
           bgcolor: "grey.50",
           borderBottom: 1,
           borderColor: "grey.200",
-          flex: "0 0 auto", // Không cho phép phần tóm tắt mở rộng
+          flex: "0 0 auto",
         }}
       >
-        {/* Category Summary */}
-        <Box sx={{ display: "flex", gap: 3, alignItems: "flex-start" }}>
-          <Box sx={{ width: 80, height: 80 }}>
+        {error && (
+          <Typography color="error" sx={{ mb: 2 }}>
+            {error}
+          </Typography>
+        )}
+        {loadingStats ? (
+          <Box sx={{ display: "flex", justifyContent: "center", py: 2 }}>
+            <CircularProgress />
+          </Box>
+        ) : (
+          <Box sx={{ display: "flex", gap: 3, alignItems: "flex-start" }}>
+            <Box sx={{ width: 80, height: 80 }}>
+              {category.image?.url ? (
+                <img
+                  src={category.image.thumbUrl || category.image.url}
+                  alt={category.image.name || "Category Image"}
+                  style={{
+                    width: "100%",
+                    height: "100%",
+                    borderRadius: "50%",
+                    objectFit: "cover",
+                  }}
+                />
+              ) : (
+                <Box
+                  sx={{
+                    width: "100%",
+                    height: "100%",
+                    borderRadius: "50%",
+                    background: "linear-gradient(135deg, #3b82f6 0%, #a855f7 100%)",
+                    display: "flex",
+                    alignItems: "center",
+                    justifyContent: "center",
+                    color: "white",
+                    fontSize: "1.5rem",
+                    fontWeight: "bold",
+                  }}
+                >
+                  {category.name
+                    .split(" ")
+                    .map((n) => n[0])
+                    .join("")
+                    .toUpperCase()}
+                </Box>
+              )}
+            </Box>
+            <Box sx={{ flex: 1 }}>
+              <Typography
+                variant="h5"
+                sx={{ color: "grey.900", fontWeight: "bold", mb: 1 }}
+              >
+                {category.name}
+              </Typography>
+            </Box>
             <Box
               sx={{
-              width: "100%",
-    height: "100%",
-    borderRadius: "50%",
-    background: "linear-gradient(135deg, #3b82f6 0%, #a855f7 100%)",
-    display: "flex",
-    alignItems: "center",
-    justifyContent: "center",
-    color: "white",
-    fontSize: "1.5rem",
-    fontWeight: "bold",
-
+                display: "grid",
+                gridTemplateColumns: "1fr 1fr",
+                gap: 2,
+                textAlign: "left",
               }}
             >
-              {category.name
-                .split(" ")
-                .map((n) => n[0])
-                .join("")
-                .toUpperCase()}
+              <Box>
+                <Typography
+                  variant="h5"
+                  sx={{ color: "primary.main", fontWeight: "bold" }}
+                >
+                  {totalProducts}
+                </Typography>
+                <Typography
+                  variant="caption"
+                  sx={{ color: "grey.500" }}
+                >
+                  Tổng Sản Phẩm
+                </Typography>
+              </Box>
+              <Box>
+                <Typography
+                  variant="h5"
+                  sx={{ color: "success.main", fontWeight: "bold" }}
+                >
+                  {formatCurrency(totalRevenue)}
+                </Typography>
+                <Typography
+                  variant="caption"
+                  sx={{ color: "grey.500" }}
+                >
+                  Tổng Doanh Thu
+                </Typography>
+              </Box>
             </Box>
           </Box>
-          <Box sx={{ flex: 1 }}>
-            <Typography
-              variant="h5"
-              sx={{ color: "grey.900", fontWeight: "bold", mb: 1 }}
-            >
-              {category.name}
-            </Typography>
-          </Box>
-          <Box
-            sx={{
-              display: "grid",
-              gridTemplateColumns: "1fr 1fr",
-              gap: 2,
-              textAlign: "left",
-            }}
-          >
-            <Box>
-              <Typography
-                variant="h5"
-                sx={{ color: "primary.main", fontWeight: "bold" }}
-              >
-                {totalProducts}
-              </Typography>
-              <Typography
-                variant="caption"
-                sx={{ color: "grey.500" }}
-              >
-                Tổng Sản Phẩm
-              </Typography>
-            </Box>
-            <Box>
-              <Typography
-                variant="h5"
-                sx={{ color: "success.main", fontWeight: "bold" }}
-              >
-                {formatCurrency(totalRevenue)}
-              </Typography>
-              <Typography
-                variant="caption"
-                sx={{ color: "grey.500" }}
-              >
-                Tổng Doanh Thu
-              </Typography>
-            </Box>
-          </Box>
-        </Box>
+        )}
       </DialogContent>
 
-      {/* Tabs */}
       <Box
         sx={{
           borderBottom: 1,
@@ -280,13 +377,12 @@ export function CategoryDetailModal({
         </Tabs>
       </Box>
 
-      {/* Tab Content */}
       <DialogContent
         sx={{
           p: 3,
           flex: 1,
           overflowY: "auto",
-          minHeight: "300px", // Đảm bảo chiều cao tối thiểu
+          minHeight: "300px",
           display: "flex",
           flexDirection: "column",
           gap: 3,
@@ -300,48 +396,55 @@ export function CategoryDetailModal({
             >
               Thông Tin Danh Mục
             </Typography>
-            <Box
-              sx={{
-                display: "grid",
-                gridTemplateColumns: { xs: "1fr", md: "1fr 1fr" },
-                gap: 3,
-              }}
-            >
-              <Box>
-                <Typography
-                  variant="body2"
-                  sx={{ color: "grey.500", fontWeight: "medium" }}
-                >
-                  Tổng Sản Phẩm Đã Bán
-                </Typography>
-                <Typography sx={{ color: "grey.900" }}>
-                  {totalSoldProducts}
-                </Typography>
+            {loadingStats ? (
+              <Box sx={{ display: "flex", justifyContent: "center", py: 2 }}>
+                <CircularProgress />
               </Box>
-              <Box>
-                <Typography
-                  variant="body2"
-                  sx={{ color: "grey.500", fontWeight: "medium" }}
-                >
-                  Giá Trị Sản Phẩm Trung Bình
-                </Typography>
-                <Typography sx={{ color: "grey.900" }}>
-                  {totalProducts > 0 ? formatCurrency(totalRevenue / totalProducts) : "0 VNĐ"}
-                </Typography>
+            ) : (
+              <Box
+                sx={{
+                  display: "grid",
+                  gridTemplateColumns: { xs: "1fr", md: "1fr 1fr" },
+                  gap: 3,
+                }}
+              >
+                <Box>
+                  <Typography
+                    variant="body2"
+                    sx={{ color: "grey.500", fontWeight: "medium" }}
+                  >
+                    Tổng Sản Phẩm Đã Bán
+                  </Typography>
+                  <Typography sx={{ color: "grey.900" }}>
+                    {totalSoldProducts}
+                  </Typography>
+                </Box>
+                <Box>
+                  <Typography
+                    variant="body2"
+                    sx={{ color: "grey.500", fontWeight: "medium" }}
+                  >
+                    Giá Trị Sản Phẩm Trung Bình
+                  </Typography>
+                  <Typography sx={{ color: "grey.900" }}>
+                    {totalProducts > 0 ? formatCurrency(totalRevenue / totalProducts) : "0 VNĐ"}
+                  </Typography>
+                </Box>
               </Box>
-            </Box>
+            )}
           </Box>
         )}
 
         {activeTab === "products" && (
           <Box>
-            <Typography
-              variant="h6"
-              sx={{ color: "grey.900", mb: 2 }}
-            >
+            <Typography variant="h6" sx={{ color: "grey.900", mb: 2 }}>
               Sản Phẩm ({totalProducts} sản phẩm)
             </Typography>
-            {category.products.length > 0 ? (
+            {loadingProducts ? (
+              <Box sx={{ display: "flex", justifyContent: "center", py: 4 }}>
+                <CircularProgress />
+              </Box>
+            ) : products.length > 0 ? (
               <Box sx={{ border: 1, borderColor: "grey.200", borderRadius: 2, overflow: "hidden" }}>
                 <Table>
                   <TableHead sx={{ bgcolor: "grey.50" }}>
@@ -356,7 +459,7 @@ export function CategoryDetailModal({
                         Giá
                       </TableCell>
                       <TableCell sx={{ px: 2, py: 1.5, color: "grey.500", fontSize: "0.75rem", fontWeight: "medium", textTransform: "uppercase" }}>
-                        Số Lượng
+                        Trạng Thái
                       </TableCell>
                       <TableCell sx={{ px: 2, py: 1.5, color: "grey.500", fontSize: "0.75rem", fontWeight: "medium", textTransform: "uppercase" }}>
                         Đã Bán
@@ -364,22 +467,42 @@ export function CategoryDetailModal({
                     </TableRow>
                   </TableHead>
                   <TableBody sx={{ "& tr:hover": { bgcolor: "grey.50" } }}>
-                    {category.products.map((product) => (
+                    {products.map((product) => (
                       <TableRow key={product.id}>
                         <TableCell sx={{ px: 2, py: 1.5, fontFamily: "monospace", fontSize: "0.875rem", color: "primary.main" }}>
                           {product.id}
                         </TableCell>
-                        <TableCell sx={{ px: 2, py: 1.5, fontSize: "0.875rem", color: "grey.900" }}>
+                        <TableCell
+                          sx={{
+                            px: 2,
+                            py: 1.5,
+                            fontSize: "0.875rem",
+                            color: "primary.main",
+                            cursor: "pointer",
+                            textDecoration: "none",
+                            transition: "all 0.3s ease-in-out",
+                            "&:hover": {
+                              backgroundImage: "linear-gradient(90deg, red, orange, yellow, green, blue, indigo, violet)",
+                              WebkitBackgroundClip: "text",
+                              WebkitTextFillColor: "transparent",
+                            },
+                          }}
+                          onClick={() => navigate(`/products?id=${product.id}`)}
+                        >
                           {product.name}
                         </TableCell>
                         <TableCell sx={{ px: 2, py: 1.5, fontSize: "0.875rem", color: "grey.900" }}>
-                          {formatCurrency(product.price)}
+                          {product.productDetails[0] ? formatCurrency(product.productDetails[0].price) : "N/A"}
                         </TableCell>
                         <TableCell sx={{ px: 2, py: 1.5, fontSize: "0.875rem", color: "grey.900" }}>
-                          {product.quantity}
+                          {product.productDetails[0]
+                            ? product.productDetails[0].isOutOfStock
+                              ? "Hết hàng"
+                              : "Còn hàng"
+                            : "N/A"}
                         </TableCell>
                         <TableCell sx={{ px: 2, py: 1.5, fontSize: "0.875rem", color: "grey.900" }}>
-                          {product.sold}
+                          {product.productDetails[0] ? product.productDetails[0].sold : "N/A"}
                         </TableCell>
                       </TableRow>
                     ))}

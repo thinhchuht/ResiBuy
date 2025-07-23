@@ -40,12 +40,13 @@
         public Guid? ShipperId { get; set; }
         public Guid? VoucherId { get; set; }
         public decimal? ShippingFee { get; set; } = 0;
+        public string CancelReason { get; set; }
         public Room ShippingAddress { get; set; }
         public User User { get; set; }
         public Store Store { get; set; }
         public Shipper Shipper { get; set; }
         public Voucher Voucher { get; set; }
-        public IEnumerable<Report> Reports { get; set; }
+        public Report? Report { get; set; }
         public IEnumerable<OrderItem> Items { get; set; }
     }
 }

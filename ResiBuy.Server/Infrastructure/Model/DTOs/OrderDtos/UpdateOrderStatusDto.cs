@@ -5,5 +5,7 @@
         public string UserId { get; set; }
         public Guid OrderId { get; set; }
         public OrderStatus? OrderStatus { get; set; }
+        public string Reason { get; set; }
+        public Guid? ShipperId { get; set; }
     }
 }
