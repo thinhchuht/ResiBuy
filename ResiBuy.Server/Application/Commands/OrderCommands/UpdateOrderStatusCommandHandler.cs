@@ -19,6 +19,8 @@ namespace ResiBuy.Server.Application.Commands.OrderCommands
             {
                 if (dto.OrderStatus == OrderStatus.None)
                     throw new CustomException(ExceptionErrorCode.ValidationFailed, "Trạng thái đơn hàng không tồn tại.");
+                if (dto.OrderStatus == OrderStatus.Reported)
+                    throw new CustomException(ExceptionErrorCode.ValidationFailed, "Trạng thái đơn hàng không hợp lệ.");
                 if (order.Status == OrderStatus.Delivered)
                     throw new CustomException(ExceptionErrorCode.ValidationFailed, "Trạng thái đơn hàng đã hoàn thành.");
                 if (dto.OrderStatus == OrderStatus.Pending)

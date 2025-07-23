@@ -6,10 +6,12 @@ namespace ResiBuy.Server.Infrastructure.Model.DTOs.ReportDtos
     {
         public string UserId { get; set; } = string.Empty;
         public string Keyword { get; set; }
+        public bool? IsResolved { get; set; }
         public DateTime? StartDate { get; set; }
         public DateTime? EndDate { get; set; }
+        public ReportTarget ReportTarget { get; set; }
         public ReportStatus ReportStatus { get; set; }
-        public int PageNumber { get; set; }
-        public int PageSize { get; set; }
+        public int PageNumber { get; set; } = 1;
+        public int PageSize { get; set; } = 10;
     }
 }

@@ -3,6 +3,7 @@ using System;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
 using Microsoft.EntityFrameworkCore.Metadata;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using ResiBuy.Server.Infrastructure;
 
@@ -11,9 +12,11 @@ using ResiBuy.Server.Infrastructure;
 namespace ResiBuy.Server.Migrations
 {
     [DbContext(typeof(ResiBuyContext))]
-    partial class ResiBuyContextModelSnapshot : ModelSnapshot
+    [Migration("20250723073727_add-reporttartget")]
+    partial class addreporttartget
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -481,8 +484,7 @@ namespace ResiBuy.Server.Migrations
 
                     b.HasIndex("CreatedById");
 
-                    b.HasIndex("OrderId")
-                        .IsUnique();
+                    b.HasIndex("OrderId");
 
                     b.ToTable("Reports");
                 });
@@ -517,9 +519,6 @@ namespace ResiBuy.Server.Migrations
 
                     b.Property<float>("EndWorkTime")
                         .HasColumnType("real");
-
-                    b.Property<bool>("IsLocked")
-                        .HasColumnType("bit");
 
                     b.Property<bool>("IsOnline")
                         .HasColumnType("bit");
@@ -650,19 +649,19 @@ namespace ResiBuy.Server.Migrations
                         new
                         {
                             Id = "adm_df",
-                            CreatedAt = new DateTime(2025, 7, 23, 16, 37, 47, 693, DateTimeKind.Local).AddTicks(4875),
+                            CreatedAt = new DateTime(2025, 7, 23, 14, 37, 27, 48, DateTimeKind.Local).AddTicks(64),
                             DateOfBirth = new DateTime(1990, 1, 1, 0, 0, 0, 0, DateTimeKind.Unspecified),
                             Email = "admin@123",
                             EmailConfirmed = true,
                             FullName = "Administrator",
                             IdentityNumber = "admin",
                             IsLocked = false,
-                            PasswordHash = "$2a$11$zakEKdrtxzXuj/w9aGceK.pT2MagEgR8.t8vJce7bE470MPLC.Beu",
+                            PasswordHash = "$2a$11$exEz2xt.ZwVqGvWT/BwMuOuP4eZRZ67ZXCzFjQkJ2oFaYA6DtOy06",
                             PhoneNumber = "admin",
                             PhoneNumberConfirmed = true,
                             ReportCount = 0,
                             Roles = "[\"ADMIN\"]",
-                            UpdatedAt = new DateTime(2025, 7, 23, 16, 37, 47, 693, DateTimeKind.Local).AddTicks(4897)
+                            UpdatedAt = new DateTime(2025, 7, 23, 14, 37, 27, 48, DateTimeKind.Local).AddTicks(77)
                         });
                 });
 
@@ -940,8 +939,8 @@ namespace ResiBuy.Server.Migrations
                         .OnDelete(DeleteBehavior.Cascade);
 
                     b.HasOne("ResiBuy.Server.Infrastructure.Model.Order", "Order")
-                        .WithOne("Report")
-                        .HasForeignKey("ResiBuy.Server.Infrastructure.Model.Report", "OrderId")
+                        .WithMany("Reports")
+                        .HasForeignKey("OrderId")
                         .OnDelete(DeleteBehavior.Restrict)
                         .IsRequired();
 
@@ -1098,7 +1097,7 @@ namespace ResiBuy.Server.Migrations
                 {
                     b.Navigation("Items");
 
-                    b.Navigation("Report");
+                    b.Navigation("Reports");
                 });
 
             modelBuilder.Entity("ResiBuy.Server.Infrastructure.Model.Product", b =>

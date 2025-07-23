@@ -64,7 +64,7 @@ interface NotificationApiItem {
   eventName: string;
   createdAt: string;
   isRead: boolean;
-  data : object
+  data : string
   [key: string]: unknown;
 }
 
@@ -74,7 +74,6 @@ function notifiConvert(item: NotificationApiItem): Notification {
     minute: "2-digit",
   });
   const formattedDate = new Date(item.createdAt).toLocaleDateString("vi-VN");
-console.log('item', item)
 
   // Parse data
   let dataObj: Record<string, unknown> = {};
@@ -85,7 +84,6 @@ console.log('item', item)
   }
 
  
-  console.log('dataObj', dataObj)
   let title = "";
   let message = "";
   let status = dataObj.orderStatus;
@@ -105,7 +103,7 @@ console.log('item', item)
           ? "Khách chưa nhận hàng"
           : "Đơn hàng đã bị hủy";
       message =
-        `Đơn hàng #${dataObj.orderId ?? item.id} ` +
+        `Đơn hàng #${dataObj.id} ` +
         (status === "Processing"
           ? "đã được xử lý"
           : status === "Shipped"
@@ -118,7 +116,7 @@ console.log('item', item)
       break;
     case item.eventName === "OrderCreated":
       title = "Đơn hàng mới";
-      message = `Đơn hàng #${dataObj.orderId ?? item.id} đã được tạo`;
+      message = `Đơn hàng #${dataObj.id} đã được tạo`;
       break;
     default:
       title = "Thông báo";
@@ -223,7 +221,6 @@ const AppBar: React.FC = () => {
 
   const handleOrderCreated = useCallback(
     (data: OrderStatusChangedData) => {
-      console.log("hihehah súuus");
       fetchItemCount();
       const formattedTime = new Date(data.createdAt).toLocaleTimeString(
         "vi-VN",
