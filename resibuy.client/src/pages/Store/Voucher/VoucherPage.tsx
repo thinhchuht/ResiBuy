@@ -101,10 +101,13 @@ const VoucherPage: React.FC = () => {
 
   const handleToggleStatus = async (voucher: Voucher) => {
     try {
-      await axios.put(`/api/Voucher/${voucher.id}/toggle-status`);
+      await axios.put("/api/Voucher/deactive", {
+        id: voucher.id,
+        storeId: storeId,
+      });
       fetchVouchers();
     } catch (error) {
-      console.error("Failed to toggle status", error);
+      console.error("Failed to deactive voucher", error);
     }
   };
 

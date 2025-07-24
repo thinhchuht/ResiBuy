@@ -20,4 +20,5 @@ public interface IOrderDbService : IBaseDbService<Order>
     Task<Order> UpdateOrderStatus(Guid orderId, OrderStatus orderStatus);
     Task<decimal> ShippingFeeCharged(Guid ShippingAddress, Guid storeAddress, float weight);
     Task<decimal> GetMonthlyBankRevenue(Guid storeId, int month);
+
 }
