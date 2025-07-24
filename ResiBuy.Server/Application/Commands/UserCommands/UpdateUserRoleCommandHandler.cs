@@ -92,13 +92,14 @@ namespace ResiBuy.Server.Application.Commands.UserCommands
 
                     if (await storeDbService.CheckRoomIsAvailable(dto.Store.RoomId))
                         throw new CustomException(ExceptionErrorCode.DuplicateValue, "Phòng đã có người sử dụng");
-
+                    if (!Regex.IsMatch(dto.Store.PhoneNumber, Constants.PhoneNumberPattern)) throw new CustomException(ExceptionErrorCode.ValidationFailed, "Số điện thoại không hợp lệ");
                     if (string.IsNullOrWhiteSpace(dto.Store.Name))
                         throw new CustomException(ExceptionErrorCode.ValidationFailed, "Cần điền tên cửa hàng của bạn");
                     if (await storeDbService.CheckStoreIsAvailable(dto.Store.Name)) throw new CustomException(ExceptionErrorCode.ValidationFailed, "Tên cửa hàng đã tồn tại, thử lại 1 tên khác.");
                     var store = new Store
                     {
                         Name = dto.Store.Name,
+                        PhoneNumber  =dto.Store.PhoneNumber,
                         Description = dto.Store.Description,
                         IsLocked = false,
                         IsOpen = true,

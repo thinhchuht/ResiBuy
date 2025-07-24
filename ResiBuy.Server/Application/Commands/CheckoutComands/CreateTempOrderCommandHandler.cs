@@ -25,6 +25,7 @@ namespace ResiBuy.Server.Application.Commands.CheckoutComands
             {
                 var storeId = group.Key;
                 var store = await storeDbService.GetStoreByIdAsync(storeId);
+               if(store.OwnerId == user.Id) throw new CustomException(ExceptionErrorCode.ValidationFailed, "Không thể mua hàng từ chính cửa hàng của mình");
                 var tempProductDetails = new List<TempProductDetailDto>();
                 foreach (var ci in group)
                 {

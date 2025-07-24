@@ -1,6 +1,6 @@
 ﻿using ResiBuy.Server.Infrastructure.DbServices.OrderDbServices;
 using ResiBuy.Server.Infrastructure.DbServices.ReportServices;
-using ResiBuy.Server.Infrastructure.Model.DTOs.ReportDtos;
+using ResiBuy.Server.Infrastructure.Model.EventDataDto;
 
 namespace ResiBuy.Server.Application.Commands.ReportCommands
 {
@@ -51,9 +51,20 @@ namespace ResiBuy.Server.Application.Commands.ReportCommands
                 }
             }
             //List<string> notiUser = new List<string>();
-            await notificationService.SendNotificationAsync(Constants.OrderReported,
-                new ResolveReportDto(report.Id, report.OrderId),
-                Constants.AdminHubGroup, [report.TargetId, report.CreatedById]);
+            List<string> notiUser = new() { report.CreatedById };
+            string storeName = "";
+            if (report.ReportTarget == ReportTarget.Customer || report.ReportTarget == ReportTarget.Shipper)
+            {
+                notiUser.Add(report.TargetId);
+            }
+            else if (report.ReportTarget == ReportTarget.Store)
+            {
+                notiUser.Add(order.Store.OwnerId);
+                storeName = order.Store.Name;
+            }
+            await notificationService.SendNotificationAsync(Constants.ReportResolved,
+                new ResolveReportDto(report.Id, report.OrderId, report.TargetId, command.IsAddReportTarget, report.ReportTarget, storeName),
+                Constants.AdminHubGroup, notiUser);
             //await mailService.SendEmailAsync();
             return ResponseModel.SuccessResponse();
         }

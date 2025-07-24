@@ -1,11 +1,12 @@
 using ResiBuy.Server.Infrastructure.DbServices.CartItemDbService;
+using ResiBuy.Server.Infrastructure.DbServices.ProductDetailDbServices;
 using ResiBuy.Server.Infrastructure.Model.DTOs.CartDtos;
 
 namespace ResiBuy.Server.Application.Commands.CartCommands
 {
     public record AddToCartCommand(Guid Id, AddToCartDto AddToCartDto) : IRequest<ResponseModel>;
     public class AddToCartCommandHandler(ICartItemDbService cartItemDbService, ICartDbService cartDbService,
-        IBaseDbService<ProductDetail> baseProductDbService, INotificationService notificationService
+        IProductDetailDbService baseProductDbService, INotificationService notificationService
         ) : IRequestHandler<AddToCartCommand, ResponseModel>
     {
         public async Task<ResponseModel> Handle(AddToCartCommand command, CancellationToken cancellationToken)
@@ -14,9 +15,10 @@ namespace ResiBuy.Server.Application.Commands.CartCommands
             {
                 if (command.AddToCartDto.Quantity <= 0) throw new CustomException(ExceptionErrorCode.ValidationFailed, "Số lượng phải là lớn hơn 0");
                 if (command.AddToCartDto.ProductDetailId == 0) throw new CustomException(ExceptionErrorCode.ValidationFailed, "Thiếu mã sản phẩm");
-                var productDetail = await baseProductDbService.GetByIntIdBaseAsync(command.AddToCartDto.ProductDetailId) ?? throw new CustomException(ExceptionErrorCode.NotFound, "Sản phẩm không tồn tại");
-                if (productDetail.IsOutOfStock || productDetail.Quantity <= 0) throw new CustomException(ExceptionErrorCode.ValidationFailed, "Sản phẩm đã hết hàng");
+                var productDetail = await baseProductDbService.GetByIdAsync(command.AddToCartDto.ProductDetailId) ?? throw new CustomException(ExceptionErrorCode.NotFound, "Sản phẩm không tồn tại");
+                if (productDetail.IsOutOfStock || productDetail.Quantity <= 0 || productDetail.Quantity < command.AddToCartDto.Quantity) throw new CustomException(ExceptionErrorCode.ValidationFailed, $"Mặt hàng {productDetail.Product.Name} chỉ còn {productDetail.Quantity} sản phẩm");
                 var cart = await cartDbService.GetByIdBaseAsync(command.Id) ?? throw new CustomException(ExceptionErrorCode.NotFound, "Giỏ hàng không tồn tại");
+                if (cart.UserId == productDetail.Product.Store.OwnerId) throw new CustomException(ExceptionErrorCode.ValidationFailed, "Không thể mua hàng từ chính cửa hàng của mình");
                 var existingItems = (await cartItemDbService.GetMatchingCartItemsAsync(command.Id, [command.AddToCartDto.ProductDetailId]));
                 if (existingItems.Any())
                 {

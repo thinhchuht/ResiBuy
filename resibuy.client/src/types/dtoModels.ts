@@ -3,6 +3,8 @@ export interface AreaDto {
   id?: string;
   name: string;
   isActive?: boolean;
+  longtitude?: string;
+  latitude?: string;
 }
 
 export interface UpdateStatusAreaDto {
