@@ -10,6 +10,14 @@ export enum HubEventType {
   CartItemAdded = "CartItemAdded",
   CartItemDeleted = "CartItemDeleted",
   OrderCreated = "OrderCreated",
+  OrderCreatedFailed = "OrderCreatedFailed",
+  OrderReported = "OrderReported",
+  ReportResolved = "ReportResolved",
+  Refunded = "Refunded",
+  RefundFailed = "RefundFailed",
+  MonthlyPaymentSettled = "MonthlyPaymentSettled",
+  MonthlyPaymentSettlFailed = "MonthlyPaymentSettlFailed",
+  ProductOutOfStock = "ProductOutOfStock",
 }
 
 export type HubEventData = UserCreatedData | OrderData | PaymentData | OrderStatusChangedData;
@@ -72,6 +80,46 @@ class HubEventsManager {
         console.log("OrderCreated event received:", data);
         this.lastEventData[HubEventType.OrderCreated] = data;
         this.notifyHandlers(HubEventType.OrderCreated, data);
+      },
+      [HubEventType.OrderCreatedFailed]: (data: HubEventData) => {
+        console.log("OrderCreatedFailed event received:", data);
+        this.lastEventData[HubEventType.OrderCreatedFailed] = data;
+        this.notifyHandlers(HubEventType.OrderCreatedFailed, data);
+      },
+      [HubEventType.OrderReported]: (data: HubEventData) => {
+        console.log("OrderReported event received:", data);
+        this.lastEventData[HubEventType.OrderReported] = data;
+        this.notifyHandlers(HubEventType.OrderReported, data);
+      },
+      [HubEventType.ReportResolved]: (data: HubEventData) => {
+        console.log("ReportResolved event received:", data);
+        this.lastEventData[HubEventType.ReportResolved] = data;
+        this.notifyHandlers(HubEventType.ReportResolved, data);
+      },
+      [HubEventType.Refunded]: (data: HubEventData) => {
+        console.log("Refunded event received:", data);
+        this.lastEventData[HubEventType.Refunded] = data;
+        this.notifyHandlers(HubEventType.Refunded, data);
+      },
+      [HubEventType.RefundFailed]: (data: HubEventData) => {
+        console.log("RefundFailed event received:", data);
+        this.lastEventData[HubEventType.RefundFailed] = data;
+        this.notifyHandlers(HubEventType.RefundFailed, data);
+      },
+      [HubEventType.MonthlyPaymentSettled]: (data: HubEventData) => {
+        console.log("MonthlyPaymentSettled event received:", data);
+        this.lastEventData[HubEventType.MonthlyPaymentSettled] = data;
+        this.notifyHandlers(HubEventType.MonthlyPaymentSettled, data);
+      },
+      [HubEventType.MonthlyPaymentSettlFailed]: (data: HubEventData) => {
+        console.log("MonthlyPaymentSettlFailed event received:", data);
+        this.lastEventData[HubEventType.MonthlyPaymentSettlFailed] = data;
+        this.notifyHandlers(HubEventType.MonthlyPaymentSettlFailed, data);
+      },
+      [HubEventType.ProductOutOfStock]: (data: HubEventData) => {
+        console.log("ProductOutOfStock event received:", data);
+        this.lastEventData[HubEventType.ProductOutOfStock] = data;
+        this.notifyHandlers(HubEventType.ProductOutOfStock, data);
       },
     };
   }

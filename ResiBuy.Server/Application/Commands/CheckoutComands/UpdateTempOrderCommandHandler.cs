@@ -38,8 +38,8 @@ namespace ResiBuy.Server.Application.Commands.CheckoutComands
                     if (request.Dto.AddressId.HasValue)
                     {
                         var weight = order.ProductDetails.Select(pd => pd.Weight).Sum();
-                        updateOrder.ShippingFee = await orderDbService.ShippingFeeCharged(request.Dto.AddressId.Value, store.RoomId, weight);
-                        //updateOrder.ShippingFee = 10000;
+                        //updateOrder.ShippingFee = await orderDbService.ShippingFeeCharged(request.Dto.AddressId.Value, store.RoomId, weight);
+                        updateOrder.ShippingFee = 5000;
                     }
                     order.Note = updateOrder.Note;
                     if (updateOrder.VoucherId.HasValue && updateOrder.VoucherId != Guid.Empty)

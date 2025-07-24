@@ -12,7 +12,8 @@ namespace ResiBuy.Server.Application.Queries.NotificationQueries
                 n.Id,
                 n.EventName,
                 n.CreatedAt,
-                n.ReadBy.Contains(query.UserId)
+                n.ReadBy.Contains(query.UserId),
+                n.Data
             )).ToList();
             return ResponseModel.SuccessResponse(new PagedResult<NotificationQueryResult>(items, pagedResult.TotalCount, pagedResult.PageNumber, pagedResult.PageSize));
         }

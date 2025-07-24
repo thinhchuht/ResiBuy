@@ -11,14 +11,16 @@ namespace ResiBuy.Server.Application.Queries.ReportQueries
         public async Task<ResponseModel> Handle(GetAllReportQuery query, CancellationToken cancellationToken)
         {
             var dto = query.Dto;
-            var pagedResults = await reportDbService.GetAllReports(dto.UserId, dto.Keyword, dto.ReportStatus, dto.StartDate, dto.EndDate,dto.PageNumber, dto.PageSize);
+            var pagedResults = await reportDbService.GetAllReports(dto.UserId, dto.IsResolved, dto.Keyword, dto.ReportStatus, dto.ReportTarget, dto.StartDate, dto.EndDate,dto.PageNumber, dto.PageSize);
             var items = pagedResults.Items.Select(report => 
             new ReportQueryResult(
                 report.Id,
+                report.IsResolved,
                 report.Title,
                 report.Description,
                 report.CreatedAt,
                 report.CreatedById,
+                report.ReportTarget,
                 report.TargetId,
                 report.OrderId)).ToList();
             return ResponseModel.SuccessResponse(new PagedResult<ReportQueryResult>(items, pagedResults.TotalCount, pagedResults.PageNumber, pagedResults.PageSize));

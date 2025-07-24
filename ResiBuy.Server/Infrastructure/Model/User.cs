@@ -16,6 +16,7 @@
         public DateTime UpdatedAt { get; set; }
         public bool EmailConfirmed { get; set; }
         public bool PhoneNumberConfirmed { get; set; }
+        public int ReportCount { get; set; }
         public Cart Cart { get; set; }
         public Image Avatar { get; set; }
         public IEnumerable<Store> Stores { get; set; } = new List<Store>();

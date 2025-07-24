@@ -50,12 +50,13 @@ namespace ResiBuy.Server.Application.Queries.OrderQueries
                 item.ShippingFee,
                 item.Note,
                 item.CancelReason,
-                item.Reports.Select(r => new
+                item.Report == null ? null : new
                 {
-                    r.Id,
-                    r.Title,
-                    r.Description,
-                }).ToList(),
+                    item.Report.Id,
+                    item.Report.Title,
+                    item.Report.Description,
+                    item.Report.IsResolved
+                },
                 new RoomQueryResult(
                     item.ShippingAddress.Id,
                     item.ShippingAddress.Name,

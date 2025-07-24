@@ -10,7 +10,7 @@ namespace ResiBuy.Server.Infrastructure.DbServices.ReportServices
             _context = context;
         }
 
-        public async Task<PagedResult<Report>> GetAllReports(string userId, string keyword, ReportStatus reportStatus, DateTime? startDate = null, DateTime? endDate = null,  int pageNumber = 1, int pageSize = 10)
+        public async Task<PagedResult<Report>> GetAllReports(string userId, bool? isResolved, string keyword, ReportStatus reportStatus, ReportTarget reportTarget, DateTime? startDate = null, DateTime? endDate = null,  int pageNumber = 1, int pageSize = 10)
         {
             var query = _context.Reports
                 .Include(r => r.CreatedBy)
@@ -19,10 +19,30 @@ namespace ResiBuy.Server.Infrastructure.DbServices.ReportServices
 
             if (!string.IsNullOrEmpty(userId))
             {
-                if (reportStatus == ReportStatus.Created)
-                    query = query.Where(r => r.CreatedById == userId);
-                if (reportStatus == ReportStatus.Target)
-                    query = query.Where(r => r.TargetId == userId);
+                switch (reportStatus)
+                {
+                    case ReportStatus.None:
+                        query = query.Where(r => r.TargetId == userId || r.CreatedById == userId);
+                        break;
+
+                    case ReportStatus.Created:
+                        query = query.Where(r => r.CreatedById == userId);
+                        break;
+
+                    case ReportStatus.Target:
+                        query = query.Where(r => r.TargetId == userId);
+                        break;
+                }
+            }
+
+            if (isResolved.HasValue)
+            {
+                query = query.Where(r => r.IsResolved == isResolved.Value);
+            }
+
+            if (reportTarget != ReportTarget.None)
+            {
+                    query = query.Where(r => r.ReportTarget == reportTarget);
             }
 
             if (!string.IsNullOrEmpty(keyword))
@@ -46,12 +66,18 @@ namespace ResiBuy.Server.Infrastructure.DbServices.ReportServices
 
             var totalCount = await query.CountAsync();
             var items = await query
-                .OrderByDescending(r => r.CreatedAt)
+                .OrderBy(r => r.IsResolved) 
+                .ThenByDescending(r => r.CreatedAt) 
                 .Skip((pageNumber - 1) * pageSize)
                 .Take(pageSize)
                 .ToListAsync();
 
             return new PagedResult<Report>(items, totalCount, pageNumber, pageSize);
+        }
+
+        public async Task<Report> GetByOrderIdAsync(Guid id)
+        {
+            return await _context.Reports.FirstOrDefaultAsync(r => r.OrderId == id);
         }
     }
 }

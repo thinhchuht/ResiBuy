@@ -48,7 +48,11 @@ namespace ResiBuy.Server.Application.Commands.StoreCommands
             };
 
             var newstore = await _storeDbService.CreateAsync(store);
-
+            if (!user.Roles.Contains(Constants.SellerRole))
+            {
+                user.Roles.Add(Constants.SellerRole);
+                await _userDbService.UpdateAsync(user);
+            }
             return ResponseModel.SuccessResponse(newstore);
         }
     }

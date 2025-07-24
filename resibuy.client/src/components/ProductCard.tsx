@@ -16,8 +16,16 @@ interface ProductCardProps {
 
 const ProductCard = ({ product, productActions, onResetState }: ProductCardProps) => {
   // Get productDetail with minimum price
-  const defaultProductDetail = product.productDetails.reduce((min, current) => 
-    (current.price < min.price ? current : min), product.productDetails[0]);
+  const defaultProductDetail = (
+    product.productDetails && product.productDetails.length > 0
+      ? product.productDetails.reduce((min, current) =>
+          current.price < min.price ? current : min,
+          product.productDetails[0]
+        )
+      : undefined
+  );
+
+  if (!defaultProductDetail) return null;
 
   const basePrice = defaultProductDetail.price;
   const discountedPrice = basePrice * (1 - product.discount / 100);

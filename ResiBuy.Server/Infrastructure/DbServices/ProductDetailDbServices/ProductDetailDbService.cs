@@ -38,7 +38,7 @@ namespace ResiBuy.Server.Infrastructure.DbServices.ProductDetailDbServices
             try
             {
 
-                var productDetail = await _context.ProductDetails.Include(pd => pd.Product).Include(pd => pd.Image).Include(pd => pd.AdditionalData).FirstOrDefaultAsync(p => p.Id == id);
+                var productDetail = await _context.ProductDetails.Include(pd => pd.Product).ThenInclude(p => p.Store).Include(pd => pd.Image).Include(pd => pd.AdditionalData).FirstOrDefaultAsync(p => p.Id == id);
                 return productDetail;
             }
             catch (Exception ex)
