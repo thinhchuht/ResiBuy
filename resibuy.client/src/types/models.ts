@@ -52,7 +52,7 @@ export interface User {
   cartId: string;
   roles: string[];
   rooms: RoomResult[];
-  stores: Store;
+  stores: Store[];
   refreshTokens: RefreshToken[];
   orders: Order[];
   userVouchers: UserVoucher[];

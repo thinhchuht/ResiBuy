@@ -189,7 +189,7 @@ const OrderCard = ({
       case OrderStatus.Cancelled:
         return "Đã hủy";
       case OrderStatus.Reported:
-        return "Bị tố cáo";
+        return "Bị báo cáo";
       default:
         return "Không xác định";
     }
@@ -574,7 +574,13 @@ const OrderCard = ({
             variant="subtitle1"
             sx={{ color: "#ff9800", fontWeight: 700, mb: 1 }}
           >
-            Đơn hàng này đã bị tố cáo
+            Đơn hàng này đã bị báo cáo
+          </Typography>
+          <Typography
+            variant="subtitle1"
+            sx={{ color: "#ff9800", fontWeight: 700, mb: 1 }}
+          >
+            Mã bản báo cáo : #{order.report.id}
           </Typography>
           <Typography
             variant="body2"
@@ -621,7 +627,7 @@ const OrderCard = ({
                 variant="body1"
                 sx={{ color: "#f44336", fontWeight: 700, mb: 1 }}
               >
-                Báo cáo đang chờ xử lý
+                Báo cáo chưa được xử lý
               </Typography>
               <Typography
                 variant="body1"

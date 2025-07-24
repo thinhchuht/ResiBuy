@@ -238,7 +238,7 @@ const Orders = () => {
             >
               <StyledTab label="Tất cả" />
               <StyledTab label="Chờ xác nhận" />
-              <StyledTab label="Đang xử lý" />
+              <StyledTab label="Đã xác nhận" />
               <StyledTab label="Đang giao" />
               <StyledTab label="Chờ nhận" />
               <StyledTab label="Đã giao" />

@@ -34,7 +34,7 @@ import {
   Category,
   Notifications,
   Dashboard,
-  Store,
+  Store as StoreIcon,
   LocalShipping,
   Storefront,
 } from "@mui/icons-material";
@@ -50,6 +50,14 @@ import {
 } from "../../hooks/useEventHub";
 import type { OrderStatusChangedData } from "../../types/hubData";
 import notificationApi from "../../api/notification.api";
+import type {
+  ReportCreatedDto,
+  ProductOutOfStockDto,
+  OrderCreateFailedDto,
+  MonthlyPaymentSettlFailedDto,
+  MonthlyPaymentSettledDto,
+} from "../../types/hubEventDto";
+import type { User, Store } from "../../types/models";
 
 interface Notification {
   id: string | number;
@@ -68,7 +76,7 @@ interface NotificationApiItem {
   [key: string]: unknown;
 }
 
-function notifiConvert(item: NotificationApiItem): Notification {
+function notifiConvert(item: NotificationApiItem, user?: User): Notification {
   const formattedTime = new Date(item.createdAt).toLocaleTimeString("vi-VN", {
     hour: "2-digit",
     minute: "2-digit",
@@ -90,11 +98,25 @@ function notifiConvert(item: NotificationApiItem): Notification {
   const match = item.eventName.match(/^OrderStatusChanged-(.+)$/);
   if (match) status = match[1];
 
+  // Helper function to get report target label
+  const getReportTargetLabel = (reportTarget: string) => {
+    switch (reportTarget) {
+      case 'Customer':
+        return "Khách hàng";
+      case 'Store':
+        return "Cửa hàng";
+      case 'Shipper':
+        return "Người giao hàng";
+      default:
+        return "";
+    }
+  };
+
   switch (true) {
     case /^OrderStatusChanged/.test(item.eventName):
       title =
         status === "Processing"
-          ? "Đơn hàng đã được xử lý"
+          ? "Đơn hàng đã được xác nhận"
           : status === "Shipped"
           ? "Đơn hàng đang được giao"
           : status === "Delivered"
@@ -117,6 +139,60 @@ function notifiConvert(item: NotificationApiItem): Notification {
     case item.eventName === "OrderCreated":
       title = "Đơn hàng mới";
       message = `Đơn hàng #${dataObj.id} đã được tạo`;
+      break;
+    case item.eventName === "OrderReported": {
+      let displayLabel = "";
+      if (dataObj.reportTarget === "Store") {
+        // Check if user has stores and if targetId matches any store
+        const userStore = user?.stores?.find((store: Store) => store.id === dataObj.targetId);
+        displayLabel = userStore ? userStore.name : "Cửa hàng";
+      } else {
+        displayLabel = getReportTargetLabel(dataObj.reportTarget as string);
+      }
+      title = `[${displayLabel}] Đơn hàng #${dataObj.orderId} bị báo cáo`;
+      message = dataObj.title ? `Lý do: ${dataObj.description}` : `Đơn hàng ${dataObj.orderId} đã bị báo cáo.`;
+      break;
+    }
+    case item.eventName === "ReportResolved": {
+      let displayLabel = "";
+      let storeLabel = "";
+      if (dataObj.reportTarget === "Store") {
+        // Check if user has stores and if targetId matches any store
+        const userStore = user?.stores?.find((store: Store) => store.id === dataObj.targetId);
+        displayLabel = userStore ? userStore.name : "Cửa hàng";
+        if (userStore) {
+          storeLabel = `[${dataObj.storeName}] `;
+        }
+      } else {
+        displayLabel = getReportTargetLabel(dataObj.reportTarget as string);
+      }
+      title = `${storeLabel} Báo cáo đơn hàng #${dataObj.orderId} đã được giải quyết`;
+      message = dataObj.isAddReportTarget ? `Báo cáo đã được xử lý. ${displayLabel} sẽ bị tính thêm 1 lần cảnh cáo.` : "Báo cáo đã được đóng.";
+      break;
+    }
+    case item.eventName === "Refunded":
+      title = "Hoàn tiền thành công";
+      message = `Đơn hàng #${dataObj.OrderId} đã được hoàn tiền thành công!`;
+      break;
+    case item.eventName === "RefundFailed":
+      title = "Hoàn tiền thất bại";
+      message = `Đơn hàng #${dataObj.OrderId} hoàn tiền thất bại, vui lòng liên hệ ban quản lý về đơn hàng.`;
+      break;
+    case item.eventName === "MonthlyPaymentSettled":
+      title = `[${dataObj.storeName}] Đã chốt doanh thu tháng`;
+      message = `Doanh thu tháng ${dataObj.paymentMonth} của bạn đã được chuyển về tài khoản. Tổng doanh thu: ${dataObj.revenue}đ`;
+      break;
+    case item.eventName === "MonthlyPaymentSettlFailed":
+      title = `[${dataObj.storeName}] Chốt doanh thu tháng thất bại.`;
+      message = "Có lỗi khi chốt doanh thu tháng, vui lòng liên hệ ban quản lý.";
+      break;
+    case item.eventName === "ProductOutOfStock":
+      title = `[${dataObj.storeName}] Sản phẩm hết hàng`;
+      message = dataObj.productName ? `Sản phẩm ${dataObj.productName} đã hết hàng.` : "Một sản phẩm đã hết hàng.";
+      break;
+    case item.eventName === "OrderCreatedFailed":
+      title = "Tạo đơn hàng thất bại";
+      message = dataObj.errorMessage ? dataObj.errorMessage as string : "Đơn hàng của bạn không được tạo thành công. Vui lòng thử lại sau";
       break;
     default:
       title = "Thông báo";
@@ -184,11 +260,11 @@ const AppBar: React.FC = () => {
             pageSize
           );
           if (page === 1) {
-            setNotifications((data.items || []).map(notifiConvert));
+            setNotifications((data.items || []).map((item: NotificationApiItem) => notifiConvert(item, user)));
           } else {
             setNotifications((prev) => [
               ...prev,
-              ...(data.items || []).map(notifiConvert),
+              ...(data.items || []).map((item: NotificationApiItem) => notifiConvert(item, user)),
             ]);
           }
           setHasMore(page < data.totalPages);
@@ -292,16 +368,163 @@ const AppBar: React.FC = () => {
     [fetchUnreadCount]
   );
 
+  const getReportTargetLabel = (reportTarget: string) => {
+    switch (reportTarget) {
+      case 'Customer':
+        return "Khách hàng";
+      case 'Store':
+        return "Cửa hàng";
+      case 'Shipper':
+        return "Người giao hàng";
+      default:
+        return "";
+    }
+  };
+
+  const handleOrderReported = useCallback((data: ReportCreatedDto) => {
+    const formattedTime = new Date(data.createdAt).toLocaleTimeString("vi-VN", { hour: "2-digit", minute: "2-digit" });
+    const formattedDate = new Date(data.createdAt).toLocaleDateString("vi-VN");
+    const targetLabel = getReportTargetLabel(data.reportTarget);
+    setNotifications((prev) => [{
+      id: data.id,
+      title: `[${targetLabel}] Đơn hàng #${data.orderId} bị báo cáo`,
+      message: data.title ? `Lý do: ${data.description}` : `Đơn hàng ${data.orderId} đã bị báo cáo.`,
+      time: `${formattedTime} ${formattedDate}`,
+      isRead: false,
+    }, ...prev]);
+    fetchUnreadCount();
+  }, [fetchUnreadCount]);
+
+  const handleReportResolved = useCallback((data: { id: string; orderId: string; targetId: string; isAddReportTarget: boolean; reportTarget: string; storeName: string }) => {
+    const formattedTime = new Date().toLocaleTimeString("vi-VN", { hour: "2-digit", minute: "2-digit" });
+    const formattedDate = new Date().toLocaleDateString("vi-VN");
+    let storeLabel = "";
+    if (user && user.stores) {
+      const storesArr = Array.isArray(user.stores) ? user.stores : [user.stores];
+      if (storesArr.some((s) => s.id === data.targetId)) {
+        storeLabel = `[${data.storeName}] `;
+      }
+    }
+    setNotifications((prev) => [{
+      id: data.id,
+      title: `${storeLabel} Báo cáo đơn hàng #${data.orderId} đã được giải quyết`,
+      message: data.isAddReportTarget ? "Báo cáo đã được xử lý. Đối tượng bị báo cáo sẽ bị tính thêm 1 lần cảnh cáo." : "Báo cáo đã được đóng.",
+      time: `${formattedTime} ${formattedDate}`,
+      isRead: false,
+    }, ...prev]);
+    fetchUnreadCount();
+  }, [fetchUnreadCount, user]);
+
+  const handleRefunded = useCallback((data: { OrderId: string }) => {
+    setNotifications((prev) => [{
+      id: data.OrderId || Math.random(),
+      title: "Hoàn tiền thành công",
+      message: `Đơn hàng #${data.OrderId} đã được hoàn tiền thành công!`,
+      time: new Date().toLocaleString("vi-VN"),
+      isRead: false,
+    }, ...prev]);
+    fetchUnreadCount();
+  }, [fetchUnreadCount]);
+
+  const handleRefundFailed = useCallback((data: { OrderId: string }) => {
+    setNotifications((prev) => [{
+      id: data.OrderId || Math.random(),
+      title: "Hoàn tiền thất bại",
+      message: `Đơn hàng #${data.OrderId} hoàn tiền thất bại, vui lòng liên hệ ban quản lý về đơn hàng.`,
+      time: new Date().toLocaleString("vi-VN"),
+      isRead: false,
+    }, ...prev]);
+    fetchUnreadCount();
+  }, [fetchUnreadCount]);
+
+  const handleMonthlyPaymentSettled = useCallback((data: MonthlyPaymentSettledDto) => {
+    let storeLabel = "";
+    if (user && user.stores) {
+      const storesArr = Array.isArray(user.stores) ? user.stores : [user.stores];
+      if (storesArr.some((s) => s.id === data.storeId)) {
+        storeLabel = `[${data.storeName}] `;
+      }
+    }
+    setNotifications((prev) => [{
+      id: Math.random(),
+      title: `${storeLabel}Đã chốt doanh thu tháng`,
+      message: `Doanh thu tháng ${data.paymentMonth} của bạn đã được chuyển về tài khoản. Tổng doanh thu: ${data.revenue}đ`,
+      time: new Date().toLocaleString("vi-VN"),
+      isRead: false,
+    }, ...prev]);
+    fetchUnreadCount();
+  }, [fetchUnreadCount, user]);
+
+  const handleMonthlyPaymentSettlFailed = useCallback((data: MonthlyPaymentSettlFailedDto) => {
+    let storeLabel = "";
+    if (user && user.stores) {
+      const storesArr = Array.isArray(user.stores) ? user.stores : [user.stores];
+      if (storesArr.some((s) => s.id === data.storeId)) {
+        storeLabel = `[${data.storeName}] `;
+      }
+    }
+    setNotifications((prev) => [{
+      id: Math.random(),
+      title: `${storeLabel}Chốt doanh thu tháng thất bại.`,
+      message: "Có lỗi khi chốt doanh thu tháng, vui lòng liên hệ ban quản lý.",
+      time: new Date().toLocaleString("vi-VN"),
+      isRead: false,
+    }, ...prev]);
+    fetchUnreadCount();
+  }, [fetchUnreadCount, user]);
+
+  const handleProductOutOfStock = useCallback((data: ProductOutOfStockDto) => {
+    setNotifications((prev) => [{
+      id: data.productDetailId,
+      title: `[${data.storeName}] Sản phẩm hết hàng`,
+      message: data.productName ? `Sản phẩm ${data.productName} đã hết hàng.` : "Một sản phẩm đã hết hàng.",
+      time: new Date().toLocaleString("vi-VN"),
+      isRead: false,
+    }, ...prev]);
+    fetchUnreadCount();
+  }, [fetchUnreadCount]);
+
+  const handleOrderCreatedFailed = useCallback((data: OrderCreateFailedDto) => {
+    setNotifications((prev) => [{
+      id: data.orderIds[0],
+      title: `Tạo đơn hàng thất bại`,
+      message: data.errorMessage || "Đơn hàng của bạn không được tạo thành công. Vui lòng thử lại sau",
+      time: new Date().toLocaleString("vi-VN"),
+      isRead: false,
+    }, ...prev]);
+    fetchUnreadCount();
+  }, [fetchUnreadCount]);
+
   const eventHandlers = useMemo(
     () => ({
       [HubEventType.CartItemAdded]: handleCartItemAdded,
       [HubEventType.OrderCreated]: handleOrderCreated,
       [HubEventType.OrderStatusChanged]: handleOrderStatusChanged,
+      [HubEventType.OrderReported]: handleOrderReported,
+      [HubEventType.ReportResolved]: handleReportResolved,
+      [HubEventType.Refunded]: handleRefunded,
+      [HubEventType.RefundFailed]: handleRefundFailed,
+      [HubEventType.MonthlyPaymentSettled]: handleMonthlyPaymentSettled,
+      [HubEventType.MonthlyPaymentSettlFailed]: handleMonthlyPaymentSettlFailed,
+      [HubEventType.ProductOutOfStock]: handleProductOutOfStock,
+      [HubEventType.OrderCreatedFailed]: handleOrderCreatedFailed,
     }),
-    [handleCartItemAdded, handleOrderCreated, handleOrderStatusChanged]
+    [
+      handleCartItemAdded,
+      handleOrderCreated,
+      handleOrderStatusChanged,
+      handleOrderReported,
+      handleReportResolved,
+      handleRefunded,
+      handleRefundFailed,
+      handleMonthlyPaymentSettled,
+      handleMonthlyPaymentSettlFailed,
+      handleProductOutOfStock,
+      handleOrderCreatedFailed,
+    ]
   );
 
-  useEventHub(eventHandlers as Partial<Record<HubEventType, HubEventHandler>>);
+  useEventHub(eventHandlers as unknown as Partial<Record<HubEventType, HubEventHandler>>);
 
   const handleSearchChange = (event: React.ChangeEvent<HTMLInputElement>) => {
     setSearchValue(event.target.value);
@@ -353,12 +576,12 @@ const AppBar: React.FC = () => {
   };
 
   const handleStoreMenuClick = (event: React.MouseEvent<HTMLElement>) => {
+
     if (user?.stores && Array.isArray(user.stores) && user.stores.length > 1) {
       setStoreMenuAnchorEl(event.currentTarget);
     } else {
-      const storeId = Array.isArray(user?.stores)
-        ? user.stores[0]?.id
-        : user?.stores?.id;
+      const storeId =  user?.stores[0]?.id
+
       if (storeId) {
         navigate(`/store/${storeId}`);
         handleProfileMenuClose();
@@ -810,15 +1033,13 @@ const AppBar: React.FC = () => {
                 transition: "all 0.2s ease-in-out",
               }}
             >
-              <Store
+              <StoreIcon
                 fontSize="small"
                 sx={{ transition: "all 0.2s ease-in-out" }}
               />
               <Typography variant="body2" sx={{ fontWeight: 500 }}>
                 {Array.isArray(user?.stores) && user.stores.length === 1
                   ? user.stores[0]?.name
-                  : !Array.isArray(user?.stores) && user?.stores?.name
-                  ? user.stores.name
                   : "Cửa hàng của bạn"}
               </Typography>
             </MenuItem>
@@ -990,7 +1211,7 @@ const AppBar: React.FC = () => {
               mt: 1,
               borderRadius: 2,
               boxShadow: "0 4px 20px rgba(0,0,0,0.1)",
-              width: 320,
+              width: 400,
               maxHeight: 3250,
               overflowY: "auto",
             },
@@ -1080,18 +1301,39 @@ const AppBar: React.FC = () => {
                       transition: "all 0.2s ease-in-out",
                     }}
                   >
-                    <Box>
+                    <Box sx={{ width: "100%" }}>
                       <Box
                         sx={{
-                          display: "flex",
-                          justifyContent: "space-between",
-                          alignItems: "flex-end",
+                          position: "relative",
                           mb: 0.5,
-                          gap: 2,
+                          pr: notification.time ? "90px" : 0, // Reserve more space for timestamp
+                          minHeight: "20px", // Ensure minimum height
                         }}
                       >
+                        {notification.time && (
+                          <Typography
+                            variant="caption"
+                            sx={{
+                              position: "absolute",
+                              top: 0,
+                              right: 0,
+                              fontStyle: "italic",
+                              color: "text.secondary",
+                              whiteSpace: "nowrap",
+                              fontWeight: 600,
+                              zIndex: 1,
+                            }}
+                          >
+                            {notification.time}
+                          </Typography>
+                        )}
                         <Box
-                          sx={{ display: "flex", alignItems: "center", gap: 1 }}
+                          sx={{ 
+                            display: "flex", 
+                            alignItems: "flex-start", 
+                            gap: 1,
+                            position: "relative"
+                          }}
                         >
                           <Typography
                             variant="subtitle2"
@@ -1099,37 +1341,16 @@ const AppBar: React.FC = () => {
                               fontWeight:
                                 notification.isRead === false ? 700 : 400,
                               wordBreak: "break-word",
+                              whiteSpace: "normal",
+                              lineHeight: 1.3,
+                              display: "block",
+                              flex: 1,
                             }}
                           >
                             {notification.title}
                           </Typography>
-                          {notification.isRead === false && (
-                            <Box
-                              component="span"
-                              sx={{
-                                width: 10,
-                                height: 10,
-                                borderRadius: "50%",
-                                bgcolor: "#1ecb4f",
-                                display: "inline-block",
-                                ml: 0.5,
-                              }}
-                            />
-                          )}
+
                         </Box>
-                        {notification.time && (
-                          <Typography
-                            variant="caption"
-                            sx={{
-                              fontStyle: "italic",
-                              color: "text.secondary",
-                              whiteSpace: "nowrap",
-                              fontWeight: 600,
-                            }}
-                          >
-                            {notification.time}
-                          </Typography>
-                        )}
                       </Box>
                       <Typography
                         variant="body2"

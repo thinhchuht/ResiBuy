@@ -64,7 +64,7 @@ public class OrderDbService : BaseDbService<Order>, IOrderDbService
 
             var totalCount = await query.CountAsync();
             var orders = await query
-                .OrderBy(o => o.Status != OrderStatus.Reported) 
+                .OrderBy(o => !(o.Status == OrderStatus.Reported && o.Report != null && !o.Report.IsResolved))
                 .ThenByDescending(o => o.UpdateAt)
                 .Include(o => o.ShippingAddress).ThenInclude(sa => sa.Building).ThenInclude(b => b.Area)
                 .Include(o => o.Store)
