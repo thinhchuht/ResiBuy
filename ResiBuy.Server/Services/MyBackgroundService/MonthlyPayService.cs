@@ -1,5 +1,6 @@
 ﻿
 using ResiBuy.Server.Infrastructure.DbServices.OrderDbServices;
+using ResiBuy.Server.Infrastructure.Model.EventDataDto;
 
 namespace ResiBuy.Server.Services.MyBackgroundService
 {
@@ -39,12 +40,12 @@ namespace ResiBuy.Server.Services.MyBackgroundService
                                     // Lấy doanh thu chuyển khoản ngân hàng của tháng trước
                                     int prevMonth = now.Month == 1 ? 12 : now.Month - 1;
                                     var revenue = await orderDbService.GetMonthlyBankRevenue(store.Id, prevMonth);
-                                    await notificationService.SendNotificationAsync(Constants.MonthlyPaymentSettled, new { StoreId = store.Id, StoreName = store.Name, Revenue = revenue, PaymentMonth = prevMonth }, Constants.NoHubGroup, [store.OwnerId]);
+                                    await notificationService.SendNotificationAsync(Constants.MonthlyPaymentSettled, new MonthlyPaymentSettledDto { StoreId = store.Id, StoreName = store.Name, Revenue = revenue, PaymentMonth = prevMonth }, Constants.NoHubGroup, [store.OwnerId]);
                                     logger.LogInformation($"StoreId: {store.Id}, Revenue (BankTransfer, month {prevMonth}): {revenue:N0} VND");
                                 }
                                 catch (Exception ex)
                                 {
-                                    await notificationService.SendNotificationAsync(Constants.ReportCreated, new { StoreId = store.Id, StoreName = store.Name }, Constants.NoHubGroup, [store.OwnerId]);
+                                    await notificationService.SendNotificationAsync(Constants.MonthlyPaymentSettlFailed, new MonthlyPaymentSettlFailedDto { StoreId = store.Id, StoreName = store.Name }, Constants.NoHubGroup, [store.OwnerId]);
                                     logger.LogError(ex, $"MonthlyPayService: Error getting revenue for store {store.Id}");
                                 }
                             }

@@ -153,6 +153,41 @@ namespace ResiBuy.Server.Infrastructure.DbServices.ShipperDbServices
                 throw new CustomException(ExceptionErrorCode.UpdateFailed, ex.Message);
             }
         }
+        public async Task<int> CountShippersByOnlineStatusAsync(bool isOnline)
+        {
+            try
+            {
+                return await _context.Shippers.CountAsync(s => s.IsOnline == isOnline);
+            }
+            catch (Exception ex)
+            {
+                throw new CustomException(ExceptionErrorCode.RepositoryError, ex.Message);
+            }
+        }
+
+        public async Task<int> CountShippersByShippingStatusAsync(bool isShipping)
+        {
+            try
+            {
+                return await _context.Shippers.CountAsync(s => s.IsShipping == isShipping);
+            }
+            catch (Exception ex)
+            {
+                throw new CustomException(ExceptionErrorCode.RepositoryError, ex.Message);
+            }
+        }
+
+        public async Task<int> SumShipperReportCountAsync()
+        {
+            try
+            {
+                return await _context.Shippers.SumAsync(s => s.ReportCount);
+            }
+            catch (Exception ex)
+            {
+                throw new CustomException(ExceptionErrorCode.RepositoryError, ex.Message);
+            }
+        }
 
 
     }

@@ -1,5 +1,4 @@
 ﻿using ResiBuy.Server.Services.MapBoxService;
-using ResiBuy.Server.Services.OpenRouteService;
 
 namespace ResiBuy.Server.Infrastructure.DbServices.OrderDbServices;
 
@@ -64,16 +63,16 @@ public class OrderDbService : BaseDbService<Order>, IOrderDbService
             }
 
             var totalCount = await query.CountAsync();
-
             var orders = await query
-                .OrderByDescending(o => o.UpdateAt)
+                .OrderBy(o => !(o.Status == OrderStatus.Reported && o.Report != null && !o.Report.IsResolved))
+                .ThenByDescending(o => o.UpdateAt)
                 .Include(o => o.ShippingAddress).ThenInclude(sa => sa.Building).ThenInclude(b => b.Area)
                 .Include(o => o.Store)
                 .Include(o => o.Items).ThenInclude(oi => oi.ProductDetail).ThenInclude(pd => pd.Image)
                 .Include(o => o.Items).ThenInclude(oi => oi.ProductDetail).ThenInclude(pd => pd.Product)
                 .Include(o => o.Voucher)
                 .Include(o => o.Shipper).ThenInclude(s => s.User)
-                .Include(o => o.Reports)
+                .Include(o => o.Report)
                 .Skip((pageNumber - 1) * pageSize)
                 .Take(pageSize)
                 .ToListAsync();
@@ -95,7 +94,7 @@ public class OrderDbService : BaseDbService<Order>, IOrderDbService
                 .Include(o => o.Items).ThenInclude(oi => oi.ProductDetail).ThenInclude(pd => pd.Product)
                 .Include(o => o.Voucher)
                 .Include(o => o.Shipper).ThenInclude(s => s.User)
-                .Include(o => o.Reports).FirstOrDefaultAsync(o => o.Id == id);
+                .Include(o => o.Report).FirstOrDefaultAsync(o => o.Id == id);
     }
 
     public async Task<List<Order>> GetCancelledOrders()
@@ -116,7 +115,7 @@ public class OrderDbService : BaseDbService<Order>, IOrderDbService
                 && o.StoreId == storeId
                 && o.UpdateAt >= startDate
                 && o.UpdateAt < endDate)
-            .SumAsync(o => o.TotalPrice);
+            .SumAsync(o => (o.TotalPrice - o.ShippingFee.Value) * 90 / 100);
     }
 
     public async Task<List<Order>> getOrdersByStatus(OrderStatus orderStatus)
@@ -133,7 +132,7 @@ public class OrderDbService : BaseDbService<Order>, IOrderDbService
             throw new CustomException(ExceptionErrorCode.RepositoryError, ex.ToString());
         }
     }
-    public async Task<decimal> ShippingFeeCharged(Guid ShippingAddress,Guid storeAddress, float weight)
+    public async Task<decimal> ShippingFeeCharged(Guid ShippingAddress, Guid storeAddress, float weight)
     {
         try
         {
@@ -151,15 +150,15 @@ public class OrderDbService : BaseDbService<Order>, IOrderDbService
             {
                 throw new CustomException(ExceptionErrorCode.NotFound, "Địa chỉ cửa hàng không tồn tại");
             }
-            decimal distanceFee = 0;
+            decimal distanceFee = 5000;
             if (shippingRoom.Building.AreaId != storeRoom.Building.AreaId)
             {
-               var route = await _mapBoxService.GetDirectionsAsync(
-                       shippingRoom.Building.Area.Latitude,
-                       shippingRoom.Building.Area.Longitude,
-                       storeRoom.Building.Area.Latitude,
-                       storeRoom.Building.Area.Longitude
-                       );
+                var route = await _mapBoxService.GetDirectionsAsync(
+                        shippingRoom.Building.Area.Latitude,
+                        shippingRoom.Building.Area.Longitude,
+                        storeRoom.Building.Area.Latitude,
+                        storeRoom.Building.Area.Longitude
+                        );
                 if (route == null || route.Routes == null || route.Routes.Count == 0)
                 {
                     throw new CustomException(ExceptionErrorCode.ValidationFailed, "Không thể tính toán khoảng cách giao hàng");
@@ -174,7 +173,7 @@ public class OrderDbService : BaseDbService<Order>, IOrderDbService
 
             if (weight > 2)
             {
-                weightFee = (decimal)(Math.Round((weight-2) / 2) * 1000); // 1000đ/2kg
+                weightFee = (decimal)(Math.Round((weight - 2) / 2) * 1000); // 1000đ/2kg
             }
             return distanceFee + weightFee;
         }
@@ -225,4 +224,135 @@ public class OrderDbService : BaseDbService<Order>, IOrderDbService
             throw new CustomException(ExceptionErrorCode.RepositoryError, ex.ToString());
         }
     }
+    public async Task<int> CountOrdersByShipperIdAsync(Guid shipperId)
+    {
+        try
+        {
+            return await _context.Orders.CountAsync(o => o.ShipperId == shipperId && o.Status == OrderStatus.Delivered);
+        }
+        catch (Exception ex)
+        {
+            throw new CustomException(ExceptionErrorCode.RepositoryError, ex.Message);
+        }
+    }
+    public async Task<Dictionary<string, decimal>> GetShippingFeeByShipperAsync(Guid shipperId, DateTime? startDate = null, DateTime? endDate = null)
+    {
+        try
+        {
+            var query = _context.Orders.AsQueryable();
+
+            query = query.Where(o => o.ShipperId == shipperId && o.ShippingFee.HasValue);
+
+            if (startDate.HasValue)
+            {
+                query = query.Where(o => o.CreateAt >= startDate.Value);
+            }
+
+            if (endDate.HasValue)
+            {
+                query = query.Where(o => o.CreateAt < endDate.Value.AddDays(1));
+            }
+
+            var now = DateTime.UtcNow;
+
+            var allTime = await query.SumAsync(o => o.ShippingFee.Value);
+
+            var today = await query.Where(o => o.CreateAt.Date == now.Date).SumAsync(o => o.ShippingFee.Value);
+
+            var weekStart = now.Date.AddDays(-(int)now.DayOfWeek);
+            var weekEnd = weekStart.AddDays(7);
+            var thisWeek = await query.Where(o => o.CreateAt >= weekStart && o.CreateAt < weekEnd).SumAsync(o => o.ShippingFee.Value);
+
+            var monthStart = new DateTime(now.Year, now.Month, 1);
+            var monthEnd = monthStart.AddMonths(1);
+            var thisMonth = await query.Where(o => o.CreateAt >= monthStart && o.CreateAt < monthEnd).SumAsync(o => o.ShippingFee.Value);
+
+            var yearStart = new DateTime(now.Year, 1, 1);
+            var yearEnd = yearStart.AddYears(1);
+            var thisYear = await query.Where(o => o.CreateAt >= yearStart && o.CreateAt < yearEnd).SumAsync(o => o.ShippingFee.Value);
+
+            // Shipping fee theo từng tháng trong năm hiện tại
+            var monthly = await query
+                .Where(o => o.CreateAt >= yearStart && o.CreateAt < yearEnd)
+                .GroupBy(o => o.CreateAt.Month)
+                .Select(g => new { Month = g.Key, Total = g.Sum(o => o.ShippingFee.Value) })
+                .ToListAsync();
+
+            var monthlyDict = monthly.ToDictionary(m => $"Month_{m.Month}", m => m.Total);
+
+            var result = new Dictionary<string, decimal>
+        {
+            { "AllTime", allTime },
+            { "Today", today },
+            { "ThisWeek", thisWeek },
+            { "ThisMonth", thisMonth },
+            { "ThisYear", thisYear }
+        };
+
+            foreach (var m in monthlyDict)
+            {
+                result[m.Key] = m.Value;
+            }
+
+            return result;
+        }
+        catch (Exception ex)
+        {
+            throw new CustomException(ExceptionErrorCode.RepositoryError, ex.ToString());
+        }
+    }
+    public async Task<int> CountOrdersAsync(Guid? shipperId, Guid? storeId, string? userId, OrderStatus? status = null)
+    {
+        try
+        {
+            var query = _context.Orders.AsQueryable();
+
+            if (shipperId.HasValue && shipperId != Guid.Empty)
+                query = query.Where(o => o.ShipperId == shipperId.Value);
+
+            if (storeId.HasValue && storeId != Guid.Empty)
+                query = query.Where(o => o.StoreId == storeId.Value);
+
+            if (!string.IsNullOrEmpty(userId))
+                query = query.Where(o => o.UserId == userId);
+
+            if (status.HasValue && status.Value != OrderStatus.None)
+                query = query.Where(o => o.Status == status.Value);
+
+            return await query.CountAsync();
+        }
+        catch (Exception ex)
+        {
+            throw new CustomException(ExceptionErrorCode.RepositoryError, ex.ToString());
+        }
+    }
+    public async Task<decimal> GetTotalShippingFeeByshipperAsync(Guid shipperId, DateTime? startDate = null, DateTime? endDate = null)
+    {
+        try
+        {
+            if (shipperId == Guid.Empty)
+                throw new CustomException(ExceptionErrorCode.ValidationFailed, "ShipperId không hợp lệ");
+
+            var query = _context.Orders
+                .Where(o => o.ShipperId == shipperId && o.Status == OrderStatus.Delivered);
+
+            if (startDate.HasValue)
+                query = query.Where(o => o.UpdateAt >= startDate.Value);
+
+            if (endDate.HasValue)
+            {
+                var end = endDate.Value.Date.AddDays(1);
+                query = query.Where(o => o.UpdateAt < end);
+            }
+
+            return await query.SumAsync(o => o.ShippingFee ?? 0);
+        }
+        catch (Exception ex)
+        {
+            throw new CustomException(ExceptionErrorCode.RepositoryError, ex.ToString());
+        }
+    }
+
+
+
 }

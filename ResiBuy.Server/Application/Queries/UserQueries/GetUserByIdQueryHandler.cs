@@ -14,6 +14,7 @@
                     s.Id,
                     s.Name,
                     s.PhoneNumber,
+                    s.IsLocked
                 })));
         }
     }

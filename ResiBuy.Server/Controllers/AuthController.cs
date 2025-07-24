@@ -64,7 +64,7 @@
                         buildingName = ur.Room.Building.Name,
                         areaName = ur.Room.Building.Area.Name
                     }),
-                    reportsCount = user.Reports.Count()
+                    reportsCount = user.ReportCount
                 }
             });
         }

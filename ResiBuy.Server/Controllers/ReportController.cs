@@ -10,44 +10,39 @@ namespace ResiBuy.Server.Controllers
     {
 
         [HttpGet]
-        public async Task<IActionResult> GetAllReport(GetReportDto dto)
+        public async Task<IActionResult> GetAllReport([FromQuery] GetReportDto dto)
         {
-            try
-            {
-                var result = await mediator.Send(new GetAllReportQuery(dto));
-                return Ok(result);
-            }
-            catch (Exception ex)
-            {
-                return BadRequest(ResponseModel.ExceptionResponse(ex.ToString()));
-            }
+            var result = await mediator.Send(new GetAllReportQuery(dto));
+            return Ok(result);
         }
 
         [HttpGet("{id}")]
         public async Task<IActionResult> GetReportById(Guid id)
         {
-            try
-            {
-                var result = await mediator.Send(new GetReportByIdQuery(id));
-                return Ok(result);
-            }
-            catch (Exception ex)
-            {
-                return BadRequest(ResponseModel.ExceptionResponse(ex.ToString()));
-            }
+            var result = await mediator.Send(new GetReportByIdQuery(id));
+            return Ok(result);
+
+        }
+
+        [HttpGet("order/{id}")]
+        public async Task<IActionResult> GetReportByOrderId(Guid id)
+        {
+            var result = await mediator.Send(new GetReportByOrderIdQuery(id));
+            return Ok(result);
+
         }
         [HttpPost]
         public async Task<IActionResult> CreateReport([FromBody] CreateReportDto dto)
         {
-            try
-            {
-                var result = await mediator.Send(new CreateReportCommand(dto));
-                return Ok(result);
-            }
-            catch (Exception ex)
-            {
-                return BadRequest(ResponseModel.ExceptionResponse(ex.ToString()));
-            }
+            var result = await mediator.Send(new CreateReportCommand(dto));
+            return Ok(result);
+        }
+
+        [HttpPut("{id}/resolve")]
+        public async Task<IActionResult> UpdateReport(Guid id, bool isAddReportTarget)
+        {
+            var result = await mediator.Send(new ResolveReportCommand(id, isAddReportTarget));
+            return Ok(result);
         }
     }
 }

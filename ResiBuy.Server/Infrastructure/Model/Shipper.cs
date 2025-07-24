@@ -4,6 +4,7 @@
     {
         public Guid               Id             { get; set; }
         public string             UserId         { get; set; }
+        public bool IsLocked { get; set; } = false;
         public bool               IsOnline       { get; set; }
         public bool               IsShipping     { get; set; } = false;
         public int                ReportCount    { get; set; }
