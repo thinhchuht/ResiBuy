@@ -2,12 +2,13 @@ import {
   Box,
   TextField,
   Typography,
-  MenuItem,
   Button,
   Stack,
   Card,
   CardContent,
   CardHeader,
+  ToggleButtonGroup,
+  ToggleButton,
 } from "@mui/material";
 import React, { useState } from "react";
 import { useParams, useNavigate } from "react-router-dom";
@@ -62,15 +63,18 @@ const VoucherCreatePage: React.FC = () => {
         />
         <CardContent>
           <Stack spacing={2}>
-            <TextField
-              select
-              label="Loại voucher"
+            <Typography>Loại voucher</Typography>
+            <ToggleButtonGroup
               value={type}
-              onChange={(e) => setType(e.target.value as VoucherType)}
+              exclusive
+              onChange={(e, newType) => {
+                if (newType !== null) setType(newType);
+              }}
+              color="primary"
             >
-              <MenuItem value="Amount">Giảm theo số tiền</MenuItem>
-              <MenuItem value="Percentage">Giảm theo phần trăm</MenuItem>
-            </TextField>
+              <ToggleButton value="Amount">Giảm tiền</ToggleButton>
+              <ToggleButton value="Percentage">Giảm %</ToggleButton>
+            </ToggleButtonGroup>
 
             <TextField
               label={
