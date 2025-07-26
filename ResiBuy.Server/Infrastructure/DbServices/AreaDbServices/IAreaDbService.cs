@@ -5,5 +5,6 @@
         Task<int> CountAsync();
         Task<IEnumerable<Area>> GetAllAreaAsync();
         Task<Area> GetByIdAsync(Guid id);
+        Task<Area> NearestAreaHasShipper(Guid currenId);
     }
 }

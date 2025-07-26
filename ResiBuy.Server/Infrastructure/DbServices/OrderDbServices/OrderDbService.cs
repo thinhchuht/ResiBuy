@@ -125,7 +125,7 @@ public class OrderDbService : BaseDbService<Order>, IOrderDbService
     {
         try
         {
-            return await _context.Orders.Where(o => o.Status == orderStatus && o.PaymentMethod == PaymentMethod.BankTransfer)
+            return await _context.Orders.Where(o => o.Status == orderStatus)
                 .Include(o => o.Store).ThenInclude(s => s.Room)
                 .ThenInclude(r => r.Building).ThenInclude(b => b.Area)
                 .ToListAsync();
