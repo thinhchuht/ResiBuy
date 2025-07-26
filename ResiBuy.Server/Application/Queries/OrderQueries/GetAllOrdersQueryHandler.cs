@@ -82,7 +82,8 @@ namespace ResiBuy.Server.Application.Queries.OrderQueries
                        oi.ProductDetail.Image.Url,
                        oi.ProductDetail.Image.ThumbUrl,
                        oi.ProductDetail.Image.Name
-                   }
+                   },
+                   oi.ProductDetail.AdditionalData.Select(ad => new AddtionalDataQueryResult(ad.Id, ad.Key, ad.Value)).ToList()
                 )).ToList()
             )).ToList();
             return ResponseModel.SuccessResponse(new PagedResult<OrderQueryResult>(items, result.TotalCount, result.PageNumber, result.PageSize));

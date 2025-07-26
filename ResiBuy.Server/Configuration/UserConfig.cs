@@ -33,6 +33,12 @@ namespace ResiBuy.Server.Configuration
                    .WithOne(r => r.CreatedBy)
                    .HasForeignKey(r => r.CreatedById)
                    .OnDelete(DeleteBehavior.Cascade); // Khi xóa User, tất cả Reports liên kết (có cùng CreatedById) sẽ tự động bị xóa. Xóa Report không ảnh hưởng đến User.
+
+
+            builder.HasMany(u => u.Reviews)
+                   .WithOne(r => r.User)
+                   .HasForeignKey(r => r.UserId)
+                   .OnDelete(DeleteBehavior.Restrict); // Khi xóa User, tất cả Reports liên kết (có cùng CreatedById) sẽ tự động bị xóa. Xóa Report không ảnh hưởng đến User.
         }
     }
 }

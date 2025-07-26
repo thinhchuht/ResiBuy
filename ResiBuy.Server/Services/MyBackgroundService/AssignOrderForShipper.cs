@@ -1,5 +1,4 @@
-﻿using Microsoft.AspNetCore.SignalR;
-using ResiBuy.Server.Infrastructure.DbServices.OrderDbServices;
+﻿using ResiBuy.Server.Infrastructure.DbServices.OrderDbServices;
 
 namespace ResiBuy.Server.Services.MyBackgroundService
 {
@@ -53,7 +52,7 @@ namespace ResiBuy.Server.Services.MyBackgroundService
                                         Note = order.Note,
                                         StoreName = order.Store?.Name,
                                         AssignedTime = DateTimeOffset.Now
-                                    },Constants.ShipperHubGroup,[shipper.Id.ToString()]);
+                                    },Constants.NoHubGroup,[shipper.Id.ToString()]);
 
                                     _logger.LogInformation($"Gửi đơn hàng {order.Id} đến shipper {shipper.Id}");
 

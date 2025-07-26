@@ -37,6 +37,8 @@ import SaveIcon from "@mui/icons-material/Save";
 import CloseIcon from "@mui/icons-material/Close";
 import TextField from "@mui/material/TextField";
 import ReportIcon from "@mui/icons-material/Report";
+import RateReviewIcon from "@mui/icons-material/RateReview";
+import ReviewModal from "../../components/ReviewModal";
 import DialogTitle from "@mui/material/DialogTitle";
 import DialogContent from "@mui/material/DialogContent";
 import DialogActions from "@mui/material/DialogActions";
@@ -53,13 +55,13 @@ interface RoomQueryResult {
   buildingName: string;
   areaName: string;
 }
-interface ImageResult {
+export interface ImageResult {
   id: string;
   name: string;
   url: string;
   thumbUrl: string;
 }
-interface OrderItemQueryResult {
+export interface OrderItemQueryResult {
   id: string;
   productId: number;
   productDetailId: number;
@@ -67,6 +69,11 @@ interface OrderItemQueryResult {
   quantity: number;
   price: number;
   image: ImageResult;
+  addtionalData: {
+    id: string;
+    key: string;
+    value: string;
+  }[];
 }
 export interface OrderApiResult {
   id: string;
@@ -158,6 +165,8 @@ const OrderCard = ({
   const [reportTargetType, setReportTargetType] = useState<
     "store" | "user" | "shipper"
   >("store");
+  const [reviewModalOpen, setReviewModalOpen] = useState(false);
+  const [selectedProductForReview, setSelectedProductForReview] = useState<OrderItemQueryResult | null>(null);
 
   const getStatusColor = (status: OrderStatus) => {
     switch (status) {
@@ -474,6 +483,20 @@ const OrderCard = ({
     }
   };
 
+  const handleOpenReviewModal = (orderItem: OrderItemQueryResult) => {
+    setSelectedProductForReview(orderItem);
+    setReviewModalOpen(true);
+  };
+
+  const handleCloseReviewModal = () => {
+    setReviewModalOpen(false);
+    setSelectedProductForReview(null);
+  };
+
+  const handleReviewSubmitted = () => {
+    handleCloseReviewModal();
+  };
+
   return (
     <Paper
       elevation={0}
@@ -644,52 +667,107 @@ const OrderCard = ({
         order.orderItems.map((item, index) => (
           <React.Fragment key={item.id}>
             <Box
-              onClick={() => navigate(`/products?id=${item.productId}`)}
               sx={{
                 display: "flex",
                 alignItems: "center",
                 mb: 2,
-                cursor: "pointer",
-                "&:hover": {
-                  "& .MuiTypography-root": {
-                    color: "#FF385C",
-                  },
-                },
+                gap: 2,
               }}
             >
-              <Avatar
-                src={item.image?.thumbUrl}
-                variant="rounded"
-                sx={{ width: 80, height: 80, mr: 2 }}
-              />
-              <Box sx={{ flex: 1 }}>
+              <Box
+                onClick={() => navigate(`/products?id=${item.productId}`)}
+                sx={{
+                  display: "flex",
+                  alignItems: "center",
+                  flex: 1,
+                  cursor: "pointer",
+                  "&:hover": {
+                    "& .MuiTypography-root": {
+                      color: "#FF385C",
+                    },
+                  },
+                }}
+              >
+                <Avatar
+                  src={item.image?.thumbUrl}
+                  variant="rounded"
+                  sx={{ width: 80, height: 80, mr: 2 }}
+                />
+                <Box sx={{ flex: 1 }}>
+                  <Typography
+                    variant="subtitle1"
+                    sx={{
+                      fontWeight: 600,
+                      mb: 0.5,
+                      transition: "color 0.2s ease",
+                    }}
+                  >
+                    {item.productName}
+                  </Typography>
+                  <Box sx={{ mb: 0.5 }}>
+                    {item.addtionalData && item.addtionalData.length > 0 && (
+                      <Typography 
+                        variant="caption" 
+                        component="div"
+                        sx={{ 
+                          color: "text.secondary",
+                          lineHeight: 1.5,
+                          overflow: 'hidden',
+                          fontWeight: 600
+                        }}
+                      >
+                        {item.addtionalData.map((data, index) => (
+                          <span key={data.id}>
+                            {data.key} : {data.value} 
+                            {index < item.addtionalData.length - 1 && ' - '}
+                          </span>
+                        ))}
+                      </Typography>
+                    )}
+                  </Box>
+                    <Typography
+                      variant="body2"
+                      sx={{ color: "#666", transition: "color 0.2s ease" }}
+                    >
+                      Số lượng: {item.quantity}
+                    </Typography>
+                </Box>
                 <Typography
                   variant="subtitle1"
                   sx={{
                     fontWeight: 600,
-                    mb: 0.5,
+                    color: "#FF385C",
                     transition: "color 0.2s ease",
                   }}
                 >
-                  {item.productName}
-                </Typography>
-                <Typography
-                  variant="body2"
-                  sx={{ color: "#666", transition: "color 0.2s ease" }}
-                >
-                  Số lượng: {item.quantity}
+                  {formatPrice(item.price)}
                 </Typography>
               </Box>
-              <Typography
-                variant="subtitle1"
-                sx={{
-                  fontWeight: 600,
-                  color: "#FF385C",
-                  transition: "color 0.2s ease",
-                }}
-              >
-                {formatPrice(item.price)}
-              </Typography>
+              {order.status === OrderStatus.Delivered && (
+                <Button
+                  variant="outlined"
+                  size="small"
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    handleOpenReviewModal(item);
+                  }}
+                  startIcon={<RateReviewIcon />}
+                  sx={{
+                    borderRadius: 2,
+                    textTransform: "none",
+                    px: 2,
+                    py: 1,
+                    borderColor: "#4CAF50",
+                    color: "#4CAF50",
+                    "&:hover": {
+                      borderColor: "#4CAF50",
+                      backgroundColor: "#4CAF5015",
+                    },
+                  }}
+                >
+                  Đánh giá
+                </Button>
+              )}
             </Box>
             {index < order.orderItems.length - 1 && (
               <Divider
@@ -1379,6 +1457,15 @@ const OrderCard = ({
           </Button>
         </DialogActions>
       </Dialog>
+      
+      {selectedProductForReview && (
+        <ReviewModal
+          open={reviewModalOpen}
+          onClose={handleCloseReviewModal}
+          orderItem={selectedProductForReview}
+          onReviewSubmitted={handleReviewSubmitted}
+        />
+      )}
     </Paper>
   );
 };

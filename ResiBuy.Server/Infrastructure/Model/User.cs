@@ -24,6 +24,7 @@
         public IEnumerable<UserRoom> UserRooms { get; set; } = new List<UserRoom>();
         public IEnumerable<UserVoucher> UserVouchers { get; set; } = new List<UserVoucher>();
         public IEnumerable<Report> Reports { get; set; } = new List<Report>();
+        public IEnumerable<Review> Reviews { get; set; } = new List<Review>();
 
         public User()
         {

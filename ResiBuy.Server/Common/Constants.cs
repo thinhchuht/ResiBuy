@@ -45,6 +45,7 @@
         public const string ProductOutOfStock         = "ProductOutOfStock";
         public const string OrderReported             = "OrderReported";
         public const string ReportResolved            = "ReportResolved";
+        public const string ReviewAdded               = "ReviewAdded";
 
         //regex pattern
         public const string EmailPattern           = @"^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$";

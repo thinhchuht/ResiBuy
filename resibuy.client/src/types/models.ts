@@ -1,3 +1,5 @@
+import type { ImageResult } from "../pages/Order/OrderCard";
+
 // Enums
 export enum OrderStatus {
   None = "None",
@@ -370,4 +372,31 @@ export interface UpdateOrderDto {
   id: string;
   voucherId?: string;
   note?: string;
+}
+
+export interface Review {
+  id: string;
+  userId: string;
+  productDetail: {
+    id: number;
+    name: string;
+    additionalData: AdditionalData[];
+  };
+  rate: number;
+  comment: string;
+  user : {
+    name : string;
+    avatar : ImageResult;
+  }
+  isAnonymous: boolean;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface PagedResult<T> {
+  items: T[];
+  totalCount: number;
+  pageNumber: number;
+  pageSize: number;
+  totalPages: number;
 }
