@@ -29,14 +29,14 @@ const shipperApi = {
   },
 
   // Cập nhật shipper
-  update: async (id: string, data: Shipper) => {
-    const response = await axiosClient.put(`${shipperUrl}/${id}`, data);
+  update: async ( data: Shipper) => {
+    const response = await axiosClient.put(`${shipperUrl}`, data);
     return response.data;
   },
 
   // Cập nhật vị trí shipper
-  updateLocation: async (id: string, data: Partial<Shipper>) => {
-    const response = await axiosClient.put(`${shipperUrl}/${id}/location`, data);
+  updateLocation: async (data: Partial<Shipper>) => {
+    const response = await axiosClient.put(`${shipperUrl}/location`, data);
     return response.data;
   },
 
@@ -45,6 +45,11 @@ const shipperApi = {
     const response = await axiosClient.put(`${shipperUrl}/${id}/status`, data);
     return response.data;
   },
+   stats: async () => {
+    const response = await axiosClient.get(`${shipperUrl}/stats`);
+    return response.data;
+  },
+
 };
 
 export default shipperApi;

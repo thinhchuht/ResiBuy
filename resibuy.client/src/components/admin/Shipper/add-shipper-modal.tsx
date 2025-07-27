@@ -1,4 +1,4 @@
-import { useEffect } from "react";
+import { useState, useEffect } from "react";
 import {
   Dialog,
   DialogTitle,
@@ -10,19 +10,28 @@ import {
   Button,
   IconButton,
   Grid,
-  FormControlLabel,
-  Switch,
+  Autocomplete,
 } from "@mui/material";
+import { TimePicker } from "@mui/x-date-pickers/TimePicker";
 import { Close, LocalShipping as ShipperIcon } from "@mui/icons-material";
 import { useShipperForm } from "./seg/utlis";
-import type { Shipper, User } from "../../../types/models";
+import areaApi from "../../../api/area.api";
+import type { Shipper } from "../../../types/models";
+import { format, parse } from "date-fns";
+
+interface Area {
+  id: string;
+  name: string;
+  isActive: boolean;
+  latitude: number;
+  longitude: number;
+}
 
 interface AddShipperModalProps {
   isOpen: boolean;
   onClose: () => void;
-  onSubmit: (shipper: Shipper, user: User) => void;
+  onSubmit: (shipper: Shipper) => void;
   editingShipper?: Shipper | null;
-  editingUser?: User | null;
 }
 
 export function AddShipperModal({
@@ -30,10 +39,50 @@ export function AddShipperModal({
   onClose,
   onSubmit,
   editingShipper,
-  editingUser,
 }: AddShipperModalProps) {
-  const { formData, errors, isSubmitting, handleInputChange, handleSubmit } =
-    useShipperForm(editingShipper, editingUser);
+  const { formData, errors, isSubmitting, handleInputChange, handleSubmit } = useShipperForm(editingShipper);
+  const [areas, setAreas] = useState<Area[]>([]);
+  const [selectedArea, setSelectedArea] = useState<Area | null>(null);
+
+  // Lấy danh sách khu vực
+  useEffect(() => {
+    const fetchAreas = async () => {
+      try {
+        const response = await areaApi.getAll();
+        console.log("Fetch areas response:", response);
+        setAreas(response);
+      } catch (error: any) {
+        console.error("Fetch areas error:", error);
+      }
+    };
+    fetchAreas();
+  }, []);
+
+  // Cập nhật selectedArea khi editingShipper hoặc areas thay đổi
+  useEffect(() => {
+    if (editingShipper && formData.lastLocationId && areas.length > 0) {
+      const area = areas.find((a) => a.id === formData.lastLocationId);
+      setSelectedArea(area || null);
+    } else {
+      setSelectedArea(null);
+    }
+  }, [editingShipper, formData.lastLocationId, areas]);
+
+  // Chuyển đổi chuỗi HH:mm thành đối tượng Date để sử dụng trong TimePicker
+  const parseTimeToDate = (time: string): Date | null => {
+    if (!time) return null;
+    return parse(time, "HH:mm", new Date());
+  };
+
+  // Xử lý thay đổi thời gian từ TimePicker
+  const handleTimeChange = (field: keyof ShipperFormData, newTime: Date | null) => {
+    if (newTime) {
+      const formattedTime = format(newTime, "HH:mm");
+      handleInputChange(field, formattedTime);
+    } else {
+      handleInputChange(field, "");
+    }
+  };
 
   if (!isOpen) return null;
 
@@ -143,6 +192,9 @@ export function AddShipperModal({
                   size="small"
                   error={!!errors.email}
                   helperText={errors.email}
+                  InputProps={{
+                    readOnly: !!editingShipper,
+                  }}
                   sx={{
                     bgcolor: "background.paper",
                     "& .MuiOutlinedInput-root": {
@@ -162,10 +214,54 @@ export function AddShipperModal({
                       color: "grey.700",
                       px: 1.5,
                       py: 1,
+                      backgroundColor: editingShipper ? "grey.100" : "background.paper",
                     },
                   }}
                 />
               </Grid>
+
+              {/* Mật khẩu (chỉ khi tạo mới) */}
+              {!editingShipper && (
+                <Grid item xs={12}>
+                  <Typography
+                    variant="body2"
+                    sx={{ color: "grey.700", fontWeight: "medium", mb: 1 }}
+                  >
+                    Mật Khẩu *
+                  </Typography>
+                  <TextField
+                    fullWidth
+                    value={formData.password}
+                    onChange={(e) => handleInputChange("password", e.target.value)}
+                    placeholder="Nhập mật khẩu"
+                    size="small"
+                    error={!!errors.password}
+                    helperText={errors.password}
+                    type="text"
+                    sx={{
+                      bgcolor: "background.paper",
+                      "& .MuiOutlinedInput-root": {
+                        borderRadius: 2,
+                        "& fieldset": {
+                          borderColor: errors.password ? "error.main" : "grey.300",
+                        },
+                        "&:hover fieldset": {
+                          borderColor: errors.password ? "error.main" : "grey.500",
+                        },
+                        "&.Mui-focused fieldset": {
+                          borderColor: "primary.main",
+                          boxShadow: "0 0 0 2px rgba(59, 130, 246, 0.5)",
+                        },
+                      },
+                      "& .MuiInputBase-input": {
+                        color: "grey.700",
+                        px: 1.5,
+                        py: 1,
+                      },
+                    }}
+                  />
+                </Grid>
+              )}
 
               {/* Họ tên */}
               <Grid item xs={12}>
@@ -183,6 +279,9 @@ export function AddShipperModal({
                   size="small"
                   error={!!errors.fullName}
                   helperText={errors.fullName}
+                  InputProps={{
+                    readOnly: !!editingShipper,
+                  }}
                   sx={{
                     bgcolor: "background.paper",
                     "& .MuiOutlinedInput-root": {
@@ -202,6 +301,7 @@ export function AddShipperModal({
                       color: "grey.700",
                       px: 1.5,
                       py: 1,
+                      backgroundColor: editingShipper ? "grey.100" : "background.paper",
                     },
                   }}
                 />
@@ -224,6 +324,9 @@ export function AddShipperModal({
                   error={!!errors.phoneNumber}
                   helperText={errors.phoneNumber}
                   type="tel"
+                  InputProps={{
+                    readOnly: !!editingShipper,
+                  }}
                   sx={{
                     bgcolor: "background.paper",
                     "& .MuiOutlinedInput-root": {
@@ -243,6 +346,7 @@ export function AddShipperModal({
                       color: "grey.700",
                       px: 1.5,
                       py: 1,
+                      backgroundColor: editingShipper ? "grey.100" : "background.paper",
                     },
                   }}
                 />
@@ -265,6 +369,9 @@ export function AddShipperModal({
                   helperText={errors.dateOfBirth}
                   type="date"
                   InputLabelProps={{ shrink: true }}
+                  InputProps={{
+                    readOnly: !!editingShipper,
+                  }}
                   sx={{
                     bgcolor: "background.paper",
                     "& .MuiOutlinedInput-root": {
@@ -284,6 +391,7 @@ export function AddShipperModal({
                       color: "grey.700",
                       px: 1.5,
                       py: 1,
+                      backgroundColor: editingShipper ? "grey.100" : "background.paper",
                     },
                   }}
                 />
@@ -305,6 +413,9 @@ export function AddShipperModal({
                   size="small"
                   error={!!errors.identityNumber}
                   helperText={errors.identityNumber}
+                  InputProps={{
+                    readOnly: !!editingShipper,
+                  }}
                   sx={{
                     bgcolor: "background.paper",
                     "& .MuiOutlinedInput-root": {
@@ -324,8 +435,58 @@ export function AddShipperModal({
                       color: "grey.700",
                       px: 1.5,
                       py: 1,
+                      backgroundColor: editingShipper ? "grey.100" : "background.paper",
                     },
                   }}
+                />
+              </Grid>
+
+              {/* Khu vực */}
+              <Grid item xs={12}>
+                <Typography
+                  variant="body2"
+                  sx={{ color: "grey.700", fontWeight: "medium", mb: 1 }}
+                >
+                  Vị trí cuối *
+                </Typography>
+                <Autocomplete
+                  options={areas}
+                  getOptionLabel={(option) => option.name}
+                  value={selectedArea}
+                  onChange={(event, newValue) => {
+                    setSelectedArea(newValue);
+                    handleInputChange("lastLocationId", newValue ? newValue.id : "");
+                  }}
+                  renderInput={(params) => (
+                    <TextField
+                      {...params}
+                      placeholder="Chọn khu vực"
+                      size="small"
+                      error={!!errors.lastLocationId}
+                      helperText={errors.lastLocationId}
+                      sx={{
+                        bgcolor: "background.paper",
+                        "& .MuiOutlinedInput-root": {
+                          borderRadius: 2,
+                          "& fieldset": {
+                            borderColor: errors.lastLocationId ? "error.main" : "grey.300",
+                          },
+                          "&:hover fieldset": {
+                            borderColor: errors.lastLocationId ? "error.main" : "grey.500",
+                          },
+                          "&.Mui-focused fieldset": {
+                            borderColor: "primary.main",
+                            boxShadow: "0 0 0 2px rgba(59, 130, 246, 0.5)",
+                          },
+                        },
+                        "& .MuiInputBase-input": {
+                          color: "grey.700",
+                          px: 1.5,
+                          py: 1,
+                        },
+                      }}
+                    />
+                  )}
                 />
               </Grid>
             </Grid>
@@ -356,34 +517,39 @@ export function AddShipperModal({
                 >
                   Thời Gian Bắt Đầu *
                 </Typography>
-                <TextField
-                  fullWidth
-                  value={formData.startWorkTime}
-                  onChange={(e) => handleInputChange("startWorkTime", e.target.value)}
-                  size="small"
-                  error={!!errors.startWorkTime}
-                  helperText={errors.startWorkTime}
-                  type="time"
-                  InputLabelProps={{ shrink: true }}
-                  sx={{
-                    bgcolor: "background.paper",
-                    "& .MuiOutlinedInput-root": {
-                      borderRadius: 2,
-                      "& fieldset": {
-                        borderColor: errors.startWorkTime ? "error.main" : "grey.300",
+                <TimePicker
+                  value={parseTimeToDate(formData.startWorkTime)}
+                  onChange={(newTime) => handleTimeChange("startWorkTime", newTime)}
+                  format="HH:mm"
+                  ampm={false}
+                  timeSteps={{ minutes: 5 }}
+                  slotProps={{
+                    textField: {
+                      fullWidth: true,
+                      size: "small",
+                      error: !!errors.startWorkTime,
+                      helperText: errors.startWorkTime,
+                      sx: {
+                        bgcolor: "background.paper",
+                        "& .MuiOutlinedInput-root": {
+                          borderRadius: 2,
+                          "& fieldset": {
+                            borderColor: errors.startWorkTime ? "error.main" : "grey.300",
+                          },
+                          "&:hover fieldset": {
+                            borderColor: errors.startWorkTime ? "error.main" : "grey.500",
+                          },
+                          "&.Mui-focused fieldset": {
+                            borderColor: "primary.main",
+                            boxShadow: "0 0 0 2px rgba(59, 130, 246, 0.5)",
+                          },
+                        },
+                        "& .MuiInputBase-input": {
+                          color: "grey.700",
+                          px: 1.5,
+                          py: 1,
+                        },
                       },
-                      "&:hover fieldset": {
-                        borderColor: errors.startWorkTime ? "error.main" : "grey.500",
-                      },
-                      "&.Mui-focused fieldset": {
-                        borderColor: "primary.main",
-                        boxShadow: "0 0 0 2px rgba(59, 130, 246, 0.5)",
-                      },
-                    },
-                    "& .MuiInputBase-input": {
-                      color: "grey.700",
-                      px: 1.5,
-                      py: 1,
                     },
                   }}
                 />
@@ -397,51 +563,41 @@ export function AddShipperModal({
                 >
                   Thời Gian Kết Thúc *
                 </Typography>
-                <TextField
-                  fullWidth
-                  value={formData.endWorkTime}
-                  onChange={(e) => handleInputChange("endWorkTime", e.target.value)}
-                  size="small"
-                  error={!!errors.endWorkTime}
-                  helperText={errors.endWorkTime}
-                  type="time"
-                  InputLabelProps={{ shrink: true }}
-                  sx={{
-                    bgcolor: "background.paper",
-                    "& .MuiOutlinedInput-root": {
-                      borderRadius: 2,
-                      "& fieldset": {
-                        borderColor: errors.endWorkTime ? "error.main" : "grey.300",
+                <TimePicker
+                  value={parseTimeToDate(formData.endWorkTime)}
+                  onChange={(newTime) => handleTimeChange("endWorkTime", newTime)}
+                  format="HH:mm"
+                  ampm={false}
+                  timeSteps={{ minutes: 5 }}
+                  slotProps={{
+                    textField: {
+                      fullWidth: true,
+                      size: "small",
+                      error: !!errors.endWorkTime,
+                      helperText: errors.endWorkTime,
+                      sx: {
+                        bgcolor: "background.paper",
+                        "& .MuiOutlinedInput-root": {
+                          borderRadius: 2,
+                          "& fieldset": {
+                            borderColor: errors.endWorkTime ? "error.main" : "grey.300",
+                          },
+                          "&:hover fieldset": {
+                            borderColor: errors.endWorkTime ? "error.main" : "grey.500",
+                          },
+                          "&.Mui-focused fieldset": {
+                            borderColor: "primary.main",
+                            boxShadow: "0 0 0 2px rgba(59, 130, 246, 0.5)",
+                          },
+                        },
+                        "& .MuiInputBase-input": {
+                          color: "grey.700",
+                          px: 1.5,
+                          py: 1,
+                        },
                       },
-                      "&:hover fieldset": {
-                        borderColor: errors.endWorkTime ? "error.main" : "grey.500",
-                      },
-                      "&.Mui-focused fieldset": {
-                        borderColor: "primary.main",
-                        boxShadow: "0 0 0 2px rgba(59, 130, 246, 0.5)",
-                      },
-                    },
-                    "& .MuiInputBase-input": {
-                      color: "grey.700",
-                      px: 1.5,
-                      py: 1,
                     },
                   }}
-                />
-              </Grid>
-
-              {/* Trạng thái sẵn sàng */}
-              <Grid item xs={12}>
-                <FormControlLabel
-                  control={
-                    <Switch
-                      checked={formData.isAvailable}
-                      onChange={(e) => handleInputChange("isAvailable", e.target.checked)}
-                      color="primary"
-                    />
-                  }
-                  label="Sẵn Sàng Giao Hàng"
-                  sx={{ color: "grey.700" }}
                 />
               </Grid>
             </Grid>

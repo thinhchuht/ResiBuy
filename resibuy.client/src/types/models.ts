@@ -144,6 +144,7 @@ export interface Order {
   updateAt: string;
   note: string;
   shipAddressId: string;
+  shippingFee:number;
   shipAddress: Room;
   userId: string;
   storeId: string;
@@ -171,6 +172,7 @@ export interface Shipper {
   id: string;
   userId: string;
   isOnline: boolean;
+  isLocked: boolean;
   isShipping: boolean;
   orders: Order[];
   startWorkTime: number;

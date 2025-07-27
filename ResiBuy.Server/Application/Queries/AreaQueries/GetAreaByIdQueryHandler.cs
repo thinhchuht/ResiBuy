@@ -18,6 +18,8 @@
                 {
                     id = area.Id,
                     name = area.Name,
+                    latitude = area.Latitude,
+                    longitude = area.Longitude,
                     isActive = area.IsActive
                 };
 

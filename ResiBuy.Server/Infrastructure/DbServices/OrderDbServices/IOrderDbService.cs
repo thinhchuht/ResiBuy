@@ -21,7 +21,7 @@ public interface IOrderDbService : IBaseDbService<Order>
     Task<decimal> ShippingFeeCharged(Guid ShippingAddress, Guid storeAddress, float weight);
     Task<decimal> GetMonthlyBankRevenue(Guid storeId, int month);
     Task<int> CountOrdersByShipperIdAsync(Guid shipperId);
-    Task<Dictionary<string, decimal>> GetShippingFeeByShipperAsync(Guid shipperId, DateTime? startDate = null, DateTime? endDate = null);
+    Task<decimal> GetShippingFeeByShipperAsync(Guid shipperId, DateTime? startDate = null, DateTime? endDate = null);
     Task<int> CountOrdersAsync(Guid? shipperId, Guid? storeId, string? userId, OrderStatus? status );
     Task<decimal> GetTotalShippingFeeByshipperAsync(Guid shipperId, DateTime? startDate = null, DateTime? endDate = null);
 
