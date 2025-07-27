@@ -13,7 +13,9 @@ import {
 } from "@mui/material";
 import { Close, LocationOn as AreaIcon } from "@mui/icons-material";
 import { useAreaForm } from "./seg/utlis";
+import { GoogleMap, LoadScript, Marker } from "@react-google-maps/api";
 import type { AreaDto } from "../../../types/dtoModels";
+import { useState } from "react";
 
 interface AddAreaModalProps {
   isOpen: boolean;
@@ -21,6 +23,19 @@ interface AddAreaModalProps {
   onSubmit: (area: AreaDto) => void;
   editArea?: AreaDto | null;
 }
+
+const mapContainerStyle = {
+  width: "100%",
+  height: "300px",
+  borderRadius: "8px",
+  border: "1px solid",
+  borderColor: "grey.300",
+};
+
+const defaultCenter = {
+  lat: 10.7769, // Trung tâm TP.HCM
+  lng: 106.7009,
+};
 
 export function AddAreaModal({
   isOpen,
@@ -30,6 +45,19 @@ export function AddAreaModal({
 }: AddAreaModalProps) {
   const { formData, errors, isSubmitting, handleInputChange, handleSubmit } =
     useAreaForm(editArea);
+  const [mapCenter, setMapCenter] = useState(
+    editArea ? { lat: editArea.latitude, lng: editArea.longitude } : defaultCenter
+  );
+
+  const handleMapClick = (event: google.maps.MapMouseEvent) => {
+    if (event.latLng) {
+      const lat = event.latLng.lat();
+      const lng = event.latLng.lng();
+      handleInputChange("latitude", lat);
+      handleInputChange("longitude", lng);
+      setMapCenter({ lat, lng });
+    }
+  };
 
   if (!isOpen) return null;
 
@@ -163,6 +191,99 @@ export function AddAreaModal({
                     },
                   }}
                 />
+              </Box>
+
+              <Box>
+                <Typography
+                  variant="body2"
+                  sx={{
+                    color: "grey.700",
+                    fontWeight: "medium",
+                    mb: 1,
+                  }}
+                >
+                  Vĩ Độ *
+                </Typography>
+                <TextField
+                  fullWidth
+                  value={formData.latitude}
+                  disabled
+                  size="small"
+                  error={!!errors.latitude}
+                  helperText={errors.latitude}
+                  sx={{
+                    bgcolor: "background.paper",
+                    "& .MuiOutlinedInput-root": {
+                      borderRadius: 2,
+                      "& fieldset": {
+                        borderColor: errors.latitude ? "error.main" : "grey.300",
+                      },
+                    },
+                    "& .MuiInputBase-input": {
+                      color: "grey.700",
+                      px: 1.5,
+                      py: 1,
+                    },
+                  }}
+                />
+              </Box>
+
+              <Box>
+                <Typography
+                  variant="body2"
+                  sx={{
+                    color: "grey.700",
+                    fontWeight: "medium",
+                    mb: 1,
+                  }}
+                >
+                  Kinh Độ *
+                </Typography>
+                <TextField
+                  fullWidth
+                  value={formData.longitude}
+                  disabled
+                  size="small"
+                  error={!!errors.longitude}
+                  helperText={errors.longitude}
+                  sx={{
+                    bgcolor: "background.paper",
+                    "& .MuiOutlinedInput-root": {
+                      borderRadius: 2,
+                      "& fieldset": {
+                        borderColor: errors.longitude ? "error.main" : "grey.300",
+                      },
+                    },
+                    "& .MuiInputBase-input": {
+                      color: "grey.700",
+                      px: 1.5,
+                      py: 1,
+                    },
+                  }}
+                />
+              </Box>
+
+              <Box>
+                <Typography
+                  variant="body2"
+                  sx={{
+                    color: "grey.700",
+                    fontWeight: "medium",
+                    mb: 1,
+                  }}
+                >
+                  Chọn Vị Trí Trên Bản Đồ
+                </Typography>
+                <LoadScript googleMapsApiKey="AIzaSyAjdoFr8FEz_oEzRH1PwUClVqIO3EPeX9U">
+                  <GoogleMap
+                    mapContainerStyle={mapContainerStyle}
+                    center={mapCenter}
+                    zoom={15}
+                    onClick={handleMapClick}
+                  >
+                    <Marker position={mapCenter} />
+                  </GoogleMap>
+                </LoadScript>
               </Box>
 
               <Box>

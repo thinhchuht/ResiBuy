@@ -1,76 +1,103 @@
+import { useState, useEffect } from "react";
 import { Box, Typography, IconButton } from "@mui/material";
 import {
   Edit,
   Visibility,
   LocalShipping as ShipperIcon,
-  ShoppingCart as OrderIcon,
-  Delete,
+  Lock,
+  LockOpen,
 } from "@mui/icons-material";
+import { LocalizationProvider } from "@mui/x-date-pickers/LocalizationProvider";
+import { AdapterDateFns } from "@mui/x-date-pickers/AdapterDateFns";
 import CustomTable from "../../../components/CustomTable";
 import { AddShipperModal } from "../../../components/admin/Shipper/add-shipper-modal";
 import { ShipperDetailModal } from "../../../components/admin/Shipper/shipper-detail-modal";
 import {
   calculateShipperStats,
-  formatCurrency,
   useShippersLogic,
 } from "../../../components/admin/Shipper/seg/utlis";
 import { StatsCard } from "../../../layouts/AdminLayout/components/StatsCard";
-import type { Shipper, User } from "../../../types/models";
+import type { Shipper } from "../../../types/models";
 
 function ShipperStatsCards() {
-  const stats = calculateShipperStats(useShippersLogic().shippers);
+  const [stats, setStats] = useState({
+    totalShippers: 0,
+    totalOnline: 0,
+    totalShipping: 0,
+    totalReported: 0,
+  });
+
+  useEffect(() => {
+    calculateShipperStats().then(setStats);
+  }, []);
 
   const cards = [
     {
       title: "Tổng Shipper",
       value: stats.totalShippers.toString(),
       icon: ShipperIcon,
-      iconColor: "#1976d2", // Xanh dương
-      iconBgColor: "#e3f2fd", // Xanh dương nhạt
+      iconColor: "#1976d2",
+      iconBgColor: "#e3f2fd",
       valueColor: "#1976d2",
     },
     {
-      title: "Tổng Đơn Hàng",
-      value: stats.totalOrders.toLocaleString(),
-      icon: OrderIcon,
-      iconColor: "#d81b60", // Hồng
-      iconBgColor: "#fce4ec", // Hồng nhạt
+      title: "Shipper Đang Hoạt Động",
+      value: stats.totalOnline.toString(),
+      icon: ShipperIcon,
+      iconColor: "#d81b60",
+      iconBgColor: "#fce4ec",
       valueColor: "#d81b60",
     },
     {
-      title: "Tổng shipper hoạt động",
-      value: formatCurrency(stats.totalRevenue),
+      title: "Shipper Đang Giao Hàng",
+      value: stats.totalShipping.toString(),
       icon: ShipperIcon,
-      iconColor: "#2e7d32", // Xanh lá
-      iconBgColor: "#e8f5e9", // Xanh lá nhạt
+      iconColor: "#2e7d32",
+      iconBgColor: "#e8f5e9",
       valueColor: "#2e7d32",
+    },
+    {
+      title: "Shipper Bị Tố Cáo",
+      value: stats.totalReported.toString(),
+      icon: ShipperIcon,
+      iconColor: "#ef4444",
+      iconBgColor: "#fee2e2",
+      valueColor: "#ef4444",
     },
   ];
 
   return (
     <Box
       sx={{
-        display: "grid",
-        gridTemplateColumns: {
-          xs: "1fr",
-          md: "1fr 1fr",
-          lg: "1fr 1fr 1fr",
-        },
+        display: "flex",
+        flexDirection: "column",
         gap: 3,
         mb: 3,
       }}
     >
-      {cards.map((card, index) => (
-        <StatsCard
-          key={index}
-          title={card.title}
-          value={card.value}
-          icon={card.icon}
-          iconColor={card.iconColor}
-          iconBgColor={card.iconBgColor}
-          valueColor={card.valueColor}
-        />
-      ))}
+      <Box
+        sx={{
+          display: "grid",
+          gridTemplateColumns: {
+            xs: "1fr",
+            md: "1fr 1fr",
+            lg: "1fr 1fr 1fr 1fr",
+          },
+          gap: 3,
+        }}
+      >
+        {cards.map((card, index) => (
+          <StatsCard
+            key={index}
+            title={card.title}
+            value={card.value}
+            icon={card.icon}
+            iconColor={card.iconColor}
+            iconBgColor={card.iconBgColor}
+            valueColor={card.valueColor}
+          />
+        ))}
+      </Box>
     </Box>
   );
 }
@@ -78,29 +105,30 @@ function ShipperStatsCards() {
 export default function ShippersPage() {
   const {
     shippers,
-    users,
+    totalCount,
+    pageNumber,
+    pageSize,
+    totalPages,
     selectedShipper,
-    selectedUser,
     isDetailModalOpen,
     isAddModalOpen,
     editingShipper,
-    editingUser,
     handleViewShipper,
     handleCloseDetailModal,
     handleAddShipper,
     handleEditShipper,
     handleCloseAddModal,
     handleSubmitShipper,
-    handleDeleteShipper,
+    handleToggleLockShipper,
     handleExportShippers,
-    countOrdersByShipperId,
+    handlePageChange,
     formatWorkTime,
     isShipperAvailable,
   } = useShippersLogic();
 
   const columns = [
     {
-      key: "id",
+      key: "id" as keyof Shipper,
       label: "ID Shipper",
       sortable: true,
       render: (shipper: Shipper) => (
@@ -117,73 +145,87 @@ export default function ShippersPage() {
       ),
     },
     {
-      key: "fullName",
+      key: "fullName" as keyof Shipper,
       label: "Họ Tên",
       sortable: true,
-      render: (shipper: Shipper) => {
-        const user = users.find((u) => u.id === shipper.userId);
-        return (
-          <Box sx={{ display: "flex", alignItems: "center" }}>
-            <Box sx={{ width: 40, height: 40, mr: 1.5 }}>
-              <Box
-                sx={{
-                  width: "100%",
-                  height: "100%",
-                  bgcolor: "linear-gradient(135deg, #3b82f6 0%, #a855f7 100%)",
-                  borderRadius: "50%",
-                  display: "flex",
-                  alignItems: "center",
-                  justifyContent: "center",
-                  color: "white",
-                  fontSize: "0.875rem",
-                  fontWeight: "bold",
-                }}
-              >
-                {user?.fullName
-                  ?.split(" ")
-                  .map((n) => n[0])
-                  .join("")
-                  .toUpperCase() || "?"}
-              </Box>
-            </Box>
-            <Typography
-              variant="body2"
-              sx={{ fontWeight: "medium", color: "grey.900" }}
+      render: (shipper: Shipper) => (
+        <Box sx={{ display: "flex", alignItems: "center" }}>
+          <Box sx={{ width: 40, height: 40, mr: 1.5 }}>
+            <Box
+              sx={{
+                width: "100%",
+                height: "100%",
+                bgcolor: "linear-gradient(135deg, #3b82f6 0%, #a855f7 100%)",
+                borderRadius: "50%",
+                display: "flex",
+                alignItems: "center",
+                justifyContent: "center",
+                color: "white",
+                fontSize: "0.875rem",
+                fontWeight: "bold",
+              }}
             >
-              {user?.fullName || "N/A"}
-            </Typography>
+              {shipper.fullName
+                ?.split(" ")
+                .map((n) => n[0])
+                .join("")
+                .toUpperCase() || "?"}
+            </Box>
           </Box>
-        );
-      },
+          <Typography
+            variant="body2"
+            sx={{ fontWeight: "medium", color: "grey.900" }}
+          >
+            {shipper.fullName || "N/A"}
+          </Typography>
+        </Box>
+      ),
     },
     {
-      key: "email",
+      key: "email" as keyof Shipper,
       label: "Email",
       sortable: true,
-      render: (shipper: Shipper) => {
-        const user = users.find((u) => u.id === shipper.userId);
-        return (
-          <Typography variant="body2" sx={{ color: "grey.900" }}>
-            {user?.email || "N/A"}
-          </Typography>
-        );
-      },
-    },
-    {
-      key: "status",
-      label: "Trạng Thái",
-      sortable: true,
       render: (shipper: Shipper) => (
-        <Typography
-          variant="body2"
-          sx={{ color: isShipperAvailable(shipper) ? "success.main" : "error.main" }}
-        >
-          {isShipperAvailable(shipper) ? "Sẵn Sàng" : "Không Sẵn Sàng"}
+        <Typography variant="body2" sx={{ color: "grey.900" }}>
+          {shipper.email || "N/A"}
         </Typography>
       ),
     },
     {
-      key: "workTime",
+      key: "phoneNumber" as keyof Shipper,
+      label: "Số Điện Thoại",
+      sortable: true,
+      render: (shipper: Shipper) => (
+        <Typography variant="body2" sx={{ color: "grey.900" }}>
+          {shipper.phoneNumber || "N/A"}
+        </Typography>
+      ),
+    },
+    {
+      key: "isLocked" as keyof Shipper,
+      label: "Trạng Thái Khóa",
+      sortable: true,
+      render: (shipper: Shipper) => (
+        <Typography
+          variant="body2"
+          sx={{ color: shipper.isLocked ? "error.main" : "success.main" }}
+        >
+          {shipper.isLocked ? "Đã Khóa" : "Không Khóa"}
+        </Typography>
+      ),
+    },
+    {
+      key: "lastLocationName" as keyof Shipper,
+      label: "Vị Trí Cuối",
+      sortable: true,
+      render: (shipper: Shipper) => (
+        <Typography variant="body2" sx={{ color: "grey.900" }}>
+          {shipper.lastLocationName || "N/A"}
+        </Typography>
+      ),
+    },
+    {
+      key: "startWorkTime" as keyof Shipper,
       label: "Thời Gian Làm Việc",
       sortable: false,
       render: (shipper: Shipper) => (
@@ -193,167 +235,152 @@ export default function ShippersPage() {
       ),
     },
     {
-      key: "totalOrders",
-      label: "Tổng Đơn Hàng",
-      sortable: true,
-      render: (shipper: Shipper) => (
-        <Typography
-          variant="body2"
-          sx={{ fontWeight: "medium", color: "grey.900" }}
-        >
-          {countOrdersByShipperId(shipper.id)}
-        </Typography>
-      ),
-    },
-    {
-      key: "actions",
+      key: "actions" as keyof Shipper,
       label: "Hành Động",
-      render: (shipper: Shipper) => {
-        const user = users.find((u) => u.id === shipper.userId);
-        return (
-          <Box sx={{ display: "flex", alignItems: "center", gap: 0.5 }}>
-            <IconButton
-              onClick={() => {
-                handleViewShipper(shipper);
-                console.log("Shipper data:", shipper, user);
-              }}
-              sx={{
-                color: "primary.main",
-                p: 0.5,
-                bgcolor: "background.paper",
-                borderRadius: 1,
-                "&:hover": {
-                  color: "primary.dark",
-                  bgcolor: "blue[50]",
-                },
-              }}
-              title="Xem Chi Tiết"
-            >
-              <Visibility sx={{ fontSize: 16 }} />
-            </IconButton>
-            <IconButton
-              onClick={() => user && handleEditShipper(shipper, user)}
-              sx={{
-                color: "success.main",
-                p: 0.5,
-                bgcolor: "background.paper",
-                borderRadius: 1,
-                "&:hover": {
-                  color: "success.dark",
-                  bgcolor: "green[50]",
-                },
-              }}
-              title="Sửa Shipper"
-            >
-              <Edit sx={{ fontSize: 16 }} />
-            </IconButton>
-            <IconButton
-              onClick={() => handleDeleteShipper(shipper.id)}
-              sx={{
-                color: "error.main",
-                p: 0.5,
-                bgcolor: "background.paper",
-                borderRadius: 1,
-                "&:hover": {
-                  color: "error.dark",
-                  bgcolor: "red[50]",
-                },
-              }}
-              title="Xóa Shipper"
-            >
-              <Delete sx={{ fontSize: 16 }} />
-            </IconButton>
-          </Box>
-        );
-      },
+      render: (shipper: Shipper) => (
+        <Box sx={{ display: "flex", alignItems: "center", gap: 0.5 }}>
+          <IconButton
+            onClick={() => {
+              handleViewShipper(shipper);
+              console.log("Shipper data:", shipper);
+            }}
+            sx={{
+              color: "primary.main",
+              p: 0.5,
+              bgcolor: "background.paper",
+              borderRadius: 1,
+              "&:hover": {
+                color: "primary.dark",
+                bgcolor: "blue[50]",
+              },
+            }}
+            title="Xem Chi Tiết"
+          >
+            <Visibility sx={{ fontSize: 16 }} />
+          </IconButton>
+          <IconButton
+            onClick={() => handleEditShipper(shipper)}
+            sx={{
+              color: "success.main",
+              p: 0.5,
+              bgcolor: "background.paper",
+              borderRadius: 1,
+              "&:hover": {
+                color: "success.dark",
+                bgcolor: "green[50]",
+              },
+            }}
+            title="Sửa Shipper"
+          >
+            <Edit sx={{ fontSize: 16 }} />
+          </IconButton>
+          <IconButton
+            onClick={() => handleToggleLockShipper(shipper.id, shipper.isLocked)}
+            sx={{
+              color: shipper.isLocked ? "warning.main" : "info.main",
+              p: 0.5,
+              bgcolor: "background.paper",
+              borderRadius: 1,
+              "&:hover": {
+                color: shipper.isLocked ? "warning.dark" : "info.dark",
+                bgcolor: shipper.isLocked ? "yellow[50]" : "cyan[50]",
+              },
+            }}
+            title={shipper.isLocked ? "Mở Khóa Shipper" : "Khóa Shipper"}
+          >
+            {shipper.isLocked ? <LockOpen sx={{ fontSize: 16 }} /> : <Lock sx={{ fontSize: 16 }} />}
+          </IconButton>
+        </Box>
+      ),
     },
   ];
 
   return (
-    <Box
-      sx={{
-        display: "flex",
-        flexDirection: "column",
-        height: "100%",
-        bgcolor: (theme) => theme.palette.grey[50],
-      }}
-    >
-      <Box
-        component="header"
-        sx={{
-          display: "flex",
-          height: 64,
-          alignItems: "center",
-          justifyContent: "space-between",
-          borderBottom: 1,
-          borderColor: "divider",
-          bgcolor: "background.paper",
-          px: 2,
-        }}
-      >
-        <Typography
-          variant="h6"
-          sx={(theme) => ({
-            color: theme.palette.grey[700],
-            fontWeight: theme.typography.fontWeightMedium,
-          })}
-        >
-          Quản Lý Shipper
-        </Typography>
-      </Box>
-
+    <LocalizationProvider dateAdapter={AdapterDateFns}>
       <Box
         sx={{
-          flex: 1,
-          overflow: "auto",
-          p: 3,
           display: "flex",
           flexDirection: "column",
-          gap: 3,
+          height: "100%",
+          bgcolor: (theme) => theme.palette.grey[50],
         }}
       >
-        <Box>
+        <Box
+          component="header"
+          sx={{
+            display: "flex",
+            height: 64,
+            alignItems: "center",
+            justifyContent: "space-between",
+            borderBottom: 1,
+            borderColor: "divider",
+            bgcolor: "background.paper",
+            px: 2,
+          }}
+        >
           <Typography
-            variant="body2"
+            variant="h6"
             sx={(theme) => ({
-              color: theme.palette.grey[600],
+              color: theme.palette.grey[700],
+              fontWeight: theme.typography.fontWeightMedium,
             })}
           >
-            Quản lý shipper và đơn hàng
+            Quản Lý Shipper
           </Typography>
         </Box>
 
-        <ShipperStatsCards />
+        <Box
+          sx={{
+            flex: 1,
+            overflow: "auto",
+            p: 3,
+            display: "flex",
+            flexDirection: "column",
+            gap: 3,
+          }}
+        >
+          <Box>
+            <Typography
+              variant="body2"
+              sx={(theme) => ({
+                color: theme.palette.grey[600],
+              })}
+            >
+              Quản lý shipper và đơn hàng
+            </Typography>
+          </Box>
 
-        <CustomTable
-          data={shippers}
-          columns={columns}
-          onAddItem={handleAddShipper}
-          onExport={handleExportShippers}
-          headerTitle="Tất Cả Shipper"
-          description="Quản lý shipper và đơn hàng"
-          showExport={true}
-          showBulkActions={false}
-          itemsPerPage={15}
+          <ShipperStatsCards />
+
+          <CustomTable
+            data={shippers}
+            totalCount={totalCount}
+            columns={columns}
+            onAddItem={handleAddShipper}
+            onExport={handleExportShippers}
+            onPageChange={handlePageChange}
+            headerTitle="Tất Cả Shipper"
+            description="Quản lý shipper và đơn hàng"
+            showExport={true}
+            showBulkActions={false}
+            itemsPerPage={pageSize}
+          />
+        </Box>
+
+        <ShipperDetailModal
+          isOpen={isDetailModalOpen}
+          onClose={handleCloseDetailModal}
+          shipper={selectedShipper}
+          onEdit={handleEditShipper}
+        />
+
+        <AddShipperModal
+          isOpen={isAddModalOpen}
+          onClose={handleCloseAddModal}
+          onSubmit={handleSubmitShipper}
+          editingShipper={editingShipper}
         />
       </Box>
-
-      <ShipperDetailModal
-        isOpen={isDetailModalOpen}
-        onClose={handleCloseDetailModal}
-        shipper={selectedShipper}
-        user={selectedUser}
-        onEdit={handleEditShipper}
-        onDelete={handleDeleteShipper}
-      />
-
-      <AddShipperModal
-        isOpen={isAddModalOpen}
-        onClose={handleCloseAddModal}
-        onSubmit={handleSubmitShipper}
-        editingShipper={editingShipper}
-        editingUser={editingUser}
-      />
-    </Box>
+    </LocalizationProvider>
   );
 }
