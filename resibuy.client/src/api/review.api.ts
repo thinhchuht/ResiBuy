@@ -12,6 +12,10 @@ const reviewApi = {
     const response = await axiosClient.get(`${reviewUrl}/${id}`);
     return response.data.data;
   },
+  getAverageRateByProductId: async (id: number) => {
+    const response = await axiosClient.get(`${reviewUrl}/product/${id}/avg-rate`);
+    return response.data.data;
+  },
   create: (userId: string, productDetailId: number, rate: number, comment: string, isAnonymous: boolean ) => {
     return axiosClient.post(`${reviewUrl}`, { userId, productDetailId,  rate, comment, isAnonymous});
   },

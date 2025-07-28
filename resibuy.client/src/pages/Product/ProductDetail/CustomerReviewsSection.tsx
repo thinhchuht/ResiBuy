@@ -1,4 +1,5 @@
-import React, { useState, useEffect } from "react";
+import { useState, useEffect, useCallback, useMemo } from "react";
+import { useEventHub, HubEventType, type HubEventHandler } from "../../../hooks/useEventHub";
 import {
   Box,
   Typography,
@@ -10,7 +11,12 @@ import {
   Chip,
 } from "@mui/material";
 import ReviewItem from "./ReviewItem";
-import type { Product, Review, PagedResult } from "../../../types/models";
+import type { 
+  Product, 
+  Review, 
+  PagedResult, 
+  ProductRatingStats
+} from "../../../types/models";
 import { useToastify } from "../../../hooks/useToastify";
 import reviewApi from "../../../api/review.api";
 
@@ -25,12 +31,10 @@ const CustomerReviewsSection: React.FC<CustomerReviewsSectionProps> = ({
   const toast = useToastify();
   const [reviews, setReviews] = useState<Review[]>([]);
   const [loading, setLoading] = useState(true);
-  const [totalReviews, setTotalReviews] = useState(0);
-  const [averageRating, setAverageRating] = useState(0);
   const [currentPage, setCurrentPage] = useState(1);
   const [totalPages, setTotalPages] = useState(0);
-  const [ratingCounts, setRatingCounts] = useState<{ [key: number]: number }>({});
   const [selectedRating, setSelectedRating] = useState<number>(0);
+  const [ratingStats, setRatingStats] = useState<ProductRatingStats | null>(null);
   const pageSize = 10;
 
   // Fetch reviews from API with pagination
@@ -43,27 +47,19 @@ const CustomerReviewsSection: React.FC<CustomerReviewsSectionProps> = ({
         page, 
         pageSize
       );
-      console.log('response', response)
+      
       setReviews(response.items || []);
-      setTotalReviews(response.totalCount || 0);
       setTotalPages(response.totalPages || 0);
       setCurrentPage(page);
       
-      // Calculate average rating and rating distribution
-      if (response.items && response.items.length > 0) {
-        const avgRating = response.items.reduce((sum: number, review: Review) => sum + review.rate, 0) / response.items.length;
-        setAverageRating(avgRating);
-        
-        // Calculate rating distribution for all reviews (not just current page)
-        const counts: { [key: number]: number } = {};
-        for (let i = 1; i <= 5; i++) {
-          counts[i] = 0;
-        }
-        response.items.forEach((review: Review) => {
-          counts[review.rate] = (counts[review.rate] || 0) + 1;
+      // Update total reviews count when filtering
+      if (rate > 0 && ratingStats) {
+        setRatingStats({
+          ...ratingStats,
+          totalReviews: response.totalCount || 0
         });
-        setRatingCounts(counts);
       }
+      
     } catch (error) {
       console.error('Error fetching reviews:', error);
       toast.error('Không thể tải đánh giá');
@@ -72,9 +68,37 @@ const CustomerReviewsSection: React.FC<CustomerReviewsSectionProps> = ({
     }
   };
 
+  const fetchRatingStats = useCallback(async () => {
+    try {
+      const stats: ProductRatingStats = await reviewApi.getAverageRateByProductId(product.id);
+      setRatingStats(stats);
+    } catch (error) {
+      console.error('Error fetching rating stats:', error);
+      toast.error('Không thể tải thống kê đánh giá');
+    }
+  }, [product.id, toast]);
+
+  const handleReviewAdded = useCallback((data: Review) => {
+    if ('rate' in data && 'productDetail' in data) {
+      if (data.productDetail?.id === product.id) {
+        setReviews(prevReviews => [data, ...prevReviews]);
+        fetchRatingStats();
+      }
+    }
+  }, [fetchRatingStats, product.id]);
+
+    const eventHandlers = useMemo(
+      () => ({
+        [HubEventType.ReviewAdded]: handleReviewAdded
+      }),
+      [handleReviewAdded]
+    );
+    useEventHub(eventHandlers as Partial<Record<HubEventType, HubEventHandler>>);
+
   useEffect(() => {
     if (product.id) {
       fetchReviews(1, 0);
+      fetchRatingStats();
     }
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [product.id]);
@@ -101,16 +125,21 @@ const CustomerReviewsSection: React.FC<CustomerReviewsSectionProps> = ({
     >
       <Box sx={{ textAlign: "center" }}>
         <Typography variant="h2" fontWeight="bold" color="primary">
-          {averageRating.toFixed(1)}
+          {ratingStats ? ratingStats.averageRating.toFixed(1) : '0.0'}
         </Typography>
-        <Rating value={averageRating} precision={0.1} readOnly size="large" />
+        <Rating 
+          value={ratingStats?.averageRating || 0} 
+          precision={0.1} 
+          readOnly 
+          size="large" 
+        />
         <Typography variant="body2" color="text.secondary" mb={2}>
-          {totalReviews} Đánh giá
+          {ratingStats?.totalReviews || 0} Đánh giá
         </Typography>
         <Stack spacing={1} alignItems="center" mb={3}>
           {[5, 4, 3, 2, 1].map((star) => {
-            const count = ratingCounts[star] || 0;
-            const percentage = totalReviews > 0 ? (count / totalReviews) * 100 : 0;
+            const distributionItem = ratingStats?.distribution?.find(d => d.stars === star);
+            const percentage = distributionItem?.percentage || 0;
             return (
               <Box 
                 key={star} 
