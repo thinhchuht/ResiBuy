@@ -7,6 +7,7 @@ import {
   CircularProgress,
   Stack,
   Button,
+  Chip,
 } from "@mui/material";
 import { useNavigate } from "react-router-dom";
 import orderApi from "../../api/order.api";
@@ -16,6 +17,7 @@ import { useOrderEvent } from "../../contexts/OrderEventContext";
 interface Order {
   id: string;
   totalPrice: number;
+  status: string;
   roomQueryResult: {
     name: string;
     buildingName: string;
@@ -41,8 +43,9 @@ function ShipperHome() {
 
     setLoading(true);
     try {
-      const res = await orderApi.getAll(
+      const res = await orderApi.getAllShip(
         "ShippedAccepted",
+        "Shipped",
         "None",
         "None",
         undefined,
@@ -84,7 +87,7 @@ function ShipperHome() {
       ) : (
         <Stack spacing={2}>
           {orders.map((order) => (
-            <Card key={order.id} variant="outlined">
+            <Card key={order.id} variant="outlined" sx={{ borderRadius: 2 }}>
               <CardContent>
                 <Stack spacing={1}>
                   <Typography variant="subtitle1" fontWeight={600} noWrap>
@@ -103,6 +106,23 @@ function ShipperHome() {
                   <Typography variant="body2">
                     <strong>Cửa hàng:</strong> {order.store.name}
                   </Typography>
+
+                  <Stack direction="row" spacing={1} alignItems="center">
+                    <Typography variant="body2">
+                      <strong>Trạng thái:</strong>
+                    </Typography>
+                    <Chip
+                      label={order.status}
+                      color={
+                        order.status === "Shipped"
+                          ? "success"
+                          : order.status === "ShippedAccepted"
+                          ? "info"
+                          : "default"
+                      }
+                      size="small"
+                    />
+                  </Stack>
 
                   <Typography variant="body2" color="primary">
                     <strong>Tổng tiền:</strong>{" "}

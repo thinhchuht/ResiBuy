@@ -31,6 +31,36 @@ const orderApi = {
     return response.data.data;
   },
 
+  getAllShip: async (
+    orderStatus = "None",
+       orderStatusShip = "None",
+    paymentMethod = "None",
+    paymentStatus = "None",
+    storeId?: string,
+    userId?: string,
+    shipperId?: string,
+    pageNumber = 1,
+    pageSize = 10,
+    startDate?: string,
+    endDate?: string
+  ) => {
+    const params: Record<string, unknown> = {
+      orderStatus,
+      orderStatusShip,
+      paymentMethod,
+      paymentStatus,
+      storeId,
+      userId,
+      shipperId,
+      pageNumber,
+      pageSize,
+    };
+    if (startDate) params.startDate = startDate;
+    if (endDate) params.endDate = endDate;
+    const response = await axiosClient.get(`${orderUrl}`, { params });
+    return response.data.data;
+  },
+
   getById: async (id: string) => {
     const response = await axiosClient.get(`${orderUrl}/${id}`);
     if (response.data.code !== 0) {

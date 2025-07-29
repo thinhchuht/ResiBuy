@@ -4,6 +4,7 @@ public interface IOrderDbService : IBaseDbService<Order>
 {
     Task<PagedResult<Order>> GetAllAsync(
         OrderStatus orderStatus,
+        OrderStatus orderStatusShip,
         PaymentMethod paymentMethod,
         PaymentStatus paymentStatus,
         Guid storeId,
