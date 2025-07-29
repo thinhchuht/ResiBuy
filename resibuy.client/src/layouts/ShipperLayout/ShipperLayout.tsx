@@ -24,7 +24,6 @@ const ShipperLayout: React.FC = () => {
     <Box sx={{ display: "flex", bgcolor: "#f0f2f5" }}>
       <CssBaseline />
 
-      {/* Sidebar */}
       <Drawer
         variant="permanent"
         sx={{
