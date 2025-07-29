@@ -139,8 +139,37 @@ const Orders = () => {
     );
   };
 
+  // const handleOrderReported = useCallback(
+  //   (data: ReportCreatedDto) => {
+  //     console.log('data', data)
+  //     if (currentTabRef.current === 0) {
+  //       setOrders((prevOrders) =>
+  //         prevOrders.map((order) =>
+  //           order.id === data.id
+  //             ? {
+  //                 ...order,
+  //                 status: data.orderStatus as OrderStatus,
+  //                 paymentStatus: data.paymentStatus as PaymentStatus,
+  //               }
+  //             : order
+  //         )
+  //       );
+  //     } else if (
+  //     orderStatusTabs[currentTabRef.current] === data.oldOrderStatus
+  //     ) {
+  //       setOrders((prevOrders) =>
+  //         prevOrders.filter((order) => order.id !== data.id)
+  //       );
+  //     } else if (orderStatusTabs[currentTabRef.current] === data.orderStatus) {
+  //       fetchOrders();
+  //     }
+  //   },
+  //   [fetchOrders]
+  // );
+
   const handleOrderStatusChanged = useCallback(
     (data: OrderStatusChangedData) => {
+      console.log('data', data)
       if (currentTabRef.current === 0) {
         setOrders((prevOrders) =>
           prevOrders.map((order) =>
@@ -154,7 +183,7 @@ const Orders = () => {
           )
         );
       } else if (
-        orderStatusTabs[currentTabRef.current] === data.oldOrderStatus
+      orderStatusTabs[currentTabRef.current] === data.oldOrderStatus
       ) {
         setOrders((prevOrders) =>
           prevOrders.filter((order) => order.id !== data.id)
@@ -169,6 +198,7 @@ const Orders = () => {
   const eventHandlers = useMemo(
     () => ({
       [HubEventType.OrderStatusChanged]: handleOrderStatusChanged,
+      // [HubEventType.OrderReported]: handleOrderReported,
     }),
     [handleOrderStatusChanged]
   );

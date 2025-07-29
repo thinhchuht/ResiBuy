@@ -76,6 +76,7 @@ namespace ResiBuy.Server.Application.Commands.OrderCommands
                     if (productDetail.Quantity == 0)
                     { 
                         productDetail.IsOutOfStock = true;
+                        productDetail.Sold = productDetail.Sold + totalOrderedQuantity;
                         notiProductDetails.Add(productDetail);
                         var allDetails = await productDetailDbService.GetByProductIdAsync(productDetail.ProductId);
                         if (allDetails.All(pd => pd.IsOutOfStock || pd.Quantity == 0))

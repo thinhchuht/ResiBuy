@@ -8,8 +8,9 @@ namespace ResiBuy.Server.Application.Commands.ShipperCommands
 {
     public record UpdateShipperCommand(
         Guid Id,
-        float StartWorkTime,
-        float EndWorkTime
+        float? StartWorkTime,
+        float? EndWorkTime,
+        bool? IsLocked 
     ) : IRequest<ResponseModel>;
 
     public class UpdateShipperCommandHandler : IRequestHandler<UpdateShipperCommand, ResponseModel>
@@ -36,9 +37,9 @@ namespace ResiBuy.Server.Application.Commands.ShipperCommands
 
             
             // 2. Cập nhật thời gian làm việc
-            shipper.StartWorkTime = command.StartWorkTime;
-            shipper.EndWorkTime = command.EndWorkTime;
-
+            shipper.StartWorkTime = command.StartWorkTime ?? shipper.StartWorkTime;
+            shipper.EndWorkTime = command.EndWorkTime ?? shipper.EndWorkTime;
+            shipper.IsLocked = command.IsLocked ?? shipper.IsLocked;
             // 3. Lưu thay đổi
             await _shipperDbService.UpdateAsync(shipper);
 

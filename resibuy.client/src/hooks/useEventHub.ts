@@ -1,11 +1,12 @@
 import { useEffect, useRef } from "react";
 import { useHub } from "../contexts/HubContext";
-import type {
-  OrderData,
-  OrderStatusChangedData,
-  PaymentData,
-  UserCreatedData,
+import type { 
+  OrderData, 
+  OrderStatusChangedData, 
+  PaymentData, 
+  UserCreatedData, 
 } from "../types/hubData";
+import type { Review } from "../types/models";
 
 // Define event types
 export enum HubEventType {
@@ -24,13 +25,10 @@ export enum HubEventType {
   MonthlyPaymentSettlFailed = "MonthlyPaymentSettlFailed",
   ProductOutOfStock = "ProductOutOfStock",
   ReceiveOrderNotification = "ReceiveOrderNotification",
+  ReviewAdded = "ReviewAdded",
 }
 
-export type HubEventData =
-  | UserCreatedData
-  | OrderData
-  | PaymentData
-  | OrderStatusChangedData;
+export type HubEventData = UserCreatedData | OrderData | PaymentData | OrderStatusChangedData | Review;
 export type HubEventHandler = (data: HubEventData) => void;
 export type HubEventHandlers = Partial<Record<HubEventType, HubEventHandler>>;
 
@@ -133,6 +131,11 @@ class HubEventsManager {
         console.log("ProductOutOfStock event received:", data);
         this.lastEventData[HubEventType.ProductOutOfStock] = data;
         this.notifyHandlers(HubEventType.ProductOutOfStock, data);
+      },
+      [HubEventType.ReviewAdded]: (data: HubEventData) => {
+        console.log("ReviewAdded event received:", data);
+        this.lastEventData[HubEventType.ReviewAdded] = data;
+        this.notifyHandlers(HubEventType.ReviewAdded, data);
       },
       [HubEventType.ReceiveOrderNotification]: (data: HubEventData) => {
         console.log("OrderAssignedToShipper event received:", data);

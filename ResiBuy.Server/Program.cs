@@ -1,5 +1,6 @@
 ﻿using ResiBuy.Server.Infrastructure.DbServices.NotificationDbServices;
 using ResiBuy.Server.Infrastructure.DbServices.ReportServices;
+using ResiBuy.Server.Infrastructure.DbServices.ReviewDbServices;
 using ResiBuy.Server.Infrastructure.DbServices.VoucherDbServices;
 using ResiBuy.Server.Services.RedisServices;
 using ResiBuy.Server.Services.SMSServices;
@@ -19,6 +20,7 @@ services.AddScoped<ISMSService, SMSService>();
 services.AddScoped<IVoucherDbService, VoucherDbService>();
 services.AddScoped<IReportDbService, ReportDbService>();
 services.AddScoped<INotificationDbService, NotificationDbService>();
+services.AddScoped<IReviewDbService, ReviewDbService>();
 services.AddMemoryCache();
 services.AddSignalR();
 services.AddMediatR(cfg => cfg.RegisterServicesFromAssemblyContaining(typeof(Program)));

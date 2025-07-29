@@ -73,6 +73,7 @@ namespace ResiBuy.Server.Application.Queries.OrderQueries
                     oi.ID,
                     oi.ProductDetail.ProductId,
                     oi.ProductDetailId,
+                    oi.ProductDetail.Reviews.Where(r => r.UserId == request.UserId).FirstOrDefault() == null ? null : oi.ProductDetail.Reviews.Where(r => r.UserId == request.UserId).FirstOrDefault().Id,
                     oi.ProductDetail.Product.Name,
                     oi.Quantity,
                     oi.Price,
@@ -82,7 +83,8 @@ namespace ResiBuy.Server.Application.Queries.OrderQueries
                        oi.ProductDetail.Image.Url,
                        oi.ProductDetail.Image.ThumbUrl,
                        oi.ProductDetail.Image.Name
-                   }
+                   },
+                   oi.ProductDetail.AdditionalData.Select(ad => new AddtionalDataQueryResult(ad.Id, ad.Key, ad.Value)).ToList()
                 )).ToList()
             )).ToList();
             return ResponseModel.SuccessResponse(new PagedResult<OrderQueryResult>(items, result.TotalCount, result.PageNumber, result.PageSize));

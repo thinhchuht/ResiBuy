@@ -17,9 +17,9 @@ namespace ResiBuy.Server.Controllers
         }
 
         [HttpGet("{id}")]
-        public async Task<IActionResult> GetById(Guid id)
+        public async Task<IActionResult> GetById(Guid id, [FromQuery] string userId)
         {
-            var result = await mediator.Send(new GetByIdOrdersQuery(id));
+            var result = await mediator.Send(new GetByIdOrdersQuery(id, userId));
             return Ok(result);
         }
 

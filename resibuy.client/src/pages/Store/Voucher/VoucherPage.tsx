@@ -11,6 +11,15 @@ import {
   Stack,
   CardHeader,
   Skeleton,
+  Table,
+  TableBody,
+  TableCell,
+  TableContainer,
+  TableHead,
+  TableRow,
+  Paper,
+  Switch,
+  TablePagination,
 } from "@mui/material";
 import React from "react";
 import { useParams, useNavigate } from "react-router-dom";
@@ -37,8 +46,6 @@ interface VoucherQueryParams {
   MinOrderPrice?: number | string;
   StartDate?: string;
   EndDate?: string;
-  IsActive?: boolean;
-  UserId?: string;
 }
 
 const VoucherPage: React.FC = () => {
@@ -51,6 +58,10 @@ const VoucherPage: React.FC = () => {
   const navigate = useNavigate();
   const [loading, setLoading] = useState(false);
 
+  const [page, setPage] = useState(0);
+  const [rowsPerPage, setRowsPerPage] = useState(5);
+  const [totalCount, setTotalCount] = useState(0);
+
   const fetchVouchers = async () => {
     try {
       if (!storeId) {
@@ -60,8 +71,8 @@ const VoucherPage: React.FC = () => {
 
       const params: VoucherQueryParams = {
         storeId,
-        pageNumber: 1,
-        pageSize: 20,
+        pageNumber: page + 1,
+        pageSize: rowsPerPage,
       };
 
       if (voucherType) {
@@ -71,7 +82,7 @@ const VoucherPage: React.FC = () => {
         params.MinOrderPrice = minOrderPrice;
       }
       if (startDate) {
-        params.StartDate = new Date(startDate).toISOString(); // đảm bảo định dạng ISO
+        params.StartDate = new Date(startDate).toISOString();
       }
       if (endDate) {
         params.EndDate = new Date(endDate).toISOString();
@@ -79,26 +90,59 @@ const VoucherPage: React.FC = () => {
 
       setLoading(true);
       const response = await axios.get("/api/Voucher", { params });
-      setVouchers(response.data.items || []);
+      setVouchers(response.data.data.items || []);
+      setTotalCount(response.data.data.totalCount || 0);
     } catch (error) {
       console.error("Failed to fetch vouchers", error);
     } finally {
       setLoading(false);
     }
   };
+
+  const handleToggleStatus = async (voucher: Voucher) => {
+    try {
+      await axios.put("/api/Voucher/deactive", {
+        id: voucher.id,
+        storeId: storeId,
+      });
+      fetchVouchers();
+    } catch (error) {
+      console.error("Failed to deactive voucher", error);
+    }
+  };
+
   const handleCreate = () => {
     navigate(`/store/${storeId}/voucher-create`);
   };
 
+  const handleUpdate = (id: string) => {
+    navigate(`/store/${storeId}/voucher-edit/${id}`);
+  };
+
+  const formatDate = (date: string) => {
+    return new Date(date).toLocaleDateString("vi-VN");
+  };
+
   useEffect(() => {
     fetchVouchers();
-  }, []);
+  }, [page, rowsPerPage]);
+
+  const handleChangePage = (_: unknown, newPage: number) => {
+    setPage(newPage);
+  };
+
+  const handleChangeRowsPerPage = (
+    event: React.ChangeEvent<HTMLInputElement>
+  ) => {
+    setRowsPerPage(parseInt(event.target.value, 10));
+    setPage(0);
+  };
 
   return (
     <Box p={4}>
       <Card>
         <CardHeader
-          title={<Typography variant="h5">Quản lý sản phẩm</Typography>}
+          title={<Typography variant="h5">Quản lý voucher</Typography>}
           action={
             <Button variant="contained" color="primary" onClick={handleCreate}>
               Thêm voucher
@@ -130,61 +174,95 @@ const VoucherPage: React.FC = () => {
             <TextField
               label="Từ ngày"
               type="date"
-              slotProps={{ inputLabel: { shrink: true } }}
               value={startDate}
               onChange={(e) => setStartDate(e.target.value)}
+              InputLabelProps={{ shrink: true }}
             />
 
             <TextField
               label="Đến ngày"
               type="date"
-              slotProps={{ inputLabel: { shrink: true } }}
               value={endDate}
               onChange={(e) => setEndDate(e.target.value)}
+              InputLabelProps={{ shrink: true }}
             />
 
             <Button variant="contained" onClick={fetchVouchers}>
               Lọc
             </Button>
           </Stack>
+
+          {/* Bảng voucher */}
+          <TableContainer component={Paper}>
+            <Table>
+              <TableHead>
+                <TableRow>
+                  <TableCell>Mã</TableCell>
+                  <TableCell>Loại</TableCell>
+                  <TableCell>Giảm</TableCell>
+                  <TableCell>Tối thiểu</TableCell>
+                  <TableCell>Giảm tối đa</TableCell>
+                  <TableCell>Hiệu lực</TableCell>
+                  <TableCell>Trạng thái</TableCell>
+                  <TableCell>Hành động</TableCell>
+                </TableRow>
+              </TableHead>
+              <TableBody>
+                {loading
+                  ? [...Array(rowsPerPage)].map((_, i) => (
+                      <TableRow key={i}>
+                        <TableCell colSpan={8}>
+                          <Skeleton height={32} />
+                        </TableCell>
+                      </TableRow>
+                    ))
+                  : vouchers.map((voucher) => (
+                      <TableRow key={voucher.id}>
+                        <TableCell>{voucher.id}</TableCell>
+                        <TableCell>{voucher.type}</TableCell>
+                        <TableCell>
+                          {voucher.type === "Amount"
+                            ? `${voucher.discountAmount}₫`
+                            : `${voucher.discountAmount}%`}
+                        </TableCell>
+                        <TableCell>{voucher.minOrderPrice}₫</TableCell>
+                        <TableCell>{voucher.maxDiscountPrice}₫</TableCell>
+                        <TableCell>
+                          {formatDate(voucher.startDate)} -{" "}
+                          {formatDate(voucher.endDate)}
+                        </TableCell>
+                        <TableCell>
+                          <Switch
+                            checked={voucher.isActive}
+                            onChange={() => handleToggleStatus(voucher)}
+                            color="primary"
+                          />
+                        </TableCell>
+                        <TableCell>
+                          <Button
+                            size="small"
+                            variant="outlined"
+                            onClick={() => handleUpdate(voucher.id)}
+                          >
+                            Cập nhật
+                          </Button>
+                        </TableCell>
+                      </TableRow>
+                    ))}
+              </TableBody>
+            </Table>
+            <TablePagination
+              component="div"
+              count={totalCount}
+              page={page}
+              onPageChange={handleChangePage}
+              rowsPerPage={rowsPerPage}
+              onRowsPerPageChange={handleChangeRowsPerPage}
+              rowsPerPageOptions={[5, 10, 20]}
+            />
+          </TableContainer>
         </CardContent>
       </Card>
-      {/* Danh sách voucher */}
-      <Stack spacing={2}>
-        {loading
-          ? // Hiển thị 3 thẻ loading giả
-            [...Array(3)].map((_, i) => (
-              <Card key={i} variant="outlined">
-                <CardContent>
-                  <Skeleton variant="text" width="60%" height={32} />
-                  <Skeleton variant="text" width="80%" />
-                  <Skeleton variant="text" width="50%" />
-                </CardContent>
-              </Card>
-            ))
-          : vouchers.map((voucher) => (
-              <Card key={voucher.id} variant="outlined">
-                <CardContent>
-                  <Typography variant="h6">
-                    🎟️{" "}
-                    {voucher.type === "Amount"
-                      ? "Giảm " + voucher.discountAmount + "₫"
-                      : `Giảm ${voucher.discountAmount}%`}
-                  </Typography>
-                  <Typography variant="body2">
-                    Tổng số lượng: {voucher.quantity} |
-                    <strong> Còn lại: {voucher.quantity}</strong> | Tối thiểu:{" "}
-                    {voucher.minOrderPrice}₫ | Giảm tối đa:{" "}
-                    {voucher.maxDiscountPrice}₫
-                  </Typography>
-                  <Typography variant="body2">
-                    Hiệu lực: {voucher.startDate} → {voucher.endDate} |{" "}
-                    {voucher.isActive ? "🟢 Đang hoạt động" : "🔴 Ngưng"}
-                  </Typography>
-                </CardContent>
-              </Card>
-            ))}
-      </Stack>
     </Box>
   );
 };

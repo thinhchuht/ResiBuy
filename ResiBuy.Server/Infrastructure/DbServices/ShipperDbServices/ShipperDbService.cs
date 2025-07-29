@@ -176,7 +176,17 @@ namespace ResiBuy.Server.Infrastructure.DbServices.ShipperDbServices
                 throw new CustomException(ExceptionErrorCode.RepositoryError, ex.Message);
             }
         }
-
+        public async Task<int> CountAllShipper()
+        {
+            try
+            {
+                return await _context.Shippers.CountAsync( );
+            }
+            catch (Exception ex)
+            {
+                throw new CustomException(ExceptionErrorCode.RepositoryError, ex.Message);
+            }
+        }
         public async Task<int> SumShipperReportCountAsync()
         {
             try

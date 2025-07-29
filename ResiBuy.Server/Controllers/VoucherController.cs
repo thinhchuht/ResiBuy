@@ -29,10 +29,10 @@ namespace ResiBuy.Server.Controllers
             return Ok(result);
         }
 
-        [HttpPut("quantity")]
-        public async Task<IActionResult> UpdateQuantityAsync([FromBody] UpdateQuantityVoucherDto dto)
+        [HttpPut()]
+        public async Task<IActionResult> UpdateQuantityAsync([FromBody] UpdateVoucherDto dto)
         {
-            var result = await mediator.Send(new UpdateQuantityCommand(dto));
+            var result = await mediator.Send(new UpdateVoucherCommand(dto));
             return Ok(result);
         }
 

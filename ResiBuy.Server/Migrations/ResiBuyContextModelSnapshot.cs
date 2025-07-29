@@ -487,6 +487,39 @@ namespace ResiBuy.Server.Migrations
                     b.ToTable("Reports");
                 });
 
+            modelBuilder.Entity("ResiBuy.Server.Infrastructure.Model.Review", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<string>("Comment")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("datetime2");
+
+                    b.Property<bool>("IsAnonymous")
+                        .HasColumnType("bit");
+
+                    b.Property<int>("ProductDetailId")
+                        .HasColumnType("int");
+
+                    b.Property<int>("Rate")
+                        .HasColumnType("int");
+
+                    b.Property<string>("UserId")
+                        .HasColumnType("nvarchar(450)");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("ProductDetailId");
+
+                    b.HasIndex("UserId");
+
+                    b.ToTable("Reviews");
+                });
+
             modelBuilder.Entity("ResiBuy.Server.Infrastructure.Model.Room", b =>
                 {
                     b.Property<Guid>("Id")
@@ -650,19 +683,19 @@ namespace ResiBuy.Server.Migrations
                         new
                         {
                             Id = "adm_df",
-                            CreatedAt = new DateTime(2025, 7, 23, 16, 37, 47, 693, DateTimeKind.Local).AddTicks(4875),
+                            CreatedAt = new DateTime(2025, 7, 25, 15, 28, 35, 499, DateTimeKind.Local).AddTicks(2476),
                             DateOfBirth = new DateTime(1990, 1, 1, 0, 0, 0, 0, DateTimeKind.Unspecified),
                             Email = "admin@123",
                             EmailConfirmed = true,
                             FullName = "Administrator",
                             IdentityNumber = "admin",
                             IsLocked = false,
-                            PasswordHash = "$2a$11$zakEKdrtxzXuj/w9aGceK.pT2MagEgR8.t8vJce7bE470MPLC.Beu",
+                            PasswordHash = "$2a$11$hPV83SuUzhfCzr5ChZJFLeT6Q0kNx0HW7e.gBRq.KvamCRbZAnakK",
                             PhoneNumber = "admin",
                             PhoneNumberConfirmed = true,
                             ReportCount = 0,
                             Roles = "[\"ADMIN\"]",
-                            UpdatedAt = new DateTime(2025, 7, 23, 16, 37, 47, 693, DateTimeKind.Local).AddTicks(4897)
+                            UpdatedAt = new DateTime(2025, 7, 25, 15, 28, 35, 499, DateTimeKind.Local).AddTicks(2490)
                         });
                 });
 
@@ -950,6 +983,24 @@ namespace ResiBuy.Server.Migrations
                     b.Navigation("Order");
                 });
 
+            modelBuilder.Entity("ResiBuy.Server.Infrastructure.Model.Review", b =>
+                {
+                    b.HasOne("ResiBuy.Server.Infrastructure.Model.ProductDetail", "ProductDetail")
+                        .WithMany("Reviews")
+                        .HasForeignKey("ProductDetailId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.HasOne("ResiBuy.Server.Infrastructure.Model.User", "User")
+                        .WithMany("Reviews")
+                        .HasForeignKey("UserId")
+                        .OnDelete(DeleteBehavior.Restrict);
+
+                    b.Navigation("ProductDetail");
+
+                    b.Navigation("User");
+                });
+
             modelBuilder.Entity("ResiBuy.Server.Infrastructure.Model.Room", b =>
                 {
                     b.HasOne("ResiBuy.Server.Infrastructure.Model.Building", "Building")
@@ -1115,6 +1166,8 @@ namespace ResiBuy.Server.Migrations
                     b.Navigation("Image");
 
                     b.Navigation("OrderItems");
+
+                    b.Navigation("Reviews");
                 });
 
             modelBuilder.Entity("ResiBuy.Server.Infrastructure.Model.Room", b =>
@@ -1149,6 +1202,8 @@ namespace ResiBuy.Server.Migrations
                     b.Navigation("Cart");
 
                     b.Navigation("Reports");
+
+                    b.Navigation("Reviews");
 
                     b.Navigation("Stores");
 

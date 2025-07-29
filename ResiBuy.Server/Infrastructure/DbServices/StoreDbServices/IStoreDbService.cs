@@ -1,3 +1,6 @@
+using ResiBuy.Server.Infrastructure.Model.DTOs.OrderDtos;
+using ResiBuy.Server.Infrastructure.Model.DTOs.StoreDtos;
+
 namespace ResiBuy.Server.Infrastructure.DbServices.StoreDbServices
 {
     public interface IStoreDbService : IBaseDbService<Store>
@@ -12,5 +15,8 @@ namespace ResiBuy.Server.Infrastructure.DbServices.StoreDbServices
         Task<int> CountAllStoresAsync();
         Task<int> CountStoresByIsOpenAsync(bool isOpen);
         Task<int> CountStoresByIsLockedAsync(bool isLocked);
+        Task<StatisticalStoreDto> StatisticalStore(Guid storeid);
+        Task<SalesAnalysisDto> SalesAnalysis (Guid storeId, DateTime startDate, DateTime endDate);
+        Task<Dictionary<int,ProductAndSale>> TopSaleProduct(Guid storeId, DateTime startDate, DateTime endDate);
     }
 }

@@ -2,7 +2,7 @@
 
 namespace ResiBuy.Server.Application.Queries.OrderQueries
 {
-    public record GetByIdOrdersQuery(Guid Id) : IRequest<ResponseModel>;
+    public record GetByIdOrdersQuery(Guid Id, string UserId) : IRequest<ResponseModel>;
 
     public class GetByIdOrdersQueryHandler(IOrderDbService orderDbService) : IRequestHandler<GetByIdOrdersQuery, ResponseModel>
     {
@@ -50,6 +50,7 @@ namespace ResiBuy.Server.Application.Queries.OrderQueries
                     oi.ID,
                     oi.ProductDetail.ProductId,
                     oi.ProductDetailId,
+                    string.IsNullOrEmpty(request.UserId) ? null : oi.ProductDetail.Reviews.Where(r => r.UserId == request.UserId).FirstOrDefault().Id,
                     oi.ProductDetail.Product.Name,
                     oi.Quantity,
                     oi.Price,
@@ -59,7 +60,8 @@ namespace ResiBuy.Server.Application.Queries.OrderQueries
                        oi.ProductDetail.Image.Url,
                        oi.ProductDetail.Image.ThumbUrl,
                        oi.ProductDetail.Image.Name
-                   }
+                   }, 
+                   oi.ProductDetail.AdditionalData.Select(ad => new AddtionalDataQueryResult(ad.Id, ad.Key, ad.Value)).ToList()
                 )).ToList()
             );
             return ResponseModel.SuccessResponse(orderRs);

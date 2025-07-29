@@ -15,19 +15,20 @@
             try
             {
                 var onlineTrue = await _shipperDbService.CountShippersByOnlineStatusAsync(true);
-                var onlineFalse = await _shipperDbService.CountShippersByOnlineStatusAsync(false);
+ 
 
                 var shippingTrue = await _shipperDbService.CountShippersByShippingStatusAsync(true);
-                var shippingFalse = await _shipperDbService.CountShippersByShippingStatusAsync(false);
 
+                var countAllShipper= await _shipperDbService.CountAllShipper();
                 var totalReportCount = await _shipperDbService.SumShipperReportCountAsync();
 
                 return ResponseModel.SuccessResponse(new
                 {
+                    CountAllShipper = countAllShipper,
                     OnlineTrue = onlineTrue,
-                    OnlineFalse = onlineFalse,
+                
                     ShippingTrue = shippingTrue,
-                    ShippingFalse = shippingFalse,
+        
                     TotalReportCount = totalReportCount
                 });
             }

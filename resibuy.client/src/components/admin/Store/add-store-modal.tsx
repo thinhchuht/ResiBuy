@@ -36,7 +36,7 @@ export function AddStoreModal({ isOpen, onClose, onSubmit, editStore }) {
   const [selectedUser, setSelectedUser] = useState(null);
   const [selectedRoom, setSelectedRoom] = useState(null);
   const [loading, setLoading] = useState(false);
-  const { toast } = useToastify();
+  const  toast  = useToastify();
 
   // Tải danh sách người dùng và phòng khi modal mở
   useEffect(() => {
