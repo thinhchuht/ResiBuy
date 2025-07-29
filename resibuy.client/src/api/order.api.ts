@@ -55,8 +55,22 @@ const orderApi = {
       userId,
       orderId,
       orderStatus,
-      reason
-    }
+      reason,
+    };
+    const response = await axiosClient.put(`/api/order/order-status`, body);
+    return response.data;
+  },
+
+  updateOrderStatusShip: async (
+    orderId: string,
+    orderStatus: string,
+    shipperId: string
+  ) => {
+    const body = {
+      orderId,
+      orderStatus,
+      shipperId,
+    };
     const response = await axiosClient.put(`/api/order/order-status`, body);
     return response.data;
   },

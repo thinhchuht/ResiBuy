@@ -24,6 +24,7 @@ export enum HubEventType {
   MonthlyPaymentSettled = "MonthlyPaymentSettled",
   MonthlyPaymentSettlFailed = "MonthlyPaymentSettlFailed",
   ProductOutOfStock = "ProductOutOfStock",
+  ReceiveOrderNotification = "ReceiveOrderNotification",
   ReviewAdded = "ReviewAdded",
 }
 
@@ -51,10 +52,13 @@ class HubEventsManager {
     }, {} as Record<HubEventType, Set<HubEventHandler>>);
 
     // Initialize last event data
-    this.lastEventData = Object.values(HubEventType).reduce((acc, eventType) => {
-      acc[eventType] = null;
-      return acc;
-    }, {} as Record<HubEventType, HubEventData | null>);
+    this.lastEventData = Object.values(HubEventType).reduce(
+      (acc, eventType) => {
+        acc[eventType] = null;
+        return acc;
+      },
+      {} as Record<HubEventType, HubEventData | null>
+    );
 
     // Create event handlers
     this.eventHandlers = {
@@ -133,6 +137,11 @@ class HubEventsManager {
         this.lastEventData[HubEventType.ReviewAdded] = data;
         this.notifyHandlers(HubEventType.ReviewAdded, data);
       },
+      [HubEventType.ReceiveOrderNotification]: (data: HubEventData) => {
+        console.log("OrderAssignedToShipper event received:", data);
+        this.lastEventData[HubEventType.ReceiveOrderNotification] = data;
+        this.notifyHandlers(HubEventType.ReceiveOrderNotification, data);
+      },
     };
   }
 
@@ -149,7 +158,9 @@ class HubEventsManager {
 
   setHub(hub: IHub) {
     if (this.hub === null) {
-      console.log("Setting up hub connection and subscriptions for the first time...");
+      console.log(
+        "Setting up hub connection and subscriptions for the first time..."
+      );
       this.hub = hub;
       this.setupSubscriptions();
     }
@@ -167,13 +178,16 @@ class HubEventsManager {
       console.log(`Subscribing to ${event} event...`);
       this.hub?.subscribe(event, this.eventHandlers[event as HubEventType]);
       // Đăng ký các event bắt đầu bằng OrderStatusChanged-
-      if (event === 'OrderStatusChanged') {
+      if (event === "OrderStatusChanged") {
         // Đăng ký wildcard cho các event bắt đầu bằng OrderStatusChanged-
         // Giả sử backend sẽ gửi event dạng OrderStatusChanged-status
         // Đăng ký handler cho các event này
         const subscribeWildcard = (evt: string) => {
-          if (evt.startsWith('OrderStatusChanged-')) {
-            this.hub?.subscribe(evt, this.eventHandlers[HubEventType.OrderStatusChanged]);
+          if (evt.startsWith("OrderStatusChanged-")) {
+            this.hub?.subscribe(
+              evt,
+              this.eventHandlers[HubEventType.OrderStatusChanged]
+            );
             console.log(`Subscribing to ${evt} event as OrderStatusChanged`);
           }
         };
@@ -181,11 +195,11 @@ class HubEventsManager {
         // (hoặc backend có thể gửi danh sách eventNames khi connect)
         // Ví dụ đăng ký sẵn các trạng thái phổ biến
         [
-          'OrderStatusChanged-Processing',
-          'OrderStatusChanged-Shipped',
-          'OrderStatusChanged-Delivered',
-          'OrderStatusChanged-CustomerNotAvailable',
-          'OrderStatusChanged-Cancelled',
+          "OrderStatusChanged-Processing",
+          "OrderStatusChanged-Shipped",
+          "OrderStatusChanged-Delivered",
+          "OrderStatusChanged-CustomerNotAvailable",
+          "OrderStatusChanged-Cancelled",
         ].forEach(subscribeWildcard);
       }
     });
@@ -230,7 +244,9 @@ class HubEventsManager {
  * const lastUserCreated = useEventHub(HubEventType.UserCreated)
  * ```
  */
-export const useEventHub = (eventTypeOrHandlers: HubEventType | HubEventHandlers) => {
+export const useEventHub = (
+  eventTypeOrHandlers: HubEventType | HubEventHandlers
+) => {
   const { connection } = useHub();
   const manager = HubEventsManager.getInstance();
   const handlersRef = useRef(eventTypeOrHandlers);
