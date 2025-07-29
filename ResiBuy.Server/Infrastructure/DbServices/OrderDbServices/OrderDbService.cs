@@ -74,6 +74,7 @@ public class OrderDbService : BaseDbService<Order>, IOrderDbService
                 .Include(o => o.Items).ThenInclude(oi => oi.ProductDetail).ThenInclude(pd => pd.AdditionalData)
                 .Include(o => o.Voucher)
                 .Include(o => o.Shipper).ThenInclude(s => s.User)
+                .Include(o => o.User)
                 .Include(o => o.Report)
                 .Skip((pageNumber - 1) * pageSize)
                 .Take(pageSize)

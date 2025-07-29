@@ -36,6 +36,12 @@ namespace ResiBuy.Server.Application.Queries.OrderQueries
             var items = result.Items.Select(item => new OrderQueryResult(
                 item.Id,
                 item.UserId,
+                item.User == null ? null : new
+                {
+                    Id = item.User.Id,
+                    FullName = item.User.FullName,
+                    PhoneNumber = item.User.PhoneNumber
+                },
                 item.Shipper == null ? null : new
                 {
                     Id = item.ShipperId,

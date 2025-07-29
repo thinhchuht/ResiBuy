@@ -1,67 +1,123 @@
-// components/shipper/OrderAlertPopup.tsx
-import { useEffect, useState } from "react";
+import { useEffect, useState } from 'react';
+import {
+  Box,
+  Card,
+  CardContent,
+  Typography,
+  CircularProgress,
+  Stack,
+  Button,
+} from '@mui/material';
+import { useNavigate } from 'react-router-dom';
+import orderApi from '../../api/order.api';
+import { useAuth } from '../../contexts/AuthContext';
 
-type Props = {
-  open: boolean;
-  onClose: () => void;
-  order: {
-    id: string;
-    customerName: string;
-    address: string;
-    storeAddress: string;
+interface Order {
+  id: string;
+  totalPrice: number;
+  roomQueryResult: {
+    name: string;
+    buildingName: string;
+    areaName: string;
+  };
+  store: {
+    name: string;
+  };
+  user: {
+    fullName: string;
   } | null;
-};
+}
 
-const OrderAlertPopup = ({ open, onClose, order }: Props) => {
-  const [countdown, setCountdown] = useState(40);
+function ShipperHome() {
+  const { user } = useAuth();
+  const [orders, setOrders] = useState<Order[]>([]);
+  const [loading, setLoading] = useState<boolean>(true);
+  const navigate = useNavigate();
 
   useEffect(() => {
-    if (!open || !order) return;
+    if (!user?.id) return;
 
-    // Reset countdown mỗi lần mở popup
-    setCountdown(40);
+    const fetchOrders = async () => {
+      setLoading(true);
+      try {
+        const res = await orderApi.getAll(
+          'ShippedAccepted',
+          'None',
+          'None',
+          undefined,
+          undefined,
+          user.id,
+          1,
+          20
+        );
+        setOrders(res.items || []);
+      } catch (err) {
+        console.error('Lỗi tải đơn hàng:', err);
+      } finally {
+        setLoading(false);
+      }
+    };
 
-    const timer = setInterval(() => {
-      setCountdown((prev) => {
-        if (prev <= 1) {
-          clearInterval(timer);
-          onClose();
-          return 0;
-        }
-        return prev - 1;
-      });
-    }, 1000);
-
-    return () => clearInterval(timer);
-  }, [open, order]);
-
-  // Phát âm thanh và rung
-  useEffect(() => {
-    if (open && order) {
-      const audio = new Audio("/sounds/notification.mp3");
-      audio.play().catch(() => {});
-      if ("vibrate" in navigator) navigator.vibrate(300);
-    }
-  }, [open, order]);
-
-  if (!open || !order) return null;
+    fetchOrders();
+  }, [user?.id]);
 
   return (
-    <div className="fixed bottom-4 right-4 bg-white p-4 shadow-xl border rounded-lg w-80 z-50 animate-bounce-in">
-      <h4 className="text-lg font-semibold mb-2">📦 Đơn hàng mới được gán</h4>
-      <p><strong>Đơn:</strong> #{order.id}</p>
-      <p><strong>Khách:</strong> {order.customerName}</p>
-      <p><strong>Địa chỉ:</strong> {order.address}</p>
-      <p><strong>Cửa hàng:</strong> {order.storeAddress}</p>
-      <p className="text-sm text-gray-500 mt-1">Tự đóng sau {countdown} giây</p>
-      <button
-        onClick={onClose}
-        className="mt-3 px-4 py-1 bg-blue-600 text-white rounded hover:bg-blue-700"
-      >
-        ❌ Đóng
-      </button>
-    </div>
-  );
-};
+    <Box sx={{ p: 3 }}>
+      <Typography variant="h5" gutterBottom fontWeight="bold">
+        🚚 Đơn đang giao ({orders.length})
+      </Typography>
 
-export default OrderAlertPopup;
+      {loading ? (
+        <CircularProgress />
+      ) : orders.length === 0 ? (
+        <Typography variant="body1" color="text.secondary">
+          Không có đơn hàng nào đang giao.
+        </Typography>
+      ) : (
+        <Stack spacing={2}>
+          {orders.map((order) => (
+            <Card key={order.id} variant="outlined">
+              <CardContent>
+                <Stack spacing={1}>
+                  <Typography variant="subtitle1" fontWeight={600} noWrap>
+                    Mã đơn: {order.id}
+                  </Typography>
+
+                  <Typography variant="body2">
+                    <strong>Người mua:</strong> {order.user?.fullName || '---'}
+                  </Typography>
+
+                  <Typography variant="body2">
+                    <strong>Địa chỉ giao:</strong>{' '}
+                    {`${order.roomQueryResult.name}, ${order.roomQueryResult.buildingName}, ${order.roomQueryResult.areaName}`}
+                  </Typography>
+
+                  <Typography variant="body2">
+                    <strong>Cửa hàng:</strong> {order.store.name}
+                  </Typography>
+
+                  <Typography variant="body2" color="primary">
+                    <strong>Tổng tiền:</strong> {order.totalPrice.toLocaleString()} đ
+                  </Typography>
+
+                  <Box sx={{ mt: 1 }}>
+                    <Button
+                      size="small"
+                      variant="contained"
+                      fullWidth
+                      onClick={() => navigate(`/orders/${order.id}`)}
+                    >
+                      Xem chi tiết
+                    </Button>
+                  </Box>
+                </Stack>
+              </CardContent>
+            </Card>
+          ))}
+        </Stack>
+      )}
+    </Box>
+  );
+}
+
+export default ShipperHome;
