@@ -52,8 +52,6 @@ interface Classify {
   value: string[];
 }
 
-// Interface dòng sản phẩm được sinh ra
-
 // Main component
 export default function CreateProduct() {
   useEffect(() => {
@@ -71,6 +69,7 @@ export default function CreateProduct() {
   const navigate = useNavigate();
 
   const [listCategory, setListCategory] = useState<Category[]>([]);
+  const [priceErrors, setPriceErrors] = useState<{ [key: number]: string }>({});
 
   const [product, setProduct] = useState<ProductInput>({
     name: "",
@@ -128,6 +127,21 @@ export default function CreateProduct() {
       )
     );
 
+  // Validate price function
+  const validatePrice = (price: number, index: number) => {
+    const newErrors = { ...priceErrors };
+
+    if (price <= 0) {
+      newErrors[index] = "Giá phải lớn hơn 0";
+    } else if (price % 500 !== 0) {
+      newErrors[index] = "Giá phải là bội số của 500";
+    } else {
+      delete newErrors[index];
+    }
+
+    setPriceErrors(newErrors);
+  };
+
   // HÀM sinh tổ hợp các thuộc tính
   const generateProductDetail = () => {
     if (classifies.length === 0) {
@@ -164,6 +178,7 @@ export default function CreateProduct() {
       });
     } else {
       setListProductDetail([]);
+      setPriceErrors({}); // Clear price errors when regenerating
       addToProductDetail(listAdditionalData);
     }
   };
@@ -206,6 +221,23 @@ export default function CreateProduct() {
   }
 
   const CreateProductAsync = async () => {
+    // Validate all prices before creating product
+    const hasErrors = Object.keys(priceErrors).length > 0;
+    const hasInvalidPrices = listProductDetail.some((detail, index) => {
+      if (detail.price <= 0 || detail.price % 500 !== 0) {
+        validatePrice(detail.price, index);
+        return true;
+      }
+      return false;
+    });
+
+    if (hasErrors || hasInvalidPrices) {
+      alert(
+        "Vui lòng kiểm tra lại giá sản phẩm. Tất cả giá phải là bội số của 500 và lớn hơn 0."
+      );
+      return;
+    }
+
     const tempProduct: ProductInput = {
       ...product,
       productDetails: listProductDetail,
@@ -388,11 +420,15 @@ export default function CreateProduct() {
                       size="small"
                       type="number"
                       value={productDetail.price}
+                      error={!!priceErrors[index]}
+                      helperText={priceErrors[index]}
                       onChange={(e) => {
                         const newList = [...listProductDetail];
-                        newList[index].price = Number(e.target.value);
+                        const newPrice = Number(e.target.value);
+                        newList[index].price = newPrice;
                         setListProductDetail(newList);
                       }}
+                      onBlur={() => validatePrice(productDetail.price, index)}
                     />
                   </TableCell>
                   <TableCell>

@@ -20,17 +20,32 @@ const VoucherCreatePage: React.FC = () => {
   const { storeId } = useParams<{ storeId: string }>();
   const navigate = useNavigate();
 
+  const todayStr = new Date().toISOString().split("T")[0];
+
+  // Get tomorrow's date for minimum end date
+  const getTomorrowStr = () => {
+    const tomorrow = new Date();
+    tomorrow.setDate(tomorrow.getDate() + 1);
+    return tomorrow.toISOString().split("T")[0];
+  };
+
+  // Set default dates: start date = today, end date = 7 days from today
+  const getDefaultStartDate = () => new Date().toISOString().split("T")[0];
+  const getDefaultEndDate = () => {
+    const date = new Date();
+    date.setDate(date.getDate() + 7);
+    return date.toISOString().split("T")[0];
+  };
+
   const [type, setType] = useState<VoucherType>("Amount");
   const [discountAmount, setDiscountAmount] = useState("");
   const [quantity, setQuantity] = useState("");
   const [minOrderPrice, setMinOrderPrice] = useState("");
   const [maxDiscountPrice, setMaxDiscountPrice] = useState("");
-  const [startDate, setStartDate] = useState("");
-  const [endDate, setEndDate] = useState("");
+  const [startDate, setStartDate] = useState(getDefaultStartDate());
+  const [endDate, setEndDate] = useState(getDefaultEndDate());
 
   const [errors, setErrors] = useState<{ [key: string]: string }>({});
-
-  const todayStr = new Date().toISOString().split("T")[0];
 
   const validateField = (fieldName: string, value: string) => {
     const newErrors = { ...errors };
@@ -39,16 +54,35 @@ const VoucherCreatePage: React.FC = () => {
       case "discountAmount":
         if (!value || isNaN(Number(value)) || Number(value) <= 0) {
           newErrors.discountAmount = "Giá trị giảm phải lớn hơn 0";
+        } else if (type === "Percentage" && Number(value) >= 100) {
+          newErrors.discountAmount = "Phần trăm giảm phải nhỏ hơn 100%";
         } else if (type === "Amount" && Number(value) % 500 !== 0) {
           newErrors.discountAmount = "Số tiền giảm phải là bội số của 500";
         } else {
           delete newErrors.discountAmount;
+          // Re-validate minOrderPrice when discountAmount changes for Amount type
+          if (type === "Amount" && minOrderPrice) {
+            if (Number(minOrderPrice) <= Number(value)) {
+              newErrors.minOrderPrice =
+                "Giá trị đơn hàng tối thiểu phải lớn hơn số tiền giảm";
+            } else if (Number(minOrderPrice) % 500 !== 0) {
+              newErrors.minOrderPrice =
+                "Giá trị đơn hàng tối thiểu phải là bội số của 500";
+            } else {
+              delete newErrors.minOrderPrice;
+            }
+          }
         }
         break;
 
       case "quantity":
-        if (!value || isNaN(Number(value)) || Number(value) <= 0) {
-          newErrors.quantity = "Số lượng phải lớn hơn 0";
+        if (
+          !value ||
+          isNaN(Number(value)) ||
+          Number(value) <= 0 ||
+          !Number.isInteger(Number(value))
+        ) {
+          newErrors.quantity = "Số lượng phải là số nguyên lớn hơn 0";
         } else {
           delete newErrors.quantity;
         }
@@ -57,6 +91,13 @@ const VoucherCreatePage: React.FC = () => {
       case "minOrderPrice":
         if (!value || isNaN(Number(value)) || Number(value) < 0) {
           newErrors.minOrderPrice = "Giá trị đơn hàng tối thiểu không hợp lệ";
+        } else if (
+          type === "Amount" &&
+          discountAmount &&
+          Number(value) <= Number(discountAmount)
+        ) {
+          newErrors.minOrderPrice =
+            "Giá trị đơn hàng tối thiểu phải lớn hơn số tiền giảm";
         } else if (Number(value) % 500 !== 0) {
           newErrors.minOrderPrice =
             "Giá trị đơn hàng tối thiểu phải là bội số của 500";
@@ -66,9 +107,9 @@ const VoucherCreatePage: React.FC = () => {
         break;
 
       case "maxDiscountPrice":
-        if (type === "Amount") {
-          if (!value || isNaN(Number(value)) || Number(value) < 0) {
-            newErrors.maxDiscountPrice = "Mức giảm tối đa không hợp lệ";
+        if (type === "Percentage") {
+          if (!value || isNaN(Number(value)) || Number(value) <= 0) {
+            newErrors.maxDiscountPrice = "Mức giảm tối đa phải lớn hơn 0";
           } else if (Number(value) % 500 !== 0) {
             newErrors.maxDiscountPrice =
               "Mức giảm tối đa phải là bội số của 500";
@@ -84,14 +125,16 @@ const VoucherCreatePage: React.FC = () => {
         if (!value) {
           newErrors.startDate = "Chọn ngày bắt đầu";
         } else if (value < todayStr) {
-          newErrors.startDate = "Ngày bắt đầu phải từ hôm nay trở đi";
+          newErrors.startDate = "Ngày bắt đầu phải là hôm nay hoặc sau hôm nay";
         } else {
           delete newErrors.startDate;
           // Re-validate endDate if it exists
-          if (endDate && value > endDate) {
-            newErrors.endDate = "Ngày kết thúc phải sau ngày bắt đầu";
-          } else if (endDate && value <= endDate) {
-            delete newErrors.endDate;
+          if (endDate) {
+            if (value >= endDate) {
+              newErrors.endDate = "Ngày kết thúc phải sau ngày bắt đầu";
+            } else {
+              delete newErrors.endDate;
+            }
           }
         }
         break;
@@ -99,7 +142,9 @@ const VoucherCreatePage: React.FC = () => {
       case "endDate":
         if (!value) {
           newErrors.endDate = "Chọn ngày kết thúc";
-        } else if (value < startDate) {
+        } else if (value <= todayStr) {
+          newErrors.endDate = "Ngày kết thúc phải sau hôm nay";
+        } else if (startDate && value <= startDate) {
           newErrors.endDate = "Ngày kết thúc phải sau ngày bắt đầu";
         } else {
           delete newErrors.endDate;
@@ -122,12 +167,19 @@ const VoucherCreatePage: React.FC = () => {
       Number(discountAmount) <= 0
     ) {
       newErrors.discountAmount = "Giá trị giảm phải lớn hơn 0";
+    } else if (type === "Percentage" && Number(discountAmount) >= 100) {
+      newErrors.discountAmount = "Phần trăm giảm phải nhỏ hơn 100%";
     } else if (type === "Amount" && Number(discountAmount) % 500 !== 0) {
       newErrors.discountAmount = "Số tiền giảm phải là bội số của 500";
     }
 
-    if (!quantity || isNaN(Number(quantity)) || Number(quantity) <= 0) {
-      newErrors.quantity = "Số lượng phải lớn hơn 0";
+    if (
+      !quantity ||
+      isNaN(Number(quantity)) ||
+      Number(quantity) <= 0 ||
+      !Number.isInteger(Number(quantity))
+    ) {
+      newErrors.quantity = "Số lượng phải là số nguyên lớn hơn 0";
     }
 
     if (
@@ -136,18 +188,25 @@ const VoucherCreatePage: React.FC = () => {
       Number(minOrderPrice) < 0
     ) {
       newErrors.minOrderPrice = "Giá trị đơn hàng tối thiểu không hợp lệ";
+    } else if (
+      type === "Amount" &&
+      discountAmount &&
+      Number(minOrderPrice) <= Number(discountAmount)
+    ) {
+      newErrors.minOrderPrice =
+        "Giá trị đơn hàng tối thiểu phải lớn hơn số tiền giảm";
     } else if (Number(minOrderPrice) % 500 !== 0) {
       newErrors.minOrderPrice =
         "Giá trị đơn hàng tối thiểu phải là bội số của 500";
     }
 
-    if (type === "Amount") {
+    if (type === "Percentage") {
       if (
         !maxDiscountPrice ||
         isNaN(Number(maxDiscountPrice)) ||
-        Number(maxDiscountPrice) < 0
+        Number(maxDiscountPrice) <= 0
       ) {
-        newErrors.maxDiscountPrice = "Mức giảm tối đa không hợp lệ";
+        newErrors.maxDiscountPrice = "Mức giảm tối đa phải lớn hơn 0";
       } else if (Number(maxDiscountPrice) % 500 !== 0) {
         newErrors.maxDiscountPrice = "Mức giảm tối đa phải là bội số của 500";
       }
@@ -156,12 +215,14 @@ const VoucherCreatePage: React.FC = () => {
     if (!startDate) {
       newErrors.startDate = "Chọn ngày bắt đầu";
     } else if (startDate < todayStr) {
-      newErrors.startDate = "Ngày bắt đầu phải từ hôm nay trở đi";
+      newErrors.startDate = "Ngày bắt đầu phải là hôm nay hoặc sau hôm nay";
     }
 
     if (!endDate) {
       newErrors.endDate = "Chọn ngày kết thúc";
-    } else if (endDate < startDate) {
+    } else if (endDate <= todayStr) {
+      newErrors.endDate = "Ngày kết thúc phải sau hôm nay";
+    } else if (startDate && endDate <= startDate) {
       newErrors.endDate = "Ngày kết thúc phải sau ngày bắt đầu";
     }
 
@@ -184,7 +245,8 @@ const VoucherCreatePage: React.FC = () => {
         discountAmount: parseFloat(discountAmount),
         quantity: parseInt(quantity),
         minOrderPrice: parseFloat(minOrderPrice),
-        maxDiscountPrice: type === "Amount" ? parseFloat(maxDiscountPrice) : 0,
+        maxDiscountPrice:
+          type === "Percentage" ? parseFloat(maxDiscountPrice) : 0,
         startDate,
         endDate,
       };
@@ -198,20 +260,71 @@ const VoucherCreatePage: React.FC = () => {
     }
   };
 
-  const handleTypeChange = (e: any, newType: VoucherType | null) => {
+  const handleTypeChange = (
+    event: React.MouseEvent<HTMLElement>,
+    newType: VoucherType | null
+  ) => {
     if (newType !== null) {
       setType(newType);
-      // Clear maxDiscountPrice error when switching to Percentage
-      if (newType === "Percentage") {
-        const newErrors = { ...errors };
+
+      // Clear relevant errors when switching types
+      const newErrors = { ...errors };
+
+      if (newType === "Amount") {
+        // Clear maxDiscountPrice error when switching to Amount
         delete newErrors.maxDiscountPrice;
-        setErrors(newErrors);
+        // Clear percentage-specific validation for discountAmount
+        if (errors.discountAmount === "Phần trăm giảm phải nhỏ hơn 100%") {
+          delete newErrors.discountAmount;
+        }
+      } else if (newType === "Percentage") {
+        // Clear Amount-specific validations
+        if (errors.discountAmount === "Số tiền giảm phải là bội số của 500") {
+          delete newErrors.discountAmount;
+        }
+        if (
+          errors.minOrderPrice ===
+          "Giá trị đơn hàng tối thiểu phải lớn hơn số tiền giảm"
+        ) {
+          delete newErrors.minOrderPrice;
+        }
       }
-      // Re-validate discountAmount when switching types to check for 500 multiple rule
+
+      setErrors(newErrors);
+
+      // Re-validate fields based on new type
       if (discountAmount) {
         validateField("discountAmount", discountAmount);
       }
+      if (minOrderPrice) {
+        validateField("minOrderPrice", minOrderPrice);
+      }
+      if (maxDiscountPrice && newType === "Percentage") {
+        validateField("maxDiscountPrice", maxDiscountPrice);
+      }
     }
+  };
+
+  const handleDatePickerClick = (inputElement: HTMLInputElement) => {
+    try {
+      if (inputElement && typeof inputElement.showPicker === "function") {
+        inputElement.showPicker();
+      }
+    } catch (error) {
+      console.error("error:", error);
+      inputElement.focus();
+    }
+  };
+
+  const getMinEndDate = () => {
+    const tomorrow = getTomorrowStr();
+    if (startDate) {
+      const dayAfterStart = new Date(startDate);
+      dayAfterStart.setDate(dayAfterStart.getDate() + 1);
+      const dayAfterStartStr = dayAfterStart.toISOString().split("T")[0];
+      return dayAfterStartStr > tomorrow ? dayAfterStartStr : tomorrow;
+    }
+    return tomorrow;
   };
 
   return (
@@ -225,8 +338,8 @@ const VoucherCreatePage: React.FC = () => {
             <Typography>Loại voucher</Typography>
             <ToggleButtonGroup
               value={type}
-              exclusive
               onChange={handleTypeChange}
+              exclusive
               color="primary"
             >
               <ToggleButton value="Amount">Giảm tiền</ToggleButton>
@@ -244,6 +357,11 @@ const VoucherCreatePage: React.FC = () => {
               fullWidth
               error={!!errors.discountAmount}
               helperText={errors.discountAmount}
+              inputProps={{
+                min: 0,
+                max: type === "Percentage" ? 99 : undefined,
+                step: type === "Amount" ? 500 : 0.01,
+              }}
             />
 
             <TextField
@@ -255,6 +373,10 @@ const VoucherCreatePage: React.FC = () => {
               fullWidth
               error={!!errors.quantity}
               helperText={errors.quantity}
+              inputProps={{
+                min: 1,
+                step: 1,
+              }}
             />
 
             <TextField
@@ -266,6 +388,10 @@ const VoucherCreatePage: React.FC = () => {
               fullWidth
               error={!!errors.minOrderPrice}
               helperText={errors.minOrderPrice}
+              inputProps={{
+                min: 0,
+                step: 500,
+              }}
             />
 
             <TextField
@@ -275,13 +401,17 @@ const VoucherCreatePage: React.FC = () => {
               onChange={(e) => setMaxDiscountPrice(e.target.value)}
               onBlur={() => validateField("maxDiscountPrice", maxDiscountPrice)}
               fullWidth
-              disabled={type === "Percentage"}
+              disabled={type === "Amount"}
               error={!!errors.maxDiscountPrice}
               helperText={
-                type === "Percentage"
-                  ? "Không cần nhập cho Giảm %"
+                type === "Amount"
+                  ? "Không cần nhập cho Giảm tiền"
                   : errors.maxDiscountPrice
               }
+              inputProps={{
+                min: type === "Percentage" ? 500 : 0,
+                step: 500,
+              }}
             />
 
             <TextField
@@ -292,9 +422,15 @@ const VoucherCreatePage: React.FC = () => {
               onBlur={() => validateField("startDate", startDate)}
               InputLabelProps={{ shrink: true }}
               fullWidth
-              inputProps={{ min: todayStr }}
+              inputProps={{
+                min: todayStr,
+                style: { cursor: "pointer" },
+              }}
               error={!!errors.startDate}
               helperText={errors.startDate}
+              onClick={(e) =>
+                handleDatePickerClick(e.target as HTMLInputElement)
+              }
             />
 
             <TextField
@@ -305,8 +441,15 @@ const VoucherCreatePage: React.FC = () => {
               onBlur={() => validateField("endDate", endDate)}
               InputLabelProps={{ shrink: true }}
               fullWidth
+              inputProps={{
+                min: getMinEndDate(),
+                style: { cursor: "pointer" },
+              }}
               error={!!errors.endDate}
               helperText={errors.endDate}
+              onClick={(e) =>
+                handleDatePickerClick(e.target as HTMLInputElement)
+              }
             />
 
             <Button variant="contained" onClick={handleCreate}>
