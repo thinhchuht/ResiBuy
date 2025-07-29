@@ -194,7 +194,7 @@ const AppRoutes: React.FC = () => {
           <Route index element={<Navigate to="home" replace />} />
           <Route path="home" element={<HomePage />} />
           <Route path="orders" element={<OrdersPage />} />
-          <Route path="order/123" element={<OrderDetailPage />} />
+          <Route path="order/:id" element={<OrderDetailPage />} />
         </Route>
 
         <Route path="/unauthorized" element={<Unauthorized />} />

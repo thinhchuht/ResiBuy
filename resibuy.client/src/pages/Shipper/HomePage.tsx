@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useState } from "react";
 import {
   Box,
   Card,
@@ -7,10 +7,11 @@ import {
   CircularProgress,
   Stack,
   Button,
-} from '@mui/material';
-import { useNavigate } from 'react-router-dom';
-import orderApi from '../../api/order.api';
-import { useAuth } from '../../contexts/AuthContext';
+} from "@mui/material";
+import { useNavigate } from "react-router-dom";
+import orderApi from "../../api/order.api";
+import { useAuth } from "../../contexts/AuthContext";
+import { useOrderEvent } from "../../contexts/OrderEventContext";
 
 interface Order {
   id: string;
@@ -30,36 +31,43 @@ interface Order {
 
 function ShipperHome() {
   const { user } = useAuth();
+  const { lastConfirmedOrderId } = useOrderEvent(); // ✅ đưa vào đây
   const [orders, setOrders] = useState<Order[]>([]);
   const [loading, setLoading] = useState<boolean>(true);
   const navigate = useNavigate();
 
-  useEffect(() => {
+  const fetchOrders = async () => {
     if (!user?.id) return;
 
-    const fetchOrders = async () => {
-      setLoading(true);
-      try {
-        const res = await orderApi.getAll(
-          'ShippedAccepted',
-          'None',
-          'None',
-          undefined,
-          undefined,
-          user.id,
-          1,
-          20
-        );
-        setOrders(res.items || []);
-      } catch (err) {
-        console.error('Lỗi tải đơn hàng:', err);
-      } finally {
-        setLoading(false);
-      }
-    };
+    setLoading(true);
+    try {
+      const res = await orderApi.getAll(
+        "ShippedAccepted",
+        "None",
+        "None",
+        undefined,
+        undefined,
+        user.id,
+        1,
+        20
+      );
+      setOrders(res.items || []);
+    } catch (err) {
+      console.error("Lỗi tải đơn hàng:", err);
+    } finally {
+      setLoading(false);
+    }
+  };
 
-    fetchOrders();
+  useEffect(() => {
+    fetchOrders(); // 📦 lần đầu load dữ liệu
   }, [user?.id]);
+
+  useEffect(() => {
+    if (lastConfirmedOrderId) {
+      fetchOrders(); // 🔁 khi xác nhận đơn mới
+    }
+  }, [lastConfirmedOrderId]);
 
   return (
     <Box sx={{ p: 3 }}>
@@ -84,11 +92,11 @@ function ShipperHome() {
                   </Typography>
 
                   <Typography variant="body2">
-                    <strong>Người mua:</strong> {order.user?.fullName || '---'}
+                    <strong>Người mua:</strong> {order.user?.fullName || "---"}
                   </Typography>
 
                   <Typography variant="body2">
-                    <strong>Địa chỉ giao:</strong>{' '}
+                    <strong>Địa chỉ giao:</strong>{" "}
                     {`${order.roomQueryResult.name}, ${order.roomQueryResult.buildingName}, ${order.roomQueryResult.areaName}`}
                   </Typography>
 
@@ -97,7 +105,8 @@ function ShipperHome() {
                   </Typography>
 
                   <Typography variant="body2" color="primary">
-                    <strong>Tổng tiền:</strong> {order.totalPrice.toLocaleString()} đ
+                    <strong>Tổng tiền:</strong>{" "}
+                    {order.totalPrice.toLocaleString()} đ
                   </Typography>
 
                   <Box sx={{ mt: 1 }}>
@@ -105,7 +114,7 @@ function ShipperHome() {
                       size="small"
                       variant="contained"
                       fullWidth
-                      onClick={() => navigate(`/orders/${order.id}`)}
+                      onClick={() => navigate(`/shipper/order/${order.id}`)}
                     >
                       Xem chi tiết
                     </Button>

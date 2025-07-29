@@ -10,8 +10,13 @@ import {
   Divider,
   Avatar,
   Stack,
+  ListItemIcon,
+  Chip,
 } from "@mui/material";
 import { Link } from "react-router-dom";
+import HomeIcon from "@mui/icons-material/Home";
+import HistoryIcon from "@mui/icons-material/History";
+import ArrowBackIcon from "@mui/icons-material/ArrowBack";
 import { useAuth } from "../../../contexts/AuthContext";
 import userApi from "../../../api/user.api";
 import shipperApi from "../../../api/ship.api";
@@ -28,7 +33,6 @@ interface ShipperUser {
 interface ShipperInfo {
   isOnline: boolean;
   user: ShipperUser;
-  // Add other fields from shipperRes.data if needed
 }
 
 const ShipperSidebar: React.FC = () => {
@@ -49,7 +53,7 @@ const ShipperSidebar: React.FC = () => {
           ...shipperRes.data,
           user: {
             ...shipperRes.data.user,
-            avatar: userRes.data.avatar, // Gộp avatar từ userApi
+            avatar: userRes.data.avatar,
           },
         });
       }
@@ -73,42 +77,60 @@ const ShipperSidebar: React.FC = () => {
         [`& .MuiDrawer-paper`]: {
           width: drawerWidth,
           boxSizing: "border-box",
+          backgroundColor: "#fff",
+          borderRight: "1px solid #e0e0e0",
         },
       }}
     >
-      <Box sx={{ p: 2, textAlign: "center" }}>
+      <Box sx={{ p: 3, textAlign: "center" }}>
         <Typography variant="h6" fontWeight="bold">
           ResiBuy Shipper
         </Typography>
 
-        <Stack alignItems="center" spacing={1} mt={2}>
+        <Stack alignItems="center" spacing={1} mt={3}>
           <Avatar
             src={avatarUrl}
             alt={fullName}
-            sx={{ width: 64, height: 64 }}
+            sx={{ width: 72, height: 72 }}
           />
-          <Typography variant="subtitle1">{fullName}</Typography>
-          <Typography variant="caption" color={isOnline ? "green" : "gray"}>
-            ● {isOnline ? "Đang hoạt động" : "Ngoại tuyến"}
+          <Typography variant="subtitle1" fontWeight={600}>
+            {fullName}
           </Typography>
+          <Chip
+            label={isOnline ? "Đang hoạt động" : "Ngoại tuyến"}
+            size="small"
+            color={isOnline ? "success" : "default"}
+            variant="outlined"
+          />
         </Stack>
       </Box>
 
-      <Divider />
+      <Divider sx={{ my: 2 }} />
 
       <List>
         <ListItem disablePadding>
           <ListItemButton component={Link} to="/shipper">
+            <ListItemIcon>
+              <HomeIcon />
+            </ListItemIcon>
             <ListItemText primary="Trang chủ" />
           </ListItemButton>
         </ListItem>
+
         <ListItem disablePadding>
           <ListItemButton component={Link} to="/shipper/orders">
+            <ListItemIcon>
+              <HistoryIcon />
+            </ListItemIcon>
             <ListItemText primary="Lịch sử đơn hàng" />
           </ListItemButton>
         </ListItem>
+
         <ListItem disablePadding>
           <ListItemButton component={Link} to="/">
+            <ListItemIcon>
+              <ArrowBackIcon />
+            </ListItemIcon>
             <ListItemText primary="Quay lại trang chủ" />
           </ListItemButton>
         </ListItem>

@@ -4,9 +4,13 @@ import "react-toastify/dist/ReactToastify.css";
 import "./index.css";
 import App from "./App.tsx";
 import "./global.scss";
+import { OrderEventProvider } from "./contexts/OrderEventContext.tsx";
 createRoot(document.getElementById("root")!).render(
   <>
-    <App />
+    <OrderEventProvider>
+      <App />
+    </OrderEventProvider>
+
     <ToastContainer />
   </>
 );
