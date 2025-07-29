@@ -54,7 +54,7 @@
                         user.UpdatedAt,
                         user.Cart.Id,
                         null,
-                        rooms.Select(r => new RoomQueryResult(r.Id, r.Name, r.Building.Name, r.Building.Area.Name)),
+                        rooms.Select(r => new RoomQueryResult(r.Id, r.Name, r.Building.Name, r.Building.Area.Name, r.Building.Area.Id)),
                         [],
                         [],
                         []

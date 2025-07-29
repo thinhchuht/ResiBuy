@@ -44,7 +44,8 @@ namespace ResiBuy.Server.Application.Queries.OrderQueries
                     order.ShippingAddress.Id,
                     order.ShippingAddress.Name,
                     order.ShippingAddress.Building.Name,
-                    order.ShippingAddress.Building.Area.Name),
+                    order.ShippingAddress.Building.Area.Name,
+                    order.ShippingAddress.Building.Area.Id),
                 new
                 {
                     Id = order.StoreId,

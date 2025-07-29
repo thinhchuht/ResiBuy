@@ -11,6 +11,9 @@ import {
 } from "@mui/material";
 import { useParams } from "react-router-dom";
 import orderApi from "../../api/order.api";
+import shipperApi from "../../api/ship.api";
+import { useAuth } from "../../contexts/AuthContext";
+import { useToastify } from "../../hooks/useToastify";
 
 interface OrderItem {
   id: string;
@@ -50,12 +53,15 @@ interface Order {
     name: string;
     buildingName: string;
     areaName: string;
+    areaId: string;
   };
   orderItems: OrderItem[];
 }
 
 function OrderDetail() {
   const { id } = useParams();
+  const { user } = useAuth();
+  const toast = useToastify();
   const [order, setOrder] = useState<Order | null>(null);
 
   useEffect(() => {
@@ -67,7 +73,6 @@ function OrderDetail() {
         console.error("Lỗi khi tải chi tiết đơn hàng:", error);
       }
     };
-
     fetchOrder();
   }, [id]);
 
@@ -79,8 +84,61 @@ function OrderDetail() {
     window.location.href = `tel:${phone}`;
   };
 
-  const handlePickedUp = () => {
-    alert("✅ Đã xác nhận lấy hàng.");
+  const handlePickedUp = async () => {
+    if (!user?.id || !order?.id) {
+      toast.error("Thiếu thông tin người dùng hoặc đơn hàng");
+      return;
+    }
+    try {
+      await orderApi.updateOrderStatusShip(order.id, "Shipped", user.id);
+      toast.success(" Đã xác nhận lấy hàng");
+      setOrder((prev) => prev && { ...prev, status: "Shipped" });
+    } catch (err) {
+      console.error(" Lỗi khi cập nhật trạng thái đơn hàng:", err);
+      toast.error("Không thể cập nhật trạng thái!");
+    }
+  };
+
+  interface ShipperLocationUpdate {
+    shipperId: string;
+    locationId: string;
+  }
+  const handleArrived = async () => {
+    if (!user?.id || !order?.roomQueryResult?.areaId) {
+      toast.error("Thiếu thông tin người dùng hoặc khu vực giao hàng");
+      return;
+    }
+
+    try {
+      const locationData: ShipperLocationUpdate = {
+        shipperId: user.id,
+        locationId: order.roomQueryResult.areaId,
+      };
+      await shipperApi.updateLocation(locationData);
+
+      toast.success("📍 Đã cập nhật vị trí tại điểm giao hàng");
+
+      await orderApi.updateOrderStatusShip(order.id, "Arrived", user.id);
+      setOrder((prev) => prev && { ...prev, status: "Arrived" });
+    } catch (error) {
+      console.error("Lỗi khi xử lý đã đến điểm giao:", error);
+    }
+  };
+
+  const handleDelivered = async () => {
+    if (!user?.id || !order?.id) {
+      toast.error("Thiếu thông tin");
+      return;
+    }
+
+    try {
+      await orderApi.updateOrderStatusShip(order.id, "Delivered", user.id);
+      toast.success("Giao hàng thành công");
+      setOrder((prev) => prev && { ...prev, status: "Delivered" });
+    } catch (err) {
+      console.error(err);
+      toast.error("Không thể cập nhật trạng thái!");
+    }
   };
 
   const handleReport = () => {
@@ -99,39 +157,31 @@ function OrderDetail() {
             <Typography>
               <strong>Mã đơn:</strong> {order.id}
             </Typography>
-
             <Typography>
               <strong>Người đặt:</strong> {order.user.fullName} (
               {order.user.phoneNumber})
             </Typography>
-
             <Typography>
               <strong>Cửa hàng:</strong> {order.store.name} (
               {order.store.phoneNumber})
             </Typography>
-
             <Typography>
               <strong>Địa chỉ giao hàng:</strong> {deliveryAddress}
             </Typography>
-
             <Typography>
               <strong>Trạng thái:</strong>{" "}
               <Chip label={order.status} color="info" />
             </Typography>
-
             <Typography>
               <strong>Thanh toán:</strong> {order.paymentMethod} -{" "}
               <Chip label={order.paymentStatus} color="warning" />
             </Typography>
-
             <Typography>
               <strong>Tổng tiền:</strong> {order.totalPrice.toLocaleString()} đ
             </Typography>
-
             <Typography>
               <strong>Phí ship:</strong> {order.shippingFee?.toLocaleString()} đ
             </Typography>
-
             {order.paymentMethod === "COD" ? (
               <Typography>
                 <strong>Tổng tiền thu:</strong>{" "}
@@ -162,7 +212,6 @@ function OrderDetail() {
                 variant="outlined"
                 sx={{ mb: 2, p: 1.5, display: "flex", alignItems: "center" }}
               >
-                {/* Ảnh sản phẩm */}
                 {item.image?.thumbUrl && (
                   <Box
                     component="img"
@@ -178,11 +227,8 @@ function OrderDetail() {
                   />
                 )}
 
-                {/* Nội dung sản phẩm */}
                 <Box sx={{ flex: 1 }}>
                   <Typography fontWeight={600}>{item.productName}</Typography>
-
-                  {/* Phân loại sản phẩm */}
                   <Stack
                     direction="row"
                     spacing={1}
@@ -198,8 +244,6 @@ function OrderDetail() {
                       />
                     ))}
                   </Stack>
-
-                  {/* Giá và SL */}
                   <Typography variant="body2" color="text.secondary">
                     Số lượng: <strong>{item.quantity}</strong> | Giá:{" "}
                     <strong>{item.price.toLocaleString()} đ</strong>
@@ -232,13 +276,35 @@ function OrderDetail() {
                 🏪 Gọi cửa hàng
               </Button>
 
-              <Button
-                variant="contained"
-                color="success"
-                onClick={handlePickedUp}
-              >
-                ✅ Đã lấy hàng
-              </Button>
+              {order.status === "ShippedAccepted" && (
+                <Button
+                  variant="contained"
+                  color="success"
+                  onClick={handlePickedUp}
+                >
+                   Đã lấy hàng
+                </Button>
+              )}
+
+              {order.status === "Shipped" && (
+                <Button
+                  variant="contained"
+                  color="info"
+                  onClick={handleArrived}
+                >
+                  Đã đến điểm giao
+                </Button>
+              )}
+
+              {order.status === "Arrived" && (
+                <Button
+                  variant="contained"
+                  color="primary"
+                  onClick={handleDelivered}
+                >
+                   Đã giao hàng
+                </Button>
+              )}
 
               <Button variant="contained" color="error" onClick={handleReport}>
                 ⚠️ Báo cáo đơn hàng
