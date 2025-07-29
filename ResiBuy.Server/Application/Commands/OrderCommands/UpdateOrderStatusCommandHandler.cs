@@ -25,6 +25,12 @@ namespace ResiBuy.Server.Application.Commands.OrderCommands
                     throw new CustomException(ExceptionErrorCode.ValidationFailed, "Trạng thái đơn hàng đã hoàn thành.");
                 if (dto.OrderStatus == OrderStatus.Pending)
                     throw new CustomException(ExceptionErrorCode.ValidationFailed, "Không được đưa đơn hàng về chờ xử lí.");
+                if (dto.OrderStatus == OrderStatus.ShippedAccepted)
+                {
+                    if (order.Status != OrderStatus.Processing)
+                        throw new CustomException(ExceptionErrorCode.ValidationFailed, "Chỉ được xác nhận giao khi đơn hàng đang ở trạng thái đang chờ giao.");
+                }
+
                 if (order.Status == OrderStatus.None)
                     throw new CustomException(ExceptionErrorCode.ValidationFailed, "Trạng thái đơn hàng không tồn tại.");
                 if (order.Status == OrderStatus.Cancelled)
@@ -46,6 +52,16 @@ namespace ResiBuy.Server.Application.Commands.OrderCommands
                 if (string.IsNullOrEmpty(dto.Reason))
                     throw new CustomException(ExceptionErrorCode.ValidationFailed, "Lý do hủy đơn hàng không được để trống.");
                 order.CancelReason = dto.Reason;
+            }
+            if (dto.OrderStatus == OrderStatus.ShippedAccepted)
+            {
+                if (!dto.ShipperId.HasValue || dto.ShipperId == Guid.Empty)
+                    throw new CustomException(ExceptionErrorCode.ValidationFailed, "Cần Id của người giao hợp lệ.");
+
+                var shipper = await shipperDbService.GetByIdBaseAsync(dto.ShipperId.Value)
+                    ?? throw new CustomException(ExceptionErrorCode.ValidationFailed, "Không tìm thấy người giao hàng.");
+
+                order.ShipperId = dto.ShipperId.Value;
             }
             if (dto.OrderStatus == OrderStatus.Shipped)
             {
