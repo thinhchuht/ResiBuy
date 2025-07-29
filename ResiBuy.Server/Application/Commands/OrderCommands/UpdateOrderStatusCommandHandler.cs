@@ -60,6 +60,9 @@ namespace ResiBuy.Server.Application.Commands.OrderCommands
             await orderDbService.UpdateAsync(order);
             var userIds = new List<string>();
             if (dto.OrderStatus == OrderStatus.Processing) userIds.Add(order.UserId);
+            if (dto.OrderStatus == OrderStatus.ShippedAccepted) 
+                userIds.AddRange([order.UserId, store.OwnerId.ToString()]);
+
             if (dto.OrderStatus == OrderStatus.Shipped) userIds.AddRange([order.UserId,store.OwnerId.ToString()]);
             if (dto.OrderStatus == OrderStatus.Delivered) userIds.AddRange([order.UserId, store.OwnerId.ToString()]);
             if (dto.OrderStatus == OrderStatus.CustomerNotAvailable) userIds.AddRange([order.UserId, store.OwnerId.ToString()]);
