@@ -12,7 +12,7 @@ public class OrderDbService : BaseDbService<Order>, IOrderDbService
         this._context = context;
         this._mapBoxService = mapBoxService;
     }
-    public async Task<PagedResult<Order>> GetAllAsync(OrderStatus orderStatus, OrderStatus orderStatusShip, PaymentMethod paymentMethod, PaymentStatus paymentStatus, Guid storeId, Guid shipperId, string userId = null, int pageNumber = 1, int pageSize = 10, DateTime? startDate = null, DateTime? endDate = null)
+    public async Task<PagedResult<Order>> GetAllAsync(OrderStatus orderStatus, PaymentMethod paymentMethod, PaymentStatus paymentStatus, Guid storeId, Guid shipperId, string userId = null, int pageNumber = 1, int pageSize = 10, DateTime? startDate = null, DateTime? endDate = null)
     {
         try
         {
@@ -38,17 +38,10 @@ public class OrderDbService : BaseDbService<Order>, IOrderDbService
 
 
 
-            if (orderStatus != OrderStatus.None && orderStatusShip != OrderStatus.None)
-            {
-                query = query.Where(o => o.Status == orderStatus || o.Status == orderStatusShip);
-            }
-            else if (orderStatus != OrderStatus.None)
+
+            if (orderStatus != OrderStatus.None)
             {
                 query = query.Where(o => o.Status == orderStatus);
-            }
-            else if (orderStatusShip != OrderStatus.None)
-            {
-                query = query.Where(o => o.Status == orderStatusShip);
             }
 
             if (paymentMethod != PaymentMethod.None)

@@ -4,7 +4,6 @@ namespace ResiBuy.Server.Application.Queries.OrderQueries
 {
     public record GetAllOrdersQuery(
        OrderStatus OrderStatus,
-       OrderStatus OrderStatusShip,
        PaymentMethod PaymentMethod,
        PaymentStatus PaymentStatus,
        Guid StoreId,
@@ -23,7 +22,6 @@ namespace ResiBuy.Server.Application.Queries.OrderQueries
         {
             var result = await orderDbService.GetAllAsync(
                 request.OrderStatus,
-                request.OrderStatusShip,
                 request.PaymentMethod,
                 request.PaymentStatus,
                 request.StoreId,
