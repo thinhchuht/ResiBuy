@@ -113,7 +113,7 @@ const ShipperSidebar: React.FC = () => {
             <ListItemIcon>
               <HomeIcon />
             </ListItemIcon>
-            <ListItemText primary="Trang chủ" />
+            <ListItemText primary="Trang giao hàng" />
           </ListItemButton>
         </ListItem>
 
