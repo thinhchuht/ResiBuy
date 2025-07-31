@@ -14,31 +14,44 @@ namespace ResiBuy.Server.Application.Commands.ReviewCommands
             if (command.Dto.Rate < 0 || command.Dto.Rate > 5) throw new CustomException(ExceptionErrorCode.ValidationFailed, "Đánh giá không hợp lệ");
             var user = await userDbService.GetUserById(command.Dto.UserId) ?? throw new CustomException(ExceptionErrorCode.ValidationFailed, "Không tồn tại người dùng");
             var productDetail = await productDetailDbService.GetByIdAsync(command.Dto.ProductDetailId) ?? throw new CustomException(ExceptionErrorCode.ValidationFailed, "Không tồn tại chi tiết sản phẩm");
-            if (await reviewDbService.CheckIfUserReviewed(command.Dto.UserId, command.Dto.ProductDetailId))
-                throw new CustomException(ExceptionErrorCode.ValidationFailed, "Người dùng đã đánh giá sản phẩm này, vui lòng sửa đánh giá cũ.");
-            var review = new Review(command.Dto.Rate, command.Dto.Comment, command.Dto.IsAnonymous, command.Dto.UserId, command.Dto.ProductDetailId);
-            await reviewDbService.UpdateAsync(review);
+            var createdReview = await reviewDbService.GetUserReview(command.Dto.UserId, command.Dto.ProductDetailId);
+            if (createdReview != null)
+            {
+                createdReview.Rate = command.Dto.Rate;
+                createdReview.Comment = command.Dto.Comment;
+                createdReview.IsAnonymous = command.Dto.IsAnonymous;
+                createdReview.UpdatedAt = DateTime.Now;
+                await reviewDbService.UpdateAsync(createdReview);
+            }
+            else
+            {
+                var review = new Review(command.Dto.Rate, command.Dto.Comment, command.Dto.IsAnonymous, command.Dto.UserId, command.Dto.ProductDetailId);
+                createdReview = await reviewDbService.CreateAsync(review);
+            }
+
             await notificationService.SendNotificationAsync(Constants.ReviewAdded,
                 new ReviewQueryResult
                 (
-                      review.Id,
+                     createdReview.Id,
                 new
                 {
-                    Id = review.ProductDetail.Id,
-                    Name = review.ProductDetail.Product.Name,
-                    AdditionalData =  review.ProductDetail.AdditionalData.Select(ad => new AddtionalDataQueryResult(ad.Id, ad.Key, ad.Value)),
+                    Id = productDetail.Id,
+                    ProductId = productDetail.Product.Id,
+                    Name = productDetail.Product.Name,
+                    AdditionalData = productDetail.AdditionalData.Select(ad => new AddtionalDataQueryResult(ad.Id, ad.Key, ad.Value)),
                 },
-                review.Rate,
-                review.Comment,
-                review.IsAnonymous ? null :
+               createdReview.Rate,
+               createdReview.Comment,
+               createdReview.IsAnonymous ? null :
                 new
                 {
-                    Name = review.User.FullName,
-                    Avatar = new AvatarQueryResult(review.User.Avatar.Id, review.User.Avatar.Name, review.User.Avatar.Url, review.User.Avatar.ThumbUrl),
+                    Name = user.FullName,
+                    Avatar = user.Avatar == null ? null : new AvatarQueryResult(user.Avatar.Id, user.Avatar.Name, user.Avatar.Url, user.Avatar.ThumbUrl),
                 },
-                review.IsAnonymous,
-                review.CreatedAt),
-                Constants.AllHubGroup);
+               createdReview.IsAnonymous,
+               createdReview.CreatedAt,
+               createdReview.UpdatedAt),
+                Constants.AllHubGroup, null, false);
             return ResponseModel.SuccessResponse();
         }
     }

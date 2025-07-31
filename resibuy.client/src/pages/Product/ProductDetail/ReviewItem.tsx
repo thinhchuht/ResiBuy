@@ -3,11 +3,9 @@ import {
   Box,
   Typography,
   Rating,
-  Button,
   Avatar,
   useTheme,
 } from "@mui/material";
-import { ThumbUpAltOutlined, FlagOutlined } from "@mui/icons-material";
 import type { Review } from "../../../types/models";
 
 interface ReviewItemProps {
@@ -16,7 +14,6 @@ interface ReviewItemProps {
 
 const ReviewItem: React.FC<ReviewItemProps> = ({ review }) => {
   const theme = useTheme();
-  console.log('review', review);
   // Generate avatar letter and color from user name
   const avatarLetter = review.isAnonymous
     ? "A"
@@ -40,9 +37,14 @@ const ReviewItem: React.FC<ReviewItemProps> = ({ review }) => {
           {avatarLetter}
         </Avatar>
         <Box flexGrow={1}>
-          <Typography variant="subtitle1" fontWeight="bold">
-            {displayName}
-          </Typography>
+          <Box display="flex" alignItems="center" gap={1} flexWrap="wrap">
+            <Typography variant="subtitle1" fontWeight="bold">
+              {displayName}
+            </Typography>
+            <Typography variant="caption" color="text.secondary">
+              {new Date(review.updatedAt).toLocaleDateString('vi-VN')}
+            </Typography>
+          </Box>
           <Rating
             value={review.rate}
             precision={0.5}
@@ -112,23 +114,6 @@ const ReviewItem: React.FC<ReviewItemProps> = ({ review }) => {
           >
             {review.comment}
           </Typography>
-          <Box display="flex" alignItems="center" gap={2} mt={2}>
-            <Button
-              startIcon={<ThumbUpAltOutlined />}
-              size="small"
-              sx={{ textTransform: "none" }}
-            >
-              (0)
-            </Button>
-            <Button
-              startIcon={<FlagOutlined />}
-              size="small"
-              sx={{ textTransform: "none" }}
-              variant="text"
-            >
-              Báo cáo
-            </Button>
-          </Box>
         </Box>
       </Box>
     </Box>

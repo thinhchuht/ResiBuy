@@ -7,6 +7,7 @@ import type {
   UserCreatedData, 
 } from "../types/hubData";
 import type { Review } from "../types/models";
+import type { ReportCreatedDto } from "../types/hubEventDto";
 
 // Define event types
 export enum HubEventType {
@@ -28,7 +29,7 @@ export enum HubEventType {
   ReviewAdded = "ReviewAdded",
 }
 
-export type HubEventData = UserCreatedData | OrderData | PaymentData | OrderStatusChangedData | Review;
+export type HubEventData = UserCreatedData | OrderData | PaymentData | OrderStatusChangedData | Review | ReportCreatedDto;
 export type HubEventHandler = (data: HubEventData) => void;
 export type HubEventHandlers = Partial<Record<HubEventType, HubEventHandler>>;
 

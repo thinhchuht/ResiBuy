@@ -381,6 +381,7 @@ export interface Review {
   userId: string;
   productDetail: {
     id: number;
+    productId : number
     name: string;
     additionalData: AdditionalData[];
   };

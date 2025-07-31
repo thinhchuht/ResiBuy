@@ -15,6 +15,7 @@ namespace ResiBuy.Server.Application.Commands.ReportCommands
             if (command.Dto.ReportTarget == 0) throw new CustomException(ExceptionErrorCode.ValidationFailed, "Thiếu đối tượng báo cáo");
 
             var user = await userDbService.GetUserById(command.Dto.UserId) ?? throw new CustomException(ExceptionErrorCode.ValidationFailed, "Không tồn tại người dùng");
+            if(user.Reports.Select(r => r.IsResolved).Count() == 2) throw new CustomException(ExceptionErrorCode.ValidationFailed, "Bạn không thể báo cáo hơn 2 đơn hàng mà chưa được giải quyết");
             var order = await orderDbService.GetById(command.Dto.OrderId) ?? throw new CustomException(ExceptionErrorCode.ValidationFailed, "Không tồn tại đơn hàng");
             if(order.Report != null) throw new CustomException(ExceptionErrorCode.ValidationFailed, "Đơn hàng đã bị báo cáo");
             if (command.Dto.UserId == command.Dto.TargetId) throw new CustomException(ExceptionErrorCode.ValidationFailed, "Không thể tự báo cáo chính mình");
