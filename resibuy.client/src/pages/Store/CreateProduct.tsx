@@ -221,6 +221,23 @@ export default function CreateProduct() {
   }
 
   const CreateProductAsync = async () => {
+    // Validate if there are no product details
+    if (listProductDetail.length === 0) {
+      alert(
+        "Vui lòng tạo ít nhất một chi tiết sản phẩm trước khi tạo sản phẩm."
+      );
+      return;
+    }
+
+    // Validate all images are uploaded
+    const missingImages = listProductDetail.some(
+      (detail) => !detail.image?.url || detail.image.url === ""
+    );
+    if (missingImages) {
+      alert("Vui lòng tải ảnh cho tất cả các chi tiết sản phẩm.");
+      return;
+    }
+
     // Validate all prices before creating product
     const hasErrors = Object.keys(priceErrors).length > 0;
     const hasInvalidPrices = listProductDetail.some((detail, index) => {

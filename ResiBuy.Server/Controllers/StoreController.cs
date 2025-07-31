@@ -69,5 +69,35 @@ namespace ResiBuy.Server.Controllers
             var result = await _mediator.Send(new CountStoreStatusQuery());
             return Ok(result);
         }
+
+        [HttpGet("top-sale-products")]
+        public async Task<IActionResult> GetTopSaleProducts(
+            [FromQuery] Guid storeId,
+            [FromQuery] DateTime startDate,
+            [FromQuery] DateTime endDate)
+        {
+            var query = new TopSaleProductQuery(storeId, startDate, endDate);
+            ResponseModel response = await _mediator.Send(query);
+            return Ok(response);
+        }
+
+        [HttpGet("sales-analysis")]
+        public async Task<IActionResult> GetSalesAnalysis(
+            [FromQuery] Guid storeId,
+            [FromQuery] DateTime startDate,
+            [FromQuery] DateTime endDate)
+        {
+            var query = new SalesAnalysisQuery(storeId, startDate, endDate);
+            ResponseModel response = await _mediator.Send(query);
+            return Ok(response);
+        }
+
+        [HttpGet("top-sale-detail")]
+        public async Task<IActionResult> GetTopSaleDetail([FromQuery] int productId)
+        {
+            var query = new TopSaleDetailQuery(productId);
+            ResponseModel response = await _mediator.Send(query);
+            return Ok(response);
+        }
     }
 }
