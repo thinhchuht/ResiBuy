@@ -1,9 +1,21 @@
 import { useState } from "react";
+import {
+  Dialog,
+  DialogTitle,
+  DialogContent,
+  DialogActions,
+  Typography,
+  Stack,
+  Button,
+  Slide,
+  Box,
+} from "@mui/material";
+import type { TransitionProps } from "@mui/material/transitions";
 import { useEventHub, HubEventType } from "../../hooks/useEventHub";
 import orderApi from "../../api/order.api";
 import { useAuth } from "../../contexts/AuthContext";
-import { useToastify } from "../../hooks/useToastify"; // ✅ dùng custom toast
-// Đảm bảo bạn có file useToastify như bạn đưa ở trên
+import { useToastify } from "../../hooks/useToastify";
+import { useOrderEvent } from "../../contexts/OrderEventContext";
 
 interface ReceiveOrderNotificationData {
   OrderId: string;
@@ -13,11 +25,16 @@ interface ReceiveOrderNotificationData {
   AssignedTime: string;
 }
 
+const Transition = Slide as React.ComponentType<
+  TransitionProps & { children: React.ReactElement }
+>;
+
 export default function OrderAlertPopup() {
   const [visible, setVisible] = useState(false);
   const [data, setData] = useState<ReceiveOrderNotificationData | null>(null);
   const { user } = useAuth();
-  const toast = useToastify(); // ✅ dùng toast success/error
+  const { confirmOrder } = useOrderEvent(); // ✅ Đặt ở đây
+  const toast = useToastify();
 
   useEventHub({
     [HubEventType.ReceiveOrderNotification]: (payload: unknown) => {
@@ -58,11 +75,11 @@ export default function OrderAlertPopup() {
 
     try {
       await orderApi.updateOrderStatusShip(
-        data.OrderId, // orderId
-        "ShippedAccepted", // trạng thái mới
-        user.id // shipperId
+        data.OrderId,
+        "ShippedAccepted",
+        user.id
       );
-
+      confirmOrder(data.OrderId);
       toast.success("Đã xác nhận đơn hàng thành công!");
     } catch (err) {
       console.error("❌ Lỗi khi cập nhật trạng thái đơn:", err);
@@ -72,34 +89,60 @@ export default function OrderAlertPopup() {
     setVisible(false);
   };
 
-  if (!visible || !data) return null;
+  const handleClose = () => setVisible(false);
+
+  if (!data) return null;
 
   return (
-    <div className="fixed inset-0 flex items-center justify-center z-50 bg-black bg-opacity-40">
-      <div className="bg-white rounded-xl shadow-xl w-[400px] max-w-full p-6 animate-fade-in">
-        <h2 className="text-xl font-bold text-green-700 mb-4 text-center">
-          🚚 Đơn hàng mới được gán!
-        </h2>
-        <div className="text-gray-800 space-y-2">
-          <p>
-            <strong>Cửa hàng:</strong> {data.StoreName}
-          </p>
-          <p>
-            <strong>Ghi chú:</strong> {data.Note || "Không có ghi chú"}
-          </p>
-          <p>
-            <strong>Tổng tiền:</strong> {data.TotalPrice.toLocaleString()} đ
-          </p>
-        </div>
-        <div className="mt-6 flex justify-center">
-          <button
-            onClick={handleConfirm}
-            className="px-4 py-2 bg-green-600 hover:bg-green-700 text-white rounded-lg transition"
-          >
-            Xác nhận
-          </button>
-        </div>
-      </div>
-    </div>
+    <Dialog
+      open={visible}
+      TransitionComponent={Transition}
+      keepMounted
+      onClose={handleClose}
+      maxWidth="xs"
+      fullWidth
+    >
+      <DialogTitle
+        sx={{ textAlign: "center", fontWeight: "bold", color: "green" }}
+      >
+        🚚 Bạn có đơn hàng mới!
+      </DialogTitle>
+
+      <DialogContent dividers>
+        <Stack spacing={1}>
+          <Box>
+            <Typography variant="body1">
+              <strong>Mã đơn hàng:</strong> {data.OrderId}
+            </Typography>
+          </Box>
+          <Box>
+            <Typography variant="body1">
+              <strong>Cửa hàng:</strong> {data.StoreName}
+            </Typography>
+          </Box>
+          <Box>
+            <Typography variant="body1">
+              <strong>Ghi chú:</strong> {data.Note || "Không có ghi chú"}
+            </Typography>
+          </Box>
+          <Box>
+            <Typography variant="body1">
+              <strong>Tổng tiền:</strong> {data.TotalPrice.toLocaleString()} đ
+            </Typography>
+          </Box>
+        </Stack>
+      </DialogContent>
+
+      <DialogActions sx={{ justifyContent: "center", pb: 2 }}>
+        <Button
+          variant="contained"
+          color="success"
+          onClick={handleConfirm}
+          size="large"
+        >
+          Xác nhận
+        </Button>
+      </DialogActions>
+    </Dialog>
   );
 }

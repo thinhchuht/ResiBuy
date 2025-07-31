@@ -1,182 +1,320 @@
-import React from "react";
+import { useEffect, useState } from "react";
 import {
   Box,
-  Typography,
+  Button,
   Card,
   CardContent,
-  Button,
-  Paper,
-  Avatar,
+  Chip,
   Divider,
-  Grid,
+  Stack,
+  Typography,
 } from "@mui/material";
-import ArrowBackIcon from "@mui/icons-material/ArrowBack";
-import LocalShippingIcon from "@mui/icons-material/LocalShipping";
-import PhoneIcon from "@mui/icons-material/Phone";
-import LocationOnIcon from "@mui/icons-material/LocationOn";
-import PaymentIcon from "@mui/icons-material/Payment";
-import { useNavigate } from "react-router-dom";
+import { useParams } from "react-router-dom";
+import orderApi from "../../api/order.api";
+import shipperApi from "../../api/ship.api";
+import { useAuth } from "../../contexts/AuthContext";
+import { useToastify } from "../../hooks/useToastify";
 
-const OrderDetailPage: React.FC = () => {
-  const navigate = useNavigate();
+interface OrderItem {
+  id: string;
+  productName: string;
+  quantity: number;
+  price: number;
+  image?: {
+    id: string;
+    url: string;
+    thumbUrl: string;
+    name: string;
+  };
+  addtionalData: {
+    id: number;
+    key: string;
+    value: string;
+  }[];
+}
 
-  const order = {
-    id: 123,
-    customerName: "Nguyễn Văn A",
-    phone: "0909 123 456",
-    address: "123 Đường Lý Thường Kiệt, Quận 10, TP.HCM",
-    storeAddress: "456 Đường Nguyễn Trãi, Quận 5, TP.HCM",
-    status: "Đang giao",
-    paymentStatus: "Chưa thanh toán",
-    paymentMethod: "Tiền mặt khi nhận hàng",
-    items: [
-      {
-        name: "Trà sữa",
-        quantity: 2,
-        price: 30000,
-        image: "https://via.placeholder.com/60?text=TS",
-      },
-      {
-        name: "Lipton",
-        quantity: 1,
-        price: 20000,
-        image: "https://via.placeholder.com/60?text=LT",
-      },
-    ],
-    total: 80000,
-    createdAt: "2025-07-21 10:30",
+interface Order {
+  id: string;
+  totalPrice: number;
+  shippingFee: number;
+  status: string;
+  paymentStatus: string;
+  paymentMethod: string;
+  note: string;
+  user: {
+    fullName: string;
+    phoneNumber: string;
+  };
+  store: {
+    name: string;
+    phoneNumber: string;
+  };
+  roomQueryResult: {
+    name: string;
+    buildingName: string;
+    areaName: string;
+    areaId: string;
+  };
+  orderItems: OrderItem[];
+}
+
+function OrderDetail() {
+  const { id } = useParams();
+  const { user } = useAuth();
+  const toast = useToastify();
+  const [order, setOrder] = useState<Order | null>(null);
+
+  useEffect(() => {
+    const fetchOrder = async () => {
+      try {
+        const res = await orderApi.getById(id as string);
+        setOrder(res);
+      } catch (error) {
+        console.error("Lỗi khi tải chi tiết đơn hàng:", error);
+      }
+    };
+    fetchOrder();
+  }, [id]);
+
+  if (!order) return <Typography>Đang tải...</Typography>;
+
+  const deliveryAddress = `${order.roomQueryResult.areaName}, ${order.roomQueryResult.buildingName}, ${order.roomQueryResult.name}`;
+
+  const handleCall = (phone: string) => {
+    window.location.href = `tel:${phone}`;
   };
 
-  const amountToCollect =
-    order.paymentStatus === "Chưa thanh toán" ? order.total : 0;
+  const handlePickedUp = async () => {
+    if (!user?.id || !order?.id) {
+      toast.error("Thiếu thông tin người dùng hoặc đơn hàng");
+      return;
+    }
+    try {
+      await orderApi.updateOrderStatusShip(order.id, "Shipped", user.id);
+      toast.success(" Đã xác nhận lấy hàng");
+      setOrder((prev) => prev && { ...prev, status: "Shipped" });
+    } catch (err) {
+      console.error(" Lỗi khi cập nhật trạng thái đơn hàng:", err);
+      toast.error("Không thể cập nhật trạng thái!");
+    }
+  };
+
+  interface ShipperLocationUpdate {
+    shipperId: string;
+    locationId: string;
+  }
+  const handleArrived = async () => {
+    if (!user?.id || !order?.roomQueryResult?.areaId) {
+      toast.error("Thiếu thông tin người dùng hoặc khu vực giao hàng");
+      return;
+    }
+
+    try {
+      const locationData: ShipperLocationUpdate = {
+        shipperId: user.id,
+        locationId: order.roomQueryResult.areaId,
+      };
+      await shipperApi.updateLocation(locationData);
+
+      toast.success("📍 Đã cập nhật vị trí tại điểm giao hàng");
+
+      await orderApi.updateOrderStatusShip(order.id, "Arrived", user.id);
+      setOrder((prev) => prev && { ...prev, status: "Arrived" });
+    } catch (error) {
+      console.error("Lỗi khi xử lý đã đến điểm giao:", error);
+    }
+  };
+
+  const handleDelivered = async () => {
+    if (!user?.id || !order?.id) {
+      toast.error("Thiếu thông tin");
+      return;
+    }
+
+    try {
+      await orderApi.updateOrderStatusShip(order.id, "Delivered", user.id);
+      toast.success("Giao hàng thành công");
+      setOrder((prev) => prev && { ...prev, status: "Delivered" });
+    } catch (err) {
+      console.error(err);
+      toast.error("Không thể cập nhật trạng thái!");
+    }
+  };
+
+  const handleReport = () => {
+    alert("⚠️ Báo cáo đơn hàng (chức năng này sẽ được cập nhật sau).");
+  };
 
   return (
-    <Box sx={{ px: 2, pb: 5 }}>
-      <Button
-        variant="outlined"
-        startIcon={<ArrowBackIcon />}
-        onClick={() => navigate("/shipper")}
-        sx={{ mb: 3 }}
-      >
-        Quay lại
-      </Button>
-
-      <Typography variant="h5" fontWeight={700} gutterBottom>
-        🧾 Chi tiết đơn hàng #{order.id}
+    <Box sx={{ p: 3 }}>
+      <Typography variant="h5" gutterBottom>
+        📦 Chi tiết đơn hàng
       </Typography>
 
-      {/* Thông tin đơn hàng */}
-      <Paper elevation={2} sx={{ p: 3, borderRadius: 3, mb: 4 }}>
-        <Grid container spacing={3}>
-          <Grid item xs={12} md={6}>
-            <Typography gutterBottom fontWeight={600}>
-              👤 Thông tin khách hàng
+      <Card variant="outlined">
+        <CardContent>
+          <Stack spacing={2}>
+            <Typography>
+              <strong>Mã đơn:</strong> {order.id}
             </Typography>
             <Typography>
-              <PhoneIcon fontSize="small" /> {order.customerName}
+              <strong>Người đặt:</strong> {order.user.fullName} (
+              {order.user.phoneNumber})
             </Typography>
             <Typography>
-              <PhoneIcon fontSize="small" /> {order.phone}
+              <strong>Cửa hàng:</strong> {order.store.name} (
+              {order.store.phoneNumber})
             </Typography>
             <Typography>
-              <LocationOnIcon fontSize="small" /> {order.address}
-            </Typography>
-          </Grid>
-          <Grid item xs={12} md={6}>
-            <Typography gutterBottom fontWeight={600}>
-              🏪 Cửa hàng & Trạng thái
+              <strong>Địa chỉ giao hàng:</strong> {deliveryAddress}
             </Typography>
             <Typography>
-              <LocationOnIcon fontSize="small" /> {order.storeAddress}
+              <strong>Trạng thái:</strong>{" "}
+              <Chip label={order.status} color="info" />
             </Typography>
             <Typography>
-              <LocalShippingIcon fontSize="small" /> Trạng thái:{" "}
-              <strong>{order.status}</strong>
+              <strong>Thanh toán:</strong> {order.paymentMethod} -{" "}
+              <Chip label={order.paymentStatus} color="warning" />
             </Typography>
             <Typography>
-              <PaymentIcon fontSize="small" /> Thanh toán:{" "}
-              <strong>{order.paymentStatus}</strong>
+              <strong>Tổng tiền:</strong> {order.totalPrice.toLocaleString()} đ
             </Typography>
             <Typography>
-              <PaymentIcon fontSize="small" /> Hình thức: {order.paymentMethod}
+              <strong>Phí ship:</strong> {order.shippingFee?.toLocaleString()} đ
             </Typography>
-            <Typography>🕒 Ngày tạo: {order.createdAt}</Typography>
-          </Grid>
-        </Grid>
-      </Paper>
+            {order.paymentMethod === "COD" ? (
+              <Typography>
+                <strong>Tổng tiền thu:</strong>{" "}
+                {(order.totalPrice + order.shippingFee).toLocaleString()} đ
+              </Typography>
+            ) : order.paymentMethod === "BankTransfer" &&
+              order.paymentStatus === "Paid" ? (
+              <Typography>
+                <strong>Tổng tiền thu:</strong> 0 đ
+              </Typography>
+            ) : null}
 
-      {/* Danh sách sản phẩm */}
-      <Paper elevation={2} sx={{ p: 3, borderRadius: 3, mb: 4 }}>
-        <Typography variant="h6" fontWeight={600} gutterBottom>
-          📦 Danh sách sản phẩm
-        </Typography>
-        <Grid container spacing={2}>
-          {order.items.map((item, idx) => (
-            <Grid key={idx} item xs={12} sm={6} md={4}>
-              <Paper
+            {order.note && (
+              <Typography>
+                <strong>Ghi chú:</strong> {order.note}
+              </Typography>
+            )}
+
+            <Divider />
+
+            <Typography variant="subtitle1" fontWeight={600}>
+              🧾 Danh sách sản phẩm:
+            </Typography>
+
+            {order.orderItems.map((item) => (
+              <Card
+                key={item.id}
                 variant="outlined"
-                sx={{
-                  p: 2,
-                  display: "flex",
-                  alignItems: "center",
-                  gap: 2,
-                  borderRadius: 2,
-                  transition: "0.3s",
-                  "&:hover": {
-                    boxShadow: 3,
-                    backgroundColor: "#f5f5f5",
-                  },
-                }}
+                sx={{ mb: 2, p: 1.5, display: "flex", alignItems: "center" }}
               >
-                <Avatar
-                  src={item.image}
-                  alt={item.name}
-                  sx={{ width: 60, height: 60 }}
-                  variant="rounded"
-                />
-                <Box>
-                  <Typography fontWeight={600}>{item.name}</Typography>
-                  <Typography variant="body2">
-                    Số lượng: {item.quantity}
-                  </Typography>
+                {item.image?.thumbUrl && (
+                  <Box
+                    component="img"
+                    src={item.image.url}
+                    alt={item.productName}
+                    sx={{
+                      width: 72,
+                      height: 72,
+                      objectFit: "cover",
+                      borderRadius: 1,
+                      mr: 2,
+                    }}
+                  />
+                )}
+
+                <Box sx={{ flex: 1 }}>
+                  <Typography fontWeight={600}>{item.productName}</Typography>
+                  <Stack
+                    direction="row"
+                    spacing={1}
+                    flexWrap="wrap"
+                    sx={{ mt: 0.5, mb: 1 }}
+                  >
+                    {item.addtionalData.map((ad) => (
+                      <Chip
+                        key={ad.id}
+                        label={`${ad.key}: ${ad.value}`}
+                        size="small"
+                        variant="outlined"
+                      />
+                    ))}
+                  </Stack>
                   <Typography variant="body2" color="text.secondary">
-                    Giá: {(item.quantity * item.price).toLocaleString()}đ
+                    Số lượng: <strong>{item.quantity}</strong> | Giá:{" "}
+                    <strong>{item.price.toLocaleString()} đ</strong>
                   </Typography>
                 </Box>
-              </Paper>
-            </Grid>
-          ))}
-        </Grid>
-      </Paper>
+              </Card>
+            ))}
 
-      {/* Tổng tiền */}
-      <Card
-        sx={{
-          p: 3,
-          borderRadius: 3,
-          backgroundColor: "#fefefe",
-          border: "1px solid #ddd",
-        }}
-      >
-        <CardContent>
-          <Typography variant="h6" fontWeight={600}>
-            💰 Tổng tiền:{" "}
-            <span style={{ color: "#1976d2" }}>
-              {order.total.toLocaleString()}đ
-            </span>
-          </Typography>
-          <Divider sx={{ my: 1 }} />
-          <Typography
-            variant="h6"
-            fontWeight={700}
-            color={amountToCollect > 0 ? "error.main" : "success.main"}
-          >
-            Số tiền cần thu: {amountToCollect.toLocaleString()}đ
-          </Typography>
+            <Divider sx={{ my: 2 }} />
+
+            <Stack
+              direction="row"
+              spacing={2}
+              justifyContent="space-between"
+              flexWrap="wrap"
+            >
+              <Button
+                variant="outlined"
+                color="primary"
+                onClick={() => handleCall(order.user.phoneNumber)}
+              >
+                📞 Gọi người mua
+              </Button>
+
+              <Button
+                variant="outlined"
+                color="secondary"
+                onClick={() => handleCall(order.store.phoneNumber)}
+              >
+                🏪 Gọi cửa hàng
+              </Button>
+
+              {order.status === "ShippedAccepted" && (
+                <Button
+                  variant="contained"
+                  color="success"
+                  onClick={handlePickedUp}
+                >
+                   Đã lấy hàng
+                </Button>
+              )}
+
+              {order.status === "Shipped" && (
+                <Button
+                  variant="contained"
+                  color="info"
+                  onClick={handleArrived}
+                >
+                  Đã đến điểm giao
+                </Button>
+              )}
+
+              {order.status === "Arrived" && (
+                <Button
+                  variant="contained"
+                  color="primary"
+                  onClick={handleDelivered}
+                >
+                   Đã giao hàng
+                </Button>
+              )}
+
+              <Button variant="contained" color="error" onClick={handleReport}>
+                ⚠️ Báo cáo đơn hàng
+              </Button>
+            </Stack>
+          </Stack>
         </CardContent>
       </Card>
     </Box>
   );
-};
+}
 
-export default OrderDetailPage;
+export default OrderDetail;

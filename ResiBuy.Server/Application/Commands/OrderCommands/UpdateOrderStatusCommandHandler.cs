@@ -30,6 +30,12 @@ namespace ResiBuy.Server.Application.Commands.OrderCommands
                     if (order.Status != OrderStatus.Processing)
                         throw new CustomException(ExceptionErrorCode.ValidationFailed, "Chỉ được xác nhận giao khi đơn hàng đang ở trạng thái đang chờ giao.");
                 }
+                if (dto.OrderStatus == OrderStatus.Arrived)
+                {
+                    if (order.Status != OrderStatus.Shipped)
+                        throw new CustomException(ExceptionErrorCode.ValidationFailed, "Chỉ được xác nhận đến điểm  giao khi đơn hàng đang ở trạng thái đang giao.");
+                }
+
 
                 if (order.Status == OrderStatus.None)
                     throw new CustomException(ExceptionErrorCode.ValidationFailed, "Trạng thái đơn hàng không tồn tại.");
@@ -63,6 +69,16 @@ namespace ResiBuy.Server.Application.Commands.OrderCommands
 
                 order.ShipperId = dto.ShipperId.Value;
             }
+            if (dto.OrderStatus == OrderStatus.Arrived)
+            {
+                if (!dto.ShipperId.HasValue || dto.ShipperId == Guid.Empty)
+                    throw new CustomException(ExceptionErrorCode.ValidationFailed, "Cần Id của người giao hợp lệ.");
+
+                var shipper = await shipperDbService.GetByIdBaseAsync(dto.ShipperId.Value)
+                    ?? throw new CustomException(ExceptionErrorCode.ValidationFailed, "Không tìm thấy người giao hàng.");
+
+                order.ShipperId = dto.ShipperId.Value;
+            }
             if (dto.OrderStatus == OrderStatus.Shipped)
             {
                 if (!dto.ShipperId.HasValue || dto.ShipperId == Guid.Empty)
@@ -78,7 +94,7 @@ namespace ResiBuy.Server.Application.Commands.OrderCommands
             if (dto.OrderStatus == OrderStatus.Processing) userIds.Add(order.UserId);
             if (dto.OrderStatus == OrderStatus.ShippedAccepted) 
                 userIds.AddRange([order.UserId, store.OwnerId.ToString()]);
-
+            if (dto.OrderStatus == OrderStatus.Arrived) userIds.AddRange([order.UserId, store.OwnerId.ToString()]);
             if (dto.OrderStatus == OrderStatus.Shipped) userIds.AddRange([order.UserId,store.OwnerId.ToString()]);
             if (dto.OrderStatus == OrderStatus.Delivered) userIds.AddRange([order.UserId, store.OwnerId.ToString()]);
             if (dto.OrderStatus == OrderStatus.CustomerNotAvailable) userIds.AddRange([order.UserId, store.OwnerId.ToString()]);

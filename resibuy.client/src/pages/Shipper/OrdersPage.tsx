@@ -30,7 +30,7 @@ const getStatusColor = (status: string) => {
   }
 };
 
-const getToday = () => new Date().toLocaleDateString("sv-SE"); // YYYY-MM-DD theo local time
+const getToday = () => new Date().toLocaleDateString("sv-SE"); // YYYY-MM-DD
 
 interface OrderItem {
   id: number;
@@ -56,6 +56,7 @@ interface Order {
   createAt: string;
   roomQueryResult?: RoomQueryResult;
   store?: Store;
+  shippingFee: number;
   paymentStatus: string;
   paymentMethod: string;
   totalPrice: number;
@@ -73,13 +74,15 @@ const ShipperOrderHistory: React.FC = () => {
   const [dateError, setDateError] = useState(false);
 
   const fetchOrders = async () => {
+    if (!user?.id) return;
     try {
       const res = await orderApi.getAll(
         statusFilter === "All" ? "None" : statusFilter,
         "None",
         "None",
         undefined,
-        user?.id,
+        undefined,
+        user.id,
         page,
         10,
         startDate || undefined,
@@ -120,7 +123,6 @@ const ShipperOrderHistory: React.FC = () => {
 
   return (
     <Box p={2}>
-      {/* Bộ lọc theo trạng thái */}
       <Tabs
         value={statusFilter}
         onChange={(_, val) => {
@@ -134,7 +136,6 @@ const ShipperOrderHistory: React.FC = () => {
         ))}
       </Tabs>
 
-      {/* Bộ lọc ngày */}
       <Box display="flex" gap={2} mb={2}>
         <TextField
           label="Từ ngày"
@@ -162,7 +163,6 @@ const ShipperOrderHistory: React.FC = () => {
         </Alert>
       )}
 
-      {/* Danh sách đơn hàng */}
       {orders.length === 0 ? (
         <Typography>Không có đơn hàng nào.</Typography>
       ) : (
@@ -201,9 +201,18 @@ const ShipperOrderHistory: React.FC = () => {
                 <strong>Thanh toán:</strong> {order.paymentStatus} |{" "}
                 {order.paymentMethod}
               </Typography>
-
               <Typography mt={1}>
-                <strong>Tổng tiền:</strong> {order.totalPrice.toLocaleString()}đ
+                <strong>Phí giao hàng:</strong>{" "}
+                {order.shippingFee?.toLocaleString()}đ
+              </Typography>
+              <Typography>
+                <strong>Tổng tiền hàng:</strong>{" "}
+                {order.totalPrice.toLocaleString()}đ
+              </Typography>
+              <Typography mt={1}>
+                <strong>Tổng cộng:</strong>{" "}
+                {(order.totalPrice + (order.shippingFee || 0)).toLocaleString()}
+                đ
               </Typography>
 
               <Divider sx={{ my: 2 }} />

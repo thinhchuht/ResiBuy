@@ -1,67 +1,196 @@
-// components/shipper/OrderAlertPopup.tsx
 import { useEffect, useState } from "react";
+import {
+  Box,
+  Card,
+  CardContent,
+  Typography,
+  CircularProgress,
+  Stack,
+  Button,
+  Chip,
+  Tabs,
+  Tab,
+  Pagination,
+} from "@mui/material";
+import { useNavigate } from "react-router-dom";
+import orderApi from "../../api/order.api";
+import { useAuth } from "../../contexts/AuthContext";
+import { useOrderEvent } from "../../contexts/OrderEventContext";
 
-type Props = {
-  open: boolean;
-  onClose: () => void;
-  order: {
-    id: string;
-    customerName: string;
-    address: string;
-    storeAddress: string;
+interface Order {
+  id: string;
+  totalPrice: number;
+  status: string;
+  roomQueryResult: {
+    name: string;
+    buildingName: string;
+    areaName: string;
+  };
+  store: {
+    name: string;
+  };
+  user: {
+    fullName: string;
   } | null;
-};
+}
 
-const OrderAlertPopup = ({ open, onClose, order }: Props) => {
-  const [countdown, setCountdown] = useState(40);
+const STATUS_OPTIONS = [
+  { value: "ShippedAccepted", label: "🆗 Đã nhận đơn" },
+  { value: "Shipped", label: "🚚 Đang giao" },
+  { value: "Arrived", label: "📍 Đã đến điểm giao" },
+];
 
-  useEffect(() => {
-    if (!open || !order) return;
+function ShipperHome() {
+  const { user } = useAuth();
+  const { lastConfirmedOrderId } = useOrderEvent();
+  const [orders, setOrders] = useState<Order[]>([]);
+  const [loading, setLoading] = useState<boolean>(true);
+  const [selectedStatus, setSelectedStatus] = useState<string>("ShippedAccepted");
+  const [currentPage, setCurrentPage] = useState<number>(1);
+  const [totalPages, setTotalPages] = useState<number>(1);
 
-    // Reset countdown mỗi lần mở popup
-    setCountdown(40);
+  const navigate = useNavigate();
 
-    const timer = setInterval(() => {
-      setCountdown((prev) => {
-        if (prev <= 1) {
-          clearInterval(timer);
-          onClose();
-          return 0;
-        }
-        return prev - 1;
-      });
-    }, 1000);
-
-    return () => clearInterval(timer);
-  }, [open, order]);
-
-  // Phát âm thanh và rung
-  useEffect(() => {
-    if (open && order) {
-      const audio = new Audio("/sounds/notification.mp3");
-      audio.play().catch(() => {});
-      if ("vibrate" in navigator) navigator.vibrate(300);
+  const fetchOrders = async (status: string, page: number = 1) => {
+    if (!user?.id) return;
+    setLoading(true);
+    try {
+      const res = await orderApi.getAll(
+        status,
+        "None",
+        "None",
+        undefined,
+        undefined,
+        user.id,
+        page,
+        5 // số lượng mỗi trang
+      );
+      setOrders(res.items || []);
+      setTotalPages(res.totalPages || 1); // hoặc tính bằng Math.ceil(res.totalCount / 10)
+    } catch (err) {
+      console.error("Lỗi tải đơn hàng:", err);
+    } finally {
+      setLoading(false);
     }
-  }, [open, order]);
+  };
 
-  if (!open || !order) return null;
+  // Reset về trang 1 khi đổi trạng thái
+  useEffect(() => {
+    setCurrentPage(1);
+  }, [selectedStatus]);
+
+  // Gọi API khi trạng thái hoặc trang thay đổi
+  useEffect(() => {
+    fetchOrders(selectedStatus, currentPage);
+  }, [user?.id, selectedStatus, currentPage]);
+
+  // Gọi lại khi xác nhận đơn hàng mới
+  useEffect(() => {
+    if (lastConfirmedOrderId) {
+      fetchOrders(selectedStatus, currentPage);
+    }
+  }, [lastConfirmedOrderId]);
 
   return (
-    <div className="fixed bottom-4 right-4 bg-white p-4 shadow-xl border rounded-lg w-80 z-50 animate-bounce-in">
-      <h4 className="text-lg font-semibold mb-2">📦 Đơn hàng mới được gán</h4>
-      <p><strong>Đơn:</strong> #{order.id}</p>
-      <p><strong>Khách:</strong> {order.customerName}</p>
-      <p><strong>Địa chỉ:</strong> {order.address}</p>
-      <p><strong>Cửa hàng:</strong> {order.storeAddress}</p>
-      <p className="text-sm text-gray-500 mt-1">Tự đóng sau {countdown} giây</p>
-      <button
-        onClick={onClose}
-        className="mt-3 px-4 py-1 bg-blue-600 text-white rounded hover:bg-blue-700"
-      >
-        ❌ Đóng
-      </button>
-    </div>
-  );
-};
+    <Box sx={{ p: 3 }}>
+      <Typography variant="h5" gutterBottom fontWeight="bold">
+        🚚 Đơn hàng của bạn
+      </Typography>
 
-export default OrderAlertPopup;
+      <Tabs
+        value={selectedStatus}
+        onChange={(e, newValue) => setSelectedStatus(newValue)}
+        variant="scrollable"
+        scrollButtons="auto"
+        sx={{ mb: 2 }}
+      >
+        {STATUS_OPTIONS.map((opt) => (
+          <Tab key={opt.value} label={opt.label} value={opt.value} />
+        ))}
+      </Tabs>
+
+      {loading ? (
+        <CircularProgress />
+      ) : orders.length === 0 ? (
+        <Typography color="text.secondary">Không có đơn hàng nào.</Typography>
+      ) : (
+        <>
+          <Stack spacing={2}>
+            {orders.map((order) => (
+              <Card key={order.id} variant="outlined" sx={{ borderRadius: 2 }}>
+                <CardContent>
+                  <Stack spacing={1}>
+                    <Typography variant="subtitle1" fontWeight={600} noWrap>
+                      Mã đơn: {order.id}
+                    </Typography>
+
+                    <Typography variant="body2">
+                      <strong>Người mua:</strong> {order.user?.fullName || "---"}
+                    </Typography>
+
+                    <Typography variant="body2">
+                      <strong>Địa chỉ giao:</strong>{" "}
+                      {`${order.roomQueryResult.name}, ${order.roomQueryResult.buildingName}, ${order.roomQueryResult.areaName}`}
+                    </Typography>
+
+                    <Typography variant="body2">
+                      <strong>Cửa hàng:</strong> {order.store.name}
+                    </Typography>
+
+                    <Stack direction="row" spacing={1} alignItems="center">
+                      <Typography variant="body2">
+                        <strong>Trạng thái:</strong>
+                      </Typography>
+                      <Chip
+                        label={order.status}
+                        color={
+                          order.status === "Shipped"
+                            ? "success"
+                            : order.status === "ShippedAccepted"
+                            ? "info"
+                            : order.status === "Arrived"
+                            ? "warning"
+                            : "default"
+                        }
+                        size="small"
+                      />
+                    </Stack>
+
+                    <Typography variant="body2" color="primary">
+                      <strong>Tổng tiền:</strong>{" "}
+                      {order.totalPrice.toLocaleString()} đ
+                    </Typography>
+
+                    <Box sx={{ mt: 1 }}>
+                      <Button
+                        size="small"
+                        variant="contained"
+                        fullWidth
+                        onClick={() => navigate(`/shipper/order/${order.id}`)}
+                      >
+                        Xem chi tiết
+                      </Button>
+                    </Box>
+                  </Stack>
+                </CardContent>
+              </Card>
+            ))}
+          </Stack>
+
+          {totalPages > 1 && (
+            <Box display="flex" justifyContent="center" mt={3}>
+              <Pagination
+                count={totalPages}
+                page={currentPage}
+                onChange={(e, page) => setCurrentPage(page)}
+                color="primary"
+              />
+            </Box>
+          )}
+        </>
+      )}
+    </Box>
+  );
+}
+
+export default ShipperHome;
