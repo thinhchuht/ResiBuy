@@ -368,7 +368,7 @@ export function ShipperDetailModal({
       };
       fetchData();
     }
-  }, [isOpen, shipper?.id, activeTab, toast, getShipperOrders]);
+  }, [isOpen, shipper?.id, activeTab, ]);
 
   // Xử lý tìm kiếm phí giao hàng tùy chỉnh
   const handleCustomFeeSearch = async () => {

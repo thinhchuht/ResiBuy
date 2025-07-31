@@ -58,7 +58,7 @@ export const useShipperForm = (editingShipper?: Shipper | null) => {
   });
 
   const [isSubmitting, setIsSubmitting] = useState(false);
-  const { toast } = useToastify();
+  const  toast  = useToastify();
 
   useEffect(() => {
     if (editingShipper) {

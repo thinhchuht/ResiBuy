@@ -215,6 +215,26 @@ const userApi = {
       };
     }
   },
+  addUserToRooms: async (userId: string, roomIds: string[]) => {
+  try {
+    const response = await axiosClient.post(userUrl + "/add-to-rooms", {
+      userId,
+      roomIds,
+    });
+    return response.data;
+  } catch (error: any) {
+    console.error("lõi", error);
+    return {
+      error: {
+        message:
+          error.response?.data?.message ||
+          error.message ||
+          "Thêm người dùng vào phòng thất bại",
+      },
+    };
+  }
+},
+
 };
 
 export default userApi;

@@ -247,7 +247,7 @@ export function StoreDetailModal({
   const [selectedOrder, setSelectedOrder] = useState<Order | null>(null);
   const [isOrderDetailOpen, setIsOrderDetailOpen] = useState(false);
   const navigate = useNavigate();
-  const { toast } = useToastify();
+  const toast  = useToastify();
   const {
     getProductsByStoreId,
     countProductsByStoreId,

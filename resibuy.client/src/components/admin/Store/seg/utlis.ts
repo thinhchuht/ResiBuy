@@ -361,7 +361,7 @@ export const useStoreForm = (editStore) => {
 
   const [errors, setErrors] = useState({});
   const [isSubmitting, setIsSubmitting] = useState(false);
-  const { toast } = useToastify();
+  const  toast  = useToastify();
 
   useEffect(() => {
     if (editStore) {
