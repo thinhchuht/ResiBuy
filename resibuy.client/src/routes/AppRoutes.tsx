@@ -36,11 +36,13 @@ import ShipperLayout from "../layouts/ShipperLayout/ShipperLayout";
 import OrdersPage from "../pages/Shipper/OrdersPage";
 // import HomePage from "../pages/Shipper/HomePage";
 import OrderDetailPage from "../pages/Shipper/OrderDetailPage";
+import OrderNotifier from "./../pages/Store/OrderNotifier";
 const AppRoutes: React.FC = () => {
   const { user } = useAuth();
 
   return (
     <Router>
+      <OrderNotifier />
       <ScrollToTop />
       <Routes>
         <Route path="/login" element={user ? <Navigate to="/" /> : <Login />} />
@@ -65,7 +67,9 @@ const AppRoutes: React.FC = () => {
           element={
             <ProtectedRoute allowedRoles={["CUSTOMER"]}>
               <HomeLayout>
-                <Orders />
+                <ProtectedRoute allowedRoles={["SELLER", "ADMIN"]}>
+                  <Orders />
+                </ProtectedRoute>
               </HomeLayout>
             </ProtectedRoute>
           }

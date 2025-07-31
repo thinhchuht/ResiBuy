@@ -8,7 +8,6 @@ import ProductPage from "./ProductPage";
 import Orders from "./Orders";
 import CreateProduct from "./CreateProduct";
 import UpdateProduct from "./UpdateProduct";
-import OrderNotifier from "./OrderNotifier";
 import VoucherPage from "./Voucher/VoucherPage";
 import CreateVoucher from "./Voucher/CreateVoucher";
 
@@ -24,7 +23,6 @@ const StorePage: React.FC = () => {
         bgcolor: "#c9b6b2",
       }}
     >
-      <OrderNotifier />
       <Sidebar menuItems={menuItems(storeId!)} />
 
       {/* Content bên phải */}
