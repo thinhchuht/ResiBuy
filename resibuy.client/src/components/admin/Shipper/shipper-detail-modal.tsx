@@ -17,7 +17,7 @@ import {
   Chip,
   TextField,
 } from "@mui/material";
-import {  useNavigate } from "react-router-dom";
+import { useNavigate } from "react-router-dom";
 import {
   Close,
   LocalShipping as ShipperIcon,
@@ -58,7 +58,7 @@ interface OrderDetailDialogProps {
 }
 
 const OrderDetailDialog: React.FC<OrderDetailDialogProps> = ({ open, onClose, order }) => {
-    const navigate = useNavigate();
+  const navigate = useNavigate();
   if (!open || !order) return null;
 
   const formatShippingAddress = (order: Order): string => {
@@ -195,24 +195,24 @@ const OrderDetailDialog: React.FC<OrderDetailDialogProps> = ({ open, onClose, or
                   {order.orderItems.map((item) => (
                     <TableRow key={item.id}>
                       <TableCell
-  sx={{
-    px: 2,
-    py: 1.5,
-    fontSize: "0.875rem",
-    color: "primary.main",
-    cursor: "pointer",
-    textDecoration: "none",
-    transition: "all 0.3s ease-in-out",
-    "&:hover": {
-      backgroundImage: "linear-gradient(90deg, red, orange, yellow, green, blue, indigo, violet)",
-      WebkitBackgroundClip: "text",
-      WebkitTextFillColor: "transparent",
-    },
-  }}
-  onClick={() => navigate(`/products?id=${item.productId}`)}
->
-  {item.productName}
-</TableCell>
+                        sx={{
+                          px: 2,
+                          py: 1.5,
+                          fontSize: "0.875rem",
+                          color: "primary.main",
+                          cursor: "pointer",
+                          textDecoration: "none",
+                          transition: "allraspall 0.3s ease-in-out",
+                          "&:hover": {
+                            backgroundImage: "linear-gradient(90deg, red, orange, yellow, green, blue, indigo, violet)",
+                            WebkitBackgroundClip: "text",
+                            WebkitTextFillColor: "transparent",
+                          },
+                        }}
+                        onClick={() => navigate(`/products?id=${item.productId}`)}
+                      >
+                        {item.productName}
+                      </TableCell>
                       <TableCell sx={{ fontSize: "0.875rem" }}>{item.quantity}</TableCell>
                       <TableCell sx={{ fontSize: "0.875rem" }}>{formatCurrency(item.price)}</TableCell>
                     </TableRow>
@@ -250,98 +250,125 @@ export function ShipperDetailModal({
   const [startDate, setStartDate] = useState<Date | null>(null);
   const [endDate, setEndDate] = useState<Date | null>(null);
   const { getShipperOrders, isShipperAvailable } = useShippersLogic();
-  const { toast } = useToastify();
+  const toast = useToastify();
 
   // Tải dữ liệu khi modal mở và shipper có giá trị
   useEffect(() => {
     if (isOpen && shipper?.id) {
       const fetchData = async () => {
         try {
-          // Lấy danh sách đơn hàng
-          const fetchedOrders = await getShipperOrders(shipper.id);
-          setOrders(fetchedOrders);
+          // Lấy tổng doanh thu
+          try {
+            const revenueResponse = await orderApi.getTotalShippingFeeshipper({
+              shipperId: shipper.id,
+            });
+            console.log("Total revenue response:", revenueResponse);
+            setTotalRevenue(Number(revenueResponse.data) || 0);
+          } catch (error: any) {
+            console.error("Total revenue error:", error);
+            setTotalRevenue(0);
+            toast.error(error.message || "Lỗi khi lấy tổng doanh thu");
+          }
 
-          // Lấy tổng số đơn hàng
-          const countResponse = await orderApi.countOrder({ shipperId: shipper.id });
-          setTotalOrders(countResponse.data || 0);
+          // Lấy tổng đơn hàng
+          try {
+            const countResponse = await orderApi.countOrder({
+              shipperId: shipper.id,
+            });
+            console.log("Total orders response:", countResponse);
+            setTotalOrders(Number(countResponse.data) || 0);
+          } catch (error: any) {
+            console.error("Total orders error:", error);
+            setTotalOrders(0);
+            toast.error(error.message || "Lỗi khi lấy tổng đơn hàng");
+          }
 
-          // Lấy tổng doanh thu (tổng phí giao hàng)
-          const revenueResponse = await orderApi.getTotalShippingFeeshipper({ shipperId: shipper.id });
-          setTotalRevenue(revenueResponse.data || 0);
+          // Lấy đơn hàng cho tab "orders"
+          if (activeTab === "orders") {
+            const ordersData = await getShipperOrders(shipper.id);
+            setOrders(ordersData);
+          }
+
+          // Lấy phí giao hàng cho tab "shipping-fee"
+          if (activeTab === "shipping-fee") {
+            const currentDate = startOfDay(new Date());
+
+            // Hôm nay
+            try {
+              const todayStart = format(currentDate, "yyyy-MM-dd'T'HH:mm:ss");
+              const todayEnd = format(endOfDay(currentDate), "yyyy-MM-dd'T'HH:mm:ss");
+              const todayResponse = await orderApi.getTotalShippingFeeshipper({
+                shipperId: shipper.id,
+                startDate: todayStart,
+                endDate: todayEnd,
+              });
+              console.log("Today fee response:", todayResponse);
+              setTodayFee(Number(todayResponse.data) || 0);
+              console.log("Today fee set:", Number(todayResponse.data) || 0);
+            } catch (error: any) {
+              console.error("Today fee error:", error);
+              setTodayFee(0);
+            }
+
+            // Tuần này
+            try {
+              const weekStart = format(startOfWeek(currentDate, { weekStartsOn: 1 }), "yyyy-MM-dd'T'HH:mm:ss");
+              const weekEnd = format(endOfWeek(currentDate, { weekStartsOn: 1 }), "yyyy-MM-dd'T'HH:mm:ss");
+              const weekResponse = await orderApi.getTotalShippingFeeshipper({
+                shipperId: shipper.id,
+                startDate: weekStart,
+                endDate: weekEnd,
+              });
+              console.log("Week fee response:", weekResponse);
+              setWeekFee(Number(weekResponse.data) || 0);
+              console.log("Week fee set:", Number(weekResponse.data) || 0);
+            } catch (error: any) {
+              console.error("Week fee error:", error);
+              setWeekFee(0);
+            }
+
+            // Tháng này
+            try {
+              const monthStart = format(startOfMonth(currentDate), "yyyy-MM-dd'T'HH:mm:ss");
+              const monthEnd = format(endOfMonth(currentDate), "yyyy-MM-dd'T'HH:mm:ss");
+              const monthResponse = await orderApi.getTotalShippingFeeshipper({
+                shipperId: shipper.id,
+                startDate: monthStart,
+                endDate: monthEnd,
+              });
+              console.log("Month fee response:", monthResponse);
+              setMonthFee(Number(monthResponse.data) || 0);
+              console.log("Month fee set:", Number(monthResponse.data) || 0);
+            } catch (error: any) {
+              console.error("Month fee error:", error);
+              setMonthFee(0);
+            }
+
+            // Năm nay
+            try {
+              const yearStart = format(startOfYear(currentDate), "yyyy-MM-dd'T'HH:mm:ss");
+              const yearEnd = format(endOfYear(currentDate), "yyyy-MM-dd'T'HH:mm:ss");
+              const yearResponse = await orderApi.getTotalShippingFeeshipper({
+                shipperId: shipper.id,
+                startDate: yearStart,
+                endDate: yearEnd,
+              });
+              console.log("Year fee response:", yearResponse);
+              setYearFee(Number(yearResponse.data) || 0);
+              console.log("Year fee set:", Number(yearResponse.data) || 0);
+            } catch (error: any) {
+              console.error("Year fee error:", error);
+              setYearFee(0);
+            }
+          }
         } catch (error: any) {
           console.error("Fetch data error:", error);
-          toast.error(error.message || "Lỗi khi lấy dữ liệu shipper");
-          setOrders([]);
-          setTotalOrders(0);
-          setTotalRevenue(0);
+          toast.error(error.message || "Lỗi khi lấy dữ liệu");
         }
       };
       fetchData();
-    } else {
-      setOrders([]);
-      setTotalOrders(0);
-      setTotalRevenue(0);
     }
-  }, [isOpen,  toast]);
-
-  // Tải phí giao hàng cho các khoảng thời gian khi chuyển sang tab "shipping-fee"
-  useEffect(() => {
-    if (isOpen && shipper?.id && activeTab === "shipping-fee") {
-      const fetchShippingFees = async () => {
-        try {
-          const currentDate = new Date('2025-07-27'); // Ngày hiện tại: 27/07/2025
-
-          // Hôm nay
-          const todayStart = format(startOfDay(currentDate), "yyyy-MM-dd'T'HH:mm:ss");
-          const todayEnd = format(endOfDay(currentDate), "yyyy-MM-dd'T'HH:mm:ss");
-          const todayResponse = await orderApi.getTotalShippingFeeshipper({
-            shipperId: shipper.id,
-            startDate: todayStart,
-            endDate: todayEnd,
-          });
-          setTodayFee(todayResponse.data || 0);
-
-          // Tuần này (21/07/2025 - 27/07/2025)
-          const weekStart = format(startOfWeek(currentDate, { weekStartsOn: 1 }), "yyyy-MM-dd'T'HH:mm:ss");
-          const weekEnd = format(endOfWeek(currentDate, { weekStartsOn: 1 }), "yyyy-MM-dd'T'HH:mm:ss");
-          const weekResponse = await orderApi.getTotalShippingFeeshipper({
-            shipperId: shipper.id,
-            startDate: weekStart,
-            endDate: weekEnd,
-          });
-          setWeekFee(weekResponse.data || 0);
-
-          // Tháng này (01/07/2025 - 31/07/2025)
-          const monthStart = format(startOfMonth(currentDate), "yyyy-MM-dd'T'HH:mm:ss");
-          const monthEnd = format(endOfMonth(currentDate), "yyyy-MM-dd'T'HH:mm:ss");
-          const monthResponse = await orderApi.getTotalShippingFeeshipper({
-            shipperId: shipper.id,
-            startDate: monthStart,
-            endDate: monthEnd,
-          });
-          setMonthFee(monthResponse.data || 0);
-
-          // Năm nay (01/01/2025 - 31/12/2025)
-          const yearStart = format(startOfYear(currentDate), "yyyy-MM-dd'T'HH:mm:ss");
-          const yearEnd = format(endOfYear(currentDate), "yyyy-MM-dd'T'HH:mm:ss");
-          const yearResponse = await orderApi.getTotalShippingFeeshipper({
-            shipperId: shipper.id,
-            startDate: yearStart,
-            endDate: yearEnd,
-          });
-          setYearFee(yearResponse.data || 0);
-        } catch (error: any) {
-          console.error("Fetch shipping fees error:", error);
-          toast.error(error.message || "Lỗi khi lấy phí giao hàng");
-          setTodayFee(0);
-          setWeekFee(0);
-          setMonthFee(0);
-          setYearFee(0);
-        }
-      };
-      fetchShippingFees();
-    }
-  }, [isOpen, shipper?.id, activeTab, toast]);
+  }, [isOpen, shipper?.id, activeTab, ]);
 
   // Xử lý tìm kiếm phí giao hàng tùy chỉnh
   const handleCustomFeeSearch = async () => {
@@ -361,7 +388,7 @@ export function ShipperDetailModal({
         startDate: start,
         endDate: end,
       });
-      setCustomFee(response.data || 0);
+      setCustomFee(Number(response.data) || 0);
     } catch (error: any) {
       console.error("Fetch custom shipping fee error:", error);
       toast.error(error.message || "Lỗi khi lấy phí giao hàng tùy chỉnh");
@@ -387,6 +414,8 @@ export function ShipperDetailModal({
     setIsOrderDetailOpen(false);
     setSelectedOrder(null);
   };
+
+  const currentDate = startOfDay(new Date()); // Ngày hiện tại (31/07/2025)
 
   return (
     <>
@@ -593,7 +622,7 @@ export function ShipperDetailModal({
             {[
               { id: "overview", label: "Tổng Quan", icon: <ShipperIcon sx={{ fontSize: 16 }} /> },
               { id: "orders", label: "Đơn Hàng", icon: <OrderIcon sx={{ fontSize: 16 }} /> },
-              { id: "shipping-fee", label: " Thu nhập từ đơn hoàn thành", icon: <WalletIcon sx={{ fontSize: 16 }} /> },
+              { id: "shipping-fee", label: "Thu nhập từ đơn hoàn thành", icon: <WalletIcon sx={{ fontSize: 16 }} /> },
             ].map((tab) => (
               <Tab
                 key={tab.id}
@@ -901,60 +930,42 @@ export function ShipperDetailModal({
 
           {activeTab === "shipping-fee" && (
             <Box>
-              <Typography
-                variant="h6"
-                sx={{ color: "grey.900", mb: 2 }}
-              >
-                 Thu nhập từ đơn hoàn thành
+              <Typography variant="h6" sx={{ color: "grey.900", mb: 2 }}>
+                Thu nhập từ đơn hoàn thành
               </Typography>
-              <Box
-                sx={{
-                  display: "grid",
-                  gridTemplateColumns: { xs: "1fr", md: "1fr 1fr" },
-                  gap: 3,
-                  mb: 4,
-                }}
-              >
+              <Box sx={{ display: "grid", gridTemplateColumns: { xs: "1fr", md: "1fr 1fr" }, gap: 3, mb: 4 }}>
                 <Box>
-                  <Typography
-                    variant="body2"
-                    sx={{ color: "grey.500", fontWeight: "medium" }}
-                  >
-                    Hôm Nay (27/07/2025)
+                  <Typography variant="body2" sx={{ color: "grey.500", fontWeight: "medium" }}>
+                    Hôm Nay ({format(currentDate, "dd/MM/yyyy")})
                   </Typography>
+                  {console.log("Rendering todayFee:", todayFee)}
                   <Typography sx={{ color: "grey.900", fontSize: "1.25rem", fontWeight: "bold" }}>
                     {formatCurrency(todayFee)}
                   </Typography>
                 </Box>
                 <Box>
-                  <Typography
-                    variant="body2"
-                    sx={{ color: "grey.500", fontWeight: "medium" }}
-                  >
-                    Tuần Này (21/07/2025 - 27/07/2025)
+                  <Typography variant="body2" sx={{ color: "grey.500", fontWeight: "medium" }}>
+                    Tuần Này ({format(startOfWeek(currentDate, { weekStartsOn: 1 }), "dd/MM/yyyy")} - {format(endOfWeek(currentDate, { weekStartsOn: 1 }), "dd/MM/yyyy")})
                   </Typography>
+                  {console.log("Rendering weekFee:", weekFee)}
                   <Typography sx={{ color: "grey.900", fontSize: "1.25rem", fontWeight: "bold" }}>
                     {formatCurrency(weekFee)}
                   </Typography>
                 </Box>
                 <Box>
-                  <Typography
-                    variant="body2"
-                    sx={{ color: "grey.500", fontWeight: "medium" }}
-                  >
-                    Tháng Này (01/07/2025 - 31/07/2025)
+                  <Typography variant="body2" sx={{ color: "grey.500", fontWeight: "medium" }}>
+                    Tháng Này ({format(startOfMonth(currentDate), "dd/MM/yyyy")} - {format(endOfMonth(currentDate), "dd/MM/yyyy")})
                   </Typography>
+                  {console.log("Rendering monthFee:", monthFee)}
                   <Typography sx={{ color: "grey.900", fontSize: "1.25rem", fontWeight: "bold" }}>
                     {formatCurrency(monthFee)}
                   </Typography>
                 </Box>
                 <Box>
-                  <Typography
-                    variant="body2"
-                    sx={{ color: "grey.500", fontWeight: "medium" }}
-                  >
-                    Năm Nay (01/01/2025 - 31/12/2025)
+                  <Typography variant="body2" sx={{ color: "grey.500", fontWeight: "medium" }}>
+                    Năm Nay ({format(startOfYear(currentDate), "dd/MM/yyyy")} - {format(endOfYear(currentDate), "dd/MM/yyyy")})
                   </Typography>
+                  {console.log("Rendering yearFee:", yearFee)}
                   <Typography sx={{ color: "grey.900", fontSize: "1.25rem", fontWeight: "bold" }}>
                     {formatCurrency(yearFee)}
                   </Typography>

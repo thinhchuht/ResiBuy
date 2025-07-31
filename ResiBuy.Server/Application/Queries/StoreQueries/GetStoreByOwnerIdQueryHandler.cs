@@ -19,7 +19,7 @@ namespace ResiBuy.Server.Application.Queries.StoreQueries
             var pagedResult = await _storeDbService.GetStoreByOwnerIdAsync(query.OwnerId, query.pageSize, query.pageNumber);
             if (pagedResult == null)
                 throw new CustomException(ExceptionErrorCode.ValidationFailed,"Cửa hàng không tồn tại");
-            var items = pagedResult.Items.Select(s => new StoreQueryResult(s.Id, s.Name, s.Description, s.IsLocked, s.IsOpen, s.ReportCount, s.CreatedAt, s.OwnerId, new
+            var items = pagedResult.Items.Select(s => new StoreQueryResult(s.Id, s.Name, s.Description, s.IsLocked, s.IsOpen, s.ReportCount, s.CreatedAt, s.OwnerId,s.PhoneNumber, new
             {
                 Id = s.RoomId,
                 Name = s.Room.Name,

@@ -121,5 +121,11 @@
             var result = await mediator.Send(command);
             return Ok(result);
         }
+        [HttpPost("add-to-rooms")]
+        public async Task<IActionResult> AddUserToRooms([FromBody] AddUserToRoomCommand command)
+        {
+            var result = await mediator.Send(command);
+            return Ok(result);
+        }
     }
 }
