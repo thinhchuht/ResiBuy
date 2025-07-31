@@ -26,10 +26,11 @@ namespace ResiBuy.Server.Application.Queries.ReviewQueries
                 new
                 {
                     Name = review.User.FullName,
-                    Avatar = new AvatarQueryResult(review.User.Avatar.Id, review.User.Avatar.Name, review.User.Avatar.Url, review.User.Avatar.ThumbUrl),
+                    Avatar = review.User.Avatar == null ? null : new AvatarQueryResult(review.User.Avatar.Id, review.User.Avatar.Name, review.User.Avatar.Url, review.User.Avatar.ThumbUrl),
                 },
                 review.IsAnonymous,
-                review.CreatedAt)).ToList();
+                review.CreatedAt,
+                review.UpdatedAt)).ToList();
             return ResponseModel.SuccessResponse(new PagedResult<ReviewQueryResult>(items, pagedResults.TotalCount, pagedResults.PageNumber, pagedResults.PageSize));
         }
     }

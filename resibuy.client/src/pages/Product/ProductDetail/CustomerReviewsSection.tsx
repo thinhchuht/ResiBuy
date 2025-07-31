@@ -9,6 +9,7 @@ import {
   CircularProgress,
   Pagination,
   Chip,
+  Divider,
 } from "@mui/material";
 import ReviewItem from "./ReviewItem";
 import type { 
@@ -79,13 +80,33 @@ const CustomerReviewsSection: React.FC<CustomerReviewsSectionProps> = ({
   }, [product.id, toast]);
 
   const handleReviewAdded = useCallback((data: Review) => {
-    if ('rate' in data && 'productDetail' in data) {
-      if (data.productDetail?.id === product.id) {
-        setReviews(prevReviews => [data, ...prevReviews]);
-        fetchRatingStats();
-      }
+    console.log('New review received:', data);
+    if ('rate' in data && 'productDetail' in data && data.productDetail?.productId === product.id) {
+      setReviews(prevReviews => {
+        const existingReviewIndex = prevReviews.findIndex(review => review.id === data.id);
+        
+        const matchesCurrentFilter = selectedRating === 0 || selectedRating === data.rate;
+        
+        if (existingReviewIndex >= 0) {
+          if (matchesCurrentFilter) {
+            const updatedReviews = [...prevReviews];
+            updatedReviews[existingReviewIndex] = data;
+            const [movedReview] = updatedReviews.splice(existingReviewIndex, 1);
+            return [movedReview, ...updatedReviews];
+          } else {
+            return prevReviews.filter((_, index) => index !== existingReviewIndex);
+          }
+        } else if (matchesCurrentFilter) {
+          return [data, ...prevReviews];
+        }
+        
+        return prevReviews;
+      });
+      
+      // Refresh the rating stats
+      fetchRatingStats();
     }
-  }, [fetchRatingStats, product.id]);
+  }, [fetchRatingStats, product.id, selectedRating]);
 
     const eventHandlers = useMemo(
       () => ({
@@ -267,10 +288,13 @@ const CustomerReviewsSection: React.FC<CustomerReviewsSectionProps> = ({
           <>
             <Box sx={{ display: "flex", flexWrap: "wrap", gap: "16px" }}>
               {reviews.map((review: Review) => (
-                <ReviewItem
-                  key={review.id}
-                  review={review}
-                />
+                <>
+                  <ReviewItem
+                    key={review.id}
+                    review={review}
+                  />
+                  <Divider />
+                </>
               ))}
               {reviews.length === 0 && (
                 <Typography variant="body2" color="text.secondary" sx={{ py: 4, textAlign: "center", width: "100%" }}>

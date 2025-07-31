@@ -1,5 +1,5 @@
 import React, { useState } from "react";
-import { Box, Typography, Button, Chip, Rating, Divider, IconButton, useTheme, Accordion, AccordionSummary, AccordionDetails, Slider, TextField } from "@mui/material";
+import { Box, Typography, Button, Chip, Divider, IconButton, useTheme, Accordion, AccordionSummary, AccordionDetails, Slider, TextField } from "@mui/material";
 import ShoppingCartIcon from "@mui/icons-material/ShoppingCart";
 import ExpandMoreIcon from "@mui/icons-material/ExpandMore";
 import type { Product } from "../../../types/models";
@@ -134,16 +134,9 @@ const ProductInfoSection: React.FC<ProductInfoSectionProps> = ({ product, quanti
   return (
     <Box sx={{ width: { xs: "100%", md: "50%" } }}>
       <Box sx={{ height: "100%", display: "flex", flexDirection: "column", marginTop: 6 }}>
-        <Typography variant="h4" gutterBottom fontWeight="bold">
+        <Typography variant="h4" gutterBottom fontWeight="bold" mb ={3}>
           {product.name}
         </Typography>
-
-        <Box display="flex" alignItems="center" gap={1} mb={2}>
-          <Rating value={4.5} precision={0.5} readOnly />
-          <Typography variant="body2" color="text.secondary">
-            (120 đánh giá)
-          </Typography>
-        </Box>
 
         <Box mb={3}>
           {product.discount > 0 ? (
