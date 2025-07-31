@@ -226,9 +226,7 @@ export default function StoresPage() {
             >
               {store.name}
             </Typography>
-            <Typography variant="caption" sx={{ color: "grey.500" }}>
-              {store.ownerId}
-            </Typography>
+            
           </Box>
         </Box>
       ),
@@ -296,6 +294,15 @@ export default function StoresPage() {
       render: (store) => (
         <Typography variant="body2" sx={{ color: "grey.900" }}>
           {store.reportCount || 0}
+        </Typography>
+      ),
+    },{
+      key: "phoneNumber",
+      label: "Số điện thoại",
+      sortable: true,
+      render: (store) => (
+        <Typography variant="body2" sx={{ color: "grey.900" }}>
+          {store.phoneNumber || 0}
         </Typography>
       ),
     },

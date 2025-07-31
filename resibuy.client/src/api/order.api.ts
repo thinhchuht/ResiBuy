@@ -75,20 +75,15 @@ const orderApi = {
     return response.data;
   },
 countOrder: async (params: {
-    shipperId?: string;
-    storeId?: string;
-    userId?: string;
-    status?: OrderStatus | string;
-  }) => {
-   
-      const response = await axiosClient.get(`${orderUrl}/count`, { params });
-      if (response.data.code !== 0) {
-        throw new Error(response.data.message || "Lỗi khi đếm đơn hàng");
-      
-      return response.data;
-   
-    }
-  },
+  shipperId?: string;
+  storeId?: string;
+  userId?: string;
+  status?: OrderStatus | string;
+}) => {
+  const response = await axiosClient.get(`${orderUrl}/count`, { params });
+  return response.data;
+}, 
+
   getTotalShippingFeeshipper: async (params: {
     shipperId: string;
     startDate?: string; 
@@ -96,15 +91,14 @@ countOrder: async (params: {
   }) => {
     
       const response = await axiosClient.get(`${orderUrl}/total-shipping-fee`, { params });
-      if (response.data.code !== 0) {
-        throw new Error(response.data.message || "Lỗi khi lấy tổng phí giao hàng");
+     
       
       return response.data;
     
     }
-  },
+  }
 
 
-};
+;
 
 export default orderApi;

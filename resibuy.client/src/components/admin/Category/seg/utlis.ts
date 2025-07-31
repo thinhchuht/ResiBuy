@@ -27,7 +27,7 @@ export function useCategoriesLogic() {
   const [isAddModalOpen, setIsAddModalOpen] = useState(false);
   const [editingCategory, setEditingCategory] = useState<Category | null>(null);
 
-  const { toast } = useToastify();
+  const  toast  = useToastify();
 
 
   const fetchCategories = useCallback(async () => {
@@ -49,7 +49,7 @@ export function useCategoriesLogic() {
   // Gọi API khi component mount
   useEffect(() => {
     fetchCategories();
-  }, [fetchCategories]);
+  }, []);
 
   const handleViewCategory = async (categoryId: string) => {
     if (!categoryId) {
@@ -270,7 +270,7 @@ export const useCategoryForm = (editCategory?: Category | null) => {
 
   const [errors, setErrors] = useState<Partial<CategoryFormData>>({});
   const [isSubmitting, setIsSubmitting] = useState(false);
-  const { toast } = useToastify();
+  const  toast  = useToastify();
 
   useEffect(() => {
     if (editCategory) {

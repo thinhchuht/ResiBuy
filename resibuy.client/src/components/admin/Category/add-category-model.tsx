@@ -37,7 +37,7 @@ export function AddCategoryModal({
   const [imageData, setImageData] = useState<CategoryFormData["image"] | null>(
     editCategory?.image || null
   );
-  const { toast } = useToastify();
+  const  toast  = useToastify();
 
   // Reset form và hình ảnh khi editCategory thay đổi
   useEffect(() => {
