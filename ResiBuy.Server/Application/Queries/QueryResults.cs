@@ -8,11 +8,12 @@
         public record NotificationQueryResult(Guid Id, string EventName, DateTime CreatedAt,bool IsRead, string Data);
 
         public record AvatarQueryResult(string Id, string Name, string Url, string ThumbUrl);
-        public record StoreQueryResult(Guid Id, string Name, string Description, bool IsLocked, bool IsOpen, int ReportCount, DateTime CreatedAt, string OwnerId, object Room);
+        public record StoreQueryResult(Guid Id, string Name, string Description, bool IsLocked, bool IsOpen, int ReportCount, DateTime CreatedAt, string OwnerId,string PhoneNumber, object Room);
         //Room query result
         public record ReportQueryResult(Guid Id, bool IsResolved, string Title, string Description, DateTime CreatedAt, string CreatedById, ReportTarget ReportTarget, string TargetId, Guid OrderId);
         public record RoomQueryResult(Guid Id, string Name, string BuildingName, string AreaName, Guid AreaId);
         public record ReviewQueryResult(Guid Id, object ProductDetail, int Rate, string Comment, object User, bool IsAnonymous, DateTime CreatedAt);
+
         public record AverageRateQueryResult(int ProductId, float AverageRating, int TotalReviews, IEnumerable<RatingDistributionQueryResult> Distribution);
         public record RatingDistributionQueryResult(int Stars, int Count, double Percentage);
         //Voucher query result ,

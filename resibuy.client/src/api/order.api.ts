@@ -84,6 +84,7 @@ const orderApi = {
     const response = await axiosClient.put(`/api/order/order-status`, body);
     return response.data;
   },
+
   countOrder: async (params: {
     shipperId?: string;
     storeId?: string;
@@ -97,6 +98,7 @@ const orderApi = {
       return response.data;
     }
   },
+
   getTotalShippingFeeshipper: async (params: {
     shipperId: string;
     startDate?: string;
@@ -110,9 +112,12 @@ const orderApi = {
         response.data.message || "Lỗi khi lấy tổng phí giao hàng"
       );
 
+
       return response.data;
     }
+
   },
 };
+
 
 export default orderApi;

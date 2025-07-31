@@ -8,10 +8,10 @@
             _context = context;
         }
 
-        public async Task<bool> CheckIfUserReviewed(string userId, int productDetailId)
+        public async Task<Review> GetUserReview(string userId, int productDetailId)
         {
             return await _context.Reviews
-                .AnyAsync(r => r.UserId == userId && r.ProductDetailId == productDetailId);
+                .FirstOrDefaultAsync(r => r.UserId == userId && r.ProductDetailId == productDetailId);
         }
 
         public async Task<PagedResult<Review>> GetAllReviewsAsync(int productId, int rate = 0, int pageNumber = 1, int pageSize = 10)
@@ -31,7 +31,7 @@
 
             var totalCount = await query.CountAsync();
             var items = await query
-                .OrderBy(r => r.CreatedAt)
+                .OrderBy(r => r.UpdatedAt)
                 .Skip((pageNumber - 1) * pageSize)
                 .Take(pageSize)
                 .ToListAsync();

@@ -63,6 +63,7 @@ namespace ResiBuy.Server.Application.Commands.CheckoutComands
             var checkOutData = new TempCheckoutDto
             {
                 Id = Guid.NewGuid(),
+                UserId = request.UserId,
                 Orders = tempOrders,
                 GrandTotal = tempOrders.Sum(o => o.TotalPrice),
                 IsInstance = dto.IsInstance

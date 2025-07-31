@@ -10,6 +10,7 @@
             UserId = userId;
             ProductDetailId = productDetailId;
             CreatedAt = DateTime.Now;
+            UpdatedAt = DateTime.Now;
         }
 
         public Guid Id { get; set; }
@@ -19,6 +20,7 @@
         public string UserId { get; set; }
         public int ProductDetailId { get; set; }
         public DateTime CreatedAt { get; set; }
+        public DateTime UpdatedAt { get; set; }
         public User User { get; set; }
         public ProductDetail ProductDetail { get; set; }
     }

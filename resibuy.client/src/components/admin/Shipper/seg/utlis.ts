@@ -58,7 +58,7 @@ export const useShipperForm = (editingShipper?: Shipper | null) => {
   });
 
   const [isSubmitting, setIsSubmitting] = useState(false);
-  const { toast } = useToastify();
+  const  toast  = useToastify();
 
   useEffect(() => {
     if (editingShipper) {
@@ -240,13 +240,17 @@ export const useShipperForm = (editingShipper?: Shipper | null) => {
 };
 
 // Hàm định dạng tiền tệ (VNĐ)
-export const formatCurrency = (amount: number): string => {
+export const formatCurrency = (amount: number | null | undefined): string => {
+  if (amount == null || isNaN(amount)) {
+    return "0 ₫";
+  }
   return new Intl.NumberFormat("vi-VN", {
     style: "currency",
     currency: "VND",
+    minimumFractionDigits: Number.isInteger(amount) ? 0 : 1, // Hiển thị 1 chữ số thập phân nếu amount không phải số nguyên
+    maximumFractionDigits: 3, // Giới hạn tối đa 1 chữ số thập phân
   }).format(amount);
 };
-
 // Hàm định dạng ngày giờ
 export const formatDate = (date: string): string => {
   return new Date(date).toLocaleString("vi-VN", {

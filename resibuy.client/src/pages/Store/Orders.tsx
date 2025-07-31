@@ -362,6 +362,7 @@ const Orders = () => {
                   order={order}
                   onUpdate={() => setPage(1)}
                   onAddressChange={handleOrderAddressChange}
+                  isStore={true}
                 />
               ))}
               <Box

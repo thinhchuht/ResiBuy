@@ -223,6 +223,7 @@ namespace ResiBuy.Server.Infrastructure.DbServices.StoreDbServices
                 foreach (var item in order.Items)
                 {
                     productQuantity += item.Quantity;
+                    sales += item.Quantity * item.ProductDetail.Price;
                 }
             }
             salesAnalysis.NumberOfProductsSold = productQuantity;
@@ -259,6 +260,31 @@ namespace ResiBuy.Server.Infrastructure.DbServices.StoreDbServices
 
             var top10ProductAndSales = productAndSales.OrderByDescending(pair => pair.Value.Sale).Take(10).ToDictionary(pair => pair.Key, pair => pair.Value);
             return top10ProductAndSales;
+        }
+
+        public async Task<List<ProductDetailAndSale>> TopSaleDetail(int productId)
+        {
+            var product = await _context.Products
+                .Include(p => p.ProductDetails)
+                .ThenInclude(pd => pd.OrderItems)
+                .FirstOrDefaultAsync(p => p.Id == productId);
+            var productDetailSales = new List<ProductDetailAndSale>();
+            int orderCount = 0;
+            decimal totalSale = 0;
+            int saleCount = 0;
+            foreach ( var detail in product.ProductDetails)
+            {
+                saleCount = detail.OrderItems.Sum(oi => oi.Quantity);
+                if (saleCount > 0)
+                {
+                    orderCount++;
+                    totalSale += saleCount * detail.Price;
+                }
+                orderCount = detail.OrderItems.Count();
+                var productDetailDto = new ProductDetailDto(detail.Id, detail.IsOutOfStock, detail.ProductId, detail.Sold, detail.Price, detail.Weight, detail.Image, detail.Quantity, detail.AdditionalData, detail.Reviews);
+                productDetailSales.Add(new ProductDetailAndSale(productDetailDto, orderCount, totalSale, saleCount));
+            }
+            return productDetailSales;
         }
     }
 }
