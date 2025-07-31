@@ -47,6 +47,7 @@ import cartApi from "../../api/cart.api";
 import { debounce } from "lodash";
 import type { BuildingDto, RoomDto } from "../../types/dtoModels";
 import reportApi from "../../api/report.api";
+import CheckCircleIcon from "@mui/icons-material/CheckCircle";
 
 // Define types matching API result
 interface RoomQueryResult {
@@ -115,6 +116,7 @@ interface OrderCardProps {
     roomId: string
   ) => void;
   onCancel?: (orderId: string) => void;
+  isStore?: boolean; // Prop mới để xác định có phải store không
 }
 
 const OrderCard = ({
@@ -122,6 +124,7 @@ const OrderCard = ({
   onUpdate,
   onAddressChange,
   onCancel,
+  isStore = false, // Mặc định là false
 }: OrderCardProps) => {
   const navigate = useNavigate();
   const { user } = useAuth();
@@ -142,6 +145,7 @@ const OrderCard = ({
   const [reportReason, setReportReason] = useState("");
   const [reportOtherReason, setReportOtherReason] = useState("");
   const [reportLoading, setReportLoading] = useState(false);
+  const [confirmOrderLoading, setConfirmOrderLoading] = useState(false);
   const reportReasons = [
     "Hàng không đúng mô tả",
     "Đơn hàng bị trễ",
@@ -166,7 +170,8 @@ const OrderCard = ({
     "store" | "user" | "shipper"
   >("store");
   const [reviewModalOpen, setReviewModalOpen] = useState(false);
-  const [selectedProductForReview, setSelectedProductForReview] = useState<OrderItemQueryResult | null>(null);
+  const [selectedProductForReview, setSelectedProductForReview] =
+    useState<OrderItemQueryResult | null>(null);
 
   const getStatusColor = (status: OrderStatus) => {
     switch (status) {
@@ -179,7 +184,7 @@ const OrderCard = ({
       case OrderStatus.Cancelled:
         return "#F44336";
       case OrderStatus.Reported:
-        return "#F44336"; // Màu cam cảnh báo
+        return "#F44336";
       default:
         return "#666";
     }
@@ -277,6 +282,28 @@ const OrderCard = ({
     }
   };
 
+  // Hàm xác nhận đơn hàng cho store
+  const handleConfirmOrder = async () => {
+    if (!user?.id) return;
+
+    setConfirmOrderLoading(true);
+    try {
+      await orderApi.updateOrderSatus(
+        user.id,
+        order.id,
+        OrderStatus.Processing,
+        ""
+      );
+      toast.success("Đã xác nhận đơn hàng thành công!");
+      if (onUpdate) onUpdate();
+    } catch (error) {
+      console.error(error);
+      toast.error("Không thể xác nhận đơn hàng!");
+    } finally {
+      setConfirmOrderLoading(false);
+    }
+  };
+
   const handleOpenAddressModal = async () => {
     setOpenAddressModal(true);
     try {
@@ -352,7 +379,6 @@ const OrderCard = ({
         setRoomLoadingMore(false);
       }
     },
-    // eslint-disable-next-line react-hooks/exhaustive-deps
     [selectedBuilding]
   );
 
@@ -447,7 +473,7 @@ const OrderCard = ({
   const handleSubmitReport = async () => {
     setReportLoading(true);
     let targetId = "";
-    let reportTarget = 2; // Mặc định là Store
+    let reportTarget = 2;
     if (reportTargetType === "store") {
       targetId = order.store.id;
       reportTarget = 2;
@@ -471,7 +497,7 @@ const OrderCard = ({
         targetId,
         title: reportTitle,
         description: reportReason === "Khác" ? reportOtherReason : reportReason,
-        reportTarget, // Truyền thêm trường này
+        reportTarget,
       });
       setReportLoading(false);
       setReportOpen(false);
@@ -706,31 +732,31 @@ const OrderCard = ({
                   </Typography>
                   <Box sx={{ mb: 0.5 }}>
                     {item.addtionalData && item.addtionalData.length > 0 && (
-                      <Typography 
-                        variant="caption" 
+                      <Typography
+                        variant="caption"
                         component="div"
-                        sx={{ 
+                        sx={{
                           color: "text.secondary",
                           lineHeight: 1.5,
-                          overflow: 'hidden',
-                          fontWeight: 600
+                          overflow: "hidden",
+                          fontWeight: 600,
                         }}
                       >
                         {item.addtionalData.map((data, index) => (
                           <span key={data.id}>
-                            {data.key} : {data.value} 
-                            {index < item.addtionalData.length - 1 && ' - '}
+                            {data.key} : {data.value}
+                            {index < item.addtionalData.length - 1 && " - "}
                           </span>
                         ))}
                       </Typography>
                     )}
                   </Box>
-                    <Typography
-                      variant="body2"
-                      sx={{ color: "#666", transition: "color 0.2s ease" }}
-                    >
-                      Số lượng: {item.quantity}
-                    </Typography>
+                  <Typography
+                    variant="body2"
+                    sx={{ color: "#666", transition: "color 0.2s ease" }}
+                  >
+                    Số lượng: {item.quantity}
+                  </Typography>
                 </Box>
                 <Typography
                   variant="subtitle1"
@@ -743,7 +769,8 @@ const OrderCard = ({
                   {formatPrice(item.price)}
                 </Typography>
               </Box>
-              {order.status === OrderStatus.Delivered && (
+              {/* Ẩn nút đánh giá cho store */}
+              {!isStore && order.status === OrderStatus.Delivered && (
                 <Button
                   variant="outlined"
                   size="small"
@@ -799,152 +826,192 @@ const OrderCard = ({
               : ""}
           </Typography>
         )}
-        {!localNote && order.status === OrderStatus.Pending && !editNote && (
-          <Box
-            sx={{
-              mt: 1,
-              display: "flex",
-              alignItems: "center",
-              gap: 1,
-              background: "#f8f9fa",
-              borderRadius: 2,
-              p: 1,
-            }}
-          >
-            <Typography
-              variant="subtitle2"
-              sx={{ color: "#1976d2", fontWeight: 600, mb: 0.5 }}
-            >
-              Lời nhắn:
-            </Typography>
-            <Button
-              size="small"
-              onClick={handleEditNote}
-              startIcon={<AddCommentIcon />}
-              sx={{ minWidth: 0, px: 1 }}
-            >
-              Thêm
-            </Button>
-          </Box>
-        )}
-        {localNote && !editNote && (
-          <Box
-            sx={{
-              mt: 1,
-              display: "flex",
-              alignItems: "center",
-              gap: 1,
-              background: "#f8f9fa",
-              borderRadius: 2,
-              p: 1,
-              transition: "background 0.3s",
-            }}
-          >
-            <Typography
-              variant="subtitle2"
-              sx={{ color: "#1976d2", fontWeight: 600, mb: 0.5 }}
-            >
-              Lời nhắn:
-            </Typography>
-            {order.status === OrderStatus.Pending && (
-              <Button
-                size="small"
-                onClick={handleEditNote}
-                startIcon={<EditIcon />}
-                sx={{ minWidth: 0, px: 1 }}
-              >
-                Sửa
-              </Button>
-            )}
-          </Box>
-        )}
-        {editNote ? (
-          <Paper
-            elevation={2}
-            sx={{
-              mt: 1,
-              p: 2,
-              borderRadius: 2,
-              background: "#f8f9fa",
-              transition: "all 0.3s",
-            }}
-          >
-            <Box sx={{ display: "flex", flexDirection: "column", gap: 1 }}>
-              <TextField
-                value={noteValue}
-                onChange={(e) => {
-                  if (e.target.value.length <= 100)
-                    setNoteValue(e.target.value);
-                }}
-                multiline
-                minRows={2}
-                maxRows={6}
-                fullWidth
-                variant="outlined"
-                placeholder="Nhập lời nhắn cho đơn hàng..."
-                disabled={noteLoading}
-                sx={{ background: "white", borderRadius: 1 }}
-                inputProps={{ maxLength: 100 }}
-              />
+
+        {/* Ẩn phần lời nhắn cho store */}
+        {!isStore && (
+          <>
+            {!localNote &&
+              order.status === OrderStatus.Pending &&
+              !editNote && (
+                <Box
+                  sx={{
+                    mt: 1,
+                    display: "flex",
+                    alignItems: "center",
+                    gap: 1,
+                    background: "#f8f9fa",
+                    borderRadius: 2,
+                    p: 1,
+                  }}
+                >
+                  <Typography
+                    variant="subtitle2"
+                    sx={{ color: "#1976d2", fontWeight: 600, mb: 0.5 }}
+                  >
+                    Lời nhắn:
+                  </Typography>
+                  <Button
+                    size="small"
+                    onClick={handleEditNote}
+                    startIcon={<AddCommentIcon />}
+                    sx={{ minWidth: 0, px: 1 }}
+                  >
+                    Thêm
+                  </Button>
+                </Box>
+              )}
+            {localNote && !editNote && (
               <Box
                 sx={{
+                  mt: 1,
                   display: "flex",
-                  justifyContent: "space-between",
                   alignItems: "center",
-                  mt: 0.5,
+                  gap: 1,
+                  background: "#f8f9fa",
+                  borderRadius: 2,
+                  p: 1,
+                  transition: "background 0.3s",
                 }}
               >
                 <Typography
-                  variant="caption"
-                  color={noteValue.length === 100 ? "error" : "text.secondary"}
+                  variant="subtitle2"
+                  sx={{ color: "#1976d2", fontWeight: 600, mb: 0.5 }}
                 >
-                  {noteValue.length}/100 ký tự
+                  Lời nhắn:
                 </Typography>
-                <Box sx={{ display: "flex", gap: 1 }}>
+                {order.status === OrderStatus.Pending && (
                   <Button
                     size="small"
-                    onClick={handleSaveNote}
-                    disabled={noteLoading || noteValue.length > 100}
-                    startIcon={<SaveIcon />}
-                    variant="contained"
-                    color="primary"
-                    sx={{ borderRadius: 2, px: 2 }}
+                    onClick={handleEditNote}
+                    startIcon={<EditIcon />}
+                    sx={{ minWidth: 0, px: 1 }}
                   >
-                    Lưu
+                    Sửa
                   </Button>
-                  <Button
-                    size="small"
-                    onClick={handleCancelEditNote}
-                    disabled={noteLoading}
-                    startIcon={<CloseIcon />}
-                    variant="outlined"
-                    color="inherit"
-                    sx={{ borderRadius: 2, px: 2 }}
-                  >
-                    Hủy
-                  </Button>
-                </Box>
+                )}
               </Box>
-            </Box>
-          </Paper>
-        ) : (
-          localNote &&
-          !editNote && (
+            )}
+            {editNote ? (
+              <Paper
+                elevation={2}
+                sx={{
+                  mt: 1,
+                  p: 2,
+                  borderRadius: 2,
+                  background: "#f8f9fa",
+                  transition: "all 0.3s",
+                }}
+              >
+                <Box sx={{ display: "flex", flexDirection: "column", gap: 1 }}>
+                  <TextField
+                    value={noteValue}
+                    onChange={(e) => {
+                      if (e.target.value.length <= 100)
+                        setNoteValue(e.target.value);
+                    }}
+                    multiline
+                    minRows={2}
+                    maxRows={6}
+                    fullWidth
+                    variant="outlined"
+                    placeholder="Nhập lời nhắn cho đơn hàng..."
+                    disabled={noteLoading}
+                    sx={{ background: "white", borderRadius: 1 }}
+                    inputProps={{ maxLength: 100 }}
+                  />
+                  <Box
+                    sx={{
+                      display: "flex",
+                      justifyContent: "space-between",
+                      alignItems: "center",
+                      mt: 0.5,
+                    }}
+                  >
+                    <Typography
+                      variant="caption"
+                      color={
+                        noteValue.length === 100 ? "error" : "text.secondary"
+                      }
+                    >
+                      {noteValue.length}/100 ký tự
+                    </Typography>
+                    <Box sx={{ display: "flex", gap: 1 }}>
+                      <Button
+                        size="small"
+                        onClick={handleSaveNote}
+                        disabled={noteLoading || noteValue.length > 100}
+                        startIcon={<SaveIcon />}
+                        variant="contained"
+                        color="primary"
+                        sx={{ borderRadius: 2, px: 2 }}
+                      >
+                        Lưu
+                      </Button>
+                      <Button
+                        size="small"
+                        onClick={handleCancelEditNote}
+                        disabled={noteLoading}
+                        startIcon={<CloseIcon />}
+                        variant="outlined"
+                        color="inherit"
+                        sx={{ borderRadius: 2, px: 2 }}
+                      >
+                        Hủy
+                      </Button>
+                    </Box>
+                  </Box>
+                </Box>
+              </Paper>
+            ) : (
+              localNote &&
+              !editNote && (
+                <Typography
+                  variant="body2"
+                  sx={{
+                    color: "#666",
+                    whiteSpace: "pre-wrap",
+                    background: "#f8f9fa",
+                    borderRadius: 2,
+                    p: 1,
+                    mt: 0.5,
+                    transition: "background 0.3s",
+                  }}
+                >
+                  {localNote}
+                </Typography>
+              )
+            )}
+          </>
+        )}
+
+        {/* Hiển thị lời nhắn từ khách hàng cho store (chỉ đọc) */}
+        {isStore && localNote && (
+          <Box
+            sx={{
+              mt: 1,
+              background: "#f0f7ff",
+              borderRadius: 2,
+              p: 2,
+              border: "1px solid #e3f2fd",
+            }}
+          >
+            <Typography
+              variant="subtitle2"
+              sx={{ color: "#1976d2", fontWeight: 600, mb: 1 }}
+            >
+              Lời nhắn từ khách hàng:
+            </Typography>
             <Typography
               variant="body2"
               sx={{
                 color: "#666",
                 whiteSpace: "pre-wrap",
-                background: "#f8f9fa",
-                borderRadius: 2,
-                p: 1,
-                mt: 0.5,
-                transition: "background 0.3s",
+                fontStyle: "italic",
               }}
             >
-              {localNote}
+              "{localNote}"
             </Typography>
-          )
+          </Box>
         )}
       </Box>
 
@@ -967,45 +1034,75 @@ const OrderCard = ({
           </Typography>
         </Box>
         <Box sx={{ display: "flex", gap: 2 }}>
-          {order.status === OrderStatus.Pending && (
-            <Button
-              variant="outlined"
-              color="error"
-              sx={{ borderRadius: 2, textTransform: "none", px: 3 }}
-              onClick={() => setCancelOpen(true)}
-            >
-              Hủy đơn
-            </Button>
+          {/* Nút cho người dùng (khách hàng) */}
+          {!isStore && (
+            <>
+              {order.status === OrderStatus.Pending && (
+                <Button
+                  variant="outlined"
+                  color="error"
+                  sx={{ borderRadius: 2, textTransform: "none", px: 3 }}
+                  onClick={() => setCancelOpen(true)}
+                >
+                  Hủy đơn
+                </Button>
+              )}
+              {order.status === OrderStatus.Pending && (
+                <Button
+                  variant="outlined"
+                  sx={{ borderRadius: 2, textTransform: "none", px: 3 }}
+                  onClick={handleOpenAddressModal}
+                >
+                  Đổi địa chỉ
+                </Button>
+              )}
+              {order.status === OrderStatus.Delivered && (
+                <Button
+                  variant="outlined"
+                  onClick={handleBuyAgain}
+                  sx={{
+                    borderRadius: 2,
+                    textTransform: "none",
+                    px: 3,
+                    borderColor: "#FF385C",
+                    color: "#FF385C",
+                    "&:hover": {
+                      borderColor: "#FF385C",
+                      backgroundColor: "#FF385C15",
+                    },
+                  }}
+                >
+                  Mua lại
+                </Button>
+              )}
+            </>
           )}
-          {order.status === OrderStatus.Pending && (
+
+          {/* Nút cho store */}
+          {isStore && order.status === OrderStatus.Pending && (
             <Button
-              variant="outlined"
-              sx={{ borderRadius: 2, textTransform: "none", px: 3 }}
-              onClick={handleOpenAddressModal}
-            >
-              Đổi địa chỉ
-            </Button>
-          )}
-          {order.status === OrderStatus.Delivered && (
-            <Button
-              variant="outlined"
-              onClick={handleBuyAgain}
+              variant="contained"
+              color="success"
+              startIcon={<CheckCircleIcon />}
+              onClick={handleConfirmOrder}
+              disabled={confirmOrderLoading}
               sx={{
                 borderRadius: 2,
                 textTransform: "none",
                 px: 3,
-                borderColor: "#FF385C",
-                color: "#FF385C",
+                py: 1,
+                fontWeight: 600,
+                boxShadow: "0 2px 8px #4CAF5033",
                 "&:hover": {
-                  borderColor: "#FF385C",
-                  backgroundColor: "#FF385C15",
+                  boxShadow: "0 4px 16px #4CAF5044",
                 },
               }}
             >
-              Mua lại
+              {confirmOrderLoading ? "Đang xử lý..." : "Xác nhận đơn hàng"}
             </Button>
           )}
-          {/* Ẩn nút báo cáo nếu đã có report */}
+
+          {/* Nút báo cáo - ẩn nếu đã có report */}
           {!order.report && (
             <Button
               variant="outlined"
@@ -1457,8 +1554,8 @@ const OrderCard = ({
           </Button>
         </DialogActions>
       </Dialog>
-      
-      {selectedProductForReview && (
+
+      {!isStore && selectedProductForReview && (
         <ReviewModal
           open={reviewModalOpen}
           onClose={handleCloseReviewModal}
