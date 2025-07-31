@@ -1,62 +1,67 @@
-import React from "react";
-import { Card, CardContent, Typography, Button, Box } from "@mui/material";
-import LocalShippingIcon from "@mui/icons-material/LocalShipping";
-import { useNavigate } from "react-router-dom";
+// components/shipper/OrderAlertPopup.tsx
+import { useEffect, useState } from "react";
 
-const HomePage: React.FC = () => {
-  // Giả lập có đơn hàng đang giao
-  const currentOrder = {
-    id: 123,
-    customerName: "Nguyễn Văn A",
-    address: "123 Đường Lý Thường Kiệt, Quận 10, TP.HCM",
-    status: "Đang giao",
-  };
+type Props = {
+  open: boolean;
+  onClose: () => void;
+  order: {
+    id: string;
+    customerName: string;
+    address: string;
+    storeAddress: string;
+  } | null;
+};
 
-  // const currentOrder = null; // Mở dòng này nếu bạn muốn test khi không có đơn
-  const navigate = useNavigate();
+const OrderAlertPopup = ({ open, onClose, order }: Props) => {
+  const [countdown, setCountdown] = useState(40);
+
+  useEffect(() => {
+    if (!open || !order) return;
+
+    // Reset countdown mỗi lần mở popup
+    setCountdown(40);
+
+    const timer = setInterval(() => {
+      setCountdown((prev) => {
+        if (prev <= 1) {
+          clearInterval(timer);
+          onClose();
+          return 0;
+        }
+        return prev - 1;
+      });
+    }, 1000);
+
+    return () => clearInterval(timer);
+  }, [open, order]);
+
+  // Phát âm thanh và rung
+  useEffect(() => {
+    if (open && order) {
+      const audio = new Audio("/sounds/notification.mp3");
+      audio.play().catch(() => {});
+      if ("vibrate" in navigator) navigator.vibrate(300);
+    }
+  }, [open, order]);
+
+  if (!open || !order) return null;
+
   return (
-    <Box>
-      <Typography variant="h5" fontWeight={600} gutterBottom>
-        Trang chủ Shipper
-      </Typography>
-
-      {currentOrder ? (
-        <Card sx={{ mt: 3 }}>
-          <CardContent>
-            <Box display="flex" alignItems="center" mb={2}>
-              <LocalShippingIcon color="primary" sx={{ mr: 1 }} />
-              <Typography variant="h6">Đơn hàng đang giao</Typography>
-            </Box>
-
-            <Typography>
-              <strong>Mã đơn:</strong> #{currentOrder.id}
-            </Typography>
-            <Typography>
-              <strong>Khách hàng:</strong> {currentOrder.customerName}
-            </Typography>
-            <Typography>
-              <strong>Địa chỉ:</strong> {currentOrder.address}
-            </Typography>
-            <Typography>
-              <strong>Trạng thái:</strong> {currentOrder.status}
-            </Typography>
-
-            <Box mt={2}>
-              <Button variant="outlined" onClick={() => navigate("/shipper/order/123")}>
-                Xem chi tiết
-              </Button>
-            </Box>
-          </CardContent>
-        </Card>
-      ) : (
-        <Box mt={5} textAlign="center">
-          <Typography variant="h6" color="text.secondary">
-            Không có đơn hàng nào cần giao
-          </Typography>
-        </Box>
-      )}
-    </Box>
+    <div className="fixed bottom-4 right-4 bg-white p-4 shadow-xl border rounded-lg w-80 z-50 animate-bounce-in">
+      <h4 className="text-lg font-semibold mb-2">📦 Đơn hàng mới được gán</h4>
+      <p><strong>Đơn:</strong> #{order.id}</p>
+      <p><strong>Khách:</strong> {order.customerName}</p>
+      <p><strong>Địa chỉ:</strong> {order.address}</p>
+      <p><strong>Cửa hàng:</strong> {order.storeAddress}</p>
+      <p className="text-sm text-gray-500 mt-1">Tự đóng sau {countdown} giây</p>
+      <button
+        onClick={onClose}
+        className="mt-3 px-4 py-1 bg-blue-600 text-white rounded hover:bg-blue-700"
+      >
+        ❌ Đóng
+      </button>
+    </div>
   );
 };
 
-export default HomePage;
+export default OrderAlertPopup;

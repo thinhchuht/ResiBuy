@@ -15,6 +15,6 @@ namespace ResiBuy.Server.Infrastructure.DbServices.ShipperDbServices
         Task<int> CountShippersByOnlineStatusAsync(bool isOnline);
         Task<int> CountShippersByShippingStatusAsync(bool isShipping);
         Task<int> SumShipperReportCountAsync();
-
+        Task<int> CountAllShipper();
     }
 }

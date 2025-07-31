@@ -24,6 +24,14 @@ namespace ResiBuy.Server.Controllers
 
         }
 
+        [HttpGet("product/{id}/avg-rate")]
+        public async Task<IActionResult> GetProductAvarageRate(int id)
+        {
+            var result = await mediator.Send(new GetAverageRateQuery(id));
+            return Ok(result);
+
+        }
+
         [HttpPost]
         public async Task<IActionResult> CreateReview([FromBody] CreateReviewDto dto)
         {

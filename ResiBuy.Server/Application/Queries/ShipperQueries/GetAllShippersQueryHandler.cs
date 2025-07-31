@@ -23,6 +23,7 @@ namespace ResiBuy.Server.Application.Queries.ShipperQueries
                 {
                     s.Id,
                     s.IsOnline,
+                    s.IsLocked,
                     s.IsShipping,
                     s.StartWorkTime,
                     s.EndWorkTime,

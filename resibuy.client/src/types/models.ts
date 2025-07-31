@@ -146,6 +146,7 @@ export interface Order {
   updateAt: string;
   note: string;
   shipAddressId: string;
+  shippingFee:number;
   shipAddress: Room;
   userId: string;
   storeId: string;
@@ -173,6 +174,7 @@ export interface Shipper {
   id: string;
   userId: string;
   isOnline: boolean;
+  isLocked: boolean;
   isShipping: boolean;
   orders: Order[];
   startWorkTime: number;
@@ -399,4 +401,36 @@ export interface PagedResult<T> {
   pageNumber: number;
   pageSize: number;
   totalPages: number;
+}
+
+export interface RatingDistribution {
+  stars: number;
+  count: number;
+  percentage: number;
+}
+
+export interface ProductRatingStats {
+  productId: number;
+  averageRating: number;
+  totalReviews: number;
+  distribution: RatingDistribution[];
+}
+
+export interface ReviewQueryResult {
+  id: string;
+  productDetail: {
+    id: number;
+    name: string;
+    additionalData: AdditionalData[];
+  };
+  rate: number;
+  comment: string;
+  user: {
+    id: string;
+    name: string;
+    avatar?: Image;
+  };
+  isAnonymous: boolean;
+  createdAt: string;
+  updatedAt: string;
 }

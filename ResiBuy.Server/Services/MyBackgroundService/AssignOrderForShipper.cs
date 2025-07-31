@@ -72,7 +72,7 @@ namespace ResiBuy.Server.Services.MyBackgroundService
                     }
                 }
 
-                await Task.Delay(TimeSpan.FromMinutes(5), stoppingToken);
+                await Task.Delay(TimeSpan.FromSeconds(5), stoppingToken);
             }
 
             _logger.LogInformation("AssignOrderForShipper is stopping.");

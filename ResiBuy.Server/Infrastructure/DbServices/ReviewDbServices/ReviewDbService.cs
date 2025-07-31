@@ -1,5 +1,4 @@
-﻿
-namespace ResiBuy.Server.Infrastructure.DbServices.ReviewDbServices
+﻿namespace ResiBuy.Server.Infrastructure.DbServices.ReviewDbServices
 {
     public class ReviewDbService : BaseDbService<Review>, IReviewDbService
     {
@@ -38,6 +37,15 @@ namespace ResiBuy.Server.Infrastructure.DbServices.ReviewDbServices
                 .ToListAsync();
 
             return new PagedResult<Review>(items, totalCount, pageNumber, pageSize);
+        }
+
+        public async Task<List<Review>> GetReviewsByProductIdAsync(int productId)
+        {
+            return await _context.Products
+                .Where(p => p.Id == productId)
+                .SelectMany(p => p.ProductDetails)
+                .SelectMany(pd => pd.Reviews)
+                .ToListAsync();
         }
 
         public async Task<Review> GetReviewById(Guid id)

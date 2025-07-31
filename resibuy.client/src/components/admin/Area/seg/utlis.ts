@@ -5,6 +5,8 @@ import type { AreaDto, CreateAreaDto } from "../../../../types/dtoModels";
 
 export interface AreaFormData {
   name: string;
+  latitude: number;
+  longitude: number;
   isActive?: boolean;
 }
 
@@ -67,7 +69,7 @@ export function useAreasLogic() {
     setIsDetailModalOpen(false);
     setSelectedArea(null);
   };
-  
+
   const handleAddArea = () => {
     setEditingArea(null);
     setIsAddModalOpen(true);
@@ -87,10 +89,8 @@ export function useAreasLogic() {
     setLoading(true);
     try {
       if (editingArea) {
-        // Cập nhật khu vực
         const response = await areaApi.update(areaData);
         if (response.code === 0) {
-          // Gọi lại fetchAreas để đảm bảo dữ liệu đồng bộ
           await fetchAreas();
           if (selectedArea && selectedArea.id === areaData.id) {
             setSelectedArea(response.data);
@@ -100,10 +100,12 @@ export function useAreasLogic() {
           toast.error(response.message || "Lỗi khi cập nhật khu vực");
         }
       } else {
-        // Thêm khu vực mới
-        const response = await areaApi.create({ name: areaData.name });
+        const response = await areaApi.create({
+          name: areaData.name,
+          latitude: areaData.latitude,
+          longitude: areaData.longitude,
+        });
         if (response.code === 0) {
-          // Gọi lại fetchAreas để đảm bảo dữ liệu đồng bộ
           await fetchAreas();
           toast.success("Thêm khu vực mới thành công!");
         } else {
@@ -118,31 +120,38 @@ export function useAreasLogic() {
       setLoading(false);
     }
   };
-const handleUpdateStatus = useCallback(
-  async (id: string) => {
-    setLoading(true);
-    setError(null);
-    try {
-      const response = await areaApi.updateStatus({ id });
-      if (response.code === 0) {
-        await fetchAreas();
-        if (selectedArea && selectedArea.id === id) {
-          setSelectedArea((prev) => (prev ? { ...prev, isActive: response.data } : null));
+
+  const handleUpdateStatus = useCallback(
+    async (id: string) => {
+      setLoading(true);
+      setError(null);
+      try {
+        const response = await areaApi.updateStatus({ id });
+        if (response.code === 0) {
+          await fetchAreas();
+          if (selectedArea && selectedArea.id === id) {
+            setSelectedArea((prev) =>
+              prev ? { ...prev, isActive: response.data } : null
+            );
+          }
+          toast.success("Cập nhật trạng thái khu vực thành công!");
+        } else {
+          throw new Error(
+            response.message || "Lỗi khi cập nhật trạng thái khu vực"
+          );
         }
-        toast.success("Cập nhật trạng thái khu vực thành công!");
-      } else {
-        throw new Error(response.message || "Lỗi khi cập nhật trạng thái khu vực");
+      } catch (err: any) {
+        const errorMessage =
+          err.message || "Lỗi khi cập nhật trạng thái khu vực";
+        setError(errorMessage);
+        toast.error(errorMessage);
+      } finally {
+        setLoading(false);
       }
-    } catch (err: any) {
-      const errorMessage = err.message || "Lỗi khi cập nhật trạng thái khu vực";
-      setError(errorMessage);
-      toast.error(errorMessage);
-    } finally {
-      setLoading(false);
-    }
-  },
-  [fetchAreas, selectedArea, toast]
-);
+    },
+    [fetchAreas, selectedArea, toast]
+  );
+
   const handleDeleteArea = async (areaId: string) => {
     if (
       window.confirm(
@@ -170,13 +179,15 @@ const handleUpdateStatus = useCallback(
   };
 
   const handleExportAreas = () => {
-    const headers = ["Area ID", "Name", "Status"];
+    const headers = ["Area ID", "Name", "Latitude", "Longitude", "Status"];
     const csvContent = [
       headers.join(","),
       ...areas.map((area) =>
         [
           area.id || "",
           `"${area.name}"`,
+          area.latitude || "",
+          area.longitude || "",
           area.isActive ? "Active" : "Inactive",
         ].join(",")
       ),
@@ -217,6 +228,8 @@ const handleUpdateStatus = useCallback(
 export const useAreaForm = (editArea?: AreaDto | null) => {
   const [formData, setFormData] = useState<AreaFormData>({
     name: editArea?.name || "",
+    latitude: editArea?.latitude || 10.7769, // Mặc định trung tâm TP.HCM
+    longitude: editArea?.longitude || 106.7009,
     isActive: editArea?.isActive ?? true,
   });
   const [errors, setErrors] = useState<Partial<AreaFormData>>({});
@@ -225,6 +238,8 @@ export const useAreaForm = (editArea?: AreaDto | null) => {
   useEffect(() => {
     setFormData({
       name: editArea?.name || "",
+      latitude: editArea?.latitude || 10.7769,
+      longitude: editArea?.longitude || 106.7009,
       isActive: editArea?.isActive ?? true,
     });
   }, [editArea]);
@@ -240,6 +255,12 @@ export const useAreaForm = (editArea?: AreaDto | null) => {
     const errors: Partial<AreaFormData> = {};
     if (!data.name?.trim()) {
       errors.name = "Tên khu vực là bắt buộc";
+    }
+    if (data.latitude === undefined || isNaN(data.latitude)) {
+      errors.latitude = "Vĩ độ không hợp lệ";
+    }
+    if (data.longitude === undefined || isNaN(data.longitude)) {
+      errors.longitude = "Kinh độ không hợp lệ";
     }
     return errors;
   };

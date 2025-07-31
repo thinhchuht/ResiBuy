@@ -73,6 +73,7 @@ namespace ResiBuy.Server.Application.Queries.OrderQueries
                     oi.ID,
                     oi.ProductDetail.ProductId,
                     oi.ProductDetailId,
+                    oi.ProductDetail.Reviews.Where(r => r.UserId == request.UserId).FirstOrDefault() == null ? null : oi.ProductDetail.Reviews.Where(r => r.UserId == request.UserId).FirstOrDefault().Id,
                     oi.ProductDetail.Product.Name,
                     oi.Quantity,
                     oi.Price,
