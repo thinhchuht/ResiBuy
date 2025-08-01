@@ -25,7 +25,7 @@ namespace ResiBuy.Server.Application.Commands.OrderCommands
                     throw new CustomException(ExceptionErrorCode.ValidationFailed, "Trạng thái đơn hàng đã hoàn thành.");
                 if (dto.OrderStatus == OrderStatus.Pending)
                     throw new CustomException(ExceptionErrorCode.ValidationFailed, "Không được đưa đơn hàng về chờ xử lí.");
-                if (dto.OrderStatus == OrderStatus.ShippedAccepted)
+                if (dto.OrderStatus == OrderStatus.Assigned)
                 {
                     if (order.Status != OrderStatus.Processing)
                         throw new CustomException(ExceptionErrorCode.ValidationFailed, "Chỉ được xác nhận giao khi đơn hàng đang ở trạng thái đang chờ giao.");
@@ -59,7 +59,7 @@ namespace ResiBuy.Server.Application.Commands.OrderCommands
                     throw new CustomException(ExceptionErrorCode.ValidationFailed, "Lý do hủy đơn hàng không được để trống.");
                 order.CancelReason = dto.Reason;
             }
-            if (dto.OrderStatus == OrderStatus.ShippedAccepted)
+            if (dto.OrderStatus == OrderStatus.Assigned)
             {
                 if (!dto.ShipperId.HasValue || dto.ShipperId == Guid.Empty)
                     throw new CustomException(ExceptionErrorCode.ValidationFailed, "Cần Id của người giao hợp lệ.");
@@ -92,7 +92,7 @@ namespace ResiBuy.Server.Application.Commands.OrderCommands
             await orderDbService.UpdateAsync(order);
             var userIds = new List<string>();
             if (dto.OrderStatus == OrderStatus.Processing) userIds.Add(order.UserId);
-            if (dto.OrderStatus == OrderStatus.ShippedAccepted) 
+            if (dto.OrderStatus == OrderStatus.Assigned) 
                 userIds.AddRange([order.UserId, store.OwnerId.ToString()]);
             if (dto.OrderStatus == OrderStatus.Arrived) userIds.AddRange([order.UserId, store.OwnerId.ToString()]);
             if (dto.OrderStatus == OrderStatus.Shipped) userIds.AddRange([order.UserId,store.OwnerId.ToString()]);

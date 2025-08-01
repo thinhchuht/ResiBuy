@@ -260,21 +260,6 @@ function OrderDetail() {
               justifyContent="space-between"
               flexWrap="wrap"
             >
-              <Button
-                variant="outlined"
-                color="primary"
-                onClick={() => handleCall(order.user.phoneNumber)}
-              >
-                📞 Gọi người mua
-              </Button>
-
-              <Button
-                variant="outlined"
-                color="secondary"
-                onClick={() => handleCall(order.store.phoneNumber)}
-              >
-                🏪 Gọi cửa hàng
-              </Button>
 
               {order.status === "ShippedAccepted" && (
                 <Button
@@ -307,7 +292,7 @@ function OrderDetail() {
               )}
 
               <Button variant="contained" color="error" onClick={handleReport}>
-                ⚠️ Báo cáo đơn hàng
+                 Báo cáo đơn hàng
               </Button>
             </Stack>
           </Stack>

@@ -34,10 +34,10 @@ interface Order {
   } | null;
 }
 
+// ✅ CHỈ 2 trạng thái theo yêu cầu
 const STATUS_OPTIONS = [
-  { value: "ShippedAccepted", label: "🆗 Đã nhận đơn" },
   { value: "Shipped", label: "🚚 Đang giao" },
-  { value: "Arrived", label: "📍 Đã đến điểm giao" },
+  { value: "CustomerNotAvailable", label: "Không liên lạc được với khách" },
 ];
 
 function ShipperHome() {
@@ -45,7 +45,7 @@ function ShipperHome() {
   const { lastConfirmedOrderId } = useOrderEvent();
   const [orders, setOrders] = useState<Order[]>([]);
   const [loading, setLoading] = useState<boolean>(true);
-  const [selectedStatus, setSelectedStatus] = useState<string>("ShippedAccepted");
+  const [selectedStatus, setSelectedStatus] = useState<string>("Shipped");
   const [currentPage, setCurrentPage] = useState<number>(1);
   const [totalPages, setTotalPages] = useState<number>(1);
 
@@ -63,10 +63,10 @@ function ShipperHome() {
         undefined,
         user.id,
         page,
-        5 // số lượng mỗi trang
+        3
       );
       setOrders(res.items || []);
-      setTotalPages(res.totalPages || 1); // hoặc tính bằng Math.ceil(res.totalCount / 10)
+      setTotalPages(res.totalPages || 1);
     } catch (err) {
       console.error("Lỗi tải đơn hàng:", err);
     } finally {
@@ -84,7 +84,7 @@ function ShipperHome() {
     fetchOrders(selectedStatus, currentPage);
   }, [user?.id, selectedStatus, currentPage]);
 
-  // Gọi lại khi xác nhận đơn hàng mới
+  // Reload lại khi có đơn hàng mới được xác nhận
   useEffect(() => {
     if (lastConfirmedOrderId) {
       fetchOrders(selectedStatus, currentPage);
@@ -146,10 +146,8 @@ function ShipperHome() {
                         color={
                           order.status === "Shipped"
                             ? "success"
-                            : order.status === "ShippedAccepted"
-                            ? "info"
-                            : order.status === "Arrived"
-                            ? "warning"
+                            : order.status === "CustomerNotAvailable"
+                            ? "error"
                             : "default"
                         }
                         size="small"
