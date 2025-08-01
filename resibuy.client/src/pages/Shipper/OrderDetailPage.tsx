@@ -77,7 +77,9 @@ function OrderDetail() {
   const toast = useToastify();
   const [order, setOrder] = useState<Order | null>(null);
   const [reportOpen, setReportOpen] = useState(false);
-  const [reportTargetType, setReportTargetType] = useState<"store" | "user" | "shipper">("store");
+  const [reportTargetType, setReportTargetType] = useState<
+    "store" | "user" | "shipper"
+  >("store");
   const [reportTitle, setReportTitle] = useState("");
   const [reportReason, setReportReason] = useState("");
   const [reportOtherReason, setReportOtherReason] = useState("");
