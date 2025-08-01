@@ -12,7 +12,7 @@
         //Room query result
         public record ReportQueryResult(Guid Id, bool IsResolved, string Title, string Description, DateTime CreatedAt, string CreatedById, ReportTarget ReportTarget, string TargetId, Guid OrderId);
         public record RoomQueryResult(Guid Id, string Name, string BuildingName, string AreaName, Guid AreaId);
-        public record ReviewQueryResult(Guid Id, object ProductDetail, int Rate, string Comment, object User, bool IsAnonymous, DateTime CreatedAt);
+        public record ReviewQueryResult(Guid Id, object ProductDetail, int Rate, string Comment, object User, bool IsAnonymous, DateTime CreatedAt, DateTime UpdatedAt);
 
         public record AverageRateQueryResult(int ProductId, float AverageRating, int TotalReviews, IEnumerable<RatingDistributionQueryResult> Distribution);
         public record RatingDistributionQueryResult(int Stars, int Count, double Percentage);

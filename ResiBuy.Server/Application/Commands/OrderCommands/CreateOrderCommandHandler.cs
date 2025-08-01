@@ -91,7 +91,7 @@ namespace ResiBuy.Server.Application.Commands.OrderCommands
                 {
                     var store = await storeDbService.GetByIdBaseAsync(order.StoreId);
                     var notiUserIds = new List<string> { store.OwnerId, user.Id };
-                    await notificationService.SendNotificationAsync(Constants.OrderCreated, new OrderStatusChangedDto(order.Id, order.StoreId, store.Name, order.Status, order.Status, order.PaymentStatus, order.CreateAt), Constants.NoHubGroup, notiUserIds);
+                    await notificationService.SendNotificationAsync(Constants.OrderCreated, new OrderStatusChangedDto(order.Id, order.StoreId, store.Name, order.Status, order.Status, order.PaymentStatus, order.CreateAt, order.UpdateAt), Constants.NoHubGroup, notiUserIds);
                 }
                 foreach (var productDetail in notiProductDetails)
                 {
