@@ -60,4 +60,5 @@ export interface OrderStatusChangedData {
   oldOrderStatus: string;
   paymentStatus: string;
   createdAt: string;
+  updatedAt: string;
 }

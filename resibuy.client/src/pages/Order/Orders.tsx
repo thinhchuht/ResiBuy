@@ -53,6 +53,7 @@ const orderStatusTabs = [
   OrderStatus.None,
   OrderStatus.Pending,
   OrderStatus.Processing,
+  OrderStatus.Assigned,
   OrderStatus.Shipped,
   OrderStatus.CustomerNotAvailable,
   OrderStatus.Delivered,
@@ -193,6 +194,7 @@ const Orders = () => {
                   ...order,
                   status: data.orderStatus as OrderStatus,
                   paymentStatus: data.paymentStatus as PaymentStatus,
+                  updatedAt: data.updatedAt,
                 }
               : order
           )
@@ -210,12 +212,48 @@ const Orders = () => {
     [fetchOrders]
   );
 
+  const handleReceiveOrderNotification = useCallback((data: unknown) => {
+    const currentTabStatus = orderStatusTabs[currentTabRef.current];
+    
+    if (currentTabStatus === OrderStatus.Assigned) {
+      // In Assigned tab, just refresh the list
+      fetchOrders();
+    } else if (currentTabStatus === OrderStatus.None) {
+      const notificationData = data as Record<string, unknown>;
+      const orderId = notificationData.orderId as string | undefined;
+      
+      if (orderId) {
+        setOrders((prevOrders) => {
+          const existingOrderIndex = prevOrders.findIndex(o => o.id === orderId);
+          
+          if (existingOrderIndex >= 0) {
+            const updatedOrder = {
+              ...prevOrders[existingOrderIndex],
+              status: OrderStatus.Assigned
+            };
+            return [
+              updatedOrder,
+              ...prevOrders.slice(0, existingOrderIndex),
+              ...prevOrders.slice(existingOrderIndex + 1)
+            ];
+          } else {
+            fetchOrders();
+            return prevOrders;
+          }
+        });
+      } else {
+        fetchOrders();
+      }
+    }
+  }, [fetchOrders]);
+
   const eventHandlers = useMemo(
     () => ({
       [HubEventType.OrderStatusChanged]: handleOrderStatusChanged,
       [HubEventType.OrderReported]: handleOrderReported,
+      [HubEventType.ReceiveOrderNotification]: handleReceiveOrderNotification,
     }),
-    [handleOrderStatusChanged, handleOrderReported]
+    [handleOrderStatusChanged, handleOrderReported, handleReceiveOrderNotification]
   );
   useEventHub(eventHandlers as Partial<Record<HubEventType, HubEventHandler>>);
 
@@ -284,6 +322,7 @@ const Orders = () => {
               <StyledTab label="Tất cả" />
               <StyledTab label="Chờ xác nhận" />
               <StyledTab label="Đã xác nhận" />
+              <StyledTab label="Đang lấy hàng" />
               <StyledTab label="Đang giao" />
               <StyledTab label="Chờ nhận" />
               <StyledTab label="Đã giao" />

@@ -4,7 +4,7 @@ public enum OrderStatus
     None,
     Pending, // Chờ store xác nhận
     Processing, // Spore đã xác nhận, đang đợi ship
-    ShippedAccepted , //Shipper đã xác nhận đơn hàng 
+    Assigned, //Đơn hàng được bắn cho Shipper
     Shipped, //Shipper đang cầm hàng và đang giao
     Arrived, // Shipper đã đến điểm giao hàng
     Delivered, // Đã giao hàng
