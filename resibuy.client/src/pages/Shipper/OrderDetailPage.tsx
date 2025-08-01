@@ -434,6 +434,7 @@ function OrderDetail() {
               justifyContent="space-between"
               flexWrap="wrap"
             >
+
               {order.status === "Assigned" && (
                 <Button
                   variant="contained"
@@ -474,6 +475,7 @@ function OrderDetail() {
                 </Button>
               )}
 
+
               {order.status !== "Reported" && (
                 <Button
                   variant="contained"
@@ -483,6 +485,7 @@ function OrderDetail() {
                   Báo cáo đơn hàng
                 </Button>
               )}
+
             </Stack>
           </Stack>
         </CardContent>
