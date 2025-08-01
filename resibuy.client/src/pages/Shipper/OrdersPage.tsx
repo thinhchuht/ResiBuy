@@ -133,7 +133,7 @@ const ShipperOrderHistory: React.FC = () => {
     }
   };
 
-  const handleTabChange = (_: any, newValue: string) => {
+  const handleTabChange = (_: React.SyntheticEvent, newValue: string) => {
     setStatusFilter(newValue);
     setPage(1);
   };
