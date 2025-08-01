@@ -11,7 +11,6 @@ import {
 } from "@mui/material";
 import { useParams } from "react-router-dom";
 import orderApi from "../../api/order.api";
-import shipperApi from "../../api/ship.api";
 import { useAuth } from "../../contexts/AuthContext";
 import { useToastify } from "../../hooks/useToastify";
 
@@ -80,10 +79,6 @@ function OrderDetail() {
 
   const deliveryAddress = `${order.roomQueryResult.areaName}, ${order.roomQueryResult.buildingName}, ${order.roomQueryResult.name}`;
 
-  const handleCall = (phone: string) => {
-    window.location.href = `tel:${phone}`;
-  };
-
   const handlePickedUp = async () => {
     if (!user?.id || !order?.id) {
       toast.error("Thiếu thông tin người dùng hoặc đơn hàng");
@@ -96,32 +91,6 @@ function OrderDetail() {
     } catch (err) {
       console.error(" Lỗi khi cập nhật trạng thái đơn hàng:", err);
       toast.error("Không thể cập nhật trạng thái!");
-    }
-  };
-
-  interface ShipperLocationUpdate {
-    shipperId: string;
-    locationId: string;
-  }
-  const handleArrived = async () => {
-    if (!user?.id || !order?.roomQueryResult?.areaId) {
-      toast.error("Thiếu thông tin người dùng hoặc khu vực giao hàng");
-      return;
-    }
-
-    try {
-      const locationData: ShipperLocationUpdate = {
-        shipperId: user.id,
-        locationId: order.roomQueryResult.areaId,
-      };
-      await shipperApi.updateLocation(locationData);
-
-      toast.success("📍 Đã cập nhật vị trí tại điểm giao hàng");
-
-      await orderApi.updateOrderStatusShip(order.id, "Arrived", user.id);
-      setOrder((prev) => prev && { ...prev, status: "Arrived" });
-    } catch (error) {
-      console.error("Lỗi khi xử lý đã đến điểm giao:", error);
     }
   };
 
@@ -141,8 +110,99 @@ function OrderDetail() {
     }
   };
 
+  const handleCustomerNotAvailable = async () => {
+    if (!user?.id || !order?.id) {
+      toast.error("Thiếu thông tin");
+      return;
+    }
+
+    try {
+      await orderApi.updateOrderStatusShip(
+        order.id,
+        "CustomerNotAvailable",
+        user.id
+      );
+      toast.success("Xác nhận không liên lạc được với khách hàng thành công");
+      setOrder((prev) => prev && { ...prev, status: "CustomerNotAvailable" });
+    } catch (err) {
+      console.error(err);
+      toast.error("Không thể cập nhật trạng thái!");
+    }
+  };
+
+  const handleCancelled = async () => {
+    if (!user?.id || !order?.id) {
+      toast.error("Thiếu thông tin");
+      return;
+    }
+
+    try {
+      await orderApi.updateOrderSatus(
+        user.id,
+        order.id,
+        "Cancelled",
+        "Không liên lạc được với khách hàng"
+      );
+      toast.success("Xác nhận hủy đơn thành công");
+      setOrder((prev) => prev && { ...prev, status: "Cancelled" });
+    } catch (err) {
+      console.error(err);
+      toast.error("Không thể cập nhật trạng thái!");
+    }
+  };
+
   const handleReport = () => {
     alert("⚠️ Báo cáo đơn hàng (chức năng này sẽ được cập nhật sau).");
+  };
+
+  const getOrderStatusLabel = (status: string): string => {
+    switch (status) {
+      case "Pending":
+        return "🕒 Chờ cửa hàng xác nhận";
+      case "Processing":
+        return "🔄 Cửa hàng đã xác nhận";
+      case "Assigned":
+        return "📦 Đã gán cho shipper";
+      case "Shipped":
+        return "🚚 Đang giao hàng";
+      case "Delivered":
+        return "✅ Đã giao hàng";
+      case "CustomerNotAvailable":
+        return "📞 Không liên lạc được với khách";
+      case "Cancelled":
+        return "❌ Đã hủy";
+      case "Reported":
+        return "⚠️ Đã báo cáo";
+      case "None":
+      default:
+        return "Không xác định";
+    }
+  };
+
+  const getPaymentMethodLabel = (method: string): string => {
+    switch (method) {
+      case "COD":
+        return "💵 Thanh toán khi nhận hàng";
+      case "BankTransfer":
+        return "🏦 Chuyển khoản ngân hàng";
+      default:
+        return "Không xác định";
+    }
+  };
+
+  const getPaymentStatusLabel = (status: string): string => {
+    switch (status) {
+      case "Pending":
+        return "⏳ Chưa thanh toán";
+      case "Paid":
+        return "✅ Đã thanh toán";
+      case "Failed":
+        return "❌ Thanh toán thất bại";
+      case "Refunded":
+        return "↩️ Đã hoàn tiền";
+      default:
+        return "Không xác định";
+    }
   };
 
   return (
@@ -168,14 +228,49 @@ function OrderDetail() {
             <Typography>
               <strong>Địa chỉ giao hàng:</strong> {deliveryAddress}
             </Typography>
-            <Typography>
-              <strong>Trạng thái:</strong>{" "}
-              <Chip label={order.status} color="info" />
-            </Typography>
-            <Typography>
-              <strong>Thanh toán:</strong> {order.paymentMethod} -{" "}
-              <Chip label={order.paymentStatus} color="warning" />
-            </Typography>
+            <Stack direction="row" spacing={1} alignItems="center">
+              <Typography variant="body2">
+                <strong>Trạng thái:</strong>
+              </Typography>
+              <Chip
+                label={getOrderStatusLabel(order.status)}
+                color={
+                  order.status === "Shipped"
+                    ? "success"
+                    : order.status === "Assigned"
+                    ? "info"
+                    : order.status === "Delivered"
+                    ? "default"
+                    : order.status === "Cancelled"
+                    ? "error"
+                    : order.status === "Reported"
+                    ? "warning"
+                    : "default"
+                }
+                size="small"
+              />
+            </Stack>
+
+            <Stack direction="row" spacing={1} alignItems="center">
+              <Typography variant="body2">
+                <strong>Thanh toán:</strong>{" "}
+                {getPaymentMethodLabel(order.paymentMethod)}
+              </Typography>
+              <Chip
+                label={getPaymentStatusLabel(order.paymentStatus)}
+                color={
+                  order.paymentStatus === "Paid"
+                    ? "success"
+                    : order.paymentStatus === "Failed"
+                    ? "error"
+                    : order.paymentStatus === "Refunded"
+                    ? "default"
+                    : "warning"
+                }
+                size="small"
+              />
+            </Stack>
+
             <Typography>
               <strong>Tổng tiền:</strong> {order.totalPrice.toLocaleString()} đ
             </Typography>
@@ -260,39 +355,48 @@ function OrderDetail() {
               justifyContent="space-between"
               flexWrap="wrap"
             >
-
-              {order.status === "ShippedAccepted" && (
+              {order.status === "Assigned" && (
                 <Button
                   variant="contained"
                   color="success"
                   onClick={handlePickedUp}
                 >
-                   Đã lấy hàng
+                  Đã lấy hàng
                 </Button>
               )}
 
               {order.status === "Shipped" && (
                 <Button
                   variant="contained"
-                  color="info"
-                  onClick={handleArrived}
-                >
-                  Đã đến điểm giao
-                </Button>
-              )}
-
-              {order.status === "Arrived" && (
-                <Button
-                  variant="contained"
                   color="primary"
                   onClick={handleDelivered}
                 >
-                   Đã giao hàng
+                  Đã giao hàng
+                </Button>
+              )}
+
+              {order.status === "Shipped" && (
+                <Button
+                  variant="contained"
+                  color="error"
+                  onClick={handleCustomerNotAvailable}
+                >
+                  Không liên lạc được với khách
+                </Button>
+              )}
+
+              {order.status === "CustomerNotAvailable" && (
+                <Button
+                  variant="contained"
+                  color="error"
+                  onClick={handleCancelled}
+                >
+                  Hủy đơn hàng
                 </Button>
               )}
 
               <Button variant="contained" color="error" onClick={handleReport}>
-                 Báo cáo đơn hàng
+                Báo cáo đơn hàng
               </Button>
             </Stack>
           </Stack>
