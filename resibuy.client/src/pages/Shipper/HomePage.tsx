@@ -36,6 +36,8 @@ interface Order {
 
 // ✅ CHỈ 2 trạng thái theo yêu cầu
 const STATUS_OPTIONS = [
+
+    { value: "Assigned", label: "Chờ lấy hàng" },
   { value: "Shipped", label: "🚚 Đang giao" },
   { value: "CustomerNotAvailable", label: "Không liên lạc được với khách" },
 ];
