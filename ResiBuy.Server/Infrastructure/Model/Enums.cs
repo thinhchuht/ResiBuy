@@ -6,7 +6,6 @@ public enum OrderStatus
     Processing, // Spore đã xác nhận, đang đợi ship
     Assigned, //Đơn hàng được bắn cho Shipper
     Shipped, //Shipper đang cầm hàng và đang giao
-    Arrived, // Shipper đã đến điểm giao hàng
     Delivered, // Đã giao hàng
     CustomerNotAvailable, // Khách không có mặt để nhận hàng
     Cancelled, // Hủy đơn hàng
