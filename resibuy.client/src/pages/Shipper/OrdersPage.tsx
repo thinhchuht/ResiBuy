@@ -7,15 +7,29 @@ import {
   Avatar,
   Chip,
   Pagination,
-  Tabs,
-  Tab,
   TextField,
   Alert,
+  Tabs,
+  Tab,
 } from "@mui/material";
 import orderApi from "../../api/order.api";
 import { useAuth } from "../../contexts/AuthContext";
 
-const OrderStatusTabs = ["All", "Delivered", "Cancelled", "Shipped"];
+const OrderStatusTabs = [
+  { label: "Đã giao hàng", value: "Delivered" },
+  { label: "Đã hủy", value: "Cancelled" },
+];
+
+const getStatusLabel = (status: string) => {
+  switch (status) {
+    case "Delivered":
+      return "Đã giao hàng";
+    case "Cancelled":
+      return "Đã hủy";
+    default:
+      return status;
+  }
+};
 
 const getStatusColor = (status: string) => {
   switch (status) {
@@ -23,8 +37,6 @@ const getStatusColor = (status: string) => {
       return "success";
     case "Cancelled":
       return "error";
-    case "Shipped":
-      return "info";
     default:
       return "default";
   }
@@ -68,16 +80,16 @@ const ShipperOrderHistory: React.FC = () => {
   const [orders, setOrders] = useState<Order[]>([]);
   const [page, setPage] = useState(1);
   const [totalPages, setTotalPages] = useState(1);
-  const [statusFilter, setStatusFilter] = useState("All");
   const [startDate, setStartDate] = useState("");
   const [endDate, setEndDate] = useState("");
   const [dateError, setDateError] = useState(false);
+  const [statusFilter, setStatusFilter] = useState("Delivered");
 
   const fetchOrders = async () => {
     if (!user?.id) return;
     try {
       const res = await orderApi.getAll(
-        statusFilter === "All" ? "None" : statusFilter,
+        statusFilter,
         "None",
         "None",
         undefined,
@@ -99,7 +111,7 @@ const ShipperOrderHistory: React.FC = () => {
     if (user?.id && !dateError) {
       fetchOrders();
     }
-  }, [page, statusFilter, user?.id, startDate, endDate, dateError]);
+  }, [user?.id, page, startDate, endDate, statusFilter, dateError]);
 
   const handleStartDateChange = (value: string) => {
     if (endDate && new Date(value) > new Date(endDate)) {
@@ -121,18 +133,16 @@ const ShipperOrderHistory: React.FC = () => {
     }
   };
 
+  const handleTabChange = (_: any, newValue: string) => {
+    setStatusFilter(newValue);
+    setPage(1);
+  };
+
   return (
     <Box p={2}>
-      <Tabs
-        value={statusFilter}
-        onChange={(_, val) => {
-          setStatusFilter(val);
-          setPage(1);
-        }}
-        sx={{ mb: 2 }}
-      >
-        {OrderStatusTabs.map((status) => (
-          <Tab key={status} label={status} value={status} />
+      <Tabs value={statusFilter} onChange={handleTabChange} sx={{ mb: 2 }}>
+        {OrderStatusTabs.map((tab) => (
+          <Tab key={tab.value} value={tab.value} label={tab.label} />
         ))}
       </Tabs>
 
@@ -178,7 +188,7 @@ const ShipperOrderHistory: React.FC = () => {
                   Đơn hàng #{order.id}
                 </Typography>
                 <Chip
-                  label={order.status}
+                  label={getStatusLabel(order.status)}
                   color={getStatusColor(order.status)}
                 />
               </Box>
@@ -211,8 +221,7 @@ const ShipperOrderHistory: React.FC = () => {
               </Typography>
               <Typography mt={1}>
                 <strong>Tổng cộng:</strong>{" "}
-                {(order.totalPrice + (order.shippingFee || 0)).toLocaleString()}
-                đ
+                {(order.totalPrice + (order.shippingFee || 0)).toLocaleString()}đ
               </Typography>
 
               <Divider sx={{ my: 2 }} />
