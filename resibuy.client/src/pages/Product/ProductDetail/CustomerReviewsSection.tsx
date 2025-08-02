@@ -1,37 +1,25 @@
-import React, { useState, useMemo } from "react";
+import { useState, useEffect, useCallback, useMemo } from "react";
+import { useEventHub, HubEventType, type HubEventHandler } from "../../../hooks/useEventHub";
 import {
   Box,
   Typography,
   Rating,
-  Divider,
-  Button,
-  Chip,
   Stack,
-  Select,
-  MenuItem,
-  FormControl,
-  InputLabel,
   useTheme,
+  CircularProgress,
+  Pagination,
+  Chip,
+  Divider,
 } from "@mui/material";
-import type { SelectChangeEvent } from "@mui/material";
 import ReviewItem from "./ReviewItem";
-import { fakeReviewData } from "../../../fakeData/fakeReviewData";
-import ReviewFormModal from "./ReviewFormModal";
-import type { Product } from "../../../types/models";
-import { useAuth } from "../../../contexts/AuthContext";
+import type { 
+  Product, 
+  Review, 
+  PagedResult, 
+  ProductRatingStats
+} from "../../../types/models";
 import { useToastify } from "../../../hooks/useToastify";
-import { useNavigate } from "react-router-dom";
-
-interface Review {
-  reviewerName: string;
-  rating: number;
-  title: string;
-  body: string;
-  date: string;
-  avatarLetter: string;
-  avatarBgColor: string;
-  helpfulCount?: number;
-}
+import reviewApi from "../../../api/review.api";
 
 interface CustomerReviewsSectionProps {
   product: Product;
@@ -41,53 +29,108 @@ const CustomerReviewsSection: React.FC<CustomerReviewsSectionProps> = ({
   product,
 }) => {
   const theme = useTheme();
-  const user = useAuth();
-  const toast = useToastify()
-  const navigate = useNavigate()
-  const [selectedRating, setSelectedRating] = useState<number | null>(null);
-  const [sortBy, setSortBy] = useState<string>("mostHelpful");
-  const [isModalOpen, setIsModalOpen] = useState(false);
+  const toast = useToastify();
+  const [reviews, setReviews] = useState<Review[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [currentPage, setCurrentPage] = useState(1);
+  const [totalPages, setTotalPages] = useState(0);
+  const [selectedRating, setSelectedRating] = useState<number>(0);
+  const [ratingStats, setRatingStats] = useState<ProductRatingStats | null>(null);
+  const pageSize = 10;
 
-  const handleOpenModal = () => {
-    if (user) {
-      setIsModalOpen(true);
-    } else {
-      toast.error("Vui lòng đăng nhập để thêm sản phẩm vào giỏ hàng");
-      navigate("/login");
+  // Fetch reviews from API with pagination
+  const fetchReviews = async (page: number = 1, rate: number = 0) => {
+    try {
+      setLoading(true);
+      const response: PagedResult<Review> = await reviewApi.getAll(
+        product.id.toString(), 
+        rate, 
+        page, 
+        pageSize
+      );
+      
+      setReviews(response.items || []);
+      setTotalPages(response.totalPages || 0);
+      setCurrentPage(page);
+      
+      // Update total reviews count when filtering
+      if (rate > 0 && ratingStats) {
+        setRatingStats({
+          ...ratingStats,
+          totalReviews: response.totalCount || 0
+        });
+      }
+      
+    } catch (error) {
+      console.error('Error fetching reviews:', error);
+      toast.error('Không thể tải đánh giá');
+    } finally {
+      setLoading(false);
     }
-
   };
-  const handleCloseModal = () => setIsModalOpen(false);
 
-  const filteredAndSortedReviews = useMemo(() => {
-    let result = [...fakeReviewData] as Review[];
-
-    if (selectedRating !== null) {
-      result = result.filter((review) => review.rating === selectedRating);
+  const fetchRatingStats = useCallback(async () => {
+    try {
+      const stats: ProductRatingStats = await reviewApi.getAverageRateByProductId(product.id);
+      setRatingStats(stats);
+    } catch (error) {
+      console.error('Error fetching rating stats:', error);
+      toast.error('Không thể tải thống kê đánh giá');
     }
+  }, [product.id, toast]);
 
-    switch (sortBy) {
-      case "mostHelpful":
-        result.sort((a, b) => (b.helpfulCount || 0) - (a.helpfulCount || 0));
-        break;
-      case "newest":
-        result.sort(
-          (a, b) => new Date(b.date).getTime() - new Date(a.date).getTime()
-        );
-        break;
-      default:
-        break;
+  const handleReviewAdded = useCallback((data: Review) => {
+    console.log('New review received:', data);
+    if ('rate' in data && 'productDetail' in data && data.productDetail?.productId === product.id) {
+      setReviews(prevReviews => {
+        const existingReviewIndex = prevReviews.findIndex(review => review.id === data.id);
+        
+        const matchesCurrentFilter = selectedRating === 0 || selectedRating === data.rate;
+        
+        if (existingReviewIndex >= 0) {
+          if (matchesCurrentFilter) {
+            const updatedReviews = [...prevReviews];
+            updatedReviews[existingReviewIndex] = data;
+            const [movedReview] = updatedReviews.splice(existingReviewIndex, 1);
+            return [movedReview, ...updatedReviews];
+          } else {
+            return prevReviews.filter((_, index) => index !== existingReviewIndex);
+          }
+        } else if (matchesCurrentFilter) {
+          return [data, ...prevReviews];
+        }
+        
+        return prevReviews;
+      });
+      
+      // Refresh the rating stats
+      fetchRatingStats();
     }
+  }, [fetchRatingStats, product.id, selectedRating]);
 
-    return result;
-  }, [selectedRating, sortBy]);
+    const eventHandlers = useMemo(
+      () => ({
+        [HubEventType.ReviewAdded]: handleReviewAdded
+      }),
+      [handleReviewAdded]
+    );
+    useEventHub(eventHandlers as Partial<Record<HubEventType, HubEventHandler>>);
+
+  useEffect(() => {
+    if (product.id) {
+      fetchReviews(1, 0);
+      fetchRatingStats();
+    }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [product.id]);
+
+  const handlePageChange = (_event: React.ChangeEvent<unknown>, value: number) => {
+    fetchReviews(value, 0);
+  };
 
   const handleRatingFilter = (rating: number) => {
-    setSelectedRating(selectedRating === rating ? null : rating);
-  };
-
-  const handleSortChange = (event: SelectChangeEvent) => {
-    setSortBy(event.target.value);
+    setSelectedRating(rating === selectedRating ? 0 : rating);
+    fetchReviews(1, rating === selectedRating ? 0 : rating);
   };
 
   return (
@@ -103,155 +146,176 @@ const CustomerReviewsSection: React.FC<CustomerReviewsSectionProps> = ({
     >
       <Box sx={{ textAlign: "center" }}>
         <Typography variant="h2" fontWeight="bold" color="primary">
-          4.0
+          {ratingStats ? ratingStats.averageRating.toFixed(1) : '0.0'}
         </Typography>
-        <Rating value={4} precision={0.5} readOnly size="large" />
+        <Rating 
+          value={ratingStats?.averageRating || 0} 
+          precision={0.1} 
+          readOnly 
+          size="large" 
+        />
         <Typography variant="body2" color="text.secondary" mb={2}>
-          {fakeReviewData.length} Đánh giá
+          {ratingStats?.totalReviews || 0} Đánh giá
         </Typography>
         <Stack spacing={1} alignItems="center" mb={3}>
-          {[5, 4, 3, 2, 1].map((star) => (
-            <Box key={star} display="flex" alignItems="center" width="80%">
-              <Typography variant="body2" mr={1}>
-                {star}★
-              </Typography>
-              <Box
-                sx={{
-                  flexGrow: 1,
-                  height: 8,
-                  bgcolor: theme.palette.grey[300],
-                  borderRadius: 1,
-                }}
+          {[5, 4, 3, 2, 1].map((star) => {
+            const distributionItem = ratingStats?.distribution?.find(d => d.stars === star);
+            const percentage = distributionItem?.percentage || 0;
+            return (
+              <Box 
+                key={star} 
+                display="flex" 
+                alignItems="center" 
+                width="80%"
+                sx={{ cursor: 'pointer' }}
+                onClick={() => handleRatingFilter(star)}
               >
+                <Typography variant="body2" mr={1}>
+                  {star}★
+                </Typography>
                 <Box
                   sx={{
-                    width: star === 4 ? "100%" : "0%",
-                    height: "100%",
-                    bgcolor:
-                      star === 4 ? theme.palette.warning.main : "transparent",
+                    flexGrow: 1,
+                    height: 8,
+                    bgcolor: theme.palette.grey[300],
                     borderRadius: 1,
                   }}
-                />
+                >
+                  <Box
+                    sx={{
+                      width: `${percentage}%`,
+                      height: "100%",
+                      bgcolor: theme.palette.warning.main,
+                      borderRadius: 1,
+                    }}
+                  />
+                </Box>
+                <Typography variant="body2" ml={1}>
+                  {percentage.toFixed(0)}%
+                </Typography>
               </Box>
-              <Typography variant="body2" ml={1}>
-                {star === 4 ? "100%" : "0%"}
-              </Typography>
-            </Box>
-          ))}
+            );
+          })}
         </Stack>
-        <Divider sx={{ my: 2 }} />
-        <Typography variant="subtitle1" fontWeight="medium" mb={1}>
-          Đánh giá sản phẩm này
-        </Typography>
-        <Typography variant="body2" color="text.secondary" mb={2}>
-          Chia sẻ suy nghĩ của bạn với những khách hàng khác
-        </Typography>
-        <Button
-          variant="contained"
-          sx={{
-            borderRadius: 8,
-            px: 4,
-            py: 1.5,
-            textTransform: "none",
-            fontSize: "1.1rem",
-            backgroundColor: theme.palette.primary.main,
-            "&:hover": {
-              backgroundColor: theme.palette.primary.dark,
-            },
-          }}
-          onClick={handleOpenModal}
-        >
-          Viết đánh giá
-        </Button>
       </Box>
 
       <Box sx={{ maxHeight: 500, overflowY: "auto" }}>
-        <Typography variant="h5" fontWeight="bold" mb={2}>
-          Đánh giá với bình luận
-        </Typography>
-        <Box
-          sx={{
-            position: "sticky",
-            top: 0,
-            zIndex: 1,
-            bgcolor: "background.paper",
-            py: 1,
-            display: "flex",
-            alignItems: "center",
-            gap: 1,
-            flexWrap: "wrap",
-            mb: 2,
-          }}
-        >
-          <Chip
-            label="Tất cả"
-            clickable
-            color={selectedRating === null ? "primary" : "default"}
-            onClick={() => setSelectedRating(null)}
-            sx={{
-              bgcolor:
-                selectedRating === null
-                  ? theme.palette.text.primary
-                  : undefined,
-              color:
-                selectedRating === null
-                  ? theme.palette.common.white
-                  : undefined,
-            }}
-          />
-          {[5, 4, 3, 2, 1].map((star) => (
+        <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 2, flexWrap: 'wrap', gap: 1 }}>
+          <Typography variant="h5" fontWeight="bold">
+            Đánh giá với bình luận
+          </Typography>
+          <Box sx={{ 
+            display: 'flex', 
+            gap: 1, 
+            flexWrap: 'wrap',
+            bgcolor: 'grey.50',
+            p: 1,
+            borderRadius: 2,
+            border: '1px solid',
+            borderColor: 'divider',
+            boxShadow: '0 1px 2px rgba(0,0,0,0.05)'
+          }}>
             <Chip
-              key={star}
-              label={`${star} ★`}
-              clickable
-              color={selectedRating === star ? "primary" : "default"}
-              onClick={() => handleRatingFilter(star)}
+              label="Tất cả"
+              onClick={() => handleRatingFilter(0)}
+              color={selectedRating === 0 ? 'primary' : 'default'}
+              variant={selectedRating === 0 ? 'filled' : 'outlined'}
               sx={{
-                bgcolor:
-                  selectedRating === star
-                    ? theme.palette.text.primary
-                    : undefined,
-                color:
-                  selectedRating === star
-                    ? theme.palette.common.white
-                    : undefined,
+                borderRadius: '8px',
+                fontWeight: 500,
+                px: 1.5,
+                '&.MuiChip-filled': {
+                  boxShadow: '0 2px 4px rgba(0,0,0,0.1)'
+                },
+                '&:hover': {
+                  bgcolor: 'action.hover',
+                }
               }}
             />
-          ))}
-          <Box sx={{ flexGrow: 1 }} />
-          <FormControl variant="outlined" size="small" sx={{ minWidth: 120 }}>
-            <InputLabel>Sắp xếp theo</InputLabel>
-            <Select
-              label="Sắp xếp theo"
-              value={sortBy}
-              onChange={handleSortChange}
-            >
-              <MenuItem value="mostHelpful">Hữu ích nhất</MenuItem>
-              <MenuItem value="newest">Mới nhất</MenuItem>
-            </Select>
-          </FormControl>
+            {[5, 4, 3, 2, 1].map((star) => (
+              <Chip
+                key={star}
+                icon={
+                  <Box sx={{
+                    display: 'flex',
+                    alignItems: 'center',
+                    '& .MuiSvgIcon-root': {
+                      color: selectedRating === star ? 'common.white' : 'warning.main',
+                      fontSize: '1.1rem',
+                      mr: 0.5
+                    }
+                  }}>
+                    <span>★</span>
+                    <Typography component="span" variant="body2" sx={{
+                      fontWeight: 500,
+                      color: selectedRating === star ? 'common.white' : 'inherit'
+                    }}>
+                      {star}
+                    </Typography>
+                  </Box>
+                }
+                onClick={() => handleRatingFilter(star)}
+                color={selectedRating === star ? 'primary' : 'default'}
+                variant={selectedRating === star ? 'filled' : 'outlined'}
+                sx={{
+                  borderRadius: '8px',
+                  px: 1.5,
+                  '& .MuiChip-label': {
+                    pl: 0.5,
+                    pr: 0
+                  },
+                  '&.MuiChip-filled': {
+                    boxShadow: '0 2px 4px rgba(0,0,0,0.1)'
+                  },
+                  borderColor: selectedRating === star ? 'primary.main' : 'divider',
+                  bgcolor: selectedRating === star ? 'primary.main' : 'background.paper',
+                  '&:hover': {
+                    bgcolor: selectedRating === star ? 'primary.dark' : 'action.hover',
+                    transform: 'translateY(-1px)',
+                    boxShadow: '0 2px 8px rgba(0,0,0,0.1)'
+                  },
+                  transition: 'all 0.2s ease-in-out'
+                }}
+              />
+            ))}
+          </Box>
         </Box>
-
-        <Box sx={{ display: "flex", flexWrap: "wrap", gap: "16px" }}>
-          {filteredAndSortedReviews.map((review, index) => (
-            <ReviewItem
-              key={index}
-              reviewerName={review.reviewerName}
-              rating={review.rating}
-              title={review.title}
-              body={review.body}
-              date={review.date}
-              avatarLetter={review.avatarLetter}
-              avatarBgColor={review.avatarBgColor}
-            />
-          ))}
-        </Box>
+        {loading ? (
+          <Box sx={{ display: "flex", justifyContent: "center", py: 4 }}>
+            <CircularProgress />
+          </Box>
+        ) : (
+          <>
+            <Box sx={{ display: "flex", flexWrap: "wrap", gap: "16px" }}>
+              {reviews.map((review: Review) => (
+                <>
+                  <ReviewItem
+                    key={review.id}
+                    review={review}
+                  />
+                  <Divider />
+                </>
+              ))}
+              {reviews.length === 0 && (
+                <Typography variant="body2" color="text.secondary" sx={{ py: 4, textAlign: "center", width: "100%" }}>
+                  Chưa có đánh giá nào cho sản phẩm này.
+                </Typography>
+              )}
+            </Box>
+            {totalPages > 1 && (
+              <Box sx={{ display: "flex", justifyContent: "center", mt: 3 }}>
+                <Pagination
+                  count={totalPages}
+                  page={currentPage}
+                  onChange={handlePageChange}
+                  color="primary"
+                  size="medium"
+                />
+              </Box>
+            )}
+          </>
+        )}
       </Box>
-      <ReviewFormModal
-        open={isModalOpen}
-        onClose={handleCloseModal}
-        product={product}
-      />
     </Box>
   );
 };

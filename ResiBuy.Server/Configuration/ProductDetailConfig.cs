@@ -7,7 +7,12 @@
             builder.HasMany(oi => oi.OrderItems)
                  .WithOne(p => p.ProductDetail)
                  .HasForeignKey(oi => oi.ProductDetailId)
-                 .OnDelete(DeleteBehavior.Restrict); 
+                 .OnDelete(DeleteBehavior.Restrict);
+
+            builder.HasMany(p => p.Reviews)
+                   .WithOne(r => r.ProductDetail)
+                   .HasForeignKey(r => r.ProductDetailId)
+                   .OnDelete(DeleteBehavior.Restrict);
         }
     }
 }

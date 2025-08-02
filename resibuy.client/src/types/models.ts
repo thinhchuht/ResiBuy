@@ -1,12 +1,16 @@
+import type { ImageResult } from "../pages/Order/OrderCard";
+
 // Enums
 export enum OrderStatus {
   None = "None",
   Pending = "Pending",
   Processing = "Processing",
+  Assigned = "Assigned",
   Shipped = "Shipped",
   CustomerNotAvailable = "CustomerNotAvailable",
   Delivered = "Delivered",
   Cancelled = "Cancelled",
+  Reported = "Reported", // Thêm trạng thái bị tố cáo
 }
 
 export enum PaymentStatus {
@@ -51,7 +55,7 @@ export interface User {
   cartId: string;
   roles: string[];
   rooms: RoomResult[];
-  stores: Store;
+  stores: Store[];
   refreshTokens: RefreshToken[];
   orders: Order[];
   userVouchers: UserVoucher[];
@@ -143,6 +147,7 @@ export interface Order {
   updateAt: string;
   note: string;
   shipAddressId: string;
+  shippingFee:number;
   shipAddress: Room;
   userId: string;
   storeId: string;
@@ -170,6 +175,7 @@ export interface Shipper {
   id: string;
   userId: string;
   isOnline: boolean;
+  isLocked: boolean;
   isShipping: boolean;
   orders: Order[];
   startWorkTime: number;
@@ -369,4 +375,64 @@ export interface UpdateOrderDto {
   id: string;
   voucherId?: string;
   note?: string;
+}
+
+export interface Review {
+  id: string;
+  userId: string;
+  productDetail: {
+    id: number;
+    productId : number
+    name: string;
+    additionalData: AdditionalData[];
+  };
+  rate: number;
+  comment: string;
+  user : {
+    name : string;
+    avatar : ImageResult;
+  }
+  isAnonymous: boolean;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface PagedResult<T> {
+  items: T[];
+  totalCount: number;
+  pageNumber: number;
+  pageSize: number;
+  totalPages: number;
+}
+
+export interface RatingDistribution {
+  stars: number;
+  count: number;
+  percentage: number;
+}
+
+export interface ProductRatingStats {
+  productId: number;
+  averageRating: number;
+  totalReviews: number;
+  distribution: RatingDistribution[];
+}
+
+export interface ReviewQueryResult {
+  id: string;
+  productDetail: {
+    id: number;
+    name: string;
+    additionalData: AdditionalData[];
+  };
+  rate: number;
+  comment: string;
+  user: {
+    id: string;
+    name: string;
+    avatar?: Image;
+  };
+  isAnonymous: boolean;
+  createdAt: string;
+  updatedAt: string;
 }

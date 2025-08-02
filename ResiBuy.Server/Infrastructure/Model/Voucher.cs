@@ -52,7 +52,7 @@
         }
         public void Deactivate()
         {
-            IsActive = false;
+            IsActive = !IsActive;
         }
     }
 

@@ -7,21 +7,23 @@ import {
   Drawer,
   Toolbar,
   Typography,
+  useTheme,
+  Paper,
 } from "@mui/material";
 import ShipperSidebar from "./component/ShipperSidebar";
-
+import OrderAlertPopup from "../../components/shipper/OrderAlertPopup";
 
 const drawerWidth = 240;
 
 const ShipperLayout: React.FC = () => {
   const location = useLocation();
   const currentPath = location.pathname.replace("/shipper/", "") || "orders";
+  const theme = useTheme();
 
   return (
-    <Box sx={{ display: "flex" }}>
+    <Box sx={{ display: "flex", bgcolor: "#f0f2f5" }}>
       <CssBaseline />
 
-      {/* Sidebar */}
       <Drawer
         variant="permanent"
         sx={{
@@ -30,45 +32,63 @@ const ShipperLayout: React.FC = () => {
           [`& .MuiDrawer-paper`]: {
             width: drawerWidth,
             boxSizing: "border-box",
+            backgroundColor: theme.palette.background.paper,
+            borderRight: "1px solid #e0e0e0",
           },
         }}
       >
         <ShipperSidebar />
       </Drawer>
 
-      {/* Nội dung chính */}
+      {/* Main Content */}
       <Box sx={{ flexGrow: 1 }}>
-        {/* Top bar */}
+        {/* Top AppBar */}
         <AppBar
           position="fixed"
+          elevation={1}
           sx={{
             ml: `${drawerWidth}px`,
             width: `calc(100% - ${drawerWidth}px)`,
             bgcolor: "white",
             color: "black",
-            boxShadow: "none",
             borderBottom: "1px solid #ddd",
             zIndex: (theme) => theme.zIndex.drawer + 1,
           }}
         >
           <Toolbar>
-            <Typography variant="h6">{getPageTitle(currentPath)}</Typography>
+            <Typography variant="h6" fontWeight={600}>
+              {getPageTitle(currentPath)}
+            </Typography>
           </Toolbar>
         </AppBar>
 
-        {/* Nội dung bên dưới AppBar */}
+        {/* Page Container */}
         <Box
           component="main"
           sx={{
+            mt: 8,
             p: 3,
-            mt: 8, // đẩy xuống dưới AppBar
-            bgcolor: "#f5f5f5",
             minHeight: "100vh",
+            bgcolor: "#f0f2f5",
           }}
         >
-          <Outlet />
+          {/* Inner card-style content */}
+          <Paper
+            elevation={1}
+            sx={{
+              p: 3,
+              borderRadius: 3,
+              backgroundColor: "white",
+              minHeight: "calc(100vh - 100px)",
+            }}
+          >
+            <Outlet />
+          </Paper>
         </Box>
       </Box>
+
+      {/* Popup thông báo đơn hàng */}
+      <OrderAlertPopup />
     </Box>
   );
 };
@@ -76,9 +96,12 @@ const ShipperLayout: React.FC = () => {
 function getPageTitle(path: string) {
   switch (path) {
     case "orders":
-      return "Lịch sử đơn hàng";
+      return "📦 Lịch sử đơn hàng";
+    case "":
+    case "shipper":
+      return "🚀 Trang chủ";
     default:
-      return "Trang chủ";
+      return "📝 Đơn hàng";
   }
 }
 

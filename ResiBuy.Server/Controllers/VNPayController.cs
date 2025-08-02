@@ -55,9 +55,32 @@ namespace ResiBuy.Server.Controllers
 
                 if (checkoutData != null)
                 {
+                    var checkoutDto = new CheckoutDto
+                    {
+                        UserId = checkoutData.UserId,
+                        GrandTotal = checkoutData.GrandTotal,
+                        AddressId = checkoutData.AddressId ?? Guid.Empty,
+                        PaymentMethod = checkoutData.PaymentMethod,
+                        IsInstance = checkoutData.IsInstance,
+                        Orders = checkoutData.Orders.Select(order => new OrderDto
+                        {
+                            Id = order.Id,
+                            StoreId = order.StoreId,
+                            VoucherId = order.VoucherId,
+                            Note = order.Note,
+                            TotalPrice = order.TotalPrice,
+                            ShippingFee = order.ShippingFee,
+                            Items = order.ProductDetails.Select(pd => new OrderItemDto
+                            {
+                                ProductDetailId = pd.Id,
+                                Quantity = pd.Quantity,
+                                Price = pd.Price
+                            }).ToList()
+                        }).ToList()
+                    };
                     try
                     {
-                        var message = JsonSerializer.Serialize(checkoutData);
+                        var message = JsonSerializer.Serialize(checkoutDto);
                         producer.ProduceMessageAsync("checkout", message, "checkout-topic");
                         checkoutSessionService.RemoveCheckoutSession(sessionId);
                         var token = GenerateToken();

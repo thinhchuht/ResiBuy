@@ -2,7 +2,7 @@
 
 namespace ResiBuy.Server.Infrastructure.Model
 {
-    public class Area
+    public class    Area
     {
         public Guid                  Id        { get; set; }
         public string                Name      { get; set; }

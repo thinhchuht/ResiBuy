@@ -1,6 +1,13 @@
 import { useEffect, useRef } from "react";
 import { useHub } from "../contexts/HubContext";
-import type { OrderData, OrderStatusChangedData, PaymentData, UserCreatedData } from "../types/hubData";
+import type { 
+  OrderData, 
+  OrderStatusChangedData, 
+  PaymentData, 
+  UserCreatedData, 
+} from "../types/hubData";
+import type { Review } from "../types/models";
+import type { ReportCreatedDto } from "../types/hubEventDto";
 
 // Define event types
 export enum HubEventType {
@@ -10,9 +17,19 @@ export enum HubEventType {
   CartItemAdded = "CartItemAdded",
   CartItemDeleted = "CartItemDeleted",
   OrderCreated = "OrderCreated",
+  OrderCreatedFailed = "OrderCreatedFailed",
+  OrderReported = "OrderReported",
+  ReportResolved = "ReportResolved",
+  Refunded = "Refunded",
+  RefundFailed = "RefundFailed",
+  MonthlyPaymentSettled = "MonthlyPaymentSettled",
+  MonthlyPaymentSettlFailed = "MonthlyPaymentSettlFailed",
+  ProductOutOfStock = "ProductOutOfStock",
+  ReceiveOrderNotification = "ReceiveOrderNotification",
+  ReviewAdded = "ReviewAdded",
 }
 
-export type HubEventData = UserCreatedData | OrderData | PaymentData | OrderStatusChangedData;
+export type HubEventData = UserCreatedData | OrderData | PaymentData | OrderStatusChangedData | Review | ReportCreatedDto;
 export type HubEventHandler = (data: HubEventData) => void;
 export type HubEventHandlers = Partial<Record<HubEventType, HubEventHandler>>;
 
@@ -36,10 +53,13 @@ class HubEventsManager {
     }, {} as Record<HubEventType, Set<HubEventHandler>>);
 
     // Initialize last event data
-    this.lastEventData = Object.values(HubEventType).reduce((acc, eventType) => {
-      acc[eventType] = null;
-      return acc;
-    }, {} as Record<HubEventType, HubEventData | null>);
+    this.lastEventData = Object.values(HubEventType).reduce(
+      (acc, eventType) => {
+        acc[eventType] = null;
+        return acc;
+      },
+      {} as Record<HubEventType, HubEventData | null>
+    );
 
     // Create event handlers
     this.eventHandlers = {
@@ -73,6 +93,56 @@ class HubEventsManager {
         this.lastEventData[HubEventType.OrderCreated] = data;
         this.notifyHandlers(HubEventType.OrderCreated, data);
       },
+      [HubEventType.OrderCreatedFailed]: (data: HubEventData) => {
+        console.log("OrderCreatedFailed event received:", data);
+        this.lastEventData[HubEventType.OrderCreatedFailed] = data;
+        this.notifyHandlers(HubEventType.OrderCreatedFailed, data);
+      },
+      [HubEventType.OrderReported]: (data: HubEventData) => {
+        console.log("OrderReported event received:", data);
+        this.lastEventData[HubEventType.OrderReported] = data;
+        this.notifyHandlers(HubEventType.OrderReported, data);
+      },
+      [HubEventType.ReportResolved]: (data: HubEventData) => {
+        console.log("ReportResolved event received:", data);
+        this.lastEventData[HubEventType.ReportResolved] = data;
+        this.notifyHandlers(HubEventType.ReportResolved, data);
+      },
+      [HubEventType.Refunded]: (data: HubEventData) => {
+        console.log("Refunded event received:", data);
+        this.lastEventData[HubEventType.Refunded] = data;
+        this.notifyHandlers(HubEventType.Refunded, data);
+      },
+      [HubEventType.RefundFailed]: (data: HubEventData) => {
+        console.log("RefundFailed event received:", data);
+        this.lastEventData[HubEventType.RefundFailed] = data;
+        this.notifyHandlers(HubEventType.RefundFailed, data);
+      },
+      [HubEventType.MonthlyPaymentSettled]: (data: HubEventData) => {
+        console.log("MonthlyPaymentSettled event received:", data);
+        this.lastEventData[HubEventType.MonthlyPaymentSettled] = data;
+        this.notifyHandlers(HubEventType.MonthlyPaymentSettled, data);
+      },
+      [HubEventType.MonthlyPaymentSettlFailed]: (data: HubEventData) => {
+        console.log("MonthlyPaymentSettlFailed event received:", data);
+        this.lastEventData[HubEventType.MonthlyPaymentSettlFailed] = data;
+        this.notifyHandlers(HubEventType.MonthlyPaymentSettlFailed, data);
+      },
+      [HubEventType.ProductOutOfStock]: (data: HubEventData) => {
+        console.log("ProductOutOfStock event received:", data);
+        this.lastEventData[HubEventType.ProductOutOfStock] = data;
+        this.notifyHandlers(HubEventType.ProductOutOfStock, data);
+      },
+      [HubEventType.ReviewAdded]: (data: HubEventData) => {
+        console.log("ReviewAdded event received:", data);
+        this.lastEventData[HubEventType.ReviewAdded] = data;
+        this.notifyHandlers(HubEventType.ReviewAdded, data);
+      },
+      [HubEventType.ReceiveOrderNotification]: (data: HubEventData) => {
+        console.log("OrderAssignedToShipper event received:", data);
+        this.lastEventData[HubEventType.ReceiveOrderNotification] = data;
+        this.notifyHandlers(HubEventType.ReceiveOrderNotification, data);
+      },
     };
   }
 
@@ -89,7 +159,9 @@ class HubEventsManager {
 
   setHub(hub: IHub) {
     if (this.hub === null) {
-      console.log("Setting up hub connection and subscriptions for the first time...");
+      console.log(
+        "Setting up hub connection and subscriptions for the first time..."
+      );
       this.hub = hub;
       this.setupSubscriptions();
     }
@@ -107,13 +179,16 @@ class HubEventsManager {
       console.log(`Subscribing to ${event} event...`);
       this.hub?.subscribe(event, this.eventHandlers[event as HubEventType]);
       // Đăng ký các event bắt đầu bằng OrderStatusChanged-
-      if (event === 'OrderStatusChanged') {
+      if (event === "OrderStatusChanged") {
         // Đăng ký wildcard cho các event bắt đầu bằng OrderStatusChanged-
         // Giả sử backend sẽ gửi event dạng OrderStatusChanged-status
         // Đăng ký handler cho các event này
         const subscribeWildcard = (evt: string) => {
-          if (evt.startsWith('OrderStatusChanged-')) {
-            this.hub?.subscribe(evt, this.eventHandlers[HubEventType.OrderStatusChanged]);
+          if (evt.startsWith("OrderStatusChanged-")) {
+            this.hub?.subscribe(
+              evt,
+              this.eventHandlers[HubEventType.OrderStatusChanged]
+            );
             console.log(`Subscribing to ${evt} event as OrderStatusChanged`);
           }
         };
@@ -121,11 +196,11 @@ class HubEventsManager {
         // (hoặc backend có thể gửi danh sách eventNames khi connect)
         // Ví dụ đăng ký sẵn các trạng thái phổ biến
         [
-          'OrderStatusChanged-Processing',
-          'OrderStatusChanged-Shipped',
-          'OrderStatusChanged-Delivered',
-          'OrderStatusChanged-CustomerNotAvailable',
-          'OrderStatusChanged-Cancelled',
+          "OrderStatusChanged-Processing",
+          "OrderStatusChanged-Shipped",
+          "OrderStatusChanged-Delivered",
+          "OrderStatusChanged-CustomerNotAvailable",
+          "OrderStatusChanged-Cancelled",
         ].forEach(subscribeWildcard);
       }
     });
@@ -170,7 +245,9 @@ class HubEventsManager {
  * const lastUserCreated = useEventHub(HubEventType.UserCreated)
  * ```
  */
-export const useEventHub = (eventTypeOrHandlers: HubEventType | HubEventHandlers) => {
+export const useEventHub = (
+  eventTypeOrHandlers: HubEventType | HubEventHandlers
+) => {
   const { connection } = useHub();
   const manager = HubEventsManager.getInstance();
   const handlersRef = useRef(eventTypeOrHandlers);

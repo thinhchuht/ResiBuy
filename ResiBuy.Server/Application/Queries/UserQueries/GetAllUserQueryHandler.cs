@@ -33,7 +33,8 @@
                     ur.RoomId,
                     ur.Room?.Name,
                     ur.Room?.Building.Name,
-                    ur.Room?.Building.Area.Name)),
+                    ur.Room?.Building.Area.Name,
+                    ur.Room.Building.Area.Id)),
                 user.UserVouchers.Select(uv => uv.VoucherId),
                 user.Reports.ToList(),
                 user.Stores.Select(s => new

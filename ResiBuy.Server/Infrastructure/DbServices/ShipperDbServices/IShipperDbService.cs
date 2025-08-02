@@ -12,5 +12,9 @@ namespace ResiBuy.Server.Infrastructure.DbServices.ShipperDbServices
         Task<Shipper> UpdateShipperStatusAsync(Guid shipperId, bool isOnline);
         Task<DirectionsResponse> GetDistanceAsync(Guid curentAreaId, Guid destinationAreaId);
         Task<List<Shipper>> GetShippersInAreaAsync(Guid areaId);
+        Task<int> CountShippersByOnlineStatusAsync(bool isOnline);
+        Task<int> CountShippersByShippingStatusAsync(bool isShipping);
+        Task<int> SumShipperReportCountAsync();
+        Task<int> CountAllShipper();
     }
 }

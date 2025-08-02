@@ -25,6 +25,7 @@ namespace ResiBuy.Server.Application.Commands.CheckoutComands
             {
                 var storeId = group.Key;
                 var store = await storeDbService.GetStoreByIdAsync(storeId);
+               if(store.OwnerId == user.Id) throw new CustomException(ExceptionErrorCode.ValidationFailed, "Không thể mua hàng từ chính cửa hàng của mình");
                 var tempProductDetails = new List<TempProductDetailDto>();
                 foreach (var ci in group)
                 {
@@ -46,7 +47,7 @@ namespace ResiBuy.Server.Application.Commands.CheckoutComands
                     ));
                 }
                 //var shippingFee = await orderDbService.ShippingFeeCharged(user.UserRooms.First().RoomId, store.RoomId, tempProductDetails.Sum(ci => ci.Weight));
-                var totalPrice = tempProductDetails.Sum(x => x.Price * x.Quantity) + 10000;
+                var totalPrice = tempProductDetails.Sum(x => x.Price * x.Quantity) + 5000;
                 var tempOrder = new TempOrderDto
                 {
                     Id = Guid.NewGuid(),
@@ -54,7 +55,7 @@ namespace ResiBuy.Server.Application.Commands.CheckoutComands
                     TotalBeforeDiscount = Math.Round(tempProductDetails.Sum(x => x.Price * x.Quantity), MidpointRounding.AwayFromZero),
                     TotalPrice = Math.Round(tempProductDetails.Sum(x => x.Price * x.Quantity), MidpointRounding.AwayFromZero),
                     ProductDetails = tempProductDetails,
-                    ShippingFee = 10000,
+                    ShippingFee = 5000,
                 };
                 tempOrders.Add(tempOrder);
             }
@@ -62,6 +63,7 @@ namespace ResiBuy.Server.Application.Commands.CheckoutComands
             var checkOutData = new TempCheckoutDto
             {
                 Id = Guid.NewGuid(),
+                UserId = request.UserId,
                 Orders = tempOrders,
                 GrandTotal = tempOrders.Sum(o => o.TotalPrice),
                 IsInstance = dto.IsInstance

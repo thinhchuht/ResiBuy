@@ -22,26 +22,24 @@ import {
   Person,
   MeetingRoom,
 } from "@mui/icons-material";
-import { useStoreForm } from "./seg/utlis";
+import { useStoreForm, useStoresLogic } from "./seg/utlis"; // Import useStoresLogic
 import userApi from "../../../api/user.api";
 import roomApi from "../../../api/room.api";
 import storeApi from "../../../api/storee.api";
 import { useToastify } from "../../../hooks/useToastify";
 
 export function AddStoreModal({ isOpen, onClose, onSubmit, editStore }) {
-  const { formData, errors, isSubmitting, handleInputChange, handleSubmit } =
-    useStoreForm(editStore);
+  const { formData, errors, isSubmitting, handleInputChange, handleSubmit } = useStoreForm(editStore);
+  const { getUserById } = useStoresLogic(); // Lấy getUserById từ useStoresLogic
   const [users, setUsers] = useState([]);
   const [rooms, setRooms] = useState([]);
   const [selectedUser, setSelectedUser] = useState(null);
   const [selectedRoom, setSelectedRoom] = useState(null);
   const [loading, setLoading] = useState(false);
-  const { toast } = useToastify();
+  const toast = useToastify();
 
-  // Tải danh sách người dùng và phòng khi modal mở
   useEffect(() => {
     if (!isOpen) {
-      // Reset khi đóng modal
       setUsers([]);
       setRooms([]);
       setSelectedUser(null);
@@ -53,15 +51,24 @@ export function AddStoreModal({ isOpen, onClose, onSubmit, editStore }) {
     const fetchData = async () => {
       try {
         if (editStore) {
-          // Chế độ chỉnh sửa: Lấy thông tin cửa hàng
-          const res = await storeApi.getById(editStore.id);
-          if (res.code === 0) {
-            setSelectedUser(res.data.owner || { id: editStore.ownerId, fullName: "", email: editStore.ownerId });
-            setSelectedRoom(res.data.room || { id: editStore.roomId, name: editStore.roomId });
+          // Chế độ chỉnh sửa: Lấy thông tin cửa hàng và thông tin người dùng
+          const [storeRes, userRes] = await Promise.all([
+            storeApi.getById(editStore.id),
+            getUserById(editStore.ownerId), // Gọi getUserById từ useStoresLogic
+          ]);
+
+          if (storeRes.code === 0) {
+            setSelectedRoom(storeRes.data.room || { id: editStore.roomId, name: editStore.roomId });
           } else {
             toast.error("Lỗi khi lấy thông tin cửa hàng");
-            setSelectedUser({ id: editStore.ownerId, fullName: "", email: editStore.ownerId });
             setSelectedRoom({ id: editStore.roomId, name: editStore.roomId });
+          }
+
+          if (userRes) {
+            setSelectedUser(userRes); // Cập nhật selectedUser với dữ liệu từ getUserById
+          } else {
+            toast.error("Không thể lấy thông tin chủ sở hữu");
+            setSelectedUser({ id: editStore.ownerId, fullName: "", email: editStore.ownerId });
           }
         } else {
           // Chế độ thêm mới: Lấy danh sách người dùng
@@ -85,9 +92,8 @@ export function AddStoreModal({ isOpen, onClose, onSubmit, editStore }) {
     };
 
     fetchData();
-  }, [isOpen, editStore, toast]);
+  }, [isOpen, editStore, ]);
 
-  // Tải danh sách phòng khi ownerId thay đổi ở chế độ thêm mới
   useEffect(() => {
     if (isOpen && !editStore && formData.ownerId) {
       setLoading(true);
@@ -106,7 +112,7 @@ export function AddStoreModal({ isOpen, onClose, onSubmit, editStore }) {
     } else if (!formData.ownerId) {
       setRooms([]);
     }
-  }, [isOpen, editStore, formData.ownerId, toast]);
+  }, [isOpen, editStore, formData.ownerId]);
 
   if (!isOpen) return null;
 
@@ -186,7 +192,6 @@ export function AddStoreModal({ isOpen, onClose, onSubmit, editStore }) {
           </Box>
         ) : (
           <form onSubmit={(e) => handleSubmit(e, onSubmit)}>
-            {/* Thông Tin Cơ Bản */}
             <Box sx={{ mb: 2 }}>
               <Typography
                 variant="h6"
@@ -203,7 +208,6 @@ export function AddStoreModal({ isOpen, onClose, onSubmit, editStore }) {
               </Typography>
 
               <Box sx={{ display: "flex", flexDirection: "column", gap: 2 }}>
-                {/* Tên Cửa Hàng */}
                 <Box>
                   <Typography
                     variant="body2"
@@ -254,7 +258,56 @@ export function AddStoreModal({ isOpen, onClose, onSubmit, editStore }) {
                   )}
                 </Box>
 
-                {/* Chủ Sở Hữu */}
+                <Box>
+                  <Typography
+                    variant="body2"
+                    sx={{
+                      color: "grey.700",
+                      fontWeight: "medium",
+                      mb: 1,
+                    }}
+                  >
+                    Số Điện Thoại *
+                  </Typography>
+                  <TextField
+                    fullWidth
+                    value={formData.phoneNumber}
+                    onChange={(e) => handleInputChange("phoneNumber", e.target.value)}
+                    placeholder="Nhập số điện thoại (VD: 0123456789)"
+                    size="small"
+                    error={!!errors.phoneNumber}
+                    sx={{
+                      bgcolor: "background.paper",
+                      "& .MuiOutlinedInput-root": {
+                        borderRadius: 2,
+                        "& fieldset": {
+                          borderColor: errors.phoneNumber ? "error.main" : "grey.300",
+                        },
+                        "&:hover fieldset": {
+                          borderColor: errors.phoneNumber ? "error.main" : "grey.500",
+                        },
+                        "&.Mui-focused fieldset": {
+                          borderColor: "primary.main",
+                          boxShadow: "0 0 0 2px rgba(59, 130, 246, 0.5)",
+                        },
+                      },
+                      "& .MuiInputBase-input": {
+                        color: "grey.700",
+                        px: 1.5,
+                        py: 1,
+                      },
+                    }}
+                  />
+                  {errors.phoneNumber && (
+                    <Typography
+                      variant="caption"
+                      sx={{ color: "error.main", mt: 0.5 }}
+                    >
+                      {errors.phoneNumber}
+                    </Typography>
+                  )}
+                </Box>
+
                 <Box>
                   <Typography
                     variant="body2"
@@ -351,7 +404,6 @@ export function AddStoreModal({ isOpen, onClose, onSubmit, editStore }) {
                   )}
                 </Box>
 
-                {/* Phòng */}
                 <Box>
                   <Typography
                     variant="body2"
@@ -443,7 +495,6 @@ export function AddStoreModal({ isOpen, onClose, onSubmit, editStore }) {
               </Box>
             </Box>
 
-            {/* Cài Đặt Cửa Hàng */}
             <Box sx={{ mb: 2 }}>
               <Typography
                 variant="h6"
@@ -460,7 +511,6 @@ export function AddStoreModal({ isOpen, onClose, onSubmit, editStore }) {
               </Typography>
 
               <Box sx={{ display: "flex", flexDirection: "column", gap: 2 }}>
-                {/* Mô Tả */}
                 <Box>
                   <Typography
                     variant="body2"
@@ -475,7 +525,7 @@ export function AddStoreModal({ isOpen, onClose, onSubmit, editStore }) {
                   <TextField
                     fullWidth
                     multiline
-                    rows={3}
+                    rows="3"
                     value={formData.description}
                     onChange={(e) =>
                       handleInputChange("description", e.target.value)
@@ -511,80 +561,77 @@ export function AddStoreModal({ isOpen, onClose, onSubmit, editStore }) {
                   </Typography>
                 </Box>
 
-                {/* Trạng Thái */}
-                <Box>
-                  <Typography
-                    variant="body2"
-                    sx={{
-                      color: "grey.700",
-                      fontWeight: "medium",
-                      mb: 1,
-                      display: "flex",
-                      alignItems: "center",
-                      gap: 0.5,
-                    }}
-                  >
-                    Trạng Thái
-                  </Typography>
-                  <FormControlLabel
-                    control={
-                      <Checkbox
-                        checked={formData.isOpen}
-                        onChange={(e) =>
-                          handleInputChange("isOpen", e.target.checked)
-                        }
-                        disabled={!editStore}
-                        sx={{
-                          color: "grey.300",
-                          "&.Mui-checked": {
-                            color: "primary.main",
-                          },
-                          "&.Mui-focused": {
-                            boxShadow: "0 0 0 2px rgba(59, 130, 246, 0.5)",
-                          },
-                        }}
-                      />
-                    }
-                    label={
-                      <Typography variant="body2" sx={{ color: "grey.700" }}>
-                        Cửa hàng đang mở
-                      </Typography>
-                    }
-                  />
-                  <FormControlLabel
-                    control={
-                      <Checkbox
-                        checked={formData.isLocked}
-                        onChange={(e) =>
-                          handleInputChange("isLocked", e.target.checked)
-                        }
-                        disabled={!editStore}
-                        sx={{
-                          color: "grey.300",
-                          "&.Mui-checked": {
-                            color: "error.main",
-                          },
-                          "&.Mui-focused": {
-                            boxShadow: "0 0 0 2px rgba(239, 68, 68, 0.5)",
-                          },
-                        }}
-                      />
-                    }
-                    label={
-                      <Typography variant="body2" sx={{ color: "grey.700" }}>
-                        Cửa hàng bị khóa
-                      </Typography>
-                    }
-                  />
-                  <Typography
-                    variant="caption"
-                    sx={{ color: "grey.500", mt: 0.5 }}
-                  >
-                    {editStore
-                      ? "Quản lý trạng thái mở/đóng và khóa/mở khóa của cửa hàng"
-                      : "Trạng thái sẽ được thiết lập sau khi tạo cửa hàng"}
-                  </Typography>
-                </Box>
+                {editStore && (
+                  <Box>
+                    <Typography
+                      variant="body2"
+                      sx={{
+                        color: "grey.700",
+                        fontWeight: "medium",
+                        mb: 1,
+                        display: "flex",
+                        alignItems: "center",
+                        gap: 0.5,
+                      }}
+                    >
+                      Trạng Thái
+                    </Typography>
+                    <FormControlLabel
+                      control={
+                        <Checkbox
+                          checked={formData.isOpen}
+                          onChange={(e) =>
+                            handleInputChange("isOpen", e.target.checked)
+                          }
+                          sx={{
+                            color: "grey.300",
+                            "&.Mui-checked": {
+                              color: "primary.main",
+                            },
+                            "&.Mui-focused": {
+                              boxShadow: "0 0 0 2px rgba(59, 130, 246, 0.5)",
+                            },
+                          }}
+                        />
+                      }
+                      label={
+                        <Typography variant="body2" sx={{ color: "grey.700" }}>
+                          Cửa hàng đang mở
+                        </Typography>
+                      }
+                    />
+                    <FormControlLabel
+                      control={
+                        <Checkbox
+                          checked={formData.isLocked}
+                          onChange={(e) =>
+                            handleInputChange("isLocked", e.target.checked)
+                          }
+                          sx={{
+                            color: "grey.300",
+                            "&.Mui-checked": {
+                              color: "error.main",
+                            },
+                            "&.Mui-focused": {
+                              boxShadow: "0 0 0 2px rgba(239, 68, 68, 0.5)",
+                            },
+                          }}
+                        />
+                      }
+                      label={
+                        <Typography variant="body2" sx={{ color: "grey.700" }}>
+                          Cửa hàng bị khóa
+                        </Typography>
+                      }
+                    />
+                    <Typography
+                      variant="caption"
+                      sx={{ color: "grey.500", mt: 0.5 }}
+                    >
+                      Quản lý trạng thái mở/đóng và khóa/mở khóa của cửa hàng
+                    </Typography>
+                  </Box>
+                )}
               </Box>
             </Box>
           </form>

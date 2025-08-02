@@ -13,6 +13,7 @@
     public class TempCheckoutDto
     {
         public Guid Id { get; set; }
+        public string UserId { get; set; }
         public Guid? AddressId { get; set; }
         public PaymentMethod PaymentMethod { get; set; }
         public decimal GrandTotal { get; set; }

@@ -1,5 +1,5 @@
 import axiosClient from "./base.api";
-
+import { OrderStatus } from "../types/models";
 const orderUrl = "/api/order";
 
 const orderApi = {
@@ -30,6 +30,16 @@ const orderApi = {
     const response = await axiosClient.get(`${orderUrl}`, { params });
     return response.data.data;
   },
+
+
+  getById: async (id: string) => {
+    const response = await axiosClient.get(`${orderUrl}/${id}`);
+    if (response.data.code !== 0) {
+      throw new Error(response.data.message || "Lỗi khi lấy chi tiết đơn hàng");
+    }
+    return response.data.data;
+  },
+
   updateOrder: async (
     userId: string,
     orderId: string,
@@ -55,11 +65,47 @@ const orderApi = {
       userId,
       orderId,
       orderStatus,
-      reason
-    }
+      reason,
+    };
     const response = await axiosClient.put(`/api/order/order-status`, body);
     return response.data;
   },
+
+  updateOrderStatusShip: async (
+    orderId: string,
+    orderStatus: string,
+    shipperId: string
+  ) => {
+    const body = {
+      orderId,
+      orderStatus,
+      shipperId,
+    };
+    const response = await axiosClient.put(`/api/order/order-status`, body);
+    return response.data;
+  },
+
+  countOrder: async (params: {
+    shipperId?: string;
+    storeId?: string;
+    userId?: string;
+    status?: OrderStatus | string;
+  }) => {
+    const response = await axiosClient.get(`${orderUrl}/count`, { params });
+      return response.data;  
+  },
+
+  getTotalShippingFeeshipper: async (params: {
+    shipperId: string;
+    startDate?: string;
+    endDate?: string;
+  }) => {
+    const response = await axiosClient.get(`${orderUrl}/total-shipping-fee`, {
+      params,
+    });
+      return response.data;
+  },
 };
+
 
 export default orderApi;

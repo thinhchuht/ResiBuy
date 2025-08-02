@@ -20,4 +20,9 @@ public interface IOrderDbService : IBaseDbService<Order>
     Task<Order> UpdateOrderStatus(Guid orderId, OrderStatus orderStatus);
     Task<decimal> ShippingFeeCharged(Guid ShippingAddress, Guid storeAddress, float weight);
     Task<decimal> GetMonthlyBankRevenue(Guid storeId, int month);
+    Task<int> CountOrdersByShipperIdAsync(Guid shipperId);
+    Task<decimal> GetShippingFeeByShipperAsync(Guid shipperId, DateTime? startDate = null, DateTime? endDate = null);
+    Task<int> CountOrdersAsync(Guid? shipperId, Guid? storeId, string? userId, OrderStatus? status );
+    Task<decimal> GetTotalShippingFeeByshipperAsync(Guid shipperId, DateTime? startDate = null, DateTime? endDate = null);
+
 }

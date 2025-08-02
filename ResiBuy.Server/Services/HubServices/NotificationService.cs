@@ -14,7 +14,10 @@ public class NotificationService(IHubContext<NotificationHub> hubContext, ILogge
             if (userIds != null && userIds.Any())
             {
                 var notiId = Guid.NewGuid();
-                var notification = new Notification(notiId, [], DateTime.Now, eventName, userIds.Select(ui => new UserNotification(ui, notiId)));
+                var notification = new Notification(notiId, [], DateTime.Now, eventName, userIds.Select(ui => new UserNotification(ui, notiId)), JsonSerializer.Serialize(data, new JsonSerializerOptions
+                {
+                    PropertyNamingPolicy = JsonNamingPolicy.CamelCase
+                }));
                 if(shoudSave) await notificationDbService.CreateAsync(notification);
                 foreach (var userId in userIds)
                 {

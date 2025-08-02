@@ -1,12 +1,15 @@
-﻿namespace ResiBuy.Server.Infrastructure.DbServices.AreaDbServices
+﻿using ResiBuy.Server.Services.MapBoxService;
+
+namespace ResiBuy.Server.Infrastructure.DbServices.AreaDbServices
 {
     public class AreaDbService : BaseDbService<Area>, IAreaDbService
     {
         private readonly ResiBuyContext _context;
-
-        public AreaDbService(ResiBuyContext context) : base(context)
+        private readonly MapBoxService _mapBoxService;
+        public AreaDbService(ResiBuyContext context, MapBoxService mapBoxService) : base(context)
         {
             _context = context;
+            _mapBoxService = mapBoxService;
         }
 
         public async Task<IEnumerable<Area>> GetAllAreaAsync()
@@ -50,6 +53,34 @@
             try
             {
                 return await _context.Areas.CountAsync();
+            }
+            catch (Exception ex)
+            {
+                throw new CustomException(ExceptionErrorCode.RepositoryError, ex.Message);
+            }
+        }
+
+        public async Task<Area> NearestAreaHasShipper(Guid currenId)
+        {
+            try
+            {
+                var areas = await _context.Areas.Include(s => s.Shippers).Where(a => a.Shippers.Any(s => s.IsOnline)).ToListAsync();
+                var curentAreas = await GetByIdAsync(currenId);
+                Area nearestArea = null;
+                double distance = 0;
+                foreach (var area in areas)
+                {
+                    var router = await _mapBoxService.GetDirectionsAsync(curentAreas.Longitude, curentAreas.Latitude, area.Longitude, area.Latitude);
+                    if (router == null && router.Routes.Count() > 0)
+                    {
+                        if (distance == 0 || router.Routes[0].Distance < distance)
+                        {
+                            distance = router.Routes[0].Distance;
+                            nearestArea = area;
+                        }
+                    }
+                }
+                return nearestArea;
             }
             catch (Exception ex)
             {

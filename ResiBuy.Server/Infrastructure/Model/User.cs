@@ -16,6 +16,7 @@
         public DateTime UpdatedAt { get; set; }
         public bool EmailConfirmed { get; set; }
         public bool PhoneNumberConfirmed { get; set; }
+        public int ReportCount { get; set; }
         public Cart Cart { get; set; }
         public Image Avatar { get; set; }
         public IEnumerable<Store> Stores { get; set; } = new List<Store>();
@@ -23,6 +24,7 @@
         public IEnumerable<UserRoom> UserRooms { get; set; } = new List<UserRoom>();
         public IEnumerable<UserVoucher> UserVouchers { get; set; } = new List<UserVoucher>();
         public IEnumerable<Report> Reports { get; set; } = new List<Report>();
+        public IEnumerable<Review> Reviews { get; set; } = new List<Review>();
 
         public User()
         {

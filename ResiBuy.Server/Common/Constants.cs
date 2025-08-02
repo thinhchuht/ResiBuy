@@ -9,6 +9,9 @@
         public const string SellerRole      = "SELLER";
         public static string[] AllowedRoles = { AdminRole, ShipperRole, CustomerRole, SellerRole };
 
+        //Constans
+        public const int MaxReportCount = 3;
+
         //Tài khoản admin default
         public const string DefaultAdmidId             = "adm_df";
         public const string DefaultAdminPassword       = "admin@123";
@@ -30,17 +33,19 @@
         public const string StoreHubGroup    = "store";
 
         //Hub events
-        public const string CartItemAdded      = "CartItemAdded";
-        public const string OrderCreated       = "OrderCreated";
-        public const string OrderCreatedFailed = "OrderCreatedFailed";
-        public const string CartItemDeleted    = "CartItemDeleted";
-        public const string OrderStatusChanged = "OrderStatusChanged";
-        public const string Refunded           = "Refunded";
-        public const string RefundFailed       = "RefundFailed";
-        public const string MonthlyPaymentSettled = "MonthlyPaymentSettled";
+        public const string CartItemAdded             = "CartItemAdded";
+        public const string OrderCreated              = "OrderCreated";
+        public const string OrderCreatedFailed        = "OrderCreatedFailed";
+        public const string CartItemDeleted           = "CartItemDeleted";
+        public const string OrderStatusChanged        = "OrderStatusChanged";
+        public const string Refunded                  = "Refunded";
+        public const string RefundFailed              = "RefundFailed";
+        public const string MonthlyPaymentSettled     = "MonthlyPaymentSettled";
         public const string MonthlyPaymentSettlFailed = "MonthlyPaymentSettlFailed";
-        public const string ReportCreated = "ReportCreated";
-        public const string ProductOutOfStock = "ProductOutOfStock";
+        public const string ProductOutOfStock         = "ProductOutOfStock";
+        public const string OrderReported             = "OrderReported";
+        public const string ReportResolved            = "ReportResolved";
+        public const string ReviewAdded               = "ReviewAdded";
 
         //regex pattern
         public const string EmailPattern           = @"^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$";

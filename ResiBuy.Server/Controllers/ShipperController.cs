@@ -79,5 +79,11 @@ namespace ResiBuy.Server.Controllers
                 throw new CustomException(ExceptionErrorCode.RepositoryError, ex.Message);
             }
         }
+        [HttpGet("stats")]
+        public async Task<IActionResult> GetStatsShipper()
+        {
+            var result = await _mediator.Send(new GetStatsShipperQuery());
+            return Ok(result);
+        }
     }
 }

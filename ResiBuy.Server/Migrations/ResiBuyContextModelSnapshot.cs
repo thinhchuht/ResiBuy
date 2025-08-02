@@ -236,6 +236,9 @@ namespace ResiBuy.Server.Migrations
                     b.Property<DateTime>("CreatedAt")
                         .HasColumnType("datetime2");
 
+                    b.Property<string>("Data")
+                        .HasColumnType("nvarchar(max)");
+
                     b.Property<string>("EventName")
                         .HasColumnType("nvarchar(max)");
 
@@ -459,11 +462,17 @@ namespace ResiBuy.Server.Migrations
                     b.Property<string>("Description")
                         .HasColumnType("nvarchar(max)");
 
+                    b.Property<bool>("IsResolved")
+                        .HasColumnType("bit");
+
                     b.Property<Guid>("OrderId")
                         .HasColumnType("uniqueidentifier");
 
+                    b.Property<int>("ReportTarget")
+                        .HasColumnType("int");
+
                     b.Property<string>("TargetId")
-                        .HasColumnType("nvarchar(450)");
+                        .HasColumnType("nvarchar(max)");
 
                     b.Property<string>("Title")
                         .HasColumnType("nvarchar(max)");
@@ -472,11 +481,46 @@ namespace ResiBuy.Server.Migrations
 
                     b.HasIndex("CreatedById");
 
-                    b.HasIndex("OrderId");
-
-                    b.HasIndex("TargetId");
+                    b.HasIndex("OrderId")
+                        .IsUnique();
 
                     b.ToTable("Reports");
+                });
+
+            modelBuilder.Entity("ResiBuy.Server.Infrastructure.Model.Review", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<string>("Comment")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("datetime2");
+
+                    b.Property<bool>("IsAnonymous")
+                        .HasColumnType("bit");
+
+                    b.Property<int>("ProductDetailId")
+                        .HasColumnType("int");
+
+                    b.Property<int>("Rate")
+                        .HasColumnType("int");
+
+                    b.Property<DateTime>("UpdatedAt")
+                        .HasColumnType("datetime2");
+
+                    b.Property<string>("UserId")
+                        .HasColumnType("nvarchar(450)");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("ProductDetailId");
+
+                    b.HasIndex("UserId");
+
+                    b.ToTable("Reviews");
                 });
 
             modelBuilder.Entity("ResiBuy.Server.Infrastructure.Model.Room", b =>
@@ -509,6 +553,9 @@ namespace ResiBuy.Server.Migrations
 
                     b.Property<float>("EndWorkTime")
                         .HasColumnType("real");
+
+                    b.Property<bool>("IsLocked")
+                        .HasColumnType("bit");
 
                     b.Property<bool>("IsOnline")
                         .HasColumnType("bit");
@@ -622,6 +669,9 @@ namespace ResiBuy.Server.Migrations
                     b.Property<bool>("PhoneNumberConfirmed")
                         .HasColumnType("bit");
 
+                    b.Property<int>("ReportCount")
+                        .HasColumnType("int");
+
                     b.Property<string>("Roles")
                         .HasColumnType("nvarchar(max)");
 
@@ -636,18 +686,19 @@ namespace ResiBuy.Server.Migrations
                         new
                         {
                             Id = "adm_df",
-                            CreatedAt = new DateTime(2025, 7, 21, 10, 22, 37, 733, DateTimeKind.Local).AddTicks(2017),
+                            CreatedAt = new DateTime(2025, 7, 31, 14, 10, 19, 294, DateTimeKind.Local).AddTicks(5341),
                             DateOfBirth = new DateTime(1990, 1, 1, 0, 0, 0, 0, DateTimeKind.Unspecified),
                             Email = "admin@123",
                             EmailConfirmed = true,
                             FullName = "Administrator",
                             IdentityNumber = "admin",
                             IsLocked = false,
-                            PasswordHash = "$2a$11$4E/RVaeokwVwotKArkuwd.vPXGGgmXJcC1ltpNwTKs1PgrE44mv/i",
+                            PasswordHash = "$2a$11$WG.5gWDPzthOylZBKY8O5e7QNx6IPzEzewYkCBdXliDPBC92OQ3Eq",
                             PhoneNumber = "admin",
                             PhoneNumberConfirmed = true,
+                            ReportCount = 0,
                             Roles = "[\"ADMIN\"]",
-                            UpdatedAt = new DateTime(2025, 7, 21, 10, 22, 37, 733, DateTimeKind.Local).AddTicks(2031)
+                            UpdatedAt = new DateTime(2025, 7, 31, 14, 10, 19, 294, DateTimeKind.Local).AddTicks(5375)
                         });
                 });
 
@@ -925,20 +976,32 @@ namespace ResiBuy.Server.Migrations
                         .OnDelete(DeleteBehavior.Cascade);
 
                     b.HasOne("ResiBuy.Server.Infrastructure.Model.Order", "Order")
-                        .WithMany("Reports")
-                        .HasForeignKey("OrderId")
+                        .WithOne("Report")
+                        .HasForeignKey("ResiBuy.Server.Infrastructure.Model.Report", "OrderId")
                         .OnDelete(DeleteBehavior.Restrict)
                         .IsRequired();
-
-                    b.HasOne("ResiBuy.Server.Infrastructure.Model.User", "Target")
-                        .WithMany()
-                        .HasForeignKey("TargetId");
 
                     b.Navigation("CreatedBy");
 
                     b.Navigation("Order");
+                });
 
-                    b.Navigation("Target");
+            modelBuilder.Entity("ResiBuy.Server.Infrastructure.Model.Review", b =>
+                {
+                    b.HasOne("ResiBuy.Server.Infrastructure.Model.ProductDetail", "ProductDetail")
+                        .WithMany("Reviews")
+                        .HasForeignKey("ProductDetailId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.HasOne("ResiBuy.Server.Infrastructure.Model.User", "User")
+                        .WithMany("Reviews")
+                        .HasForeignKey("UserId")
+                        .OnDelete(DeleteBehavior.Restrict);
+
+                    b.Navigation("ProductDetail");
+
+                    b.Navigation("User");
                 });
 
             modelBuilder.Entity("ResiBuy.Server.Infrastructure.Model.Room", b =>
@@ -1089,7 +1152,7 @@ namespace ResiBuy.Server.Migrations
                 {
                     b.Navigation("Items");
 
-                    b.Navigation("Reports");
+                    b.Navigation("Report");
                 });
 
             modelBuilder.Entity("ResiBuy.Server.Infrastructure.Model.Product", b =>
@@ -1106,6 +1169,8 @@ namespace ResiBuy.Server.Migrations
                     b.Navigation("Image");
 
                     b.Navigation("OrderItems");
+
+                    b.Navigation("Reviews");
                 });
 
             modelBuilder.Entity("ResiBuy.Server.Infrastructure.Model.Room", b =>
@@ -1140,6 +1205,8 @@ namespace ResiBuy.Server.Migrations
                     b.Navigation("Cart");
 
                     b.Navigation("Reports");
+
+                    b.Navigation("Reviews");
 
                     b.Navigation("Stores");
 

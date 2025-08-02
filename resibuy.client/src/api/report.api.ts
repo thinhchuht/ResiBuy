@@ -23,6 +23,7 @@ const reportApi = {
     targetId: string;
     title: string;
     description: string;
+    reportTarget: number; // Thêm trường này
   }) => {
     const response = await axiosClient.post("/api/report", data);
     return response.data;

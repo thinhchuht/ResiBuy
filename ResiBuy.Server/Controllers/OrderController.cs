@@ -17,9 +17,9 @@ namespace ResiBuy.Server.Controllers
         }
 
         [HttpGet("{id}")]
-        public async Task<IActionResult> GetById(Guid id)
+        public async Task<IActionResult> GetById(Guid id, [FromQuery] string userId)
         {
-            var result = await mediator.Send(new GetByIdOrdersQuery(id));
+            var result = await mediator.Send(new GetByIdOrdersQuery(id, userId));
             return Ok(result);
         }
 
@@ -43,6 +43,22 @@ namespace ResiBuy.Server.Controllers
         public async Task<IActionResult> UpdateOrderStatus([FromBody] UpdateOrderStatusDto dto)
         {
             var result = await mediator.Send(new UpdateOrderStatusCommand(dto));
+            return Ok(result);
+        }
+        [HttpGet("count")]
+        public async Task<IActionResult> CountOrders( Guid? shipperId,  Guid? storeId,  string? userId,  OrderStatus? status)
+        {
+            var query = new CountOrdersQuery(shipperId, storeId, userId, status);
+            var result = await mediator.Send(query);
+            return Ok(result);
+        }
+
+       
+        [HttpGet("total-shipping-fee")]
+        public async Task<IActionResult> GetTotalShippingFee(Guid shipperId,  DateTime? startDate,  DateTime? endDate)
+        {
+            var query = new GetTotalShippingFeeQuery(shipperId, startDate, endDate);
+            var result = await mediator.Send(query);
             return Ok(result);
         }
     }

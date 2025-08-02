@@ -1,5 +1,4 @@
-﻿using Microsoft.AspNetCore.SignalR;
-using ResiBuy.Server.Infrastructure.DbServices.OrderDbServices;
+﻿using ResiBuy.Server.Infrastructure.DbServices.OrderDbServices;
 
 namespace ResiBuy.Server.Services.MyBackgroundService
 {
@@ -25,6 +24,7 @@ namespace ResiBuy.Server.Services.MyBackgroundService
                     var orderDbService = scope.ServiceProvider.GetRequiredService<IOrderDbService>();
                     var shipperDbService = scope.ServiceProvider.GetRequiredService<IShipperDbService>();
                     var notificationService = scope.ServiceProvider.GetRequiredService<INotificationService>();
+                    var areaDBService = scope.ServiceProvider.GetRequiredService<IAreaDbService>();
 
                     try
                     {
@@ -35,11 +35,15 @@ namespace ResiBuy.Server.Services.MyBackgroundService
                             {
                                 var areaId = orderGroup.Key;
                                 var ordersInArea = orderGroup.ToList();
-                                var shippers = (await shipperDbService.GetShippersInAreaAsync(areaId))
+                                var shippers = (await shipperDbService.GetShippersInAreaAsync(areaId)).Where(s => s.IsOnline == true)
                                                .OrderBy(s => s.LastDelivered ?? DateTimeOffset.MinValue)
                                                .ToList();
 
-                                if (!shippers.Any()) continue;
+                                if (!shippers.Any())
+                                {
+                                    var nearestArea = await areaDBService.NearestAreaHasShipper(areaId);
+                                    shippers.AddRange(nearestArea.Shippers);
+                                };
 
                                 int shipperIndex = 0;
                                 foreach (var order in ordersInArea)
@@ -53,7 +57,7 @@ namespace ResiBuy.Server.Services.MyBackgroundService
                                         Note = order.Note,
                                         StoreName = order.Store?.Name,
                                         AssignedTime = DateTimeOffset.Now
-                                    },Constants.ShipperHubGroup,[shipper.Id.ToString()]);
+                                    }, Constants.ShipperHubGroup, [shipper.Id.ToString()]);
 
                                     _logger.LogInformation($"Gửi đơn hàng {order.Id} đến shipper {shipper.Id}");
 
@@ -68,7 +72,7 @@ namespace ResiBuy.Server.Services.MyBackgroundService
                     }
                 }
 
-                await Task.Delay(TimeSpan.FromMinutes(5), stoppingToken);
+                await Task.Delay(TimeSpan.FromSeconds(5), stoppingToken);
             }
 
             _logger.LogInformation("AssignOrderForShipper is stopping.");

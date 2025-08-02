@@ -21,7 +21,7 @@ namespace ResiBuy.Server.Application.Commands.VoucherCommands
                     throw new CustomException(ExceptionErrorCode.ValidationFailed, "Ngày bắt đầu phải sau thời điểm hiện tại");
                 if (dto.StartDate >= dto.EndDate)
                     throw new CustomException(ExceptionErrorCode.ValidationFailed, "Ngày bắt đầu phải trước ngày kết thúc");
-                var voucher = new Voucher(dto.DiscountAmount, dto.Type, dto.Quantity, dto.MinOrderPrice, dto.MaxDiscountPrice, dto.StartDate, dto.EndDate, dto.StoreId);
+                var voucher = new Voucher(dto.DiscountAmount, dto.Type, dto.Quantity, dto.MinOrderPrice, dto.MaxDiscountPrice ?? 0, dto.StartDate, dto.EndDate, dto.StoreId);
                 var createdVoucher = await voucherDbService.CreateAsync(voucher);
                 return ResponseModel.SuccessResponse(createdVoucher);
             }
