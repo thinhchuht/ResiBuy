@@ -37,6 +37,7 @@ import OrdersPage from "../pages/Shipper/OrdersPage";
 // import HomePage from "../pages/Shipper/HomePage";
 import OrderDetailPage from "../pages/Shipper/OrderDetailPage";
 import HomePage from "../pages/Shipper/HomePage";
+import OrderNotifier from "./../pages/Store/OrderNotifier";
 const AppRoutes: React.FC = () => {
   const { user } = useAuth();
 
