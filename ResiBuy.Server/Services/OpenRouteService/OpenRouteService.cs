@@ -11,7 +11,7 @@
             _httpClient.DefaultRequestHeaders.Add("Authorization", $"Bearer {ApiKey}");
         }
 
-        public async Task<ORSRouteResponse> GetRouteAsync(double startLon, double startLat, double endLon, double endLat)
+        public async Task<ORSRouteResponse> GetRouteAsync(double startLat, double startLon, double endLat, double endLon)
         {
             var requestBody = new CoordinateRequest
             {
@@ -24,7 +24,7 @@
 
             var content = new StringContent(JsonSerializer.Serialize(requestBody), Encoding.UTF8, "application/json");
 
-            var response = await _httpClient.PostAsync("https://api.openrouteservice.org/v2/directions/foot-walking", content);
+            var response = await _httpClient.PostAsync("https://api.openrouteservice.org/v2/directions/driving-car", content);
 
             if (!response.IsSuccessStatusCode)
                 throw new Exception("Request failed: " + response.StatusCode);
