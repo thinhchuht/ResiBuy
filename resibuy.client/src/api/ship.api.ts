@@ -2,11 +2,16 @@ import axiosClient from "./base.api";
 import type { Shipper } from "../types/models";
 
 const shipperUrl = "/api/shipper";
-
+export interface ShipperLocationUpdate {
+  shipperId: string;
+  locationId: string;
+}
 const shipperApi = {
   // Lấy danh sách shipper (có phân trang)
   getAll: async (pageNumber: number = 1, pageSize: number = 5) => {
-    const response = await axiosClient.get(`${shipperUrl}?pageNumber=${pageNumber}&pageSize=${pageSize}`);
+    const response = await axiosClient.get(
+      `${shipperUrl}?pageNumber=${pageNumber}&pageSize=${pageSize}`
+    );
     return response.data;
   },
 
@@ -29,14 +34,13 @@ const shipperApi = {
   },
 
   // Cập nhật shipper
-  update: async ( data: Shipper) => {
+  update: async (data: Shipper) => {
     const response = await axiosClient.put(`${shipperUrl}`, data);
     return response.data;
   },
 
-  // Cập nhật vị trí shipper
-  updateLocation: async (data: Partial<Shipper>) => {
-    const response = await axiosClient.put(`${shipperUrl}/location`, data);
+  updateLocation: async (data: ShipperLocationUpdate) => {
+    const response = await axiosClient.put("/api/shipper/location", data);
     return response.data;
   },
 
@@ -45,11 +49,10 @@ const shipperApi = {
     const response = await axiosClient.put(`${shipperUrl}/${id}/status`, data);
     return response.data;
   },
-   stats: async () => {
+  stats: async () => {
     const response = await axiosClient.get(`${shipperUrl}/stats`);
     return response.data;
   },
-
 };
 
 export default shipperApi;

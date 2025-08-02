@@ -3,17 +3,18 @@
 namespace ResiBuy.Server.Application.Queries.OrderQueries
 {
     public record GetAllOrdersQuery(
-        OrderStatus OrderStatus,
-        PaymentMethod PaymentMethod,
-        PaymentStatus PaymentStatus,
-        Guid StoreId,
-        Guid ShipperId,
-        string UserId = null,
-        int PageNumber = 1,
-        int PageSize = 10,
-        DateTime? StartDate = null,
-        DateTime? EndDate = null
-    ) : IRequest<ResponseModel>;
+       OrderStatus OrderStatus,
+       PaymentMethod PaymentMethod,
+       PaymentStatus PaymentStatus,
+       Guid StoreId,
+       Guid ShipperId,
+       string UserId = null,
+       int PageNumber = 1,
+       int PageSize = 10,
+       DateTime? StartDate = null,
+       DateTime? EndDate = null
+   ) : IRequest<ResponseModel>;
+
 
     public class GetAllOrdersQueryHandler(IOrderDbService orderDbService) : IRequestHandler<GetAllOrdersQuery, ResponseModel>
     {
@@ -36,6 +37,12 @@ namespace ResiBuy.Server.Application.Queries.OrderQueries
             var items = result.Items.Select(item => new OrderQueryResult(
                 item.Id,
                 item.UserId,
+                item.User == null ? null : new
+                {
+                    Id = item.User.Id,
+                    FullName = item.User.FullName,
+                    PhoneNumber = item.User.PhoneNumber
+                },
                 item.Shipper == null ? null : new
                 {
                     Id = item.ShipperId,
@@ -61,7 +68,8 @@ namespace ResiBuy.Server.Application.Queries.OrderQueries
                     item.ShippingAddress.Id,
                     item.ShippingAddress.Name,
                     item.ShippingAddress.Building.Name,
-                    item.ShippingAddress.Building.Area.Name),
+                    item.ShippingAddress.Building.Area.Name,
+                    item.ShippingAddress.Building.Area.Id),
                 new
                 {
                     Id = item.StoreId,

@@ -38,6 +38,7 @@ public class OrderDbService : BaseDbService<Order>, IOrderDbService
 
 
 
+
             if (orderStatus != OrderStatus.None)
             {
                 query = query.Where(o => o.Status == orderStatus);
@@ -75,6 +76,7 @@ public class OrderDbService : BaseDbService<Order>, IOrderDbService
                 .Include(o => o.Items).ThenInclude(oi => oi.ProductDetail).ThenInclude(pd => pd.AdditionalData)
                 .Include(o => o.Voucher)
                 .Include(o => o.Shipper).ThenInclude(s => s.User)
+                .Include(o => o.User)
                 .Include(o => o.Report)
                 .Skip((pageNumber - 1) * pageSize)
                 .Take(pageSize)
@@ -93,11 +95,13 @@ public class OrderDbService : BaseDbService<Order>, IOrderDbService
     {
         return await _context.Orders.Include(o => o.ShippingAddress).ThenInclude(sa => sa.Building).ThenInclude(b => b.Area)
                 .Include(o => o.Store)
+                .Include(o => o.User)
                 .Include(o => o.Items).ThenInclude(oi => oi.ProductDetail).ThenInclude(pd => pd.Image)
                 .Include(o => o.Items).ThenInclude(oi => oi.ProductDetail).ThenInclude(pd => pd.Product)
                 .Include(o => o.Items).ThenInclude(oi => oi.ProductDetail).ThenInclude(pd => pd.AdditionalData)
                 .Include(o => o.Voucher)
                 .Include(o => o.Shipper).ThenInclude(s => s.User)
+          
                 .Include(o => o.Report).FirstOrDefaultAsync(o => o.Id == id);
     }
 

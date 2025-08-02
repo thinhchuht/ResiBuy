@@ -187,6 +187,12 @@ const OrderCard = ({
         return "#F44336";
       case OrderStatus.Reported:
         return "#F44336";
+      case OrderStatus.Assigned:
+        return "#2196F3";
+      case OrderStatus.Shipped:
+        return "#2196F3";
+      case OrderStatus.CustomerNotAvailable:
+        return "#F44336";
       default:
         return "#666";
     }
@@ -206,6 +212,10 @@ const OrderCard = ({
         return "Đã hủy";
       case OrderStatus.Reported:
         return "Bị báo cáo";
+      case OrderStatus.Assigned:
+        return "Đang lấy hàng";
+      case OrderStatus.CustomerNotAvailable:
+        return "Chờ nhận";
       default:
         return "Không xác định";
     }

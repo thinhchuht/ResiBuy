@@ -9,12 +9,13 @@
         public OrderStatus OldOrderStatus { get; set; }
         public PaymentStatus PaymentStatus { get; set; }  
         public DateTime CreatedAt { get; set; }
+        public DateTime UpdatedAt { get; set; }
         public OrderStatusChangedDto()
         {
             
         }
 
-        public OrderStatusChangedDto(Guid orderId, Guid storeId, string storeName, OrderStatus orderStatus, OrderStatus oldOrderStatus, PaymentStatus paymentStatus, DateTime createdAt)
+        public OrderStatusChangedDto(Guid orderId, Guid storeId, string storeName, OrderStatus orderStatus, OrderStatus oldOrderStatus, PaymentStatus paymentStatus, DateTime createdAt, DateTime updatedAt)
         {
             Id = orderId;
             StoreId = storeId;
@@ -22,7 +23,8 @@
             OrderStatus = orderStatus;
             OldOrderStatus = oldOrderStatus;
             PaymentStatus = paymentStatus;
-            CreatedAt = createdAt;  
+            CreatedAt = createdAt;
+            UpdatedAt = updatedAt;
         }
     }
 }
