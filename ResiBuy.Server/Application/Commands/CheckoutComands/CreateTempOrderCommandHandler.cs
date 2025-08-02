@@ -46,16 +46,16 @@ namespace ResiBuy.Server.Application.Commands.CheckoutComands
                         productDetail.AdditionalData.Select(ad => { ad.ProductDetail = null; return ad; }).ToList()
                     ));
                 }
-                //var shippingFee = await orderDbService.ShippingFeeCharged(user.UserRooms.First().RoomId, store.RoomId, tempProductDetails.Sum(ci => ci.Weight));
-                var totalPrice = tempProductDetails.Sum(x => x.Price * x.Quantity) + 5000;
+                var shippingFee = await orderDbService.ShippingFeeCharged(user.UserRooms.First().RoomId, store.RoomId, tempProductDetails.Sum(ci => ci.Weight));
+                var totalPrice = tempProductDetails.Sum(x => x.Price * x.Quantity) + shippingFee;
                 var tempOrder = new TempOrderDto
                 {
                     Id = Guid.NewGuid(),
                     StoreId = storeId,
                     TotalBeforeDiscount = Math.Round(tempProductDetails.Sum(x => x.Price * x.Quantity), MidpointRounding.AwayFromZero),
-                    TotalPrice = Math.Round(tempProductDetails.Sum(x => x.Price * x.Quantity), MidpointRounding.AwayFromZero),
+                    TotalPrice = totalPrice,
                     ProductDetails = tempProductDetails,
-                    ShippingFee = 5000,
+                    ShippingFee = shippingFee,
                 };
                 tempOrders.Add(tempOrder);
             }
