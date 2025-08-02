@@ -10,6 +10,7 @@ import CreateProduct from "./CreateProduct";
 import UpdateProduct from "./UpdateProduct";
 import VoucherPage from "./Voucher/VoucherPage";
 import CreateVoucher from "./Voucher/CreateVoucher";
+import UpdateVoucher from "./Voucher/UpdateVoucher";
 
 const StorePage: React.FC = () => {
   const { storeId } = useParams<{ storeId: string }>(); // lấy param
@@ -36,6 +37,7 @@ const StorePage: React.FC = () => {
           <Route path="product-update/:id" element={<UpdateProduct />} />
           <Route path="vouchers" element={<VoucherPage />} />
           <Route path="voucher-create" element={<CreateVoucher />} />
+          <Route path="voucher-update/:voucherId" element={<UpdateVoucher />} />
         </Routes>
       </Box>
     </Box>

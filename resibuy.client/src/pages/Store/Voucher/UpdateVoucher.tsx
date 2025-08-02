@@ -30,6 +30,13 @@ interface Voucher {
   isActive: boolean;
 }
 
+// Add interface for API response
+interface VoucherApiResponse {
+  code: number;
+  message: string;
+  data: Voucher;
+}
+
 const UpdateVoucher: React.FC = () => {
   const { storeId, voucherId } = useParams<{
     storeId: string;
@@ -73,7 +80,15 @@ const UpdateVoucher: React.FC = () => {
         params: { storeId },
       });
 
-      const voucherData: Voucher = response.data.data;
+      const apiResponse: VoucherApiResponse = response.data;
+
+      // Check if response is successful and has data
+      if (apiResponse.code !== 0 || !apiResponse.data) {
+        setError("Không tìm thấy voucher");
+        return;
+      }
+
+      const voucherData: Voucher = apiResponse.data;
 
       // Set form data from fetched voucher
       setType(voucherData.type);
@@ -81,8 +96,9 @@ const UpdateVoucher: React.FC = () => {
       setQuantity(voucherData.quantity.toString());
       setMinOrderPrice(voucherData.minOrderPrice.toString());
       setMaxDiscountPrice(voucherData.maxDiscountPrice.toString());
-      setStartDate(new Date(voucherData.startDate).toISOString().split("T")[0]);
-      setEndDate(new Date(voucherData.endDate).toISOString().split("T")[0]);
+      // Fix date parsing to avoid timezone issues
+      setStartDate(voucherData.startDate.split("T")[0]);
+      setEndDate(voucherData.endDate.split("T")[0]);
     } catch (error) {
       console.error("Failed to fetch voucher", error);
       setError("Không thể tải thông tin voucher");
