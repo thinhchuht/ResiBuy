@@ -116,7 +116,7 @@ const VoucherPage: React.FC = () => {
   };
 
   const handleUpdate = (id: string) => {
-    navigate(`/store/${storeId}/voucher-edit/${id}`);
+    navigate(`/store/${storeId}/voucher-update/${id}`);
   };
 
   const formatDate = (date: string) => {

@@ -18,9 +18,9 @@ namespace ResiBuy.Server.Application.Commands.VoucherCommands
                 if (dto.DiscountAmount <= 0) throw new CustomException(ExceptionErrorCode.ValidationFailed, "Số tiền giảm phải lớn hơn 0");
                 if (dto.MinOrderPrice < 0) throw new CustomException(ExceptionErrorCode.ValidationFailed, "Giá đơn tối thiểu không được nhỏ hơn 0");
                 if (dto.MaxDiscountPrice < 0) throw new CustomException(ExceptionErrorCode.ValidationFailed, "Giá giảm tối đa không được nhỏ hơn 0");
-                if (dto.StartDate < DateTime.Now)
+                if (dto.StartDate.Date < DateTime.Now.Date)
                     throw new CustomException(ExceptionErrorCode.ValidationFailed, "Ngày bắt đầu phải sau thời điểm hiện tại");
-                if (dto.StartDate >= dto.EndDate)
+                if (dto.StartDate.Date >= dto.EndDate.Date)
                     throw new CustomException(ExceptionErrorCode.ValidationFailed, "Ngày bắt đầu phải trước ngày kết thúc");
                 voucher.UpdateQuantity(dto.Quantity);
                 voucher.DiscountAmount = dto.DiscountAmount;

@@ -7,7 +7,8 @@ namespace ResiBuy.Server.Controllers
 {
     [ApiController]
     [Route("api/[controller]")]
-    public class VNPayController(IVNPayService vnPayService, IVoucherDbService voucherDbService, ICheckoutSessionService checkoutSessionService, IRedisService redisService, IKafkaProducerService producer, ResiBuyContext dbContext) : ControllerBase
+    public class VNPayController(IVNPayService vnPayService, IVoucherDbService voucherDbService, ICheckoutSessionService checkoutSessionService, IRedisService redisService,
+        IKafkaProducerService producer, ILogger<VNPayController> logger, ResiBuyContext dbContext) : ControllerBase
     {
         private static readonly Dictionary<string, DateTime> _paymentTokens = new();
 
@@ -85,6 +86,8 @@ namespace ResiBuy.Server.Controllers
                         checkoutSessionService.RemoveCheckoutSession(sessionId);
                         var token = GenerateToken();
                         _paymentTokens[token] = DateTime.Now.AddMinutes(5);
+                        logger.LogError(token);
+                        logger.LogError(_paymentTokens[token].ToString());
                         return Redirect($"http://localhost:5001/checkout-success?token={token}");
                     }
                     catch (Exception)
@@ -139,7 +142,8 @@ namespace ResiBuy.Server.Controllers
             {
                 rng.GetBytes(randomBytes);
             }
-            return Convert.ToBase64String(randomBytes);
+            var rawToken = Convert.ToBase64String(randomBytes);
+            return Uri.EscapeDataString(rawToken);
         }
     }
 

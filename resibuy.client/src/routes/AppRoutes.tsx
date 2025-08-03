@@ -1,10 +1,5 @@
 import React from "react";
-import {
-  BrowserRouter as Router,
-  Routes,
-  Route,
-  Navigate,
-} from "react-router-dom";
+import { BrowserRouter as Router, Routes, Route, Navigate } from "react-router-dom";
 import { useAuth } from "../contexts/AuthContext";
 import Login from "../components/auth/Login";
 import ProtectedRoute from "../components/auth/ProtectedRoute";
@@ -24,6 +19,7 @@ import Dashboard from "../pages/Admin/dashboard/Dashboard";
 import StoresPage from "../pages/Admin/Store/page";
 import CategoriesPage from "../pages/Admin/Category/page";
 import ShippersPage from "../pages/Admin/Shipper/page";
+import UserPage from "../pages/Admin/User/page";
 import Orders from "../pages/Order/Orders";
 import Profile from "../pages/Profile/Profile";
 import Store from "../pages/Store/StorePage";
@@ -37,11 +33,13 @@ import OrdersPage from "../pages/Shipper/OrdersPage";
 // import HomePage from "../pages/Shipper/HomePage";
 import OrderDetailPage from "../pages/Shipper/OrderDetailPage";
 import HomePage from "../pages/Shipper/HomePage";
+import OrderNotifier from "./../pages/Store/OrderNotifier";
 const AppRoutes: React.FC = () => {
   const { user } = useAuth();
 
   return (
     <Router>
+      <OrderNotifier />
       <ScrollToTop />
       <Routes>
         <Route path="/login" element={user ? <Navigate to="/" /> : <Login />} />
@@ -64,9 +62,11 @@ const AppRoutes: React.FC = () => {
         <Route
           path="/orders"
           element={
-            <ProtectedRoute allowedRoles={["CUSTOMER"]}>
+            <ProtectedRoute allowedRoles={["CUSTOMER", "SELLER", "ADMIN"]}>
               <HomeLayout>
+                {/* <ProtectedRoute allowedRoles={["SELLER", "ADMIN"]}> */}
                 <Orders />
+                {/* </ProtectedRoute> */}
               </HomeLayout>
             </ProtectedRoute>
           }
@@ -171,6 +171,7 @@ const AppRoutes: React.FC = () => {
             <Route path="resi" element={<OverviewPage />} />
             <Route path="buildings/:areaId" element={<BuildingsPage />} />
             <Route path="rooms/:buildingId" element={<RoomsPage />} />
+            <Route path="user" element={<UserPage />} />
           </Route>
         }
         <Route
@@ -189,8 +190,7 @@ const AppRoutes: React.FC = () => {
             <ProtectedRoute allowedRoles={["SHIPPER"]}>
               <ShipperLayout />
             </ProtectedRoute>
-          }
-        >
+          }>
           <Route index element={<Navigate to="home" replace />} />
           <Route path="home" element={<HomePage />} />
           <Route path="orders" element={<OrdersPage />} />

@@ -160,12 +160,14 @@ const OrderCard = ({
   const [cancelReason, setCancelReason] = useState("");
   const [cancelOtherReason, setCancelOtherReason] = useState("");
   const [cancelLoading, setCancelLoading] = useState(false);
-  const cancelReasons = [
-    "Đổi ý",
-    "Tìm được giá tốt hơn",
-    "Thời gian giao hàng lâu",
-    "Lý do khác",
-  ];
+  const cancelReasons = isStore
+    ? ["Không đủ hàng", "Cửa hàng quá nhiều đơn", "Lý do khác"]
+    : [
+        "Đổi ý",
+        "Tìm được giá tốt hơn",
+        "Thời gian giao hàng lâu",
+        "Lý do khác",
+      ];
   const [reportTargetType, setReportTargetType] = useState<
     "store" | "user" | "shipper"
   >("store");
@@ -1044,19 +1046,19 @@ const OrderCard = ({
           </Typography>
         </Box>
         <Box sx={{ display: "flex", gap: 2 }}>
+          {order.status === OrderStatus.Pending && (
+            <Button
+              variant="outlined"
+              color="error"
+              sx={{ borderRadius: 2, textTransform: "none", px: 3 }}
+              onClick={() => setCancelOpen(true)}
+            >
+              Hủy đơn
+            </Button>
+          )}
           {/* Nút cho người dùng (khách hàng) */}
           {!isStore && (
             <>
-              {order.status === OrderStatus.Pending && (
-                <Button
-                  variant="outlined"
-                  color="error"
-                  sx={{ borderRadius: 2, textTransform: "none", px: 3 }}
-                  onClick={() => setCancelOpen(true)}
-                >
-                  Hủy đơn
-                </Button>
-              )}
               {order.status === OrderStatus.Pending && (
                 <Button
                   variant="outlined"

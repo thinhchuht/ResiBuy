@@ -261,7 +261,7 @@ export default function CreateProduct() {
     };
     await axiosClient.post("api/Product", tempProduct).then((res) => {
       if (res.status === 200) {
-        navigate("productPage");
+        navigate(`/store/${storeId}/productPage`);
       }
     });
   };
