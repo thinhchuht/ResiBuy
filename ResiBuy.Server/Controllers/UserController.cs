@@ -122,10 +122,23 @@
             return Ok(result);
         }
         [HttpPost("add-to-rooms")]
-        public async Task<IActionResult> AddUserToRooms([FromBody] AddUserToRoomCommand command)
+        public async Task<IActionResult> AddUserToRooms([FromBody] AddUsersToRoomCommand command)
         {
             var result = await mediator.Send(command);
             return Ok(result);
         }
+        [HttpPost("remove-userroom")]
+        public async Task<IActionResult> RemoveUserRoom([FromBody] RemoveUserRoomCommand command)
+        {
+            var result = await mediator.Send(command);
+            return Ok(result);
+        }
+        [HttpGet("stats")]
+        public async Task<IActionResult> GetStatistics()
+        {
+            var result = await mediator.Send(new GetUserStatisticsCommand());
+            return Ok(result);
+        }
+
     }
 }

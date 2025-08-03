@@ -3,6 +3,7 @@ import {
   Dialog,
   DialogTitle,
   DialogContent,
+  DialogActions,
   Box,
   Typography,
   Button,
@@ -16,12 +17,13 @@ import {
   TableCell,
   Chip,
   CircularProgress,
-  Radio,
-  RadioGroup,
+  Checkbox,
   FormControlLabel,
   Pagination,
+  TextField,
+  InputAdornment,
 } from "@mui/material";
-import { Close, Edit, People as UsersIcon, Info as InfoIcon, Add } from "@mui/icons-material";
+import { Close, Edit, People as UsersIcon, Info as InfoIcon, Add, Search, Delete } from "@mui/icons-material";
 import { formatDate } from "./seg/utlis";
 import buildingApi from "../../../api/building.api";
 import userApi from "../../../api/user.api";
@@ -41,6 +43,7 @@ interface AddUserToRoomModalProps {
   open: boolean;
   onClose: () => void;
   roomId: string;
+  room: RoomDetailDto;
   onUserAdded: () => void;
 }
 
@@ -48,72 +51,82 @@ const AddUserToRoomModal: React.FC<AddUserToRoomModalProps> = ({
   open,
   onClose,
   roomId,
+  room,
   onUserAdded,
 }) => {
   const [users, setUsers] = useState<UserDto[]>([]);
-  const [selectedUserId, setSelectedUserId] = useState<string | null>(null);
+  const [selectedUserIds, setSelectedUserIds] = useState<string[]>([]);
   const [loading, setLoading] = useState(false);
   const [pageNumber, setPageNumber] = useState(1);
-  const [pageSize] = useState(10); 
+  const [pageSize] = useState(10);
   const [totalCount, setTotalCount] = useState(0);
+  const [searchTerm, setSearchTerm] = useState("");
   const  toast  = useToastify();
 
   useEffect(() => {
-    if (open) {
-      const fetchUsers = async () => {
-        setLoading(true);
-        try {
-          const response = await userApi.getAllUser(pageNumber, pageSize);
-          console.log("Get all users response:", response);
-          if (response.error) {
-            toast.error(response.error.message);
-            setUsers([]);
-            setTotalCount(0);
-          } else {
-            setUsers(response.data.items || []);
-            setTotalCount(response.data.totalCount || 0);
-          }
-        } catch (err: any) {
-          console.error("Fetch users error:", err);
-          toast.error(err.message || "Lỗi khi lấy danh sách người dùng");
+  if (open) {
+    const fetchUsers = async () => {
+      setLoading(true);
+      try {
+        const response = searchTerm
+          ? await userApi.searchUsers(searchTerm, pageNumber, pageSize)
+          : await userApi.getAllUser(pageNumber, pageSize);
+        console.log("Fetch users response:", JSON.stringify(response, null, 2));
+        if (response.code !== 0) {
+          toast.error(response.message || "Lỗi khi lấy danh sách người dùng");
           setUsers([]);
           setTotalCount(0);
-        } finally {
-          setLoading(false);
+        } else {
+          setUsers(response.data?.items || []);
+          setTotalCount(response.data?.totalCount || 0);
         }
-      };
-      fetchUsers();
-    }
-  }, [open, pageNumber, pageSize, ]);
-
-  const handleAddUser = async () => {
-    if (!selectedUserId) {
-      toast.error("Vui lòng chọn một người dùng");
-      return;
-    }
-
-    setLoading(true);
-    try {
-      const response = await userApi.addUserToRooms(selectedUserId, [roomId]);
-      console.log("Add user to rooms response:", response);
-      if (response.error) {
-        toast.error(response.error.message);
-      } else {
-        toast.success("Thêm người dùng vào phòng thành công!");
-          toast.success(response.data);
-        onUserAdded();
-        onClose();
+      } catch (err: any) {
+        console.error("Fetch users error:", JSON.stringify(err, null, 2));
+        toast.error(err.message || "Lỗi khi lấy danh sách người dùng");
+        setUsers([]);
+        setTotalCount(0);
+      } finally {
+        setLoading(false);
       }
-    } catch (err: any) {
-      toast.error(err.message || "Lỗi khi thêm người dùng vào phòng");
-    } finally {
-      setLoading(false);
-    }
-  };
+    };
+    fetchUsers();
+  }
+}, [open, pageNumber, pageSize, searchTerm, ]);
+  const handleAddUser = async () => {
+  if (selectedUserIds.length === 0) {
+    toast.error("Vui lòng chọn ít nhất một người dùng");
+    return;
+  }
 
+  setLoading(true);
+  try {
+    const response = await userApi.addUserToRooms(selectedUserIds, [roomId]);
+    console.log("Add users to rooms response:", JSON.stringify(response, null, 2));
+    if (response.code !== 0) {
+      toast.error(response.message || "Lỗi khi thêm người dùng vào phòng");
+    } else {
+      toast.success(`Thêm ${selectedUserIds.length} người dùng vào phòng thành công!`);
+      onUserAdded();
+      onClose();
+    }
+  } catch (err: any) {
+    console.error("Add users error:", JSON.stringify(err, null, 2));
+    toast.error(err.message || "Lỗi khi thêm người dùng vào phòng");
+  } finally {
+    setLoading(false);
+  }
+};
   const handlePageChange = (_event: React.ChangeEvent<unknown>, newPage: number) => {
     setPageNumber(newPage);
-    setSelectedUserId(null); // Đặt lại lựa chọn khi chuyển trang
+    setSelectedUserIds([]);
+  };
+
+  const handleCheckboxChange = (userId: string) => {
+    setSelectedUserIds((prev) =>
+      prev.includes(userId)
+        ? prev.filter((id) => id !== userId)
+        : [...prev, userId]
+    );
   };
 
   const totalPages = Math.ceil(totalCount / pageSize);
@@ -141,6 +154,23 @@ const AddUserToRoomModal: React.FC<AddUserToRoomModalProps> = ({
         </IconButton>
       </DialogTitle>
       <DialogContent>
+        <TextField
+          placeholder="Tìm kiếm người dùng..."
+          value={searchTerm}
+          onChange={(e) => {
+            setSearchTerm(e.target.value);
+            setPageNumber(1);
+          }}
+          size="small"
+          sx={{ maxWidth: 300, mb: 2 }}
+          InputProps={{
+            startAdornment: (
+              <InputAdornment position="start">
+                <Search sx={{ color: "grey.400" }} />
+              </InputAdornment>
+            ),
+          }}
+        />
         {loading ? (
           <Box sx={{ display: "flex", justifyContent: "center", py: 4 }}>
             <CircularProgress />
@@ -151,41 +181,45 @@ const AddUserToRoomModal: React.FC<AddUserToRoomModalProps> = ({
               Danh Sách Người Dùng
             </Typography>
             <Typography variant="body2" sx={{ color: "grey.500", mb: 2 }}>
-              Chọn một người dùng để thêm vào phòng
+              Chọn một hoặc nhiều người dùng để thêm vào phòng
             </Typography>
-            <RadioGroup value={selectedUserId} onChange={(e) => setSelectedUserId(e.target.value)}>
-              <Box sx={{ border: 1, borderColor: "grey.200", borderRadius: 2, overflow: "hidden" }}>
-                <Table>
-                  <TableHead sx={{ bgcolor: "grey.50" }}>
-                    <TableRow>
-                      <TableCell sx={{ px: 2, py: 1.5, color: "grey.500", fontSize: "0.75rem", fontWeight: "medium", textTransform: "uppercase" }}>
-                        Chọn
-                      </TableCell>
-                      <TableCell sx={{ px: 2, py: 1.5, color: "grey.500", fontSize: "0.75rem", fontWeight: "medium", textTransform: "uppercase" }}>
-                        Họ Tên
-                      </TableCell>
-                      <TableCell sx={{ px: 2, py: 1.5, color: "grey.500", fontSize: "0.75rem", fontWeight: "medium", textTransform: "uppercase" }}>
-                        Số Điện Thoại
-                      </TableCell>
-                      <TableCell sx={{ px: 2, py: 1.5, color: "grey.500", fontSize: "0.75rem", fontWeight: "medium", textTransform: "uppercase" }}>
-                        Phòng Hiện Tại
-                      </TableCell>
-                      <TableCell sx={{ px: 2, py: 1.5, color: "grey.500", fontSize: "0.75rem", fontWeight: "medium", textTransform: "uppercase" }}>
-                       Vai trò
-                      </TableCell>
-                    </TableRow>
-                  </TableHead>
-                  <TableBody sx={{ "& tr:hover": { bgcolor: "grey.50" } }}>
-                    {users.map((user) => (
+            <Box sx={{ border: 1, borderColor: "grey.200", borderRadius: 2, overflow: "hidden" }}>
+              <Table>
+                <TableHead sx={{ bgcolor: "grey.50" }}>
+                  <TableRow>
+                    <TableCell sx={{ px: 2, py: 1.5, color: "grey.500", fontSize: "0.75rem", fontWeight: "medium", textTransform: "uppercase" }}>
+                      Chọn
+                    </TableCell>
+                    <TableCell sx={{ px: 2, py: 1.5, color: "grey.500", fontSize: "0.75rem", fontWeight: "medium", textTransform: "uppercase" }}>
+                      Họ Tên
+                    </TableCell>
+                    <TableCell sx={{ px: 2, py: 1.5, color: "grey.500", fontSize: "0.75rem", fontWeight: "medium", textTransform: "uppercase" }}>
+                      Số Điện Thoại
+                    </TableCell>
+                    <TableCell sx={{ px: 2, py: 1.5, color: "grey.500", fontSize: "0.75rem", fontWeight: "medium", textTransform: "uppercase" }}>
+                      Phòng Hiện Tại
+                    </TableCell>
+                    <TableCell sx={{ px: 2, py: 1.5, color: "grey.500", fontSize: "0.75rem", fontWeight: "medium", textTransform: "uppercase" }}>
+                      Vai Trò
+                    </TableCell>
+                  </TableRow>
+                </TableHead>
+                <TableBody sx={{ "& tr:hover": { bgcolor: "grey.50" } }}>
+                  {users.map((user) => {
+                    const isInRoom = user.rooms?.some((r) => r.id === roomId);
+                    return (
                       <TableRow key={user.id}>
                         <TableCell sx={{ px: 2, py: 1.5 }}>
                           <FormControlLabel
-                            value={user.id}
-                            control={<Radio />}
+                            control={
+                              <Checkbox
+                                checked={selectedUserIds.includes(user.id)}
+                                onChange={() => handleCheckboxChange(user.id)}
+                                disabled={isInRoom}
+                              />
+                            }
                             label=""
                             sx={{ m: 0 }}
-                            checked={selectedUserId === user.id}
-                            onChange={() => setSelectedUserId(user.id)}
                           />
                         </TableCell>
                         <TableCell sx={{ px: 2, py: 1.5, fontSize: "0.875rem", color: "grey.900" }}>
@@ -196,30 +230,38 @@ const AddUserToRoomModal: React.FC<AddUserToRoomModalProps> = ({
                         </TableCell>
                         <TableCell sx={{ px: 2, py: 1.5, fontSize: "0.875rem", color: "grey.900" }}>
                           {user.rooms && user.rooms.length > 0
-                            ? user.rooms.map((room) => room.name).join(", ")
+                            ? user.rooms.map((r) => (
+                                <Typography
+                                  key={r.id}
+                                  component="span"
+                                  sx={{ color: r.id === roomId ? "error.main" : "grey.900", mr: 0.5 }}
+                                >
+                                  {r.name}{r.id !== user.rooms[user.rooms.length - 1].id ? ", " : ""}
+                                </Typography>
+                              ))
                             : "Chưa có phòng"}
                         </TableCell>
-                         <TableCell sx={{ px: 2, py: 1.5, fontSize: "0.875rem", color: "grey.900" }}>
-                            {user.roles.map((role) => (
-                              <Chip
-                                key={role}
-                                label={role}
-                                sx={{
-                                  bgcolor: "primary.light",
-                                  color: "primary.main",
-                                  fontSize: "0.75rem",
-                                  height: 24,
-                                  mr: 0.5,
-                                }}
-                              />
-                            ))}
-                          </TableCell>
+                        <TableCell sx={{ px: 2, py: 1.5, fontSize: "0.875rem", color: "grey.900" }}>
+                          {user.roles.map((role) => (
+                            <Chip
+                              key={role}
+                              label={role}
+                              sx={{
+                                bgcolor: "primary.light",
+                                color: "primary.main",
+                                fontSize: "0.75rem",
+                                height: 24,
+                                mr: 0.5,
+                              }}
+                            />
+                          ))}
+                        </TableCell>
                       </TableRow>
-                    ))}
-                  </TableBody>
-                </Table>
-              </Box>
-            </RadioGroup>
+                    );
+                  })}
+                </TableBody>
+              </Table>
+            </Box>
             {totalCount > 0 && (
               <Box sx={{ mt: 2, display: "flex", justifyContent: "flex-end" }}>
                 <Pagination
@@ -251,7 +293,7 @@ const AddUserToRoomModal: React.FC<AddUserToRoomModalProps> = ({
               </Button>
               <Button
                 onClick={handleAddUser}
-                disabled={loading || !selectedUserId}
+                disabled={loading || selectedUserIds.length === 0}
                 sx={{
                   px: 3,
                   py: 1,
@@ -276,7 +318,6 @@ const AddUserToRoomModal: React.FC<AddUserToRoomModalProps> = ({
   );
 };
 
-// Phần còn lại của RoomDetailModal giữ nguyên như mã gốc
 export default function RoomDetailModal({
   isOpen,
   onClose,
@@ -290,7 +331,10 @@ export default function RoomDetailModal({
   const [isAddUserModalOpen, setIsAddUserModalOpen] = useState(false);
   const [room, setRoom] = useState<RoomDetailDto | null>(null);
   const [refreshUsers, setRefreshUsers] = useState(0);
-  const  toast  = useToastify();
+  const [isDeleteConfirmOpen, setIsDeleteConfirmOpen] = useState(false);
+  const [userIdToDelete, setUserIdToDelete] = useState<string | null>(null);
+  const [deleteLoading, setDeleteLoading] = useState(false);
+  const { toast } = useToastify();
 
   // Sync room prop with local state
   useEffect(() => {
@@ -317,7 +361,7 @@ export default function RoomDetailModal({
     }
   }, [isOpen, room?.buildingId, ]);
 
-  // Refresh room details when a user is added
+  // Refresh room details when a user is added or removed
   useEffect(() => {
     if (isOpen && room?.id && refreshUsers > 0) {
       const fetchRoomDetail = async () => {
@@ -345,6 +389,77 @@ export default function RoomDetailModal({
     setRefreshUsers((prev) => prev + 1);
   };
 
+  const handleOpenDeleteConfirm = (userId: string) => {
+    setUserIdToDelete(userId);
+    setIsDeleteConfirmOpen(true);
+  };
+
+const handleCloseDeleteConfirm = () => {
+  console.log("Before closing: isDeleteConfirmOpen =", isDeleteConfirmOpen);
+  setIsDeleteConfirmOpen(false);
+  setUserIdToDelete(null);
+  // Ép buộc kiểm tra trạng thái
+  setTimeout(() => {
+    console.log("After closing (timeout): isDeleteConfirmOpen =", isDeleteConfirmOpen);
+    if (isDeleteConfirmOpen) {
+      console.warn("isDeleteConfirmOpen still true, forcing update");
+      setIsDeleteConfirmOpen(false); // Thử lại
+    }
+  }, 0);
+};
+const handleDeleteUser = async () => {
+  if (!userIdToDelete) {
+    console.warn("No userIdToDelete provided");
+    return;
+  }
+  if (!room?.id) {
+    console.warn("No room id provided");
+    toast.error("Không tìm thấy ID phòng");
+    return;
+  }
+
+  setDeleteLoading(true);
+  try {
+    const response = await userApi.removeUserRom(userIdToDelete, room.id);
+    console.log("Remove user from room response:", JSON.stringify(response, null, 2));
+
+    if (response.code !== 0) {
+      console.log("Error response received:", response.message);
+      toast.error(response.message || "Lỗi khi xóa người dùng khỏi phòng");
+    } else {
+      console.log("Success: Starting success handling");
+      try {
+        console.log("Calling toast.success");
+        toast.success(response.message || "Xóa người dùng khỏi phòng thành công!");
+      } catch (toastError) {
+        console.error("Error in toast.success:", JSON.stringify(toastError, null, 2));
+      }
+
+      try {
+        console.log("Calling setRefreshUsers");
+        setRefreshUsers((prev) => {
+          console.log("Updating refreshUsers from", prev, "to", prev + 1);
+          return prev + 1;
+        });
+      } catch (refreshError) {
+        console.error("Error in setRefreshUsers:", JSON.stringify(refreshError, null, 2));
+      }
+
+      try {
+        console.log("Calling handleCloseDeleteConfirm");
+        handleCloseDeleteConfirm();
+      } catch (closeError) {
+        console.error("Error in handleCloseDeleteConfirm:", JSON.stringify(closeError, null, 2));
+      }
+    }
+  } catch (err: any) {
+    console.error("Error in handleDeleteUser:", JSON.stringify(err, null, 2));
+    toast.error(err.message || "Lỗi khi xóa người dùng khỏi phòng");
+  } finally {
+    console.log("Setting deleteLoading to false");
+    setDeleteLoading(false);
+  }
+};
   if (!isOpen || !room) return null;
 
   const totalUsers = room.users.length;
@@ -685,6 +800,9 @@ export default function RoomDetailModal({
                         <TableCell sx={{ px: 2, py: 1.5, color: "grey.500", fontSize: "0.75rem", fontWeight: "medium", textTransform: "uppercase" }}>
                           Ngày Tạo
                         </TableCell>
+                        <TableCell sx={{ px: 2, py: 1.5, color: "grey.500", fontSize: "0.75rem", fontWeight: "medium", textTransform: "uppercase" }}>
+                          Hành Động
+                        </TableCell>
                       </TableRow>
                     </TableHead>
                     <TableBody sx={{ "& tr:hover": { bgcolor: "grey.50" } }}>
@@ -734,6 +852,14 @@ export default function RoomDetailModal({
                           <TableCell sx={{ px: 2, py: 1.5, fontSize: "0.875rem", color: "grey.900" }}>
                             {formatDate(user.createdAt)}
                           </TableCell>
+                          <TableCell sx={{ px: 2, py: 1.5 }}>
+                            <IconButton
+                              onClick={() => handleOpenDeleteConfirm(user.id)}
+                              sx={{ color: "error.main" }}
+                            >
+                              <Delete sx={{ fontSize: 20 }} />
+                            </IconButton>
+                          </TableCell>
                         </TableRow>
                       ))}
                     </TableBody>
@@ -749,12 +875,59 @@ export default function RoomDetailModal({
           )}
         </DialogContent>
       </Dialog>
+
       <AddUserToRoomModal
         open={isAddUserModalOpen}
         onClose={handleCloseAddUserModal}
         roomId={room.id}
+        room={room}
         onUserAdded={handleUserAdded}
       />
+
+      <Dialog
+        open={isDeleteConfirmOpen}
+        onClose={handleCloseDeleteConfirm}
+        maxWidth="sm"
+        fullWidth
+      >
+        <DialogTitle sx={{ color: "grey.900" }}>
+          Xác Nhận Xóa
+        </DialogTitle>
+        <DialogContent>
+          <Typography sx={{ color: "grey.900" }}>
+            Bạn có chắc chắn muốn xóa người dùng này khỏi phòng không?
+          </Typography>
+        </DialogContent>
+        <DialogActions>
+          <Button
+            onClick={handleCloseDeleteConfirm}
+            sx={{
+              px: 3,
+              py: 1,
+              bgcolor: "grey.200",
+              color: "grey.800",
+              borderRadius: 2,
+              "&:hover": { bgcolor: "grey.300" },
+            }}
+          >
+            Hủy
+          </Button>
+          <Button
+            onClick={handleDeleteUser}
+            disabled={deleteLoading}
+            sx={{
+              px: 3,
+              py: 1,
+              bgcolor: "error.main",
+              color: "white",
+              borderRadius: 2,
+              "&:hover": { bgcolor: "error.dark" },
+            }}
+          >
+            {deleteLoading ? <CircularProgress size={24} color="inherit" /> : "Xóa"}
+          </Button>
+        </DialogActions>
+      </Dialog>
     </>
   );
 }

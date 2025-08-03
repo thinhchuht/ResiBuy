@@ -215,10 +215,10 @@ const userApi = {
       };
     }
   },
-  addUserToRooms: async (userId: string, roomIds: string[]) => {
+  addUserToRooms: async (userIds: string[], roomIds: string[]) => {
   try {
     const response = await axiosClient.post(userUrl + "/add-to-rooms", {
-      userId,
+      userIds,
       roomIds,
     });
     return response.data;
@@ -234,6 +234,41 @@ const userApi = {
     };
   }
 },
+ removeUserRom: async (userId: string, roomId: string) => {
+  try {
+    const response = await axiosClient.post(userUrl + "/remove-userroom", {
+      userId,
+      roomId,
+    });
+    return response.data;
+  } catch (error: any) {
+    console.error("Remove user room failed:", JSON.stringify(error, null, 2));
+    return {
+      code: error.response?.data?.code || -1,
+      message: error.response?.data?.message || error.message || "Lỗi khi xóa người dùng khỏi phòng",
+      data: null,
+    };
+  }
+},
+
+getstats: async () => {
+    try {
+      const response = await axiosClient.get(userUrl+ "/stats"
+
+      );
+      return response.data;
+    } catch (error: any) {
+      console.error("Get all users failed:", error);
+      return {
+        error: {
+          message:
+            error.response?.data?.message ||
+            error.message ||
+            "Lấy danh sách thông kke thất bại",
+        },
+      };
+    }
+  },
 
 };
 

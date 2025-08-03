@@ -152,31 +152,7 @@ export function useAreasLogic() {
     [fetchAreas, selectedArea, toast]
   );
 
-  const handleDeleteArea = async (areaId: string) => {
-    if (
-      window.confirm(
-        "Bạn có chắc chắn muốn xóa khu vực này? Hành động này không thể hoàn tác."
-      )
-    ) {
-      setLoading(true);
-      try {
-        const response = await areaApi.delete(areaId);
-        if (response.code === 0) {
-          await fetchAreas();
-          if (selectedArea && selectedArea.id === areaId) {
-            handleCloseDetailModal();
-          }
-          toast.success("Xóa khu vực thành công!");
-        } else {
-          toast.error(response.message || "Lỗi khi xóa khu vực");
-        }
-      } catch (err: any) {
-        toast.error(err.message || "Lỗi khi xóa khu vực");
-      } finally {
-        setLoading(false);
-      }
-    }
-  };
+ 
 
   const handleExportAreas = () => {
     const headers = ["Area ID", "Name", "Latitude", "Longitude", "Status"];
@@ -219,7 +195,6 @@ export function useAreasLogic() {
     handleEditArea,
     handleCloseAddModal,
     handleSubmitArea,
-    handleDeleteArea,
     handleExportAreas,
     handleUpdateStatus,
   };
