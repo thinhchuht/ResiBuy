@@ -1,10 +1,5 @@
 import React from "react";
-import {
-  BrowserRouter as Router,
-  Routes,
-  Route,
-  Navigate,
-} from "react-router-dom";
+import { BrowserRouter as Router, Routes, Route, Navigate } from "react-router-dom";
 import { useAuth } from "../contexts/AuthContext";
 import Login from "../components/auth/Login";
 import ProtectedRoute from "../components/auth/ProtectedRoute";
@@ -67,11 +62,11 @@ const AppRoutes: React.FC = () => {
         <Route
           path="/orders"
           element={
-            <ProtectedRoute allowedRoles={["CUSTOMER"]}>
+            <ProtectedRoute allowedRoles={["CUSTOMER", "SELLER", "ADMIN"]}>
               <HomeLayout>
-                <ProtectedRoute allowedRoles={["SELLER", "ADMIN"]}>
-                  <Orders />
-                </ProtectedRoute>
+                {/* <ProtectedRoute allowedRoles={["SELLER", "ADMIN"]}> */}
+                <Orders />
+                {/* </ProtectedRoute> */}
               </HomeLayout>
             </ProtectedRoute>
           }
@@ -195,8 +190,7 @@ const AppRoutes: React.FC = () => {
             <ProtectedRoute allowedRoles={["SHIPPER"]}>
               <ShipperLayout />
             </ProtectedRoute>
-          }
-        >
+          }>
           <Route index element={<Navigate to="home" replace />} />
           <Route path="home" element={<HomePage />} />
           <Route path="orders" element={<OrdersPage />} />

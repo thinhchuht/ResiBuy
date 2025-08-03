@@ -1,12 +1,5 @@
 import React, { useEffect, useState } from "react";
-import {
-  Box,
-  Container,
-  Typography,
-  Paper,
-  Stack,
-  CircularProgress,
-} from "@mui/material";
+import { Box, Container, Typography, Paper, Stack, CircularProgress } from "@mui/material";
 import CheckCircleOutlineIcon from "@mui/icons-material/CheckCircleOutline";
 import LocalShippingIcon from "@mui/icons-material/LocalShipping";
 import ShoppingBagIcon from "@mui/icons-material/ShoppingBag";
@@ -22,7 +15,7 @@ const CheckoutSuccess: React.FC = () => {
     isOrderSuccess: boolean;
   }) || { isOrderSuccess: false };
   const searchParams = new URLSearchParams(location.search);
-  const token = searchParams.get('token');
+  const token = searchParams.get("token");
   const [isVerifying, setIsVerifying] = useState(true);
   const [isValid, setIsValid] = useState(false);
 
@@ -44,10 +37,11 @@ const CheckoutSuccess: React.FC = () => {
       }
 
       try {
+        console.log("token", token);
         const response = await vnPayApi.verifyPaymentToken(token);
         setIsValid(response.success && response.data.isValid);
       } catch (error) {
-        console.error('Error verifying token:', error);
+        console.error("Error verifying token:", error);
         setIsValid(false);
       } finally {
         setIsVerifying(false);
@@ -62,14 +56,14 @@ const CheckoutSuccess: React.FC = () => {
       try {
         await vnPayApi.invalidatePaymentToken(token);
       } catch (error) {
-        console.error('Error invalidating token:', error);
+        console.error("Error invalidating token:", error);
       }
     }
   };
 
   if (isVerifying) {
     return (
-      <Container maxWidth="md" sx={{ py: 8, display: 'flex', justifyContent: 'center', alignItems: 'center' }}>
+      <Container maxWidth="md" sx={{ py: 8, display: "flex", justifyContent: "center", alignItems: "center" }}>
         <CircularProgress />
       </Container>
     );
@@ -82,22 +76,18 @@ const CheckoutSuccess: React.FC = () => {
   const handleViewOrders = async () => {
     await invalidateToken();
     window.history.replaceState({}, "");
-    navigate('/orders');
+    navigate("/orders");
   };
 
   const handleContinueShopping = async () => {
     await invalidateToken();
     window.history.replaceState({}, "");
-    navigate('/');
+    navigate("/");
   };
 
   return (
     <Container maxWidth="md" sx={{ py: 8 }}>
-      <motion.div
-        initial={{ opacity: 0, y: 20 }}
-        animate={{ opacity: 1, y: 0 }}
-        transition={{ duration: 0.5 }}
-      >
+      <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.5 }}>
         <Paper
           elevation={3}
           sx={{
@@ -105,8 +95,7 @@ const CheckoutSuccess: React.FC = () => {
             borderRadius: 4,
             background: "linear-gradient(145deg, #ffffff 0%, #f8f9fa 100%)",
             boxShadow: "0 8px 32px rgba(0,0,0,0.1)",
-          }}
-        >
+          }}>
           <Stack spacing={4} alignItems="center">
             <motion.div
               initial={{ scale: 0 }}
@@ -116,8 +105,7 @@ const CheckoutSuccess: React.FC = () => {
                 stiffness: 260,
                 damping: 20,
                 delay: 0.2,
-              }}
-            >
+              }}>
               <CheckCircleOutlineIcon
                 sx={{
                   fontSize: 100,
@@ -134,8 +122,7 @@ const CheckoutSuccess: React.FC = () => {
                 fontWeight: "bold",
                 color: "#2c3e50",
                 textAlign: "center",
-              }}
-            >
+              }}>
               Đơn hàng của bạn đang được xử lý!
             </Typography>
 
@@ -145,10 +132,8 @@ const CheckoutSuccess: React.FC = () => {
                 color: "#666",
                 textAlign: "center",
                 maxWidth: "600px",
-              }}
-            >
-              Cảm ơn bạn đã đặt hàng. Chúng tôi sẽ xử lý đơn hàng của bạn ngay
-              lập tức và gửi thông tin cập nhật qua email.
+              }}>
+              Cảm ơn bạn đã đặt hàng. Chúng tôi sẽ xử lý đơn hàng của bạn ngay lập tức và gửi thông tin cập nhật qua email.
             </Typography>
 
             <Box
@@ -158,8 +143,7 @@ const CheckoutSuccess: React.FC = () => {
                 flexWrap: "wrap",
                 justifyContent: "center",
                 width: "100%",
-              }}
-            >
+              }}>
               <Paper
                 elevation={2}
                 sx={{
@@ -176,15 +160,9 @@ const CheckoutSuccess: React.FC = () => {
                     boxShadow: "0 8px 24px rgba(33, 150, 243, 0.15)",
                   },
                 }}
-                onClick={handleViewOrders}
-              >
-                <LocalShippingIcon
-                  sx={{ fontSize: 40, color: "#2196F3", mb: 1 }}
-                />
-                <Typography
-                  variant="subtitle1"
-                  sx={{ fontWeight: "bold", color: "#2c3e50" }}
-                >
+                onClick={handleViewOrders}>
+                <LocalShippingIcon sx={{ fontSize: 40, color: "#2196F3", mb: 1 }} />
+                <Typography variant="subtitle1" sx={{ fontWeight: "bold", color: "#2c3e50" }}>
                   Theo dõi đơn hàng
                 </Typography>
               </Paper>
@@ -205,15 +183,9 @@ const CheckoutSuccess: React.FC = () => {
                     boxShadow: "0 8px 24px rgba(255, 152, 0, 0.15)",
                   },
                 }}
-                onClick={handleContinueShopping}
-              >
-                <ShoppingBagIcon
-                  sx={{ fontSize: 40, color: "#FF9800", mb: 1 }}
-                />
-                <Typography
-                  variant="subtitle1"
-                  sx={{ fontWeight: "bold", color: "#2c3e50" }}
-                >
+                onClick={handleContinueShopping}>
+                <ShoppingBagIcon sx={{ fontSize: 40, color: "#FF9800", mb: 1 }} />
+                <Typography variant="subtitle1" sx={{ fontWeight: "bold", color: "#2c3e50" }}>
                   Tiếp tục mua sắm
                 </Typography>
               </Paper>
