@@ -137,13 +137,18 @@ namespace ResiBuy.Server.Controllers
 
         private string GenerateToken()
         {
-            var randomBytes = new byte[32];
+            const string chars = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789";
+            var token = new char[32];
             using (var rng = RandomNumberGenerator.Create())
             {
-                rng.GetBytes(randomBytes);
+                byte[] data = new byte[32];
+                rng.GetBytes(data);
+                for (int i = 0; i < token.Length; i++)
+                {
+                    token[i] = chars[data[i] % chars.Length];
+                }
             }
-            var rawToken = Convert.ToBase64String(randomBytes);
-            return Uri.EscapeDataString(rawToken);
+            return new string(token);
         }
     }
 
