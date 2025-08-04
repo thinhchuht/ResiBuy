@@ -92,7 +92,7 @@ const AppRoutes: React.FC = () => {
         <Route
           path="/profile"
           element={
-            <ProtectedRoute allowedRoles={["CUSTOMER", "ADMIN", "SHIPPER"]}>
+            <ProtectedRoute allowedRoles={["CUSTOMER", "ADMIN", "SHIPPER", "SELLER"]}>
               <HomeLayout>
                 <Profile />
               </HomeLayout>
