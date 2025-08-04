@@ -45,7 +45,7 @@ namespace ResiBuy.Server.Application.Commands.OrderCommands
                         throw new CustomException(ExceptionErrorCode.ValidationFailed, "Đơn hàng đã bị hủy trước đó.");
                     if (oldStatus != OrderStatus.Shipped || oldStatus != OrderStatus.CustomerNotAvailable)
                         throw new CustomException(ExceptionErrorCode.ValidationFailed, "Đơn hàng chưa được vận chuyển");
-                    if (oldStatus != OrderStatus.Shipped && dto.OrderStatus == OrderStatus.CustomerNotAvailable)
+                    if (oldStatus != OrderStatus.Shipped && oldStatus != OrderStatus.CustomerNotAvailable && dto.OrderStatus == OrderStatus.Delivered)
                         throw new CustomException(ExceptionErrorCode.ValidationFailed, "Đơn hàng chưa ở trong trạng thái giao hàng.");
                     if (oldStatus == OrderStatus.Pending && dto.OrderStatus != OrderStatus.Cancelled && dto.OrderStatus != OrderStatus.Processing)
                         throw new CustomException(ExceptionErrorCode.ValidationFailed, "Đơn hàng chưa xử lý chỉ được xử lý hoặc hủy.");
