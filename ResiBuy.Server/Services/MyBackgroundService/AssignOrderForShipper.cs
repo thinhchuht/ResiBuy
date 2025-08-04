@@ -44,8 +44,17 @@ namespace ResiBuy.Server.Services.MyBackgroundService
                                 if (!shippers.Any())
                                 {
                                     var nearestArea = await areaDBService.NearestAreaHasShipper(areaId);
-                                    shippers.AddRange(nearestArea.Shippers);
-                                };
+                                    if (nearestArea?.Shippers != null && nearestArea.Shippers.Any())
+                                    {
+                                        shippers.AddRange(nearestArea.Shippers);
+                                    }
+                                }
+
+                                if (!shippers.Any())
+                                {
+                                    _logger.LogWarning($"Không có shipper nào trong hoặc gần khu vực {areaId}. Bỏ qua đơn hàng.");
+                                    continue; // Bỏ qua nhóm đơn hàng này
+                                }
 
                                 int shipperIndex = 0;
                                 foreach (var order in ordersInArea)
@@ -62,6 +71,7 @@ namespace ResiBuy.Server.Services.MyBackgroundService
                                     }, Constants.ShipperHubGroup, [shipper.Id.ToString()]);
                                     order.ShipperId = shipper.Id;
                                     order.Status = OrderStatus.Assigned;
+                                    order.UpdateAt = DateTime.Now;
                                     await orderDbService.UpdateAsync(order);
                                     _logger.LogInformation($"Gửi đơn hàng {order.Id} đến shipper {shipper.Id}");
 
