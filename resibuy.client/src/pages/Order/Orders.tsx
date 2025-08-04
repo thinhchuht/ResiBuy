@@ -28,7 +28,7 @@ import HomeIcon from "@mui/icons-material/Home";
 import NavigateNextIcon from "@mui/icons-material/NavigateNext";
 import type { OrderStatusChangedData } from "../../types/hubData";
 import CalendarTodayIcon from "@mui/icons-material/CalendarToday";
-import type { ReportCreatedDto } from "../../types/hubEventDto";
+import type { ReportCreatedDto, ReportResolvedDto } from "../../types/hubEventDto";
 
 const StyledTabs = styled(Tabs)({
   borderBottom: "1px solid #e8e8e8",
@@ -182,6 +182,34 @@ const Orders = () => {
     },
     [fetchOrders]
   );
+  const handleReportResolved = useCallback(
+    (data: ReportResolvedDto) => {
+      console.log("Report resolved data:", data);
+      
+      setOrders((prevOrders) => {
+        // Find if the reported order exists in current state
+        const orderIndex = prevOrders.findIndex(order => 
+          order.id === data.orderId && order.report?.id === data.id
+        );
+        
+        if (orderIndex >= 0) {
+          // If order with report is found, update its isResolved status
+          const updatedOrders = [...prevOrders];
+          updatedOrders[orderIndex] = {
+            ...updatedOrders[orderIndex],
+            report: {
+              ...updatedOrders[orderIndex].report!,
+              isResolved: true
+            }
+          };
+          return updatedOrders;
+        }
+        
+        return prevOrders;
+      });
+    },
+    []
+  );
 
   const handleOrderStatusChanged = useCallback(
     (data: OrderStatusChangedData) => {
@@ -251,9 +279,10 @@ const Orders = () => {
     () => ({
       [HubEventType.OrderStatusChanged]: handleOrderStatusChanged,
       [HubEventType.OrderReported]: handleOrderReported,
+      [HubEventType.ReportResolved]: handleReportResolved,
       [HubEventType.ReceiveOrderNotification]: handleReceiveOrderNotification,
     }),
-    [handleOrderStatusChanged, handleOrderReported, handleReceiveOrderNotification]
+    [handleOrderStatusChanged, handleOrderReported, handleReportResolved, handleReceiveOrderNotification]
   );
   useEventHub(eventHandlers as Partial<Record<HubEventType, HubEventHandler>>);
 

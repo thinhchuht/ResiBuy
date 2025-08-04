@@ -60,7 +60,9 @@ namespace ResiBuy.Server.Services.MyBackgroundService
                                         StoreName = order.Store?.Name,
                                         AssignedTime = DateTimeOffset.Now
                                     }, Constants.ShipperHubGroup, [shipper.Id.ToString()]);
-                                    await orderDbService.UpdateOrderStatus(order.Id, OrderStatus.Assigned);
+                                    order.ShipperId = shipper.Id;
+                                    order.Status = OrderStatus.Assigned;
+                                    await orderDbService.UpdateAsync(order);
                                     _logger.LogInformation($"Gửi đơn hàng {order.Id} đến shipper {shipper.Id}");
 
                                     shipperIndex = (shipperIndex + 1) % shippers.Count;

@@ -16,6 +16,7 @@ namespace ResiBuy.Server.Application.Commands.ReportCommands
             report.IsResolved = true;
              await reportDbService.UpdateAsync(report);
             var order = await orderDbService.GetByIdBaseAsync(report.OrderId);
+            var lockedUsers = new List<string>();
             order.Status = OrderStatus.Cancelled;
             if(command.IsAddReportTarget)
             {
@@ -27,6 +28,7 @@ namespace ResiBuy.Server.Application.Commands.ReportCommands
                     {
                         user.IsLocked = true;
                         await userDbService.UpdateAsync(user);
+                        lockedUsers.Add(user.Id);
                     }
                 }
                 if (report.ReportTarget == ReportTarget.Store)
@@ -37,16 +39,18 @@ namespace ResiBuy.Server.Application.Commands.ReportCommands
                     {
                         store.IsLocked = true;
                         await storeDbService.UpdateAsync(store);
+                        lockedUsers.Add(store.OwnerId);
                     }
                 }
                 if (report.ReportTarget == ReportTarget.Shipper)
                 {
-                    var shipper = await shipperDbService.GetByIdBaseAsync(Guid.Parse(report.TargetId)) ?? throw new CustomException(ExceptionErrorCode.ValidationFailed, "Không tìm thấy người dùng");
+                    var shipper = await shipperDbService.GetShipperByIdAsync(Guid.Parse(report.TargetId)) ?? throw new CustomException(ExceptionErrorCode.ValidationFailed, "Không tìm thấy người dùng");
                     shipper.ReportCount += 1;
                     if (shipper.ReportCount == Constants.MaxReportCount)
                     {
                         shipper.IsLocked = true;
                         await shipperDbService.UpdateAsync(shipper);
+                        lockedUsers.Add(shipper.User.Id);
                     }
                 }
             }
