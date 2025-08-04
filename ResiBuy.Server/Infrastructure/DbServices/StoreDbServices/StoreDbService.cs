@@ -223,8 +223,8 @@ namespace ResiBuy.Server.Infrastructure.DbServices.StoreDbServices
                 foreach (var item in order.Items)
                 {
                     productQuantity += item.Quantity;
-                    sales += item.Quantity * item.ProductDetail.Price;
                 }
+                sales += order.TotalPrice;
             }
             salesAnalysis.NumberOfProductsSold = productQuantity;
             salesAnalysis.SuccessedOrderQuantity = orderSuccess.Count();
