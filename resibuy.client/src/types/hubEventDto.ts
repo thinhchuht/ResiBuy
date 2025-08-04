@@ -21,6 +21,17 @@ export interface ReportCreatedDto {
   orderId: string;
 }
 
+export interface ReportResolvedDto {
+  id: string;
+  title: string;
+  description: string;
+  createdAt: string;
+  createdById: string;
+  reportTarget: string;
+  targetId: string;
+  orderId: string;
+}
+
 export interface ProductOutOfStockDto {
   productDetailId: number;
   productName: string;

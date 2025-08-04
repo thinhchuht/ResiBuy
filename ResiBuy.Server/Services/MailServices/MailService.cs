@@ -44,7 +44,6 @@
             catch (Exception ex)
             {
                 Console.WriteLine($"[Email Error] {ex.Message}");
-                // Hoặc log bằng ILogger
             }
         }
 
