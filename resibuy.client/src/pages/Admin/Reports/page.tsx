@@ -134,24 +134,22 @@ export default function ReportsPage() {
         createdById: data.createdById,
         targetId: data.targetId,
       };
-      
+
       const matchesFilters = (
-        (!filters.keyword || 
+        (!filters.keyword ||
          newReport.title.toLowerCase().includes(filters.keyword.toLowerCase()) ||
          newReport.description.toLowerCase().includes(filters.keyword.toLowerCase())) &&
-        
-        (filters.reportTarget === ReportTarget.None || 
+        (filters.reportTarget === ReportTarget.None ||
          newReport.reportTarget === filters.reportTarget) &&
-        
         (!filters.startDate || new Date(newReport.createdAt) >= filters.startDate) &&
         (!filters.endDate || new Date(newReport.createdAt) <= filters.endDate)
       );
-      
+
       if (matchesFilters) {
         setReports((prevReports) => [newReport, ...prevReports]);
         setTotalCount((prevCount) => prevCount + 1);
       }
-      
+
       setStats((prevStats) => ({
         ...prevStats,
         total: prevStats.total + 1,
@@ -167,7 +165,6 @@ export default function ReportsPage() {
         }),
       }));
     },
-    // eslint-disable-next-line react-hooks/exhaustive-deps
     [filters]
   );
 
@@ -179,7 +176,6 @@ export default function ReportsPage() {
   );
   useEventHub(eventHandlers as Partial<Record<HubEventType, HubEventHandler>>);
 
-  // Functions to get Vietnamese status text
   const getStatusText = (status: OrderStatus) => {
     switch (status) {
       case OrderStatus.Pending:
@@ -248,7 +244,6 @@ export default function ReportsPage() {
     try {
       const response = await reportApi.getCount();
       const statsData = response.data;
-      console.log('statsData', statsData);
       setStats({
         total: statsData.total,
         resolved: statsData.resolved,
@@ -262,8 +257,6 @@ export default function ReportsPage() {
     }
   };
 
-
-
   const handlePageChange = (newPage: number) => {
     setPageNumber(newPage);
   };
@@ -275,7 +268,6 @@ export default function ReportsPage() {
   useEffect(() => {
     const timeoutId = setTimeout(() => {
       if (searchKeyword !== filters.keyword) {
-        console.log('Debounced search keyword:', searchKeyword);
         setFilters(prev => ({ ...prev, keyword: searchKeyword }));
         setPageNumber(1);
       }
@@ -295,13 +287,10 @@ export default function ReportsPage() {
     setPageNumber(1);
   };
 
-
-
   const handleViewReport = async (report: Report) => {
     setSelectedReport(report);
     setIsDetailModalOpen(true);
-    
-    // Fetch order details
+
     if (report.orderId) {
       setIsLoadingOrder(true);
       try {
@@ -331,7 +320,6 @@ export default function ReportsPage() {
     setIsConfirmModalOpen(false);
   };
 
-  // Handle resolve report
   const handleResolveReport = async (reportId: string, isAddReportTarget: boolean = false) => {
     try {
       await reportApi.resolve(reportId, isAddReportTarget);
@@ -446,7 +434,6 @@ export default function ReportsPage() {
 
   useEffect(() => {
     loadReports();
-  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [pageNumber, filters]);
 
   useEffect(() => {
@@ -455,7 +442,39 @@ export default function ReportsPage() {
 
   return (
     <LocalizationProvider dateAdapter={AdapterDateFns} adapterLocale={vi}>
-      <Box sx={{ display: "flex", height: "100vh" }}>
+      <Box
+        sx={{
+          display: "flex",
+          flexDirection: "column",
+          height: "100%",
+          bgcolor: (theme) => theme.palette.grey[50],
+          overflow: "hidden",
+        }}
+      >
+        <Box
+          component="header"
+          sx={{
+            display: "flex",
+            height: 64,
+            alignItems: "center",
+            justifyContent: "space-between",
+            borderBottom: 1,
+            borderColor: "divider",
+            bgcolor: "background.paper",
+            px: 2,
+          }}
+        >
+          <Typography
+            variant="h6"
+            sx={(theme) => ({
+              color: theme.palette.grey[700],
+              fontWeight: theme.typography.fontWeightMedium,
+            })}
+          >
+            Quản Lý Báo Cáo
+          </Typography>
+        </Box>
+
         <Box
           sx={{
             flex: 1,
@@ -552,7 +571,6 @@ export default function ReportsPage() {
                   label="Từ ngày"
                   value={filters.startDate}
                   onChange={(date) => {
-                    console.log('StartDate changed:', date);
                     setFilters(prev => ({ ...prev, startDate: date }));
                   }}
                   slotProps={{ textField: { size: "small", fullWidth: true } }}
@@ -563,7 +581,6 @@ export default function ReportsPage() {
                   label="Đến ngày"
                   value={filters.endDate}
                   onChange={(date) => {
-                    console.log('EndDate changed:', date);
                     setFilters(prev => ({ ...prev, endDate: date }));
                   }}
                   slotProps={{ textField: { size: "small", fullWidth: true } }}
@@ -575,7 +592,6 @@ export default function ReportsPage() {
                   <Select
                     value={filters.reportTarget}
                     onChange={(e) => {
-                      console.log('ReportTarget changed:', e.target.value);
                       setFilters(prev => ({ ...prev, reportTarget: e.target.value as ReportTarget }));
                     }}
                     label="Đối tượng"
@@ -613,19 +629,20 @@ export default function ReportsPage() {
             PaperProps={{
               sx: {
                 borderRadius: 2,
-                maxHeight: '90vh'
+                maxHeight: '90vh',
+                bgcolor: "background.paper",
               }
             }}
           >
-            <DialogTitle 
-              sx={{ 
-                display: "flex", 
-                justifyContent: "space-between", 
-                alignItems: "center", 
+            <DialogTitle
+              sx={{
+                display: "flex",
+                justifyContent: "space-between",
+                alignItems: "center",
                 pr: 1,
-                background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
-                color: 'white',
-                borderRadius: '8px 8px 0 0'
+                bgcolor: "background.paper",
+                borderBottom: 1,
+                borderColor: "divider",
               }}
             >
               <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
@@ -637,7 +654,7 @@ export default function ReportsPage() {
               <IconButton
                 onClick={handleCloseDetailModal}
                 size="small"
-                sx={{ color: "white", '&:hover': { backgroundColor: 'rgba(255,255,255,0.1)' } }}
+                sx={{ color: "text.secondary" }}
               >
                 <Close />
               </IconButton>
@@ -647,20 +664,18 @@ export default function ReportsPage() {
                 <Box>
                   {/* Report Section */}
                   {orderDetails.report && (
-                    <Box sx={{ p: 3, backgroundColor: '#f8f9fa' }}>
-                      <Typography variant="h6" gutterBottom sx={{ color: '#2c3e50', fontWeight: 600 }}>
+                    <Box sx={{ p: 3, bgcolor: "background.paper" }}>
+                      <Typography variant="h6" gutterBottom sx={{ color: 'grey.900', fontWeight: 600 }}>
                         Thông tin báo cáo
                       </Typography>
-                      
                       <Card sx={{ mb: 2, boxShadow: '0 2px 8px rgba(0,0,0,0.1)' }}>
                         <CardContent>
-                          <Typography variant="h6" gutterBottom sx={{ color: '#e74c3c', fontWeight: 600 }}>
+                          <Typography variant="h6" gutterBottom sx={{ color: 'error.main', fontWeight: 600 }}>
                             {orderDetails.report.title}
                           </Typography>
-                          <Typography variant="body1" paragraph sx={{ color: '#34495e', lineHeight: 1.6 }}>
+                          <Typography variant="body1" paragraph sx={{ color: 'grey.800', lineHeight: 1.6 }}>
                             {orderDetails.report.description}
                           </Typography>
-                          
                           <Box sx={{ display: "flex", flexWrap: "wrap", gap: 2, mt: 2 }}>
                             <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
                               <Typography variant="body2" color="text.secondary">
@@ -674,7 +689,6 @@ export default function ReportsPage() {
                                 variant="filled"
                               />
                             </Box>
-                            
                             <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
                               <Typography variant="body2" color="text.secondary">
                                 Trạng thái:
@@ -687,7 +701,6 @@ export default function ReportsPage() {
                                 variant="filled"
                               />
                             </Box>
-                            
                             <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
                               <Typography variant="body2" color="text.secondary">
                                 Ngày tạo:
@@ -703,11 +716,10 @@ export default function ReportsPage() {
                   )}
 
                   {/* Order Details Section */}
-                  <Box sx={{ p: 3 }}>
-                    <Typography variant="h6" gutterBottom sx={{ color: '#2c3e50', fontWeight: 600, mb: 2 }}>
+                  <Box sx={{ p: 3, bgcolor: "background.paper" }}>
+                    <Typography variant="h6" gutterBottom sx={{ color: 'grey.900', fontWeight: 600, mb: 2 }}>
                       Thông tin đơn hàng
                     </Typography>
-                    
                     {isLoadingOrder ? (
                       <Box sx={{ display: "flex", justifyContent: "center", py: 4 }}>
                         <CircularProgress size={32} />
@@ -715,22 +727,21 @@ export default function ReportsPage() {
                     ) : orderDetails ? (
                       <Card sx={{ boxShadow: '0 2px 8px rgba(0,0,0,0.1)' }}>
                         <CardContent>
-                          {/* Order Basic Info */}
                           <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 3, mb: 3 }}>
                             <Box sx={{ flex: 1, minWidth: 200 }}>
                               <Typography variant="subtitle2" color="text.secondary" gutterBottom>
                                 Mã đơn hàng
                               </Typography>
-                              <Typography variant="body1" fontFamily="monospace" sx={{ 
-                                backgroundColor: '#f8f9fa', 
-                                p: 1, 
+                              <Typography variant="body1" fontFamily="monospace" sx={{
+                                bgcolor: 'grey.100',
+                                p: 1,
                                 borderRadius: 1,
-                                border: '1px solid #e9ecef'
+                                border: '1px solid',
+                                borderColor: 'grey.200'
                               }}>
                                 {orderDetails.id}
                               </Typography>
                             </Box>
-                            
                             <Box sx={{ flex: 1, minWidth: 200 }}>
                               <Typography variant="subtitle2" color="text.secondary" gutterBottom>
                                 Tổng tiền
@@ -739,7 +750,6 @@ export default function ReportsPage() {
                                 {orderDetails.totalPrice?.toLocaleString('vi-VN')} VNĐ
                               </Typography>
                             </Box>
-                            
                             <Box sx={{ flex: 1, minWidth: 200 }}>
                               <Typography variant="subtitle2" color="text.secondary" gutterBottom>
                                 Phí giao hàng
@@ -749,8 +759,6 @@ export default function ReportsPage() {
                               </Typography>
                             </Box>
                           </Box>
-                          
-                          {/* Status Info */}
                           <Box sx={{ display: 'flex', gap: 2, mb: 3, flexWrap: 'wrap' }}>
                             <Chip
                               label={`Trạng thái: ${getStatusText(orderDetails.status)}`}
@@ -771,14 +779,11 @@ export default function ReportsPage() {
                               sx={{ fontWeight: 500 }}
                             />
                           </Box>
-                          
-                          {/* People Involved */}
                           <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 3 }}>
-                            {/* Customer */}
-                            <Box sx={{ flex: 1, minWidth: 250, p: 2, backgroundColor: '#e3f2fd', borderRadius: 2 }}>
+                            <Box sx={{ flex: 1, minWidth: 250, p: 2, bgcolor: 'grey.100', borderRadius: 2 }}>
                               <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 1 }}>
-                                <Person sx={{ color: '#1976d2', fontSize: 20 }} />
-                                <Typography variant="subtitle1" fontWeight={600} color="#1976d2">
+                                <Person sx={{ color: 'primary.main', fontSize: 20 }} />
+                                <Typography variant="subtitle1" fontWeight={600} color="primary.main">
                                   Khách hàng
                                 </Typography>
                               </Box>
@@ -789,12 +794,10 @@ export default function ReportsPage() {
                                 {orderDetails.user?.phoneNumber || 'Không có số điện thoại'}
                               </Typography>
                             </Box>
-                            
-                            {/* Store */}
-                            <Box sx={{ flex: 1, minWidth: 250, p: 2, backgroundColor: '#f3e5f5', borderRadius: 2 }}>
+                            <Box sx={{ flex: 1, minWidth: 250, p: 2, bgcolor: 'grey.100', borderRadius: 2 }}>
                               <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 1 }}>
-                                <Store sx={{ color: '#7b1fa2', fontSize: 20 }} />
-                                <Typography variant="subtitle1" fontWeight={600} color="#7b1fa2">
+                                <Store sx={{ color: 'secondary.main', fontSize: 20 }} />
+                                <Typography variant="subtitle1" fontWeight={600} color="secondary.main">
                                   Cửa hàng
                                 </Typography>
                               </Box>
@@ -805,13 +808,11 @@ export default function ReportsPage() {
                                 {orderDetails.store?.phoneNumber || 'Không có số điện thoại'}
                               </Typography>
                             </Box>
-                            
-                            {/* Shipper - only show if exists */}
                             {orderDetails.shipper?.id && (
-                              <Box sx={{ flex: 1, minWidth: 250, p: 2, backgroundColor: '#fff3e0', borderRadius: 2 }}>
+                              <Box sx={{ flex: 1, minWidth: 250, p: 2, bgcolor: 'grey.100', borderRadius: 2 }}>
                                 <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 1 }}>
-                                  <LocalShipping sx={{ color: '#f57c00', fontSize: 20 }} />
-                                  <Typography variant="subtitle1" fontWeight={600} color="#f57c00">
+                                  <LocalShipping sx={{ color: 'warning.main', fontSize: 20 }} />
+                                  <Typography variant="subtitle1" fontWeight={600} color="warning.main">
                                     Người giao hàng
                                   </Typography>
                                 </Box>
@@ -824,17 +825,16 @@ export default function ReportsPage() {
                               </Box>
                             )}
                           </Box>
-                          
-                          {/* Products Section */}
                           {orderDetails.orderItems && orderDetails.orderItems.length > 0 && (
                             <Box sx={{ mt: 3 }}>
-                              <Typography variant="subtitle1" fontWeight={600} gutterBottom sx={{ color: '#2c3e50', mb: 2 }}>
+                              <Typography variant="subtitle1" fontWeight={600} gutterBottom sx={{ color: 'grey.900', mb: 2 }}>
                                 Sản phẩm trong đơn hàng ({orderDetails.orderItems.length})
                               </Typography>
                               <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
                                 {orderDetails.orderItems.map((item, index) => (
-                                  <Card key={index} sx={{ 
-                                    border: '1px solid #e0e0e0', 
+                                  <Card key={index} sx={{
+                                    border: '1px solid',
+                                    borderColor: 'grey.200',
                                     boxShadow: '0 1px 3px rgba(0,0,0,0.1)',
                                     '&:hover': {
                                       boxShadow: '0 2px 8px rgba(0,0,0,0.15)'
@@ -842,23 +842,23 @@ export default function ReportsPage() {
                                   }}>
                                     <CardContent sx={{ p: 2 }}>
                                       <Box sx={{ display: 'flex', gap: 2, alignItems: 'flex-start' }}>
-                                        {/* Product Image */}
                                         {item.image && (
-                                          <Box sx={{ 
-                                            width: 80, 
-                                            height: 80, 
-                                            borderRadius: 1, 
+                                          <Box sx={{
+                                            width: 80,
+                                            height: 80,
+                                            borderRadius: 1,
                                             overflow: 'hidden',
-                                            border: '1px solid #e0e0e0',
+                                            border: '1px solid',
+                                            borderColor: 'grey.200',
                                             flexShrink: 0
                                           }}>
-                                            <img 
-                                              src={item.image.thumbUrl || item.image.url} 
+                                            <img
+                                              src={item.image.thumbUrl || item.image.url}
                                               alt={item.productName}
-                                              style={{ 
-                                                width: '100%', 
-                                                height: '100%', 
-                                                objectFit: 'cover' 
+                                              style={{
+                                                width: '100%',
+                                                height: '100%',
+                                                objectFit: 'cover'
                                               }}
                                               onError={(e) => {
                                                 e.currentTarget.src = '/placeholder-image.png';
@@ -866,11 +866,9 @@ export default function ReportsPage() {
                                             />
                                           </Box>
                                         )}
-                                        
-                                        {/* Product Info */}
                                         <Box sx={{ flex: 1, minWidth: 0 }}>
-                                          <Typography variant="subtitle2" fontWeight={600} gutterBottom sx={{ 
-                                            color: '#2c3e50',
+                                          <Typography variant="subtitle2" fontWeight={600} gutterBottom sx={{
+                                            color: 'grey.900',
                                             overflow: 'hidden',
                                             textOverflow: 'ellipsis',
                                             display: '-webkit-box',
@@ -879,7 +877,6 @@ export default function ReportsPage() {
                                           }}>
                                             {item.productName}
                                           </Typography>
-                                          
                                           <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 2, mt: 1 }}>
                                             <Box>
                                               <Typography variant="caption" color="text.secondary" display="block">
@@ -889,7 +886,6 @@ export default function ReportsPage() {
                                                 {item.quantity}
                                               </Typography>
                                             </Box>
-                                            
                                             <Box>
                                               <Typography variant="caption" color="text.secondary" display="block">
                                                 Đơn giá
@@ -898,7 +894,6 @@ export default function ReportsPage() {
                                                 {item.price?.toLocaleString('vi-VN')} VNĐ
                                               </Typography>
                                             </Box>
-                                            
                                             <Box>
                                               <Typography variant="caption" color="text.secondary" display="block">
                                                 Thành tiền
@@ -908,8 +903,6 @@ export default function ReportsPage() {
                                               </Typography>
                                             </Box>
                                           </Box>
-                                          
-                                          {/* Additional Data */}
                                           {item.addtionalData && item.addtionalData.length > 0 && (
                                             <Box sx={{ mt: 1 }}>
                                               <Typography variant="caption" color="text.secondary" display="block" gutterBottom>
@@ -917,7 +910,7 @@ export default function ReportsPage() {
                                               </Typography>
                                               <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 0.5 }}>
                                                 {item.addtionalData.map((data, dataIndex) => (
-                                                  <Chip 
+                                                  <Chip
                                                     key={dataIndex}
                                                     label={`${data.key}: ${data.value}`}
                                                     size="small"
@@ -965,14 +958,14 @@ export default function ReportsPage() {
             )}
           </Dialog>
 
-          {/* Confirmation Modal */}
           <Dialog
             open={isConfirmModalOpen}
             onClose={handleCloseConfirmModal}
             maxWidth="sm"
             fullWidth
+            PaperProps={{ sx: { bgcolor: "background.paper" } }}
           >
-            <DialogTitle sx={{ display: "flex", justifyContent: "space-between", alignItems: "center", pr: 1 }}>
+            <DialogTitle sx={{ display: "flex", justifyContent: "space-between", alignItems: "center", pr: 1, bgcolor: "background.paper" }}>
               Xác nhận xử lý
               <IconButton
                 onClick={handleCloseConfirmModal}
@@ -982,12 +975,12 @@ export default function ReportsPage() {
                 <Close />
               </IconButton>
             </DialogTitle>
-            <DialogContent>
+            <DialogContent sx={{ bgcolor: "background.paper" }}>
               <Typography variant="body1" sx={{ mb: 2 }}>
                 Bạn muốn xử lý báo cáo này như thế nào?
               </Typography>
             </DialogContent>
-            <DialogActions sx={{ gap: 1, p: 2 }}>
+            <DialogActions sx={{ gap: 1, p: 2, bgcolor: "background.paper" }}>
               <Button
                 onClick={handleCloseConfirmModal}
                 color="inherit"
@@ -1011,7 +1004,7 @@ export default function ReportsPage() {
               </Button>
             </DialogActions>
           </Dialog>
-        </Box>
+        </Box>a
       </Box>
     </LocalizationProvider>
   );
