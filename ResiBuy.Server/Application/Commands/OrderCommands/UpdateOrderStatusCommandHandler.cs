@@ -105,11 +105,7 @@ namespace ResiBuy.Server.Application.Commands.OrderCommands
                 //await orderDbService.UpdateAsync(order);
                 await orderDbService.UpdateTransactionAsync(order);
                 await orderDbService.SaveChangesAsync();
-            }
-            catch (Exception ex)
-            {
-                if (transaction != null)
-                    await transaction.RollbackAsync();
+                await transaction.CommitAsync();
                 var userIds = new List<string>();
                 if (dto.OrderStatus == OrderStatus.Processing) userIds.Add(order.UserId);
                 if (dto.OrderStatus == OrderStatus.Assigned)
@@ -119,9 +115,14 @@ namespace ResiBuy.Server.Application.Commands.OrderCommands
                 if (dto.OrderStatus == OrderStatus.CustomerNotAvailable) userIds.AddRange([order.UserId, store.OwnerId.ToString()]);
                 if (dto.OrderStatus == OrderStatus.Cancelled) userIds.AddRange([order.UserId, store.OwnerId.ToString()]);
                 await notificationService.SendNotificationAsync($"{Constants.OrderStatusChanged}-{order.Status}", new OrderStatusChangedDto(order.Id, order.StoreId, store.Name, order.Status, oldStatus, order.PaymentStatus, order.CreateAt, order.UpdateAt), "", userIds);
+            }
+            catch (Exception ex)
+            {
+                if (transaction != null)
+                    await transaction.RollbackAsync();
+                
                 throw new CustomException(ExceptionErrorCode.RepositoryError, ex.ToString());
             }
-            
             return ResponseModel.SuccessResponse();
         }
     }

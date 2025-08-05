@@ -71,13 +71,25 @@ namespace ResiBuy.Server.Infrastructure.DbServices.ReportServices
                 .Skip((pageNumber - 1) * pageSize)
                 .Take(pageSize)
                 .ToListAsync();
-
             return new PagedResult<Report>(items, totalCount, pageNumber, pageSize);
         }
 
         public async Task<Report> GetByOrderIdAsync(Guid id)
         {
             return await _context.Reports.FirstOrDefaultAsync(r => r.OrderId == id);
+        }
+
+        public async Task<ReportStatusCountQueryResult> GetReportStatusCountAsync()
+        {
+            var total = await _context.Reports.CountAsync();
+            var resolved = await _context.Reports.CountAsync(r => r.IsResolved);
+            var unresolved = total - resolved;
+
+            var customerTarget = await _context.Reports.CountAsync(r => r.ReportTarget == ReportTarget.Customer);
+            var storeTarget = await _context.Reports.CountAsync(r => r.ReportTarget == ReportTarget.Store);
+            var shipperTarget = await _context.Reports.CountAsync(r => r.ReportTarget == ReportTarget.Shipper);
+
+            return new ReportStatusCountQueryResult(total, resolved, unresolved, customerTarget, storeTarget, shipperTarget);
         }
     }
 }
