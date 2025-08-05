@@ -70,6 +70,8 @@ export interface RoomFilter {
   pageSize?: number;
   keyword?: string;
   buildingId?: string;
+  isActive? :boolean;
+  noUser?: boolean;
 }
 export interface CategoryImage {
   id: string;

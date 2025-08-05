@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 import {
   Box,
   Button,
@@ -13,14 +13,21 @@ import {
   FormHelperText,
   CircularProgress,
   Typography,
+  Checkbox,
+  FormControlLabel,
+  Select,
+  MenuItem,
+  InputLabel,
 } from "@mui/material";
 import { DatePicker } from "@mui/x-date-pickers/DatePicker";
 import { LocalizationProvider } from "@mui/x-date-pickers/LocalizationProvider";
 import { AdapterDateFns } from "@mui/x-date-pickers/AdapterDateFns";
-import { Person as PersonIcon, Add as AddIcon, Close as CloseIcon } from "@mui/icons-material";
-import { useUserForm } from "./seg/utlis";
+import { Person as PersonIcon, Add as AddIcon, Close as CloseIcon, ArrowBack, ArrowForward } from "@mui/icons-material";
+import { useUserForm } from "./seg/utils";
 import roomApi from "../../../api/room.api";
-import type { UserDto, RoomDto } from "../../../types/dtoModels";
+import areaApi from "../../../api/area.api";
+import buildingApi from "../../../api/building.api";
+import type { UserDto, RoomDto, AreaDto, BuildingDto } from "../../../types/dtoModels";
 
 interface AddUserModalProps {
   isOpen: boolean;
@@ -33,7 +40,7 @@ interface AddUserModalProps {
     identityNumber: string;
     password: string;
     roomIds: string[];
-  }) => Promise<void>;
+  }, rooms: RoomDto[]) => Promise<void>;
   editingUser: UserDto | null;
 }
 
@@ -41,28 +48,129 @@ export function AddUserModal({ isOpen, onClose, onSubmit, editingUser }: AddUser
   const { formData, errors, isSubmitting, handleInputChange, handleSubmit } = useUserForm(editingUser);
   const [roomModalOpen, setRoomModalOpen] = useState(false);
   const [rooms, setRooms] = useState<RoomDto[]>([]);
+  const [selectedRooms, setSelectedRooms] = useState<RoomDto[]>([]); // Thêm trạng thái để lưu các phòng đã chọn
   const [isLoadingRooms, setIsLoadingRooms] = useState(false);
   const [roomError, setRoomError] = useState<string | null>(null);
+  const [pageNumber, setPageNumber] = useState(1);
+  const [pageSize] = useState(10);
+  const [totalPages, setTotalPages] = useState(1);
+  const [totalCount, setTotalCount] = useState(0);
+  const [searchTerm, setSearchTerm] = useState("");
+  const [isActiveFilter, setIsActiveFilter] = useState(true);
+  const [noUsersFilter, setNoUsersFilter] = useState(false);
+  const [areas, setAreas] = useState<AreaDto[]>([]);
+  const [buildings, setBuildings] = useState<BuildingDto[]>([]);
+  const [areaId, setAreaId] = useState<string>("");
+  const [buildingId, setBuildingId] = useState<string>("");
 
-  // Lấy danh sách phòng
+  // Khởi tạo rooms và selectedRooms với editingUser.rooms khi edit
+  useEffect(() => {
+    if (editingUser && editingUser.rooms) {
+      setRooms(editingUser.rooms);
+      setSelectedRooms(editingUser.rooms);
+    } else {
+      setRooms([]);
+      setSelectedRooms([]);
+    }
+  }, [editingUser]);
+
+  // Lấy danh sách khu vực khi mở modal chọn phòng
   useEffect(() => {
     if (roomModalOpen) {
-      setIsLoadingRooms(true);
-      roomApi
-        .getAll(1, 100)
-        .then((response) => {
-          setRooms(response.items.filter((room) => room.isActive));
-          setRoomError(null);
-        })
-        .catch((error) => {
-          console.error("Error fetching rooms:", error);
-          setRoomError(error.message || "Lỗi khi lấy danh sách phòng");
-        })
-        .finally(() => {
-          setIsLoadingRooms(false);
-        });
+      const fetchAreas = async () => {
+        try {
+          const response = await areaApi.getAll();
+          setAreas(response);
+        } catch (error: any) {
+          console.error("Error fetching areas:", error);
+          setRoomError(error.message || "Lỗi khi lấy danh sách khu vực");
+        }
+      };
+      fetchAreas();
     }
   }, [roomModalOpen]);
+
+  // Lấy danh sách tòa nhà khi areaId thay đổi
+  useEffect(() => {
+    if (roomModalOpen && areaId) {
+      const fetchBuildings = async () => {
+        try {
+          const response = await buildingApi.getByAreaId(areaId);
+          setBuildings(response);
+          setBuildingId(""); // Reset buildingId khi areaId thay đổi
+        } catch (error: any) {
+          console.error("Error fetching buildings:", error);
+          setRoomError(error.message || "Lỗi khi lấy danh sách tòa nhà");
+        }
+      };
+      fetchBuildings();
+    } else {
+      setBuildings([]);
+      setBuildingId("");
+    }
+  }, [roomModalOpen, areaId]);
+
+  // Hàm lấy danh sách phòng
+  const fetchRooms = useCallback(async () => {
+    setIsLoadingRooms(true);
+    try {
+      let response;
+      if (buildingId) {
+        if (searchTerm) {
+          response = await roomApi.searchInBuilding({
+            keyword: searchTerm,
+            buildingId,
+            pageNumber,
+            pageSize,
+            isActive: isActiveFilter,
+            noUsers: noUsersFilter,
+          });
+        } else {
+          response = await roomApi.getByBuildingId(buildingId, pageNumber, pageSize, isActiveFilter, noUsersFilter);
+        }
+      } else {
+        if (searchTerm) {
+          response = await roomApi.search({
+            keyword: searchTerm,
+            pageNumber,
+            pageSize,
+            isActive: isActiveFilter,
+            noUsers: noUsersFilter,
+          });
+        } else {
+          response = await roomApi.getAll(pageNumber, pageSize, isActiveFilter, noUsersFilter);
+        }
+      }
+      // Giữ các phòng đã chọn (selectedRooms) và thêm các phòng mới từ API
+      const existingRoomIds = selectedRooms.map((r) => r.id);
+      const newRooms = response.items.filter((room) => !existingRoomIds.includes(room.id));
+      setRooms([...selectedRooms, ...newRooms]);
+      setTotalCount(response.totalCount);
+      setTotalPages(response.totalPages);
+      setRoomError(null);
+    } catch (error: any) {
+      console.error("Error fetching rooms:", error);
+      setRoomError(error.message || "Lỗi khi lấy danh sách phòng");
+    } finally {
+      setIsLoadingRooms(false);
+    }
+  }, [pageNumber, pageSize, searchTerm, isActiveFilter, noUsersFilter, buildingId, selectedRooms]);
+
+  // Lấy danh sách phòng khi mở modal chọn phòng hoặc khi các bộ lọc/tham số thay đổi
+  useEffect(() => {
+    if (roomModalOpen) {
+      fetchRooms();
+    } else {
+      // Khi đóng modal, chỉ giữ selectedRooms
+      setRooms(selectedRooms);
+      setPageNumber(1);
+      setSearchTerm("");
+      setIsActiveFilter(true);
+      setNoUsersFilter(false);
+      setAreaId("");
+      setBuildingId("");
+    }
+  }, [roomModalOpen, fetchRooms, selectedRooms]);
 
   // Xử lý chọn/xóa phòng
   const handleRoomSelect = (roomId: string) => {
@@ -70,22 +178,83 @@ export function AddUserModal({ isOpen, onClose, onSubmit, editingUser }: AddUser
       ? formData.roomIds.filter((id) => id !== roomId)
       : [...formData.roomIds, roomId];
     handleInputChange("roomIds", newRoomIds);
+
+    // Cập nhật selectedRooms
+    if (newRoomIds.includes(roomId)) {
+      const selectedRoom = rooms.find((r) => r.id === roomId);
+      if (selectedRoom && !selectedRooms.find((r) => r.id === roomId)) {
+        setSelectedRooms([...selectedRooms, selectedRoom]);
+      }
+    } else {
+      setSelectedRooms(selectedRooms.filter((r) => r.id !== roomId));
+    }
   };
 
   // Xóa phòng khỏi danh sách đã chọn
   const handleRoomDelete = (roomId: string) => {
     handleInputChange("roomIds", formData.roomIds.filter((id) => id !== roomId));
+    setSelectedRooms(selectedRooms.filter((r) => r.id !== roomId));
   };
 
   // Mở/đóng modal chọn phòng
   const handleOpenRoomModal = () => setRoomModalOpen(true);
-  const handleCloseRoomModal = () => setRoomModalOpen(false);
+  const handleCloseRoomModal = () => {
+    setRoomModalOpen(false);
+  };
+
+  // Xử lý thay đổi khu vực
+  const handleAreaChange = (event: React.ChangeEvent<{ value: unknown }>) => {
+    setAreaId(event.target.value as string);
+    setPageNumber(1); // Reset về trang 1 khi thay đổi khu vực
+  };
+
+  // Xử lý thay đổi tòa nhà
+  const handleBuildingChange = (event: React.ChangeEvent<{ value: unknown }>) => {
+    setBuildingId(event.target.value as string);
+    setPageNumber(1); // Reset về trang 1 khi thay đổi tòa nhà
+  };
+
+  // Xử lý tìm kiếm
+  const handleSearchChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    setSearchTerm(e.target.value);
+    setPageNumber(1); // Reset về trang 1 khi tìm kiếm
+  };
+
+  // Xử lý thay đổi bộ lọc
+  const handleIsActiveFilterChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    setIsActiveFilter(e.target.checked);
+    setPageNumber(1); // Reset về trang 1 khi thay đổi bộ lọc
+  };
+
+  const handleNoUsersFilterChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    setNoUsersFilter(e.target.checked);
+    setPageNumber(1); // Reset về trang 1 khi thay đổi bộ lọc
+  };
+
+  // Xử lý phân trang
+  const handlePreviousPage = () => {
+    if (pageNumber > 1) {
+      setPageNumber(pageNumber - 1);
+    }
+  };
+
+  const handleNextPage = () => {
+    if (pageNumber < totalPages) {
+      setPageNumber(pageNumber + 1);
+    }
+  };
 
   // Format ngày sinh
   const handleDateChange = (date: Date | null) => {
     if (date) {
       handleInputChange("dateOfBirth", date.toISOString().split("T")[0]);
     }
+  };
+
+  // Gửi formData và rooms khi submit
+  const handleFormSubmit = (e: React.FormEvent<HTMLFormElement>) => {
+    console.log("handleFormSubmit called");
+    handleSubmit(e, (user) => onSubmit(user, selectedRooms));
   };
 
   if (!isOpen) return null;
@@ -128,13 +297,13 @@ export function AddUserModal({ isOpen, onClose, onSubmit, editingUser }: AddUser
               variant="h6"
               sx={{ color: "grey.900", fontWeight: "medium" }}
             >
-              {editingUser ? "Chỉnh Sửa Người Dùng" : "Thêm Người Dùng Mới"}
+              {editingUser ? "Chỉnh Sửa Phòng Người Dùng" : "Thêm Người Dùng Mới"}
             </Typography>
             <Typography
               variant="body2"
               sx={{ color: "grey.500" }}
             >
-              {editingUser ? "Cập nhật thông tin người dùng" : "Tạo người dùng mới"}
+              {editingUser ? "Cập nhật danh sách phòng của người dùng" : "Tạo người dùng mới"}
             </Typography>
           </Box>
           <IconButton
@@ -163,7 +332,7 @@ export function AddUserModal({ isOpen, onClose, onSubmit, editingUser }: AddUser
             gap: 3,
           }}
         >
-          <form id="user-form" onSubmit={(e) => handleSubmit(e, onSubmit)}>
+          <form id="user-form" onSubmit={handleFormSubmit}>
             {/* Thông Tin Cơ Bản */}
             <Box sx={{ mb: 2 }}>
               <Typography
@@ -252,6 +421,7 @@ export function AddUserModal({ isOpen, onClose, onSubmit, editingUser }: AddUser
                     placeholder="Nhập họ tên"
                     size="small"
                     error={!!errors.fullName}
+                    disabled={!!editingUser}
                     sx={{
                       bgcolor: "background.paper",
                       "& .MuiOutlinedInput-root": {
@@ -303,6 +473,7 @@ export function AddUserModal({ isOpen, onClose, onSubmit, editingUser }: AddUser
                     placeholder="Nhập số điện thoại"
                     size="small"
                     error={!!errors.phoneNumber}
+                    disabled={!!editingUser}
                     sx={{
                       bgcolor: "background.paper",
                       "& .MuiOutlinedInput-root": {
@@ -350,6 +521,7 @@ export function AddUserModal({ isOpen, onClose, onSubmit, editingUser }: AddUser
                   <DatePicker
                     value={formData.dateOfBirth ? new Date(formData.dateOfBirth) : null}
                     onChange={handleDateChange}
+                    disabled={!!editingUser}
                     slotProps={{
                       textField: {
                         fullWidth: true,
@@ -409,6 +581,7 @@ export function AddUserModal({ isOpen, onClose, onSubmit, editingUser }: AddUser
                     placeholder="Nhập CMND/CCCD"
                     size="small"
                     error={!!errors.identityNumber}
+                    disabled={!!editingUser}
                     sx={{
                       bgcolor: "background.paper",
                       "& .MuiOutlinedInput-root": {
@@ -529,7 +702,7 @@ export function AddUserModal({ isOpen, onClose, onSubmit, editingUser }: AddUser
                     <Box sx={{ display: "flex", flexWrap: "wrap", gap: 1 }}>
                       {formData.roomIds.length > 0 ? (
                         formData.roomIds.map((roomId) => {
-                          const room = rooms.find((r) => r.id === roomId);
+                          const room = selectedRooms.find((r) => r.id === roomId);
                           return room ? (
                             <Chip
                               key={roomId}
@@ -542,7 +715,19 @@ export function AddUserModal({ isOpen, onClose, onSubmit, editingUser }: AddUser
                                 borderRadius: 1,
                               }}
                             />
-                          ) : null;
+                          ) : (
+                            <Chip
+                              key={roomId}
+                              label={`Phòng ${roomId}`}
+                              onDelete={() => handleRoomDelete(roomId)}
+                              deleteIcon={<CloseIcon />}
+                              sx={{
+                                bgcolor: "grey.100",
+                                color: "grey.700",
+                                borderRadius: 1,
+                              }}
+                            />
+                          );
                         })
                       ) : (
                         <Typography variant="body2" color="text.secondary">
@@ -596,6 +781,7 @@ export function AddUserModal({ isOpen, onClose, onSubmit, editingUser }: AddUser
             type="submit"
             form="user-form"
             disabled={isSubmitting}
+            onClick={() => console.log("Submit button clicked, isSubmitting:", isSubmitting)}
             sx={{
               px: 3,
               py: 1,
@@ -606,7 +792,7 @@ export function AddUserModal({ isOpen, onClose, onSubmit, editingUser }: AddUser
               "&:disabled": { opacity: 0.5, cursor: "not-allowed" },
             }}
           >
-            {isSubmitting ? "Đang Lưu..." : editingUser ? "Cập Nhật Người Dùng" : "Thêm Người Dùng"}
+            {isSubmitting ? "Đang Lưu..." : editingUser ? "Cập Nhật Phòng" : "Thêm Người Dùng"}
           </Button>
         </DialogActions>
       </Dialog>
@@ -648,9 +834,121 @@ export function AddUserModal({ isOpen, onClose, onSubmit, editingUser }: AddUser
             overflowY: "auto",
             display: "flex",
             flexDirection: "column",
-            gap: 1,
+            gap: 2,
           }}
         >
+          {/* Tìm kiếm và bộ lọc */}
+          <Box sx={{ display: "flex", flexDirection: "column", gap: 2, mb: 2 }}>
+            <FormControl fullWidth size="small">
+              <InputLabel id="area-select-label">Khu Vực</InputLabel>
+              <Select
+                labelId="area-select-label"
+                value={areaId}
+                label="Khu Vực"
+                onChange={handleAreaChange}
+                sx={{
+                  bgcolor: "background.paper",
+                  "& .MuiOutlinedInput-root": {
+                    borderRadius: 2,
+                    "& fieldset": { borderColor: "grey.300" },
+                    "&:hover fieldset": { borderColor: "grey.500" },
+                    "&.Mui-focused fieldset": {
+                      borderColor: "primary.main",
+                      boxShadow: "0 0 0 2px rgba(59, 130, 246, 0.5)",
+                    },
+                  },
+                }}
+              >
+                <MenuItem value="">
+                  <em>Tất cả khu vực</em>
+                </MenuItem>
+                {areas.map((area) => (
+                  <MenuItem key={area.id} value={area.id}>
+                    {area.name}
+                  </MenuItem>
+                ))}
+              </Select>
+            </FormControl>
+            <FormControl fullWidth size="small">
+              <InputLabel id="building-select-label">Tòa Nhà</InputLabel>
+              <Select
+                labelId="building-select-label"
+                value={buildingId}
+                label="Tòa Nhà"
+                onChange={handleBuildingChange}
+                disabled={!areaId}
+                sx={{
+                  bgcolor: "background.paper",
+                  "& .MuiOutlinedInput-root": {
+                    borderRadius: 2,
+                    "& fieldset": { borderColor: "grey.300" },
+                    "&:hover fieldset": { borderColor: "grey.500" },
+                    "&.Mui-focused fieldset": {
+                      borderColor: "primary.main",
+                      boxShadow: "0 0 0 2px rgba(59, 130, 246, 0.5)",
+                    },
+                  },
+                }}
+              >
+                <MenuItem value="">
+                  <em>Tất cả tòa nhà</em>
+                </MenuItem>
+                {buildings.map((building) => (
+                  <MenuItem key={building.id} value={building.id}>
+                    {building.name}
+                  </MenuItem>
+                ))}
+              </Select>
+            </FormControl>
+            <TextField
+              fullWidth
+              value={searchTerm}
+              onChange={handleSearchChange}
+              placeholder="Tìm kiếm phòng..."
+              size="small"
+              sx={{
+                bgcolor: "background.paper",
+                "& .MuiOutlinedInput-root": {
+                  borderRadius: 2,
+                  "& fieldset": { borderColor: "grey.300" },
+                  "&:hover fieldset": { borderColor: "grey.500" },
+                  "&.Mui-focused fieldset": {
+                    borderColor: "primary.main",
+                    boxShadow: "0 0 0 2px rgba(59, 130, 246, 0.5)",
+                  },
+                },
+                "& .MuiInputBase-input": {
+                  color: "grey.700",
+                  px: 1.5,
+                  py: 1,
+                },
+              }}
+            />
+            <Box sx={{ display: "flex", gap: 2 }}>
+              <FormControlLabel
+                control={
+                  <Checkbox
+                    checked={isActiveFilter}
+                    onChange={handleIsActiveFilterChange}
+                  />
+                }
+                label="Chỉ hiển thị phòng hoạt động"
+                sx={{ color: "grey.700" }}
+              />
+              <FormControlLabel
+                control={
+                  <Checkbox
+                    checked={noUsersFilter}
+                    onChange={handleNoUsersFilterChange}
+                  />
+                }
+                label="Phòng chưa có người dùng"
+                sx={{ color: "grey.700" }}
+              />
+            </Box>
+          </Box>
+
+          {/* Danh sách phòng */}
           {isLoadingRooms ? (
             <Box sx={{ display: "flex", justifyContent: "center", p: 3 }}>
               <CircularProgress />
@@ -659,16 +957,60 @@ export function AddUserModal({ isOpen, onClose, onSubmit, editingUser }: AddUser
             <Typography color="error">{roomError}</Typography>
           ) : (
             <Box sx={{ display: "flex", flexDirection: "column", gap: 1 }}>
-              {rooms.map((room) => (
-                <Box key={room.id} sx={{ display: "flex", alignItems: "center" }}>
-                  <input
-                    type="checkbox"
-                    checked={formData.roomIds.includes(room.id)}
-                    onChange={() => handleRoomSelect(room.id)}
-                  />
-                  <Typography sx={{ ml: 1, color: "grey.700" }}>{room.name}</Typography>
-                </Box>
-              ))}
+              {rooms.length > 0 ? (
+                rooms.map((room) => (
+                  <Box key={room.id} sx={{ display: "flex", alignItems: "center" }}>
+                    <Checkbox
+                      checked={formData.roomIds.includes(room.id)}
+                      onChange={() => handleRoomSelect(room.id)}
+                    />
+                    <Typography sx={{ ml: 1, color: "grey.700" }}>{room.name}</Typography>
+                  </Box>
+                ))
+              ) : (
+                <Typography color="text.secondary">Không tìm thấy phòng</Typography>
+              )}
+            </Box>
+          )}
+
+          {/* Phân trang */}
+          {totalPages > 1 && (
+            <Box sx={{ display: "flex", justifyContent: "space-between", alignItems: "center", mt: 2 }}>
+              <Typography variant="body2" color="grey.700">
+                Trang {pageNumber} / {totalPages} (Tổng: {totalCount} phòng)
+              </Typography>
+              <Box sx={{ display: "flex", gap: 1 }}>
+                <Button
+                  variant="outlined"
+                  startIcon={<ArrowBack />}
+                  onClick={handlePreviousPage}
+                  disabled={pageNumber === 1}
+                  sx={{
+                    borderRadius: 2,
+                    borderColor: "grey.300",
+                    color: "grey.700",
+                    "&:hover": { borderColor: "grey.500", bgcolor: "grey.100" },
+                    "&:disabled": { opacity: 0.5 },
+                  }}
+                >
+                  Trước
+                </Button>
+                <Button
+                  variant="outlined"
+                  endIcon={<ArrowForward />}
+                  onClick={handleNextPage}
+                  disabled={pageNumber === totalPages}
+                  sx={{
+                    borderRadius: 2,
+                    borderColor: "grey.300",
+                    color: "grey.700",
+                    "&:hover": { borderColor: "grey.500", bgcolor: "grey.100" },
+                    "&:disabled": { opacity: 0.5 },
+                  }}
+                >
+                  Sau
+                </Button>
+              </Box>
             </Box>
           )}
         </DialogContent>
