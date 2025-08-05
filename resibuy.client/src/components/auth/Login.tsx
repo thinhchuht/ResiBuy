@@ -2,20 +2,7 @@ import React, { useState, useRef } from "react";
 import { useNavigate } from "react-router-dom";
 import { useFormik } from "formik";
 import * as Yup from "yup";
-import {
-  Box,
-  Button,
-  TextField,
-  Typography,
-  Paper,
-  InputAdornment,
-  IconButton,
-  Alert,
-  CircularProgress,
-  Dialog,
-  MenuItem,
-  Autocomplete,
-} from "@mui/material";
+import { Box, Button, TextField, Typography, Paper, InputAdornment, IconButton, Alert, CircularProgress, Dialog, MenuItem, Autocomplete } from "@mui/material";
 import { Visibility, VisibilityOff, Phone, Lock } from "@mui/icons-material";
 import { useToastify } from "../../hooks/useToastify";
 import { useAuth } from "../../contexts/AuthContext";
@@ -89,9 +76,7 @@ const Login: React.FC = () => {
       password: "",
     },
     validationSchema: Yup.object({
-      password: Yup.string()
-        .min(5, "Mật khẩu phải ít nhất 6 kí tự")
-        .required("Vui lòng điền mật khẩu"),
+      password: Yup.string().min(5, "Mật khẩu phải ít nhất 6 kí tự").required("Vui lòng điền mật khẩu"),
     }),
     onSubmit: async (values) => {
       setIsLoading(true);
@@ -99,8 +84,8 @@ const Login: React.FC = () => {
       try {
         const result = await login(values.phoneNumber, values.password);
         if (result.success) {
-          console.log('result' , result)
-          if(result?.data?.user?.roles.includes("ADMIN")) {
+          console.log("result", result);
+          if (result?.data?.user?.roles.includes("ADMIN")) {
             navigate("/admin");
           } else {
             navigate("/home");
@@ -108,15 +93,12 @@ const Login: React.FC = () => {
           }
         } else {
           const loginError = result.error as LoginError;
-          setError(
-            loginError?.message || "Số điện thoại hoặc mật khẩu không hợp lệ"
-          );
+          setError(loginError?.message || "Số điện thoại hoặc mật khẩu không hợp lệ");
         }
       } catch (err: unknown) {
         const error = err as LoginError;
         const errorMessage =
-          error.message?.includes("ERR_CONNECTION_REFUSED") ||
-          error.message?.includes("ERR_SSL_PROTOCOL_ERROR")
+          error.message?.includes("ERR_CONNECTION_REFUSED") || error.message?.includes("ERR_SSL_PROTOCOL_ERROR")
             ? "Không thể kết nối đến máy chủ. Thử lại sau"
             : error?.message || "An unexpected error occurred.";
         setError(errorMessage);
@@ -177,7 +159,18 @@ const Login: React.FC = () => {
 
   const handleRegister = async (e: React.FormEvent) => {
     e.preventDefault();
-    setRegisterTouched({ identityNumber: true, phone: true, email: true, password: true, fullName: true, dateOfBirth: true, areaId: true, buildingId: true, roomId: true, roomIds: true });
+    setRegisterTouched({
+      identityNumber: true,
+      phone: true,
+      email: true,
+      password: true,
+      fullName: true,
+      dateOfBirth: true,
+      areaId: true,
+      buildingId: true,
+      roomId: true,
+      roomIds: true,
+    });
     console.log("submit", registerForm, registerErrors);
     if (Object.values(registerErrors).some(Boolean)) {
       toast.error("Vui lòng nhập đầy đủ thông tin hợp lệ!");
@@ -197,7 +190,7 @@ const Login: React.FC = () => {
       console.log("call getCode", payload);
       const res = await userApi.getCode(payload);
       if (!res || res.error) {
-        toast.error(res?.error?.message || "Gửi mã xác nhận thất bại!");
+        console.error(res?.error?.message || "Gửi mã xác nhận thất bại!");
       } else {
         setRegisterCodeModalOpen(true);
       }
@@ -223,7 +216,18 @@ const Login: React.FC = () => {
         setRegisterCodeModalOpen(false);
         setRegisterModalOpen(false);
         setRegisterForm({ identityNumber: "", phone: "", email: "", password: "", fullName: "", dateOfBirth: "", areaId: "", buildingId: "", roomId: "", roomIds: [] });
-        setRegisterTouched({ identityNumber: false, phone: false, email: false, password: false, fullName: false, dateOfBirth: false, areaId: false, buildingId: false, roomId: false, roomIds: false });
+        setRegisterTouched({
+          identityNumber: false,
+          phone: false,
+          email: false,
+          password: false,
+          fullName: false,
+          dateOfBirth: false,
+          areaId: false,
+          buildingId: false,
+          roomId: false,
+          roomIds: false,
+        });
         setRegisterCode("");
         toast.success("Đăng ký thành công! Vui lòng đăng nhập.");
       }
@@ -250,7 +254,7 @@ const Login: React.FC = () => {
     try {
       const roomsRes = await roomApi.searchInBuilding({ buildingId, pageNumber: page, pageSize, keyword: search });
       setRoomsData((prev) => {
-        const newRooms = roomsRes.items.filter(r => !prev.some(p => p.id === r.id));
+        const newRooms = roomsRes.items.filter((r) => !prev.some((p) => p.id === r.id));
         return [...prev, ...newRooms];
       });
     } catch {
@@ -280,8 +284,7 @@ const Login: React.FC = () => {
         alignItems: "center",
         justifyContent: "center",
         backdropFilter: "blur(2px)",
-      }}
-    >
+      }}>
       <Paper
         elevation={10}
         sx={{
@@ -293,21 +296,15 @@ const Login: React.FC = () => {
           display: "flex",
           flexDirection: "column",
           alignItems: "center",
-        }}
-      >
+        }}>
         <Box
           sx={{
             display: "flex",
             justifyContent: "center",
             alignItems: "center",
             gap: 2,
-          }}
-        >
-          <img
-            src={logo}
-            alt="ResiBuy"
-            style={{ width: "100px", height: "100px" }}
-          />
+          }}>
+          <img src={logo} alt="ResiBuy" style={{ width: "100px", height: "100px" }} />
           <Box>
             <Typography color="text.secondary" mb={2} sx={{ fontWeight: 600 }}>
               Trải nghiệm mua sắm tại nhà
@@ -321,11 +318,7 @@ const Login: React.FC = () => {
           </Alert>
         )}
 
-        <Box
-          component="form"
-          onSubmit={formik.handleSubmit}
-          sx={{ width: "100%" }}
-        >
+        <Box component="form" onSubmit={formik.handleSubmit} sx={{ width: "100%" }}>
           <TextField
             fullWidth
             margin="normal"
@@ -337,9 +330,7 @@ const Login: React.FC = () => {
             value={formik.values.phoneNumber}
             onChange={formik.handleChange}
             onBlur={formik.handleBlur}
-            error={
-              formik.touched.phoneNumber && Boolean(formik.errors.phoneNumber)
-            }
+            error={formik.touched.phoneNumber && Boolean(formik.errors.phoneNumber)}
             helperText={formik.touched.phoneNumber && formik.errors.phoneNumber}
             disabled={isLoading}
             InputProps={{
@@ -373,10 +364,7 @@ const Login: React.FC = () => {
               ),
               endAdornment: (
                 <InputAdornment position="end">
-                  <IconButton
-                    onClick={() => setShowPassword(!showPassword)}
-                    disabled={isLoading}
-                  >
+                  <IconButton onClick={() => setShowPassword(!showPassword)} disabled={isLoading}>
                     {showPassword ? <VisibilityOff /> : <Visibility />}
                   </IconButton>
                 </InputAdornment>
@@ -393,46 +381,23 @@ const Login: React.FC = () => {
               mb: 1,
               py: 1.5,
               borderRadius: 15,
-              background:
-                "linear-gradient(to right, #EB5C60, #F28B50, #FFD190)",
+              background: "linear-gradient(to right, #EB5C60, #F28B50, #FFD190)",
             }}
-            disabled={isLoading}
-          >
-            {isLoading ? (
-              <CircularProgress size={24} color="inherit" />
-            ) : (
-              "Đăng nhập"
-            )}
+            disabled={isLoading}>
+            {isLoading ? <CircularProgress size={24} color="inherit" /> : "Đăng nhập"}
           </Button>
 
           {/* Forgot password and register links */}
-          <Box sx={{ display: 'flex', flexDirection: 'row', justifyContent: 'space-between', mb: 1, width: '100%' }}>
-            <Typography
-              variant="body2"
-              color="primary"
-              sx={{ cursor: "pointer", textDecoration: "underline" }}
-              onClick={() => setRegisterModalOpen(true)}
-            >
+          <Box sx={{ display: "flex", flexDirection: "row", justifyContent: "space-between", mb: 1, width: "100%" }}>
+            <Typography variant="body2" color="primary" sx={{ cursor: "pointer", textDecoration: "underline" }} onClick={() => setRegisterModalOpen(true)}>
               Đăng ký tài khoản
             </Typography>
-            <Typography
-              variant="body2"
-              color="primary"
-              sx={{ cursor: "pointer", textDecoration: "underline" }}
-              onClick={() => setForgotModalOpen(true)}
-            >
+            <Typography variant="body2" color="primary" sx={{ cursor: "pointer", textDecoration: "underline" }} onClick={() => setForgotModalOpen(true)}>
               Quên mật khẩu?
             </Typography>
           </Box>
 
-          <Typography
-            variant="body2"
-            color="text.secondary"
-            align="center"
-            mt={2}
-            fontSize={12}
-            fontStyle={"italic"}
-          >
+          <Typography variant="body2" color="text.secondary" align="center" mt={2} fontSize={12} fontStyle={"italic"}>
             Liên hệ với Ban quản lí tòa nhà để được tạo tài khoản bán hàng
           </Typography>
         </Box>
@@ -455,8 +420,7 @@ const Login: React.FC = () => {
               minWidth: 350,
               maxWidth: 400,
             },
-          }}
-        >
+          }}>
           <Box
             sx={{
               p: 4,
@@ -469,8 +433,7 @@ const Login: React.FC = () => {
                 handleSendResetCode();
               }
             }}
-            tabIndex={0}
-          >
+            tabIndex={0}>
             <Typography
               variant="h5"
               sx={{
@@ -478,15 +441,10 @@ const Login: React.FC = () => {
                 fontWeight: 700,
                 color: "#EB5C60",
                 letterSpacing: 1,
-              }}
-            >
+              }}>
               Quên mật khẩu
             </Typography>
-            <Typography
-              variant="body2"
-              color="text.secondary"
-              sx={{ mb: 2, textAlign: "center" }}
-            >
+            <Typography variant="body2" color="text.secondary" sx={{ mb: 2, textAlign: "center" }}>
               Vui lòng nhập số điện thoại đã đăng ký để nhận mã xác nhận.
             </Typography>
             <TextField
@@ -511,8 +469,7 @@ const Login: React.FC = () => {
                 gap: 2,
                 width: "100%",
                 mt: 1,
-              }}
-            >
+              }}>
               <Button
                 variant="text"
                 color="secondary"
@@ -530,8 +487,7 @@ const Login: React.FC = () => {
                     borderColor: "#FF6B6B",
                     color: "#FF6B6B",
                   },
-                }}
-              >
+                }}>
                 Hủy
               </Button>
               <Button
@@ -544,20 +500,13 @@ const Login: React.FC = () => {
                   py: 1.2,
                   borderRadius: 15,
                   fontWeight: 600,
-                  background:
-                    "linear-gradient(to right, #EB5C60, #F28B50, #FFD190)",
+                  background: "linear-gradient(to right, #EB5C60, #F28B50, #FFD190)",
                   boxShadow: "0 3px 12px rgba(233, 30, 99, 0.13)",
                   "&:hover": {
-                    background:
-                      "linear-gradient(to right, #F28B50, #EB5C60, #FFD190)",
+                    background: "linear-gradient(to right, #F28B50, #EB5C60, #FFD190)",
                   },
-                }}
-              >
-                {isSendingCode ? (
-                  <CircularProgress size={20} color="inherit" />
-                ) : (
-                  "Gửi mã xác nhận"
-                )}
+                }}>
+                {isSendingCode ? <CircularProgress size={20} color="inherit" /> : "Gửi mã xác nhận"}
               </Button>
             </Box>
           </Box>
@@ -578,7 +527,18 @@ const Login: React.FC = () => {
         onClose={() => {
           setRegisterModalOpen(false);
           setRegisterForm({ identityNumber: "", phone: "", email: "", password: "", fullName: "", dateOfBirth: "", areaId: "", buildingId: "", roomId: "", roomIds: [] });
-          setRegisterTouched({ identityNumber: false, phone: false, email: false, password: false, fullName: false, dateOfBirth: false, areaId: false, buildingId: false, roomId: false, roomIds: false });
+          setRegisterTouched({
+            identityNumber: false,
+            phone: false,
+            email: false,
+            password: false,
+            fullName: false,
+            dateOfBirth: false,
+            areaId: false,
+            buildingId: false,
+            roomId: false,
+            roomIds: false,
+          });
         }}
         PaperProps={{
           sx: {
@@ -588,10 +548,9 @@ const Login: React.FC = () => {
             background: "linear-gradient(135deg, #fff 80%, #ffe3ec 100%)",
             minWidth: 700,
             maxWidth: 900,
-            width: '100%',
+            width: "100%",
           },
-        }}
-      >
+        }}>
         <Box
           component="form"
           onSubmit={handleRegister}
@@ -601,13 +560,12 @@ const Login: React.FC = () => {
             flexDirection: "column",
             alignItems: "center",
             justifyContent: "center",
-          }}
-        >
-          <Typography variant="h5" sx={{ mb: 3, fontWeight: 700, color: "#EB5C60", letterSpacing: 1, textAlign: 'center' }}>
+          }}>
+          <Typography variant="h5" sx={{ mb: 3, fontWeight: 700, color: "#EB5C60", letterSpacing: 1, textAlign: "center" }}>
             Đăng ký tài khoản
           </Typography>
-          <Box sx={{ display: 'flex', flexDirection: 'row', gap: 5, width: '100%', mb: 3, justifyContent: 'center' }}>
-            <Box sx={{ flex: 1, display: 'flex', flexDirection: 'column', minWidth: 0, maxWidth: 360 }}>
+          <Box sx={{ display: "flex", flexDirection: "row", gap: 5, width: "100%", mb: 3, justifyContent: "center" }}>
+            <Box sx={{ flex: 1, display: "flex", flexDirection: "column", minWidth: 0, maxWidth: 360 }}>
               <Typography variant="subtitle2" sx={{ mb: 1, fontWeight: 600 }}>
                 Thông tin tài khoản
               </Typography>
@@ -615,8 +573,8 @@ const Login: React.FC = () => {
                 fullWidth
                 label="Họ tên"
                 value={registerForm.fullName}
-                onChange={e => handleRegisterChange("fullName", e.target.value)}
-                onBlur={() => setRegisterTouched(prev => ({ ...prev, fullName: true }))}
+                onChange={(e) => handleRegisterChange("fullName", e.target.value)}
+                onBlur={() => setRegisterTouched((prev) => ({ ...prev, fullName: true }))}
                 error={registerTouched.fullName && Boolean(registerErrors.fullName)}
                 helperText={registerTouched.fullName && registerErrors.fullName}
                 sx={{ mb: 2, borderRadius: 2, background: "#fff" }}
@@ -626,8 +584,8 @@ const Login: React.FC = () => {
                 label="Ngày sinh"
                 type="date"
                 value={registerForm.dateOfBirth}
-                onChange={e => handleRegisterChange("dateOfBirth", e.target.value)}
-                onBlur={() => setRegisterTouched(prev => ({ ...prev, dateOfBirth: true }))}
+                onChange={(e) => handleRegisterChange("dateOfBirth", e.target.value)}
+                onBlur={() => setRegisterTouched((prev) => ({ ...prev, dateOfBirth: true }))}
                 error={registerTouched.dateOfBirth && Boolean(registerErrors.dateOfBirth)}
                 helperText={registerTouched.dateOfBirth && registerErrors.dateOfBirth}
                 sx={{ mb: 2, borderRadius: 2, background: "#fff" }}
@@ -637,8 +595,8 @@ const Login: React.FC = () => {
                 fullWidth
                 label="Số CCCD"
                 value={registerForm.identityNumber}
-                onChange={e => handleRegisterChange("identityNumber", e.target.value)}
-                onBlur={() => setRegisterTouched(prev => ({ ...prev, identityNumber: true }))}
+                onChange={(e) => handleRegisterChange("identityNumber", e.target.value)}
+                onBlur={() => setRegisterTouched((prev) => ({ ...prev, identityNumber: true }))}
                 error={registerTouched.identityNumber && Boolean(registerErrors.identityNumber)}
                 helperText={registerTouched.identityNumber && registerErrors.identityNumber}
                 sx={{ mb: 2, borderRadius: 2, background: "#fff" }}
@@ -647,8 +605,8 @@ const Login: React.FC = () => {
                 fullWidth
                 label="Số điện thoại"
                 value={registerForm.phone}
-                onChange={e => handleRegisterChange("phone", e.target.value)}
-                onBlur={() => setRegisterTouched(prev => ({ ...prev, phone: true }))}
+                onChange={(e) => handleRegisterChange("phone", e.target.value)}
+                onBlur={() => setRegisterTouched((prev) => ({ ...prev, phone: true }))}
                 error={registerTouched.phone && Boolean(registerErrors.phone)}
                 helperText={registerTouched.phone && registerErrors.phone}
                 sx={{ mb: 2, borderRadius: 2, background: "#fff" }}
@@ -657,8 +615,8 @@ const Login: React.FC = () => {
                 fullWidth
                 label="Email"
                 value={registerForm.email}
-                onChange={e => handleRegisterChange("email", e.target.value)}
-                onBlur={() => setRegisterTouched(prev => ({ ...prev, email: true }))}
+                onChange={(e) => handleRegisterChange("email", e.target.value)}
+                onBlur={() => setRegisterTouched((prev) => ({ ...prev, email: true }))}
                 error={registerTouched.email && Boolean(registerErrors.email)}
                 helperText={registerTouched.email && registerErrors.email}
                 sx={{ mb: 2, borderRadius: 2, background: "#fff" }}
@@ -668,15 +626,15 @@ const Login: React.FC = () => {
                 label="Mật khẩu"
                 type="password"
                 value={registerForm.password}
-                onChange={e => handleRegisterChange("password", e.target.value)}
-                onBlur={() => setRegisterTouched(prev => ({ ...prev, password: true }))}
+                onChange={(e) => handleRegisterChange("password", e.target.value)}
+                onBlur={() => setRegisterTouched((prev) => ({ ...prev, password: true }))}
                 error={registerTouched.password && Boolean(registerErrors.password)}
                 helperText={registerTouched.password && registerErrors.password}
                 sx={{ mb: 2, borderRadius: 2, background: "#fff" }}
               />
             </Box>
             {/* Cột phải: thông tin phòng */}
-            <Box sx={{ flex: 1, display: 'flex', flexDirection: 'column', minWidth: 0, maxWidth: 360 }}>
+            <Box sx={{ flex: 1, display: "flex", flexDirection: "column", minWidth: 0, maxWidth: 360 }}>
               <Typography variant="subtitle2" sx={{ mb: 1, fontWeight: 600 }}>
                 Thông tin phòng
               </Typography>
@@ -685,21 +643,24 @@ const Login: React.FC = () => {
                 fullWidth
                 label="Khu vực"
                 value={registerForm.areaId}
-                onChange={e => {
+                onChange={(e) => {
                   handleRegisterChange("areaId", e.target.value);
                   handleRegisterChange("buildingId", "");
                   if (e.target.value) fetchBuildings(e.target.value);
                 }}
-                onBlur={() => setRegisterTouched(prev => ({ ...prev, areaId: true }))}
+                onBlur={() => setRegisterTouched((prev) => ({ ...prev, areaId: true }))}
                 error={registerTouched.areaId && Boolean(registerErrors.areaId)}
                 helperText={registerTouched.areaId && registerErrors.areaId}
-                sx={{ mb: 2, background: '#fff' }}
+                sx={{ mb: 2, background: "#fff" }}
                 SelectProps={{ native: false }}
-                className="register-select-field"
-              >
-                <MenuItem value="" disabled>Chọn khu vực</MenuItem>
+                className="register-select-field">
+                <MenuItem value="" disabled>
+                  Chọn khu vực
+                </MenuItem>
                 {areasData.map((area) => (
-                  <MenuItem key={area.id} value={area.id}>{area.name}</MenuItem>
+                  <MenuItem key={area.id} value={area.id}>
+                    {area.name}
+                  </MenuItem>
                 ))}
               </TextField>
               <TextField
@@ -707,33 +668,39 @@ const Login: React.FC = () => {
                 fullWidth
                 label="Tòa nhà"
                 value={registerForm.buildingId}
-                onChange={async e => {
+                onChange={async (e) => {
                   handleRegisterChange("buildingId", e.target.value);
                   if (e.target.value) {
                     await fetchRooms(e.target.value as string, 1, 6);
                   }
                 }}
-                onBlur={() => setRegisterTouched(prev => ({ ...prev, buildingId: true }))}
+                onBlur={() => setRegisterTouched((prev) => ({ ...prev, buildingId: true }))}
                 error={registerTouched.buildingId && Boolean(registerErrors.buildingId)}
                 helperText={registerTouched.buildingId && registerErrors.buildingId}
-                sx={{ mb: 2, background: '#fff' }}
+                sx={{ mb: 2, background: "#fff" }}
                 disabled={!registerForm.areaId}
                 SelectProps={{ native: false }}
-                className="register-select-field"
-              >
-                <MenuItem value="" disabled>Chọn tòa nhà</MenuItem>
+                className="register-select-field">
+                <MenuItem value="" disabled>
+                  Chọn tòa nhà
+                </MenuItem>
                 {buildingsData.map((building) => (
-                  <MenuItem key={building.id} value={building.id}>{building.name}</MenuItem>
+                  <MenuItem key={building.id} value={building.id}>
+                    {building.name}
+                  </MenuItem>
                 ))}
               </TextField>
               <Autocomplete
                 multiple
                 fullWidth
                 options={roomsData}
-                getOptionLabel={option => option.name || ''}
-                value={roomsData.filter(r => selectedRoomIds.includes(String(r.id)))}
+                getOptionLabel={(option) => option.name || ""}
+                value={roomsData.filter((r) => selectedRoomIds.includes(String(r.id)))}
                 onChange={(_, newValue) => {
-                  handleRegisterChange("roomIds", newValue.map(r => String(r.id)).filter((id): id is string => !!id));
+                  handleRegisterChange(
+                    "roomIds",
+                    newValue.map((r) => String(r.id)).filter((id): id is string => !!id)
+                  );
                 }}
                 onInputChange={(_, newInputValue) => {
                   if (!registerForm.buildingId) return;
@@ -750,7 +717,7 @@ const Login: React.FC = () => {
                       label="Phòng"
                       error={registerTouched.roomIds && Boolean(registerErrors.roomIds)}
                       helperText={registerTouched.roomIds && registerErrors.roomIds}
-                      sx={{ mb: 2, background: '#fff' }}
+                      sx={{ mb: 2, background: "#fff" }}
                       inputProps={{ ...params.inputProps, readOnly: !registerForm.buildingId }}
                     />
                   );
@@ -758,7 +725,7 @@ const Login: React.FC = () => {
               />
             </Box>
           </Box>
-          <Box sx={{ display: "flex", flexDirection: "row", gap: 2, width: "100%", mt: 2, justifyContent: 'flex-end' }}>
+          <Box sx={{ display: "flex", flexDirection: "row", gap: 2, width: "100%", mt: 2, justifyContent: "flex-end" }}>
             <Button
               variant="text"
               color="secondary"
@@ -774,13 +741,12 @@ const Login: React.FC = () => {
                 color: "#e91e63",
                 background: "#fff",
                 boxShadow: "none",
-                '&:hover': {
+                "&:hover": {
                   background: "#ffe3ec",
                   borderColor: "#FF6B6B",
                   color: "#FF6B6B",
                 },
-              }}
-            >
+              }}>
               Hủy
             </Button>
             <Button
@@ -796,11 +762,10 @@ const Login: React.FC = () => {
                 borderRadius: 15,
                 background: "linear-gradient(to right, #EB5C60, #F28B50, #FFD190)",
                 boxShadow: "0 3px 12px rgba(233, 30, 99, 0.13)",
-                '&:hover': {
+                "&:hover": {
                   background: "linear-gradient(to right, #F28B50, #EB5C60, #FFD190)",
                 },
-              }}
-            >
+              }}>
               {registerLoading ? <CircularProgress size={22} color="inherit" /> : "Đăng ký"}
             </Button>
           </Box>
