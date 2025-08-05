@@ -48,6 +48,7 @@ import { debounce } from "lodash";
 import type { BuildingDto, RoomDto } from "../../types/dtoModels";
 import reportApi from "../../api/report.api";
 import CheckCircleIcon from "@mui/icons-material/CheckCircle";
+import type { Report } from "../Admin/Reports/page";
 
 // Define types matching API result
 interface RoomQueryResult {
@@ -79,6 +80,11 @@ export interface OrderItemQueryResult {
 export interface OrderApiResult {
   id: string;
   userId: string;
+  user: {
+    id: string;
+    fullName: string;
+    phoneNumber: string;
+  };
   shipper: {
     id: string;
     phoneNumber: string;
@@ -93,12 +99,7 @@ export interface OrderApiResult {
   note: string;
   cancelReason: string;
   roomQueryResult: RoomQueryResult;
-  report: {
-    id: string;
-    title: string;
-    description: string;
-    isResolved: boolean;
-  };
+  report: Report;
   store: Store;
   voucher: Voucher;
   orderItems: OrderItemQueryResult[];

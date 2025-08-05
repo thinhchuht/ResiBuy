@@ -1,8 +1,30 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 import axiosClient from "./base.api";
+
+// Type definitions for better TypeScript support
+import type { User } from "../types/models";
+
+type LoginSuccessResponse = {
+  success: true;
+  data: {
+    user: User;
+    token: string;
+    refreshToken: string;
+  };
+};
+
+type LoginErrorResponse = {
+  success: false;
+  error: {
+    message: string;
+  };
+};
+
+type LoginResponse = LoginSuccessResponse | LoginErrorResponse;
+
 const authUrl = "/api/auth";
 const authApi = {
-  login: async (phoneNumber: string, password: string) => {
+  login: async (phoneNumber: string, password: string): Promise<LoginResponse> => {
     try {
       const response = await axiosClient.post(authUrl + "/login", {
         phoneNumber,

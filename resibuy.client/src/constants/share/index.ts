@@ -7,7 +7,8 @@ import {
   ConfirmationNumber,
   Store,
   DeliveryDiningSharp,
-  Apartment ,
+  Apartment,
+  Report,
 } from "@mui/icons-material";
 
 export const menuItems = [
@@ -20,6 +21,7 @@ export const menuItems = [
   { title: "Vouchers", url: "/vouchers", icon: ConfirmationNumber },
   { title: "Quản lý chung cư", url: "/admin/resi", icon: Apartment },
   { title: "Cửa hàng", url: "/admin/store", icon: Store },
+  { title: "Báo cáo", url: "/admin/reports", icon: Report },
 ];
 export const categoryData = [
   { name: "Skincare", value: 35, color: "#8884d8" },

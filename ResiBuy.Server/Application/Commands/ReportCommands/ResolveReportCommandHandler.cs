@@ -15,9 +15,9 @@ namespace ResiBuy.Server.Application.Commands.ReportCommands
             var report = await reportDbService.GetByIdBaseAsync(command.Id) ?? throw new CustomException(ExceptionErrorCode.ValidationFailed, "Không tồn tại báo cáo");
             report.IsResolved = true;
              await reportDbService.UpdateAsync(report);
-            var order = await orderDbService.GetByIdBaseAsync(report.OrderId);
+            var order = await orderDbService.GetById(report.OrderId);
             var lockedUsers = new List<string>();
-            order.Status = OrderStatus.Cancelled;
+            //order.Status = OrderStatus.Cancelled;
             if(command.IsAddReportTarget)
             {
                 if (report.ReportTarget == ReportTarget.Customer)

@@ -99,8 +99,13 @@ const Login: React.FC = () => {
       try {
         const result = await login(values.phoneNumber, values.password);
         if (result.success) {
-          toast.success("Chúc bạn mua sắm vui vẻ!");
-          navigate("/home");
+          console.log('result' , result)
+          if(result?.data?.user?.roles.includes("ADMIN")) {
+            navigate("/admin");
+          } else {
+            navigate("/home");
+            toast.success("Chúc bạn mua sắm vui vẻ!");
+          }
         } else {
           const loginError = result.error as LoginError;
           setError(
