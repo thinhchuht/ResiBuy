@@ -16,19 +16,13 @@ interface PasswordChangeSectionProps {
 
 const validationSchema = Yup.object().shape({
   oldPassword: Yup.string().required("Vui lòng nhập mật khẩu hiện tại"),
-  newPassword: Yup.string()
-    .min(8, "Mật khẩu phải có ít nhất 8 ký tự")
-    .required("Vui lòng nhập mật khẩu mới"),
+  newPassword: Yup.string().min(8, "Mật khẩu phải có ít nhất 8 ký tự").required("Vui lòng nhập mật khẩu mới"),
   confirmPassword: Yup.string()
     .oneOf([Yup.ref("newPassword")], "Mật khẩu không khớp")
     .required("Vui lòng xác nhận mật khẩu mới"),
 });
 
-const PasswordChangeSection = ({
-  user,
-  isAdmin,
-  maskMiddle,
-}: PasswordChangeSectionProps) => {
+const PasswordChangeSection = ({ user, isAdmin, maskMiddle }: PasswordChangeSectionProps) => {
   const toast = useToastify();
   const [showOldPassword, setShowOldPassword] = useState(false);
   const [showNewPassword, setShowNewPassword] = useState(false);
@@ -36,7 +30,7 @@ const PasswordChangeSection = ({
   const [openConfirmModal, setOpenConfirmModal] = useState(false);
   const [confirmCode, setConfirmCode] = useState("");
   const [isSubmittingCode, setIsSubmittingCode] = useState(false);
-  const [pendingPassword, setPendingPassword] = useState<{oldPassword: string, newPassword: string} | null>(null);
+  const [pendingPassword, setPendingPassword] = useState<{ oldPassword: string; newPassword: string } | null>(null);
 
   const initialValues = {
     oldPassword: "",
@@ -53,8 +47,8 @@ const PasswordChangeSection = ({
         setOpenConfirmModal(true);
         toast.success("Mã xác nhận đã được gửi về email của bạn!");
       }
-    } catch {
-      toast.error("Gửi mã xác nhận thất bại!");
+    } catch (error) {
+      console.log(error);
     }
   };
 
@@ -82,8 +76,8 @@ const PasswordChangeSection = ({
 
   return (
     <Box>
-      <Box sx={{ borderBottom: '1px solid #f8bbd0', mb: 3, pb: 1 }}>
-        <Typography variant="h6" fontWeight={700} color="#e91e63" sx={{ textAlign: 'left' }}>
+      <Box sx={{ borderBottom: "1px solid #f8bbd0", mb: 3, pb: 1 }}>
+        <Typography variant="h6" fontWeight={700} color="#e91e63" sx={{ textAlign: "left" }}>
           Đổi mật khẩu
         </Typography>
       </Box>
@@ -95,11 +89,7 @@ const PasswordChangeSection = ({
           {maskMiddle(user?.phoneNumber) || "-"}
         </Typography>
       </Box>
-      <Formik
-        initialValues={initialValues}
-        validationSchema={validationSchema}
-        onSubmit={handleSubmit}
-      >
+      <Formik initialValues={initialValues} validationSchema={validationSchema} onSubmit={handleSubmit}>
         {({ errors, touched, values, handleChange, handleBlur }) => (
           <Form>
             <Field
@@ -118,10 +108,7 @@ const PasswordChangeSection = ({
               InputProps={{
                 endAdornment: (
                   <InputAdornment position="end">
-                    <IconButton
-                      onClick={() => setShowOldPassword(!showOldPassword)}
-                      edge="end"
-                    >
+                    <IconButton onClick={() => setShowOldPassword(!showOldPassword)} edge="end">
                       {showOldPassword ? <VisibilityOff /> : <Visibility />}
                     </IconButton>
                   </InputAdornment>
@@ -153,10 +140,7 @@ const PasswordChangeSection = ({
               InputProps={{
                 endAdornment: (
                   <InputAdornment position="end">
-                    <IconButton
-                      onClick={() => setShowNewPassword(!showNewPassword)}
-                      edge="end"
-                    >
+                    <IconButton onClick={() => setShowNewPassword(!showNewPassword)} edge="end">
                       {showNewPassword ? <VisibilityOff /> : <Visibility />}
                     </IconButton>
                   </InputAdornment>
@@ -188,10 +172,7 @@ const PasswordChangeSection = ({
               InputProps={{
                 endAdornment: (
                   <InputAdornment position="end">
-                    <IconButton
-                      onClick={() => setShowConfirmPassword(!showConfirmPassword)}
-                      edge="end"
-                    >
+                    <IconButton onClick={() => setShowConfirmPassword(!showConfirmPassword)} edge="end">
                       {showConfirmPassword ? <VisibilityOff /> : <Visibility />}
                     </IconButton>
                   </InputAdornment>
@@ -223,8 +204,7 @@ const PasswordChangeSection = ({
                   backgroundColor: "#FF5C5C",
                   boxShadow: "0 6px 20px rgba(233, 30, 99, 0.4)",
                 },
-              }}
-            >
+              }}>
               Đổi mật khẩu
             </Button>
           </Form>

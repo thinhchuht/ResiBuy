@@ -146,12 +146,22 @@ export const useUserForm = (editingUser?: UserDto | null) => {
       }
 
       if (!formData.password) {
-        newErrors.password = "Mật khẩu là bắt buộc khi tạo mới";
-        isValid = false;
-      } else if (formData.password.length < 6) {
-        newErrors.password = "Mật khẩu phải có ít nhất 6 ký tự";
-        isValid = false;
-      }
+  newErrors.password = "Mật khẩu là bắt buộc khi tạo mới";
+  isValid = false;
+} else if (formData.password.length < 8) {
+  newErrors.password = "Mật khẩu phải có ít nhất 8 ký tự";
+  isValid = false;
+} else if (!/(?=.*[a-z])/.test(formData.password)) {
+  newErrors.password = "Mật khẩu phải có ít nhất 1 chữ thường";
+  isValid = false;
+} else if (!/(?=.*[A-Z])/.test(formData.password)) {
+  newErrors.password = "Mật khẩu phải có ít nhất 1 chữ hoa";
+  isValid = false;
+} else if (!/(?=.*\d)/.test(formData.password)) {
+  newErrors.password = "Mật khẩu phải có ít nhất 1 số";
+  isValid = false;
+}
+
     }
 
     setErrors(newErrors);
@@ -173,7 +183,7 @@ export const useUserForm = (editingUser?: UserDto | null) => {
     setIsSubmitting(true);
     try {
       await onSubmit(formData, rooms);
-      toast.success(editingUser ? "Cập nhật phòng thành công!" : "Thêm người dùng thành công!");
+      toast.success(editingUser ? "Cập nhật phòng thành công!" : "Đang kiểm tra");
     } catch (error: any) {
       console.error("Submit user error:", error);
       toast.error(error.message || "Lỗi khi lưu người dùng");

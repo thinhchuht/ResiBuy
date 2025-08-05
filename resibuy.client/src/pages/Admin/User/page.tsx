@@ -20,6 +20,7 @@ import {
 } from "../../../components/admin/User/seg/utils";
 import { AddUserModal } from "../../../components/admin/User/add-user-modal";
 import { EditRoleModal } from "../../../components/admin/User/edit-role-modal";
+import { UserDetailModal } from "../../../components/admin/User/user-detail-modal";
 
 function UserStatsCards() {
   const [stats, setStats] = useState({
@@ -439,6 +440,12 @@ export default function UserPage() {
             onClose={handleCloseEditRoleModal}
             onSubmit={handleSubmitRole}
             userId={editingRoleUser}
+          />
+
+          <UserDetailModal
+            isOpen={isDetailModalOpen}
+            onClose={handleCloseDetailModal}
+            user={selectedUser}
           />
         </Box>
       </Box>
