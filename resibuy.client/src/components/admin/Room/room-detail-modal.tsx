@@ -420,7 +420,7 @@ const handleDeleteUser = async () => {
 
   setDeleteLoading(true);
   try {
-    const response = await userApi.removeUserRom(userIdToDelete, room.id);
+    const response = await userApi.removeUserRom(userIdToDelete,[ room.id]);
     console.log("Remove user from room response:", JSON.stringify(response, null, 2));
 
     if (response.code !== 0) {
