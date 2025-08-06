@@ -7,11 +7,11 @@ namespace ResiBuy.Server.Controllers
     public class RoomController(IMediator mediator) : ControllerBase
     {
         [HttpGet]
-        public async Task<IActionResult> GetAllAsync([FromQuery] int pageNumber = 1, [FromQuery] int pageSize = 10)
+        public async Task<IActionResult> GetAllAsync([FromQuery] GetPagedRoomsQuery query)
         {
             try
             {
-                var result = await mediator.Send(new GetPagedRoomsQuery(pageNumber, pageSize));
+                var result = await mediator.Send(query);
                 return Ok(result);
             }
             catch (CustomException ex)
@@ -25,11 +25,24 @@ namespace ResiBuy.Server.Controllers
         }
 
         [HttpGet("building/{id}")]
-        public async Task<IActionResult> GetByBuildingPaged(Guid id, [FromQuery] int pageNumber = 1, [FromQuery] int pageSize = 10)
+        public async Task<IActionResult> GetByBuildingPaged(
+           Guid id,
+           [FromQuery] int pageNumber = 1,
+           [FromQuery] int pageSize = 10,
+           [FromQuery] bool? isActive = null,
+           [FromQuery] bool? noUsers = null)
         {
-            var result = await mediator.Send(new GetRoomsByBuildingIdPagedQuery(id, pageNumber, pageSize));
+            var result = await mediator.Send(new GetRoomsByBuildingIdPagedQuery(
+                id,
+                pageNumber,
+                pageSize,
+                isActive,
+                noUsers
+            ));
+
             return Ok(result);
         }
+
 
 
         [HttpPost("create")]
@@ -121,10 +134,12 @@ namespace ResiBuy.Server.Controllers
         }
 
         [HttpGet("searchrom/building")]
-        public async Task<IActionResult> SearchRoomsByNameAndBuilding([FromQuery] Guid buildingId, [FromQuery] string keyword, [FromQuery] int pageNumber = 1, [FromQuery] int pageSize = 10)
+        public async Task<IActionResult> SearchRoomsByNameAndBuilding([FromQuery] Guid buildingId, [FromQuery] string keyword, [FromQuery] int pageNumber = 1, [FromQuery] int pageSize = 10, [FromQuery] bool? isActive = null,[FromQuery] bool? noUsers = null)
         {
-         
-                var result = await mediator.Send(new GetRoomsByNameAndBuildingQuery(buildingId, keyword, pageNumber, pageSize));
+
+            var result = await mediator.Send(new GetRoomsByNameAndBuildingQuery(
+    buildingId, keyword, pageNumber, pageSize, isActive, noUsers
+));
                 return Ok(result);
           
         }

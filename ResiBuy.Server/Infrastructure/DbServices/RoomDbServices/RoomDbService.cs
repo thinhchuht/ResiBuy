@@ -40,16 +40,29 @@
             }
         }
 
-        public async Task<PagedResult<Room>> GetAllRoomsAsync(int pageNumber, int pageSize)
+        public async Task<PagedResult<Room>> GetAllRoomsAsync(int pageNumber, int pageSize, bool? IsActive = null,bool? NoUsers = null)
         {
             try
             {
                 if (pageNumber < 1 || pageSize < 1)
                     throw new CustomException(ExceptionErrorCode.ValidationFailed, "Số trang và số phần tử phải lớn hơn 0");
 
-                var query = _context.Rooms;
+                var query = _context.Rooms
+                    .Include(r => r.UserRooms)
+                    .AsQueryable();
+
+                if (IsActive.HasValue)
+                {
+                    query = query.Where(r => r.IsActive == IsActive.Value);
+                }
+
+                if (NoUsers == true)
+                {
+                    query = query.Where(r => !r.UserRooms.Any());
+                }
 
                 var totalCount = await query.CountAsync();
+
                 var items = await query
                     .OrderBy(r => r.Name)
                     .Skip((pageNumber - 1) * pageSize)
@@ -114,7 +127,7 @@
             }
         }
 
-        public async Task<PagedResult<Room>> GetRoomsByBuildingIdPagedAsync(Guid buildingId, int pageNumber, int pageSize)
+        public async Task<PagedResult<Room>> GetRoomsByBuildingIdPagedAsync(Guid buildingId, int pageNumber, int pageSize, bool? isActive = null, bool? noUsers = null)
         {
             try
             {
@@ -122,11 +135,25 @@
                     throw new CustomException(ExceptionErrorCode.ValidationFailed, "Số trang và số phần tử phải lớn hơn 0");
 
                 var query = _context.Rooms
+                    .Include(r => r.UserRooms)
                     .Where(r => r.BuildingId == buildingId)
-                   
                     .AsQueryable();
 
+          
+                if (isActive.HasValue)
+                    query = query.Where(r => r.IsActive == isActive.Value);
+
+
+                if (noUsers.HasValue)
+                {
+                    if (noUsers.Value)
+                        query = query.Where(r => !r.UserRooms.Any());
+                    else
+                        query = query.Where(r => r.UserRooms.Any());
+                }
+
                 var totalCount = await query.CountAsync();
+
                 var items = await query
                     .Skip((pageNumber - 1) * pageSize)
                     .Take(pageSize)
@@ -195,7 +222,8 @@
                 throw new CustomException(ExceptionErrorCode.RepositoryError, ex.Message);
             }
         }
-        public async Task<PagedResult<Room>> SearchRoomsByNameAndBuildingAsync(Guid buildingId, string keyword, int pageNumber, int pageSize)
+        public async Task<PagedResult<Room>> SearchRoomsByNameAndBuildingAsync(Guid buildingId, string keyword, int pageNumber, int pageSize, bool? isActive = null,
+    bool? noUsers = null)
         {
             try
             {
@@ -205,16 +233,27 @@
                 if (pageNumber < 1 || pageSize < 1)
                     throw new CustomException(ExceptionErrorCode.ValidationFailed, "Số trang và số phần tử phải lớn hơn 0");
 
-
                 var query = _context.Rooms
+                    .Include(r => r.UserRooms) // cần include để dùng Any()
                     .Where(r => r.BuildingId == buildingId)
                     .AsQueryable();
 
                 if (!string.IsNullOrWhiteSpace(keyword))
-                    query.Where(r => r.Name.Contains(keyword.Trim()));
+                    query = query.Where(r => r.Name.Contains(keyword.Trim()));
 
+                if (isActive.HasValue)
+                    query = query.Where(r => r.IsActive == isActive.Value);
+
+                if (noUsers.HasValue)
+                {
+                    if (noUsers.Value)
+                        query = query.Where(r => !r.UserRooms.Any());
+                    else
+                        query = query.Where(r => r.UserRooms.Any());
+                }
 
                 var totalCount = await query.CountAsync();
+
                 var items = await query
                     .OrderBy(r => r.Name)
                     .Skip((pageNumber - 1) * pageSize)

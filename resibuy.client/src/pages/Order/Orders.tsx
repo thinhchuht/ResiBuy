@@ -158,6 +158,10 @@ const Orders = () => {
                     description: data.description,
                     isResolved: false,
                     createdAt: data.createdAt,
+                    orderId: data.orderId,
+                    createdById: data.createdById,
+                    targetId: data.targetId,
+                    reportTarget: data.reportTarget
                   }
                 }
               : order

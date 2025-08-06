@@ -1,4 +1,3 @@
-using ResiBuy.Server.Infrastructure.Model;
 using ResiBuy.Server.Infrastructure.Model.DTOs.OrderDtos;
 using ResiBuy.Server.Infrastructure.Model.DTOs.StoreDtos;
 
@@ -118,7 +117,7 @@ namespace ResiBuy.Server.Infrastructure.DbServices.StoreDbServices
             try
             {
                 return await _context.Stores
-                    .AnyAsync(s => s.RoomId == roomId);
+                    .AnyAsync(s => s.RoomId == roomId && !s.IsLocked);
             }
             catch (Exception ex)
             {
@@ -223,8 +222,8 @@ namespace ResiBuy.Server.Infrastructure.DbServices.StoreDbServices
                 foreach (var item in order.Items)
                 {
                     productQuantity += item.Quantity;
-                    sales += item.Quantity * item.ProductDetail.Price;
                 }
+                sales += order.TotalPrice;
             }
             salesAnalysis.NumberOfProductsSold = productQuantity;
             salesAnalysis.SuccessedOrderQuantity = orderSuccess.Count();

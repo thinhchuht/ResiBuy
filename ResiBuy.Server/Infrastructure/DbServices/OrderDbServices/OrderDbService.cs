@@ -109,7 +109,7 @@ public class OrderDbService : BaseDbService<Order>, IOrderDbService
 
     public async Task<List<Order>> GetCancelledOrders()
     {
-        return await _context.Orders.Where(o => o.Status == OrderStatus.Cancelled && o.PaymentMethod == PaymentMethod.BankTransfer && o.PaymentStatus == PaymentStatus.Paid).ToListAsync();
+        return await _context.Orders.Include(o => o.Report).Where(o => (o.Status == OrderStatus.Cancelled || (o.Status == OrderStatus.Reported && o.Report.IsResolved)) && o.PaymentMethod == PaymentMethod.BankTransfer && o.PaymentStatus == PaymentStatus.Paid).ToListAsync();
     }
 
     public async Task<decimal> GetMonthlyBankRevenue(Guid storeId, int month)

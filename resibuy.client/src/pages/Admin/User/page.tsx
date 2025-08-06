@@ -6,6 +6,7 @@ import {
   Person as UserIcon,
   Lock,
   LockOpen,
+  AdminPanelSettings,
 } from "@mui/icons-material";
 import { LocalizationProvider } from "@mui/x-date-pickers/LocalizationProvider";
 import { AdapterDateFns } from "@mui/x-date-pickers/AdapterDateFns";
@@ -16,8 +17,10 @@ import {
   calculateUserStats,
   useUsersLogic,
   formatDate,
-} from "../../../components/admin/User/seg/utlis";
+} from "../../../components/admin/User/seg/utils";
 import { AddUserModal } from "../../../components/admin/User/add-user-modal";
+import { EditRoleModal } from "../../../components/admin/User/edit-role-modal";
+
 function UserStatsCards() {
   const [stats, setStats] = useState({
     totalUsers: 0,
@@ -31,7 +34,7 @@ function UserStatsCards() {
     setIsLoading(true);
     calculateUserStats()
       .then((data) => {
-        console.log("calculateUserStats result:", data); // Thêm log để debug
+        console.log("calculateUserStats result:", data);
         if (data.error) {
           setError(data.error.message || "Lỗi khi lấy thống kê");
         } else {
@@ -136,14 +139,19 @@ export default function UserPage() {
     selectedUser,
     isDetailModalOpen,
     isAddModalOpen,
+    isEditRoleModalOpen,
     editingUser,
+    editingRoleUser,
     searchTerm,
     handleViewUser,
     handleCloseDetailModal,
     handleAddUser,
     handleEditUser,
+    handleEditRole,
     handleCloseAddModal,
+    handleCloseEditRoleModal,
     handleSubmitUser,
+    handleSubmitRole,
     handleToggleLockUser,
     handleExportUsers,
     handlePageChange,
@@ -310,6 +318,22 @@ export default function UserPage() {
             <Edit sx={{ fontSize: 16 }} />
           </IconButton>
           <IconButton
+            onClick={() => handleEditRole(user.id)}
+            sx={{
+              color: "purple.main",
+              p: 0.5,
+              bgcolor: "background.paper",
+              borderRadius: 1,
+              "&:hover": {
+                color: "purple.dark",
+                bgcolor: "purple[50]",
+              },
+            }}
+            title="Chỉnh Sửa Vai Trò"
+          >
+            <AdminPanelSettings sx={{ fontSize: 16 }} />
+          </IconButton>
+          <IconButton
             onClick={() => handleToggleLockUser(user.id, user.isLocked)}
             sx={{
               color: user.isLocked ? "warning.main" : "info.main",
@@ -329,12 +353,7 @@ export default function UserPage() {
       ),
     },
   ];
-<AddUserModal
-  isOpen={isAddModalOpen}
-  onClose={handleCloseAddModal}
-  onSubmit={handleSubmitUser}
-  editingUser={editingUser}
-/>
+
   return (
     <LocalizationProvider dateAdapter={AdapterDateFns}>
       <Box
@@ -407,12 +426,20 @@ export default function UserPage() {
             itemsPerPage={pageSize}
             searchTerm={searchTerm}
           />
+
           <AddUserModal
-  isOpen={isAddModalOpen}
-  onClose={handleCloseAddModal}
-  onSubmit={handleSubmitUser}
-  editingUser={editingUser}
-/>
+            isOpen={isAddModalOpen}
+            onClose={handleCloseAddModal}
+            onSubmit={handleSubmitUser}
+            editingUser={editingUser}
+          />
+
+          <EditRoleModal
+            isOpen={isEditRoleModalOpen}
+            onClose={handleCloseEditRoleModal}
+            onSubmit={handleSubmitRole}
+            userId={editingRoleUser}
+          />
         </Box>
       </Box>
     </LocalizationProvider>

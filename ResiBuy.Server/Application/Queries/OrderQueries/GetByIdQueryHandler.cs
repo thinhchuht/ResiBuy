@@ -33,13 +33,17 @@ namespace ResiBuy.Server.Application.Queries.OrderQueries
                 order.ShippingFee,
                 order.Note,
                 order.CancelReason,
-                order.Report == null ? null : new
-                {
+                order.Report == null ? null : new ReportQueryResult(
                     order.Report.Id,
+                    order.Report.IsResolved,
                     order.Report.Title,
                     order.Report.Description,
-                    order.Report.IsResolved
-                },
+                    order.Report.CreatedAt,
+                    order.Report.CreatedById,
+                    order.Report.ReportTarget,
+                    order.Report.TargetId,
+                    order.Id
+                ),
                 new RoomQueryResult(
                     order.ShippingAddress.Id,
                     order.ShippingAddress.Name,

@@ -16,6 +16,13 @@ namespace ResiBuy.Server.Controllers
             return Ok(result);
         }
 
+        [HttpGet("count")]
+        public async Task<IActionResult> CountReport()
+        {
+            var result = await mediator.Send(new ReportStatusCountQuery());
+            return Ok(result);
+        }
+
         [HttpGet("{id}")]
         public async Task<IActionResult> GetReportById(Guid id)
         {

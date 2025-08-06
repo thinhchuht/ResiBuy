@@ -6,7 +6,7 @@ import {
   CircularProgress,
   Box,
 } from "@mui/material";
-import axios from "axios";
+import axios from "../../../api/base.api";
 
 interface SalesAnalysisDto {
   numberOfProductsSold: number;

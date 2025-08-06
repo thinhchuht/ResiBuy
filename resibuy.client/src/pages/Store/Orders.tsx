@@ -51,6 +51,7 @@ const StyledTab = styled(Tab)({
 const orderStatusTabs = [
   OrderStatus.None,
   OrderStatus.Pending,
+  OrderStatus.Assigned,
   OrderStatus.Processing,
   OrderStatus.Shipped,
   OrderStatus.Delivered,

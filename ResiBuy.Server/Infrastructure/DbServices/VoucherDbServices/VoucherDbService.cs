@@ -16,7 +16,7 @@
                 .ToListAsync();
 
             var invalidVouchers = vouchers
-                .Where(v => !v.IsActive || v.EndDate < now)
+                .Where(v => !v.IsActive || v.EndDate < now || v.Quantity <= 0)
                 .ToList();
 
             if (invalidVouchers.Any())

@@ -22,12 +22,10 @@ namespace ResiBuy.Server.Application.Commands.CheckoutComands
             var checkoutData = JsonSerializer.Deserialize<TempCheckoutDto>(json!);
             if (checkoutData == null)
                 throw new CustomException(ExceptionErrorCode.InvalidInput, "Không thể đọc dữ liệu đơn hàng tạm thời");
-
             // Cập nhật addressId và paymentMethod nếu có
             if (request.Dto.AddressId.HasValue)
                 checkoutData.AddressId = request.Dto.AddressId;
             checkoutData.PaymentMethod = request.Dto.PaymentMethod;
-
             // Cập nhật voucher và note cho từng order
             foreach (var updateOrder in request.Dto.Orders)
             {
@@ -39,7 +37,6 @@ namespace ResiBuy.Server.Application.Commands.CheckoutComands
                     {
                         var weight = order.ProductDetails.Select(pd => pd.Weight).Sum();
                         updateOrder.ShippingFee = await orderDbService.ShippingFeeCharged(request.Dto.AddressId.Value, store.RoomId, weight);
-                        //updateOrder.ShippingFee = 5000;
                     }
                     order.Note = updateOrder.Note;
                     if (updateOrder.VoucherId.HasValue && updateOrder.VoucherId != Guid.Empty)
@@ -50,6 +47,8 @@ namespace ResiBuy.Server.Application.Commands.CheckoutComands
                         var voucher = await voucherDbService.GetByIdBaseAsync(updateOrder.VoucherId.Value);
                         if (voucher == null || voucher.StoreId != order.StoreId)
                             throw new CustomException(ExceptionErrorCode.ValidationFailed, "Voucher không hợp lệ hoặc không thuộc cửa hàng này");
+                        if(voucher.Quantity <= 0) throw new CustomException(ExceptionErrorCode.ValidationFailed, "Voucher đã hết hàng");
+                        await voucherDbService.CheckIsActiveVouchers([voucher.Id]);
                         order.VoucherId = voucher.Id;
                         order.TotalPrice = CalculatePrice.GetFinalTotal(order.TotalBeforeDiscount, voucher) + order.ShippingFee;
                         order.DiscountAmount = CalculatePrice.GetDiscountAmount(order.TotalBeforeDiscount, voucher);
@@ -67,7 +66,10 @@ namespace ResiBuy.Server.Application.Commands.CheckoutComands
                     }
                     else
                     {
+                        order.VoucherId = null;
                         order.Voucher = null;
+                        order.DiscountAmount = 0;
+                        order.TotalPrice = order.TotalBeforeDiscount + order.ShippingFee;
                     }
                 }
             }

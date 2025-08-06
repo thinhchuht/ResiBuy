@@ -20,6 +20,7 @@ import StoresPage from "../pages/Admin/Store/page";
 import CategoriesPage from "../pages/Admin/Category/page";
 import ShippersPage from "../pages/Admin/Shipper/page";
 import UserPage from "../pages/Admin/User/page";
+import ReportsPage from "../pages/Admin/Reports/page";
 import Orders from "../pages/Order/Orders";
 import Profile from "../pages/Profile/Profile";
 import Store from "../pages/Store/StorePage";
@@ -172,6 +173,7 @@ const AppRoutes: React.FC = () => {
             <Route path="buildings/:areaId" element={<BuildingsPage />} />
             <Route path="rooms/:buildingId" element={<RoomsPage />} />
             <Route path="user" element={<UserPage />} />
+            <Route path="reports" element={<ReportsPage />} />
           </Route>
         }
         <Route
