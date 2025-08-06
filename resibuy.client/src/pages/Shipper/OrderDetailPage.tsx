@@ -99,11 +99,10 @@ function OrderDetail() {
         setOrder(res);
       } catch (error) {
         console.error("Lỗi khi tải chi tiết đơn hàng:", error);
-        toast.error("Không thể tải chi tiết đơn hàng!");
       }
     };
     fetchOrder();
-  }, [id, toast]);
+  }, [id]);
 
   const handleOpenReport = () => {
     setReportOpen(true);
