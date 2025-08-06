@@ -214,9 +214,28 @@ const CartItemSection = ({
                           <span>{formatPrice(productDetail.price)}</span>
                         )}
                       </Typography>
-                      <Typography variant="body2" color="text.secondary">
-                        {Array.isArray(productDetail.additionalData) ? productDetail.additionalData.map((ad) => ad.value).join(", ") : ""}
-                      </Typography>
+                      {Array.isArray(productDetail.additionalData) && productDetail.additionalData.length > 0 && (
+                        <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 0.5, mt: 0.5 }}>
+                          {productDetail.additionalData.map((data) => (
+                            <Box
+                              key={data.id}
+                              sx={{
+                                fontSize: '0.7rem',
+                                height: 22,
+                                px: 1,
+                                display: 'inline-flex',
+                                alignItems: 'center',
+                                backgroundColor: 'rgba(25, 118, 210, 0.08)',
+                                color: 'primary.main',
+                                border: '1px solid rgba(25, 118, 210, 0.2)',
+                                borderRadius: 1,
+                              }}
+                            >
+                              {data.value}
+                            </Box>
+                          ))}
+                        </Box>
+                      )}
                     </Box>
                   </Box>
                 </TableCell>
