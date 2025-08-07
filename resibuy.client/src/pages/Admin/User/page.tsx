@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import { Box, Typography, IconButton, Chip, CircularProgress } from "@mui/material";
+import { Box, Typography, IconButton, Chip, CircularProgress, Dialog, DialogTitle, DialogContent, DialogActions, Button, TextField } from "@mui/material";
 import {
   Edit,
   Visibility,
@@ -7,6 +7,7 @@ import {
   Lock,
   LockOpen,
   AdminPanelSettings,
+  Search as SearchIcon,
 } from "@mui/icons-material";
 import { LocalizationProvider } from "@mui/x-date-pickers/LocalizationProvider";
 import { AdapterDateFns } from "@mui/x-date-pickers/AdapterDateFns";
@@ -158,6 +159,41 @@ export default function UserPage() {
     handlePageChange,
     handleSearch,
   } = useUsersLogic();
+
+  const [isConfirmDialogOpen, setIsConfirmDialogOpen] = useState(false);
+  const [confirmUser, setConfirmUser] = useState<{ id: string; isLocked: boolean } | null>(null);
+  const [localSearchTerm, setLocalSearchTerm] = useState(searchTerm);
+
+  const handleOpenConfirmDialog = (userId: string, isLocked: boolean) => {
+    setConfirmUser({ id: userId, isLocked });
+    setIsConfirmDialogOpen(true);
+  };
+
+  const handleCloseConfirmDialog = () => {
+    setIsConfirmDialogOpen(false);
+    setConfirmUser(null);
+  };
+
+  const handleConfirmToggleLock = () => {
+    if (confirmUser) {
+      handleToggleLockUser(confirmUser.id, confirmUser.isLocked);
+    }
+    handleCloseConfirmDialog();
+  };
+
+  const handleSearchInputChange = (event: React.ChangeEvent<HTMLInputElement>) => {
+    setLocalSearchTerm(event.target.value);
+  };
+
+  const handleSearchSubmit = () => {
+    handleSearch(localSearchTerm.trim());
+  };
+
+  const handleKeyPress = (event: React.KeyboardEvent<HTMLInputElement>) => {
+    if (event.key === "Enter") {
+      handleSearchSubmit();
+    }
+  };
 
   const columns = [
     {
@@ -335,7 +371,7 @@ export default function UserPage() {
             <AdminPanelSettings sx={{ fontSize: 16 }} />
           </IconButton>
           <IconButton
-            onClick={() => handleToggleLockUser(user.id, user.isLocked)}
+            onClick={() => handleOpenConfirmDialog(user.id, user.isLocked)}
             sx={{
               color: user.isLocked ? "warning.main" : "info.main",
               p: 0.5,
@@ -412,6 +448,28 @@ export default function UserPage() {
 
           <UserStatsCards />
 
+          <Box sx={{ display: "flex", alignItems: "center", gap: 2, mb: 2 }}>
+            <TextField
+              label="Tìm kiếm người dùng"
+              variant="outlined"
+              value={localSearchTerm}
+              onChange={handleSearchInputChange}
+              onKeyPress={handleKeyPress}
+              placeholder="Nhập tên, email, hoặc số điện thoại"
+              sx={{ flex: 1,}}
+              InputProps={{
+                startAdornment: <SearchIcon sx={{ color: "grey.500", mr: 1 }} />,
+              }}
+            />
+            <Button
+              variant="contained"
+              onClick={handleSearchSubmit}
+              sx={{ bgcolor: "primary.main", "&:hover": { bgcolor: "primary.dark" } }}
+            >
+              Tìm
+            </Button>
+          </Box>
+
           <CustomTable
             data={users}
             totalCount={totalCount}
@@ -426,6 +484,7 @@ export default function UserPage() {
             showBulkActions={false}
             itemsPerPage={pageSize}
             searchTerm={searchTerm}
+            showSearch={false} // Disable built-in search if we use the custom search bar
           />
 
           <AddUserModal
@@ -447,6 +506,50 @@ export default function UserPage() {
             onClose={handleCloseDetailModal}
             user={selectedUser}
           />
+
+          <Dialog
+            open={isConfirmDialogOpen}
+            onClose={handleCloseConfirmDialog}
+            sx={{
+              "& .MuiDialog-paper": {
+                borderRadius: 2,
+                boxShadow: 24,
+                p: 2,
+              },
+            }}
+          >
+            <DialogTitle sx={{ color: "grey.900" }}>
+              Xác Nhận {confirmUser?.isLocked ? "Mở Khóa" : "Khóa"} Người Dùng
+            </DialogTitle>
+            <DialogContent>
+              <Typography sx={{ color: "grey.700" }}>
+                Bạn có chắc chắn muốn {confirmUser?.isLocked ? "mở khóa" : "khóa"} người dùng này không?
+              </Typography>
+            </DialogContent>
+            <DialogActions>
+              <Button
+                onClick={handleCloseConfirmDialog}
+                sx={{
+                  color: "grey.500",
+                  "&:hover": { bgcolor: "grey.100" },
+                }}
+              >
+                Hủy
+              </Button>
+              <Button
+                onClick={handleConfirmToggleLock}
+                sx={{
+                  bgcolor: confirmUser?.isLocked ? "success.main" : "error.main",
+                  color: "white",
+                  "&:hover": {
+                    bgcolor: confirmUser?.isLocked ? "success.dark" : "error.dark",
+                  },
+                }}
+              >
+                Xác Nhận
+              </Button>
+            </DialogActions>
+          </Dialog>
         </Box>
       </Box>
     </LocalizationProvider>

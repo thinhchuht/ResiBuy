@@ -236,28 +236,59 @@ export function UserDetailModal({ isOpen, onClose, user, onEdit, onToggleLock }:
     totalSpent: 0,
   });
   const [loadingOrders, setLoadingOrders] = useState(false);
+  const [loadingStats, setLoadingStats] = useState(false);
   const [selectedOrder, setSelectedOrder] = useState<OrderDto | null>(null);
   const [isOrderDetailOpen, setIsOrderDetailOpen] = useState(false);
   const { toast } = useToastify();
   const navigate = useNavigate();
   const pageSize = 10;
 
+  // Fetch total order count and total spent when modal opens
+  useEffect(() => {
+    if (isOpen && user?.id) {
+      setLoadingStats(true);
+      Promise.all([
+        orderApi.countOrder({ userId: user.id }),
+        orderApi.getTotalOrderAmount({ userId: user.id }),
+      ])
+        .then(([countResponse, amountResponse]) => {
+          console.log("countOrder response:", countResponse);
+          console.log("getTotalOrderAmount response:", amountResponse);
+          if (countResponse.code === 0 && amountResponse.code === 0) {
+            setOrders((prev) => ({
+              ...prev,
+              totalCount: countResponse.data || 0,
+              totalSpent: amountResponse.data.totalOrderAmount || 0,
+            }));
+          } else {
+            throw new Error("Lỗi khi lấy thống kê đơn hàng");
+          }
+        })
+        .catch((err: any) => {
+          console.error("Fetch order stats error:", err);
+          toast.error(err.message || "Lỗi khi lấy thống kê đơn hàng");
+        })
+        .finally(() => {
+          setLoadingStats(false);
+        });
+    }
+  }, [isOpen, user?.id, toast]);
+
+  // Fetch order list when switching to orders tab
   useEffect(() => {
     if (isOpen && user?.id && activeTab === "orders") {
       setLoadingOrders(true);
       orderApi
         .getAll("None", "None", "None", undefined, user.id, undefined, orders.pageNumber, pageSize)
         .then((response) => {
-          console.log("orderApi.getAll response:", response); // Debug log
+          console.log("orderApi.getAll response:", response);
           if (response && Array.isArray(response.items)) {
-            const totalSpent = response.items.reduce((sum: number, order: OrderDto) => sum + (order.totalPrice || 0), 0);
-            setOrders({
+            setOrders((prev) => ({
+              ...prev,
               items: response.items,
-              totalCount: response.totalCount || 0,
               pageNumber: response.pageNumber || 1,
               totalPages: response.totalPages || 1,
-              totalSpent,
-            });
+            }));
           } else {
             throw new Error("Dữ liệu đơn hàng không hợp lệ");
           }
@@ -607,23 +638,31 @@ export function UserDetailModal({ isOpen, onClose, user, onEdit, onToggleLock }:
               }}
             >
               <Box>
-                <Typography
-                  variant="h5"
-                  sx={{ color: "primary.main", fontWeight: "bold" }}
-                >
-                  {orders.totalCount}
-                </Typography>
+                {loadingStats ? (
+                  <CircularProgress size={20} />
+                ) : (
+                  <Typography
+                    variant="h5"
+                    sx={{ color: "primary.main", fontWeight: "bold" }}
+                  >
+                    {orders.totalCount}
+                  </Typography>
+                )}
                 <Typography variant="caption" sx={{ color: "grey.500" }}>
                   Tổng Đơn Hàng
                 </Typography>
               </Box>
               <Box>
-                <Typography
-                  variant="h5"
-                  sx={{ color: "success.main", fontWeight: "bold" }}
-                >
-                  {orders.totalSpent.toLocaleString("vi-VN")} VND
-                </Typography>
+                {loadingStats ? (
+                  <CircularProgress size={20} />
+                ) : (
+                  <Typography
+                    variant="h5"
+                    sx={{ color: "success.main", fontWeight: "bold" }}
+                  >
+                    {orders.totalSpent.toLocaleString("vi-VN")} VND
+                  </Typography>
+                )}
                 <Typography variant="caption" sx={{ color: "grey.500" }}>
                   Tổng Chi Tiêu
                 </Typography>
@@ -805,7 +844,7 @@ export function UserDetailModal({ isOpen, onClose, user, onEdit, onToggleLock }:
                   description={`Đơn hàng của ${user.fullName || "người dùng"}`}
                   showExport={false}
                   showBulkActions={false}
-                 showSearch={false}
+                  showSearch={false}
                 />
               ) : (
                 <Box sx={{ textAlign: "center", py: 4, color: "grey.500" }}>

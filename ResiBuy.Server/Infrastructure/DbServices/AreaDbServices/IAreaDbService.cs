@@ -6,5 +6,7 @@
         Task<IEnumerable<Area>> GetAllAreaAsync();
         Task<Area> GetByIdAsync(Guid id);
         Task<Area> NearestAreaHasShipper(Guid currenId);
+        Task<bool> IsNameExistsAsync(string name);
+
     }
 }

@@ -430,7 +430,7 @@ export const useUsersLogic = () => {
 
   const handleExportUsers = async () => {
     try {
-      const response = await userApi.getAllUser(1, 100);
+      const response = await userApi.getAllUser(1, 10000);
       console.log("Export users response:", response);
       if (response.code !== 0) {
         throw new Error(response.message || "Lỗi khi lấy danh sách người dùng");
@@ -440,14 +440,14 @@ export const useUsersLogic = () => {
         fullName: user.fullName || "",
         email: user.email || "",
         phoneNumber: user.phoneNumber || "",
-        isLocked: user.isLocked ? "Đã Khóa" : "Hoạt động",
+        isLocked: user.isLocked ? "Locked" : "UnLocked",
         roles: user.roles.join(", "),
         rooms: user.rooms?.map((room) => room.name).join(", ") || "",
         dateOfBirth: formatDate(user.dateOfBirth),
         createdAt: formatDate(user.createdAt),
       }));
       const csv = [
-        ["ID", "Họ Tên", "Email", "Số Điện Thoại", "Trạng Thái", "Vai Trò", "Phòng", "Ngày Sinh", "Ngày Tạo"],
+        ["ID", "Full Name", "Email", "Phone Number", "Status", "Role", "Room", "Date of Birth", "Created at"],
         ...csvData.map((row) => [
           row.id,
           `"${row.fullName}"`,

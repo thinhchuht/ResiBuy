@@ -105,6 +105,7 @@ const orderApi = {
     });
       return response.data;
   },
+  getTotalOrderAmount:async(params: {userId ?: string,storeId?: string})=>{const response =await axiosClient.get(`${orderUrl}/total-amount`,{params});return response.data;}
 };
 
 
