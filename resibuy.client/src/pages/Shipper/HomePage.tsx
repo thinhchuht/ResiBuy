@@ -47,7 +47,7 @@ function ShipperHome() {
   const { user } = useAuth();
   const {
     lastConfirmedOrderId,
-    lastNewOrderId, // ✅ Thêm dòng này vào đây
+    lastNewOrderId, 
   } = useOrderEvent();
 
   const [orders, setOrders] = useState<Order[]>([]);

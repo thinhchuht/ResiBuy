@@ -181,7 +181,10 @@ function OrderDetail() {
     try {
       await orderApi.updateOrderStatusShip(order.id, "Delivered", user.id);
       toast.success("Giao hàng thành công");
-      setOrder((prev) => prev && { ...prev, status: "Delivered" });
+      setOrder(
+        (prev) =>
+          prev && { ...prev, status: "Delivered", paymentStatus: "Paid" }
+      );
     } catch (err) {
       console.error(err);
       toast.error("Không thể cập nhật trạng thái!");
@@ -222,7 +225,10 @@ function OrderDetail() {
         "Không liên lạc được với khách hàng"
       );
       toast.success("Xác nhận hủy đơn thành công");
-      setOrder((prev) => prev && { ...prev, status: "Cancelled" });
+      setOrder(
+        (prev) =>
+          prev && { ...prev, status: "Cancelled", paymentStatus: "Failed" }
+      );
     } catch (err) {
       console.error(err);
       toast.error("Không thể cập nhật trạng thái!");
@@ -433,7 +439,6 @@ function OrderDetail() {
               justifyContent="space-between"
               flexWrap="wrap"
             >
-
               {order.status === "Assigned" && (
                 <Button
                   variant="contained"
@@ -454,7 +459,7 @@ function OrderDetail() {
                 </Button>
               )}
 
-                {order.status === "CustomerNotAvailable" && (
+              {order.status === "CustomerNotAvailable" && (
                 <Button
                   variant="contained"
                   color="primary"
@@ -484,7 +489,6 @@ function OrderDetail() {
                 </Button>
               )}
 
-
               {order.status !== "Reported" && (
                 <Button
                   variant="contained"
@@ -494,7 +498,6 @@ function OrderDetail() {
                   Báo cáo đơn hàng
                 </Button>
               )}
-
             </Stack>
           </Stack>
         </CardContent>
