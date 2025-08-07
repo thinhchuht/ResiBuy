@@ -1,5 +1,7 @@
 import { useEventHub, HubEventType } from "../../hooks/useEventHub";
 import { useToastify } from "../../hooks/useToastify";
+import { useOrderEvent } from "../../contexts/OrderEventContext";
+import { useRef } from "react";
 
 interface OrderNotification {
   OrderId: string;
@@ -11,6 +13,10 @@ interface OrderNotification {
 
 export default function OrderAlertToast() {
   const toast = useToastify();
+  const { setLastNewOrderId } = useOrderEvent();
+
+  // ✅ Dùng ref để tránh toast lặp lại đơn hàng cũ
+  const lastToastOrderId = useRef<string | null>(null);
 
   useEventHub({
     [HubEventType.ReceiveOrderNotification]: (payload: unknown) => {
@@ -31,13 +37,19 @@ export default function OrderAlertToast() {
           parsed.StoreName &&
           parsed.AssignedTime
         ) {
-          toast.info(
-            `📦 Đơn hàng mới từ ${
-              parsed.StoreName
-            } - ${parsed.TotalPrice.toLocaleString()} đ`,
-            { autoClose: 5000 }
-          );
-          console.log("📦 Nhận đơn hàng:", parsed);
+          // ✅ Ngăn toast nếu đã show cùng OrderId
+          if (parsed.OrderId !== lastToastOrderId.current) {
+            toast.info(
+              `📦 Đơn hàng mới từ ${parsed.StoreName} - ${parsed.TotalPrice.toLocaleString()} đ`,
+              { autoClose: 5000 }
+            );
+            console.log("📦 Nhận đơn hàng:", parsed);
+
+            lastToastOrderId.current = parsed.OrderId;
+            setLastNewOrderId(parsed.OrderId);
+          } else {
+            console.log("⏩ Đã hiện toast cho đơn hàng này:", parsed.OrderId);
+          }
         } else {
           console.warn("❌ Payload thiếu thông tin cần thiết:", payload);
         }
@@ -47,5 +59,5 @@ export default function OrderAlertToast() {
     },
   });
 
-  return null; 
+  return null;
 }

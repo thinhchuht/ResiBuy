@@ -17,6 +17,9 @@ import orderApi from "../../api/order.api";
 import { useAuth } from "../../contexts/AuthContext";
 import { useOrderEvent } from "../../contexts/OrderEventContext";
 
+
+
+
 interface Order {
   id: string;
   totalPrice: number;
@@ -42,9 +45,15 @@ const STATUS_OPTIONS = [
   { value: "CustomerNotAvailable", label: "Không liên lạc được với khách" },
 ];
 
+
+
 function ShipperHome() {
   const { user } = useAuth();
-  const { lastConfirmedOrderId } = useOrderEvent();
+  const {
+    lastConfirmedOrderId,
+    lastNewOrderId, // ✅ Thêm dòng này vào đây
+  } = useOrderEvent();
+
   const [orders, setOrders] = useState<Order[]>([]);
   const [loading, setLoading] = useState<boolean>(true);
   const [selectedStatus, setSelectedStatus] = useState<string>("Shipped");
@@ -86,7 +95,14 @@ function ShipperHome() {
     fetchOrders(selectedStatus, currentPage);
   }, [user?.id, selectedStatus, currentPage]);
 
-  // Reload lại khi có đơn hàng mới được xác nhận
+  // ✅ Gọi lại khi có đơn hàng mới (qua SignalR toast)
+  useEffect(() => {
+    if (lastNewOrderId) {
+      fetchOrders(selectedStatus, currentPage);
+    }
+  }, [lastNewOrderId]);
+
+  // Reload lại khi đơn hàng được xác nhận
   useEffect(() => {
     if (lastConfirmedOrderId) {
       fetchOrders(selectedStatus, currentPage);

@@ -10,7 +10,6 @@ createRoot(document.getElementById("root")!).render(
     <OrderEventProvider>
       <App />
     </OrderEventProvider>
-
     <ToastContainer />
   </>
 );

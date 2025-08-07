@@ -454,6 +454,16 @@ function OrderDetail() {
                 </Button>
               )}
 
+                {order.status === "CustomerNotAvailable" && (
+                <Button
+                  variant="contained"
+                  color="primary"
+                  onClick={handleDelivered}
+                >
+                  Đã giao hàng
+                </Button>
+              )}
+
               {order.status === "Shipped" && (
                 <Button
                   variant="contained"
