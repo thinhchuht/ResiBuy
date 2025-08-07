@@ -21,6 +21,10 @@ import {
   ListItemText,
   Popover,
   Badge,
+  Dialog,
+  DialogTitle,
+  DialogContent,
+  IconButton as MuiIconButton,
 } from "@mui/material";
 import {
   Login,
@@ -37,6 +41,7 @@ import {
   Store as StoreIcon,
   LocalShipping,
   Storefront,
+  Close,
 } from "@mui/icons-material";
 import { Link, useNavigate } from "react-router-dom";
 import { useAuth } from "../../contexts/AuthContext";
@@ -50,6 +55,8 @@ import {
 } from "../../hooks/useEventHub";
 import type { OrderStatusChangedData } from "../../types/hubData";
 import notificationApi from "../../api/notification.api";
+import orderApi from "../../api/order.api";
+import OrderCard, { type OrderApiResult } from "../../pages/Order/OrderCard";
 import type {
   ReportCreatedDto,
   ProductOutOfStockDto,
@@ -58,6 +65,7 @@ import type {
   MonthlyPaymentSettledDto,
 } from "../../types/hubEventDto";
 import type { User, Store } from "../../types/models";
+import { useToastify } from "../../hooks/useToastify";
 
 interface Notification {
   id: string | number;
@@ -65,6 +73,8 @@ interface Notification {
   message: string;
   time?: string;
   isRead?: boolean;
+  orderId?: string;
+  storeId?: string;
 }
 
 interface NotificationApiItem {
@@ -91,6 +101,21 @@ function notifiConvert(item: NotificationApiItem, user?: User): Notification {
     dataObj = {};
   }
 
+  let orderId: string | undefined;
+  if (dataObj.orderId) {
+    orderId = dataObj.orderId as string;
+  } else if (dataObj.OrderId) {
+    orderId = dataObj.OrderId as string;
+  } else if (dataObj.id) {
+    orderId = dataObj.id as string;
+  }
+
+  let storeId: string | undefined;
+  if (dataObj.storeId) {
+    storeId = dataObj.storeId as string;
+  } else if (dataObj.targetId && dataObj.reportTarget === "Store") {
+    storeId = dataObj.targetId as string;
+  }
  
   let title = "";
   let message = "";
@@ -98,7 +123,6 @@ function notifiConvert(item: NotificationApiItem, user?: User): Notification {
   const match = item.eventName.match(/^OrderStatusChanged-(.+)$/);
   if (match) status = match[1];
 
-  // Helper function to get report target label
   const getReportTargetLabel = (reportTarget: string) => {
     switch (reportTarget) {
       case 'Customer':
@@ -143,7 +167,6 @@ function notifiConvert(item: NotificationApiItem, user?: User): Notification {
     case item.eventName === "OrderReported": {
       let displayLabel = "";
       if (dataObj.reportTarget === "Store") {
-        // Check if user has stores and if targetId matches any store
         const userStore = user?.stores?.find((store: Store) => store.id === dataObj.targetId);
         displayLabel = userStore ? userStore.name : "Cửa hàng";
       } else {
@@ -157,7 +180,6 @@ function notifiConvert(item: NotificationApiItem, user?: User): Notification {
       let displayLabel = "";
       let storeLabel = "";
       if (dataObj.reportTarget === "Store") {
-        // Check if user has stores and if targetId matches any store
         const userStore = user?.stores?.find((store: Store) => store.id === dataObj.targetId);
         displayLabel = userStore ? userStore.name : "Cửa hàng";
         if (userStore) {
@@ -181,14 +203,23 @@ function notifiConvert(item: NotificationApiItem, user?: User): Notification {
     case item.eventName === "MonthlyPaymentSettled":
       title = `[${dataObj.storeName}] Đã chốt doanh thu tháng`;
       message = `Doanh thu tháng ${dataObj.paymentMonth} của bạn đã được chuyển về tài khoản. Tổng doanh thu: ${dataObj.revenue}đ`;
+      if (dataObj.storeId) {
+        storeId = dataObj.storeId as string;
+      }
       break;
     case item.eventName === "MonthlyPaymentSettlFailed":
       title = `[${dataObj.storeName}] Chốt doanh thu tháng thất bại.`;
       message = "Có lỗi khi chốt doanh thu tháng, vui lòng liên hệ ban quản lý.";
+      if (dataObj.storeId) {
+        storeId = dataObj.storeId as string;
+      }
       break;
     case item.eventName === "ProductOutOfStock":
       title = `[${dataObj.storeName}] Sản phẩm hết hàng`;
       message = dataObj.productName ? `Sản phẩm ${dataObj.productName} đã hết hàng.` : "Một sản phẩm đã hết hàng.";
+      if (dataObj.storeId) {
+        storeId = dataObj.storeId as string;
+      }
       break;
     case item.eventName === "OrderCreatedFailed":
       title = "Tạo đơn hàng thất bại";
@@ -205,14 +236,16 @@ function notifiConvert(item: NotificationApiItem, user?: User): Notification {
     message,
     time: `${formattedTime} ${formattedDate}`,
     isRead: item.isRead,
+    orderId,
+    storeId,
   };
 }
 
-// Type guard cho eventName
 type OrderStatusChangedDataWithEvent = OrderStatusChangedData & { eventName?: string };
 
 const AppBar: React.FC = () => {
   const { logout } = useAuth();
+  const toast = useToastify();
   const { user } = useAuth();
   const [cartItems, setCartItems] = useState(0);
   const [anchorEl, setAnchorEl] = useState<null | HTMLElement>(null);
@@ -230,6 +263,10 @@ const AppBar: React.FC = () => {
   const [hasMore, setHasMore] = useState(true);
   const pageSize = 3;
   const notificationListRef = useRef<HTMLDivElement>(null);
+  
+  const [orderModalOpen, setOrderModalOpen] = useState(false);
+  const [selectedOrder, setSelectedOrder] = useState<OrderApiResult | null>(null);
+  const [orderLoading, setOrderLoading] = useState(false);
 
   const fetchItemCount = useCallback(async () => {
     if (user) {
@@ -305,7 +342,6 @@ const AppBar: React.FC = () => {
       const formattedDate = new Date(data.createdAt).toLocaleDateString(
         "vi-VN"
       );
-      console.log(formattedDate, formattedTime);
       const newNotifications = {
         id: data.id,
         title: "Đơn hàng mới",
@@ -313,17 +349,16 @@ const AppBar: React.FC = () => {
         time: `${formattedTime} ${formattedDate}`,
         isRead: false,
       };
-      console.log("hhihi");
-      console.log(newNotifications);
       setNotifications((prev) => [newNotifications, ...prev]);
+      toast.success(`Đơn hàng mới đã được tạo`);
       fetchUnreadCount();
     },
+    // eslint-disable-next-line react-hooks/exhaustive-deps
     [setNotifications, fetchItemCount, fetchUnreadCount]
   );
 
   const handleOrderStatusChanged = useCallback(
     (data: OrderStatusChangedData) => {
-      console.log("hihehah", data);
       const formattedTime = new Date(data.createdAt).toLocaleTimeString(
         "vi-VN",
         { hour: "2-digit", minute: "2-digit" }
@@ -363,8 +398,10 @@ const AppBar: React.FC = () => {
         isRead: false,
       };
       setNotifications((prev) => [newNotifications, ...prev]);
-      fetchUnreadCount(); // cập nhật badge khi có notification mới
+      toast.success(newNotifications.message);
+      fetchUnreadCount(); 
     },
+    // eslint-disable-next-line react-hooks/exhaustive-deps
     [fetchUnreadCount]
   );
 
@@ -392,7 +429,9 @@ const AppBar: React.FC = () => {
       time: `${formattedTime} ${formattedDate}`,
       isRead: false,
     }, ...prev]);
+    toast.success(`[${targetLabel}] Đơn hàng #${data.orderId} bị báo cáo`);
     fetchUnreadCount();
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [fetchUnreadCount]);
 
   const handleReportResolved = useCallback((data: { id: string; orderId: string; targetId: string; isAddReportTarget: boolean; reportTarget: string; storeName: string }) => {
@@ -412,7 +451,9 @@ const AppBar: React.FC = () => {
       time: `${formattedTime} ${formattedDate}`,
       isRead: false,
     }, ...prev]);
+    toast.success(`${storeLabel} Báo cáo đơn hàng #${data.orderId} đã được giải quyết`);
     fetchUnreadCount();
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [fetchUnreadCount, user]);
 
   const handleRefunded = useCallback((data: { OrderId: string }) => {
@@ -423,7 +464,9 @@ const AppBar: React.FC = () => {
       time: new Date().toLocaleString("vi-VN"),
       isRead: false,
     }, ...prev]);
+    toast.success(`Đơn hàng #${data.OrderId} đã được hoàn tiền thành công!`);
     fetchUnreadCount();
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [fetchUnreadCount]);
 
   const handleRefundFailed = useCallback((data: { OrderId: string }) => {
@@ -434,7 +477,9 @@ const AppBar: React.FC = () => {
       time: new Date().toLocaleString("vi-VN"),
       isRead: false,
     }, ...prev]);
+    toast.error(`Đơn hàng #${data.OrderId} hoàn tiền thất bại, vui lòng liên hệ ban quản lý về đơn hàng.`);
     fetchUnreadCount();
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [fetchUnreadCount]);
 
   const handleMonthlyPaymentSettled = useCallback((data: MonthlyPaymentSettledDto) => {
@@ -452,7 +497,9 @@ const AppBar: React.FC = () => {
       time: new Date().toLocaleString("vi-VN"),
       isRead: false,
     }, ...prev]);
+    toast.success(`Doanh thu tháng ${data.paymentMonth} của bạn đã được chuyển về tài khoản. Tổng doanh thu: ${data.revenue}đ`);
     fetchUnreadCount();
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [fetchUnreadCount, user]);
 
   const handleMonthlyPaymentSettlFailed = useCallback((data: MonthlyPaymentSettlFailedDto) => {
@@ -470,7 +517,9 @@ const AppBar: React.FC = () => {
       time: new Date().toLocaleString("vi-VN"),
       isRead: false,
     }, ...prev]);
+    toast.error(`Có lỗi khi chốt doanh thu tháng, vui lòng liên hệ ban quản lý.`);
     fetchUnreadCount();
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [fetchUnreadCount, user]);
 
   const handleProductOutOfStock = useCallback((data: ProductOutOfStockDto) => {
@@ -481,7 +530,9 @@ const AppBar: React.FC = () => {
       time: new Date().toLocaleString("vi-VN"),
       isRead: false,
     }, ...prev]);
+    toast.error(`[${data.storeName}] Sản phẩm hết hàng`);
     fetchUnreadCount();
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [fetchUnreadCount]);
 
   const handleOrderCreatedFailed = useCallback((data: OrderCreateFailedDto) => {
@@ -492,7 +543,9 @@ const AppBar: React.FC = () => {
       time: new Date().toLocaleString("vi-VN"),
       isRead: false,
     }, ...prev]);
+    toast.error(`Đơn hàng của bạn không được tạo thành công. Vui lòng thử lại sau`);
     fetchUnreadCount();
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [fetchUnreadCount]);
 
   const eventHandlers = useMemo(
@@ -602,6 +655,7 @@ const AppBar: React.FC = () => {
 
   const handleNotificationClick = async (notification: Notification) => {
     handleNotificationClose();
+    console.log(notification)
     if (notification.isRead === false && user) {
       try {
         await notificationApi.readNotification(
@@ -614,10 +668,55 @@ const AppBar: React.FC = () => {
             n.id === notification.id ? { ...n, isRead: true } : n
           )
         );
-      } catch {
-        // Xử lý lỗi nếu cần
+      } catch(error) {
+        console.error("Error reading notification:", error);
       }
     }
+
+    let orderId: string | null = null;
+    if (notification.orderId) {
+      orderId = notification.orderId;
+    } else {
+      try {
+        const orderMatch = notification.message.match(/#(\d+)/);
+        if (orderMatch) {
+          orderId = orderMatch[1];
+        } else {
+          const titleMatch = notification.title.match(/#(\d+)/);
+          if (titleMatch) {
+            orderId = titleMatch[1];
+          }
+        }
+      } catch (error) {
+        console.error("Error parsing notification data:", error);
+      }
+    }
+
+    if (orderId) {
+      console.log("Found orderId:", orderId);
+      setOrderLoading(true);
+      try {
+        const orderData = await orderApi.getById(orderId);
+        console.log("Order data:", orderData);
+        setSelectedOrder(orderData);
+        setOrderModalOpen(true);
+      } catch (error) {
+        console.error("Error fetching order:", error);
+      } finally {
+        setOrderLoading(false);
+      }
+    } else if (notification.storeId && notification.title.match(/^\[.*\]/)) {
+      console.log("Found storeId:", notification.storeId, "for notification:", notification.title);
+      handleCloseOrderModal();
+      navigate(`/store/${notification.storeId}/orders`);
+    } else {
+      console.log("No orderId or storeId found for notification:", notification);
+    }
+  };
+
+  const handleCloseOrderModal = () => {
+    setOrderModalOpen(false);
+    setSelectedOrder(null);
   };
 
   return (
@@ -1434,6 +1533,226 @@ const AppBar: React.FC = () => {
               </MenuItem>
             ))}
         </Menu>
+
+        {/* Order Modal */}
+        <Dialog
+          open={orderModalOpen}
+          onClose={handleCloseOrderModal}
+          maxWidth="lg"
+          fullWidth
+          PaperProps={{
+            sx: {
+              borderRadius: 4,
+              maxHeight: "95vh",
+              overflow: "hidden",
+              background: "linear-gradient(135deg, #fff5f5 0%, #ffe4e6 100%)",
+              boxShadow: "0 20px 60px rgba(239,68,68,0.15)",
+              border: "1px solid rgba(239,68,68,0.1)",
+            },
+          }}
+        >
+          <DialogTitle
+            sx={{
+              display: "flex",
+              justifyContent: "space-between",
+              alignItems: "center",
+              background: "linear-gradient(90deg,rgb(238, 118, 138) 0%, #f87171 100%)",
+              color: "white",
+              py: 3,
+              px: 4,
+              position: "relative",
+              "&::after": {
+                content: '""',
+                position: "absolute",
+                bottom: 0,
+                left: 0,
+                right: 0,
+                height: "3px",
+                background: "linear-gradient(90deg, #ec4899 0%, #f472b6 100%)",
+              },
+            }}
+          >
+            <Box sx={{ display: "flex", alignItems: "center", gap: 2 }}>
+              <Receipt sx={{ fontSize: 28, color: "rgba(255,255,255,0.9)" }} />
+              <Box>
+                <Typography variant="h5" sx={{ fontWeight: 700, mb: 0.5 }}>
+                  Chi tiết đơn hàng
+                </Typography>
+                {selectedOrder && (
+                  <Typography variant="body2" sx={{ opacity: 0.9, fontWeight: 500 }}>
+                    Mã đơn hàng: #{selectedOrder.id}
+                  </Typography>
+                )}
+              </Box>
+            </Box>
+            <Box sx={{ display: "flex", gap: 1 }}>
+              <Button
+                variant="outlined"
+                size="small"
+                onClick={() => {
+                  handleCloseOrderModal();
+                  if (selectedOrder?.store?.id && user?.roles?.includes("SELLER") && user?.stores?.some(store => store.id === selectedOrder?.store?.id)) {
+                    navigate(`/store/${selectedOrder.store.id}/orders`);
+                  } else {
+                    navigate("/orders");
+                  }
+                }}
+                sx={{
+                  color: "white",
+                  borderColor: "rgba(255,255,255,0.3)",
+                  backgroundColor: "rgba(255,255,255,0.1)",
+                  backdropFilter: "blur(10px)",
+                  textTransform: "none",
+                  fontWeight: 600,
+                  px: 2,
+                  py: 0.5,
+                  transition: "all 0.3s ease",
+                  "&:hover": {
+                    backgroundColor: "rgba(255,255,255,0.2)",
+                    borderColor: "rgba(255,255,255,0.5)",
+                    transform: "translateY(-1px)",
+                    boxShadow: "0 4px 12px rgba(0,0,0,0.15)",
+                  },
+                }}
+              >
+                <Receipt sx={{ fontSize: 16, mr: 1 }} />
+                {user?.stores?.some(store => store.id === selectedOrder?.store?.id) && user?.roles?.includes("SELLER") 
+                  ? "Xem đơn hàng cửa hàng" 
+                  : "Xem tất cả đơn hàng"
+                }
+              </Button>
+              <MuiIconButton
+                onClick={handleCloseOrderModal}
+                sx={{
+                  color: "rgba(255,255,255,0.8)",
+                  backgroundColor: "rgba(255,255,255,0.1)",
+                  backdropFilter: "blur(10px)",
+                  border: "1px solid rgba(255,255,255,0.2)",
+                  transition: "all 0.3s ease",
+                  "&:hover": {
+                    backgroundColor: "rgba(255,255,255,0.2)",
+                    transform: "scale(1.1)",
+                    color: "white",
+                  },
+                }}
+              >
+                <Close />
+              </MuiIconButton>
+            </Box>
+          </DialogTitle>
+          <DialogContent 
+            sx={{ 
+              p: 0, 
+              overflow: "auto",
+              background: "rgba(255,255,255,0.9)",
+              backdropFilter: "blur(10px)",
+            }}
+          >
+            {orderLoading ? (
+              <Box 
+                sx={{ 
+                  p: 6, 
+                  textAlign: "center",
+                  background: "rgba(255,255,255,0.7)",
+                  borderRadius: 3,
+                  m: 3,
+                  border: "1px solid rgba(239,68,68,0.1)",
+                }}
+              >
+                <Box
+                  sx={{
+                    width: 60,
+                    height: 60,
+                    borderRadius: "50%",
+                    border: "3px solid #fecaca",
+                    borderTop: "3px solid #ef4444",
+                    animation: "spin 1s linear infinite",
+                    mx: "auto",
+                    mb: 2,
+                    "@keyframes spin": {
+                      "0%": { transform: "rotate(0deg)" },
+                      "100%": { transform: "rotate(360deg)" },
+                    },
+                  }}
+                />
+                <Typography variant="h6" sx={{ fontWeight: 600, color: "#ef4444", mb: 1 }}>
+                  Đang tải thông tin
+                </Typography>
+                <Typography variant="body2" color="text.secondary">
+                  Vui lòng chờ trong giây lát...
+                </Typography>
+              </Box>
+            ) : selectedOrder ? (
+              <Box sx={{ p: 3 }}>
+                <OrderCard
+                  order={selectedOrder}
+                  isStore={user?.roles?.includes("SELLER") && user?.stores?.some(store => store.id === selectedOrder?.store?.id)}
+                  onCloseModal={handleCloseOrderModal}
+                />
+              </Box>
+            ) : (
+              <Box 
+                sx={{ 
+                  p: 6, 
+                  textAlign: "center",
+                  background: "rgba(255,255,255,0.7)",
+                  borderRadius: 3,
+                  m: 3,
+                  border: "1px solid rgba(239,68,68,0.1)",
+                }}
+              >
+                <Box
+                  sx={{
+                    width: 80,
+                    height: 80,
+                    borderRadius: "50%",
+                    background: "linear-gradient(135deg, #ef4444 0%, #f87171 100%)",
+                    display: "flex",
+                    alignItems: "center",
+                    justifyContent: "center",
+                    mx: "auto",
+                    mb: 3,
+                    boxShadow: "0 8px 32px rgba(239,68,68,0.3)",
+                  }}
+                >
+                  <Receipt sx={{ fontSize: 40, color: "white" }} />
+                </Box>
+                <Typography variant="h6" sx={{ fontWeight: 600, color: "#ef4444", mb: 1 }}>
+                  Không tìm thấy thông tin
+                </Typography>
+                <Typography variant="body2" color="text.secondary" sx={{ mb: 3 }}>
+                  Đơn hàng này có thể đã bị xóa hoặc không tồn tại
+                </Typography>
+                <Button
+                  variant="contained"
+                  onClick={() => {
+                    handleCloseOrderModal();
+                    navigate("/orders");
+                  }}
+                  sx={{
+                    background: "linear-gradient(90deg, #ef4444 0%, #f87171 100%)",
+                    color: "white",
+                    textTransform: "none",
+                    fontWeight: 600,
+                    px: 3,
+                    py: 1.5,
+                    borderRadius: 2,
+                    boxShadow: "0 4px 12px rgba(239,68,68,0.3)",
+                    transition: "all 0.3s ease",
+                    "&:hover": {
+                      background: "linear-gradient(90deg, #dc2626 0%, #ef4444 100%)",
+                      boxShadow: "0 6px 20px rgba(239,68,68,0.4)",
+                      transform: "translateY(-2px)",
+                    },
+                  }}
+                >
+                  <Receipt sx={{ fontSize: 18, mr: 1 }} />
+                  Xem tất cả đơn hàng
+                </Button>
+              </Box>
+            )}
+          </DialogContent>
+        </Dialog>
       </Toolbar>
     </MuiAppBar>
   );

@@ -53,7 +53,7 @@ const orderApi = {
       note,
     };
     const response = await axiosClient.put(`/api/order`, body);
-    return response.data;
+    return response.data.data;
   },
   updateOrderSatus: async (
     userId: string,

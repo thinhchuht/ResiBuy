@@ -1,5 +1,4 @@
-
-import Logo from "../../../assets/Images/Logo.png"
+import Logo from "../../../assets/Images/Logo.png";
 import { useLocation, Link } from "react-router-dom";
 import {
   Box,
@@ -16,11 +15,25 @@ import {
 } from "@mui/material";
 import { Settings, Logout, ShoppingBag } from "@mui/icons-material";
 import { menuItems } from "../../../constants/share";
+import { useCallback, useMemo } from "react";
+import { HubEventType, useEventHub, type HubEventHandler } from "../../../hooks/useEventHub";
+import { useToastify } from "../../../hooks/useToastify";
 
 export function Sidebar() {
   const location = useLocation();
   const pathname = location.pathname;
-
+  const toast = useToastify();
+  const handleOrderReported = useCallback(() => {
+    toast.success("Vừa có 1 báo cáo mới được tạo");
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+  const eventHandlers = useMemo(
+    () => ({
+      [HubEventType.OrderReported]: handleOrderReported,
+    }),
+    [handleOrderReported]
+  );
+  useEventHub(eventHandlers as Partial<Record<HubEventType, HubEventHandler>>);
   return (
     <Paper
       elevation={0}
@@ -35,11 +48,8 @@ export function Sidebar() {
       {/* Header */}
       <Box sx={{ px: 1, py: 2, borderBottom: "1px solid #e0e0e0" }}>
         <Stack direction="row" alignItems="center" spacing={1}>
-          <Box
-        
-          >
-           <img src={Logo} alt="Logo" width={100} height={72} />
-
+          <Box>
+            <img src={Logo} alt="Logo" width={100} height={72} />
           </Box>
           <Box>
             <Typography variant="subtitle1" fontWeight={600}>
