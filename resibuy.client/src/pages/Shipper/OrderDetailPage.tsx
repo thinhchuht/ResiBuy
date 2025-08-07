@@ -14,6 +14,8 @@ import {
   DialogActions,
   TextField,
   MenuItem,
+  Tooltip,
+  IconButton,
 } from "@mui/material";
 import WarningAmberIcon from "@mui/icons-material/WarningAmber";
 import { useParams } from "react-router-dom";
@@ -37,6 +39,7 @@ import DoneAllIcon from "@mui/icons-material/DoneAll";
 import PhoneMissedIcon from "@mui/icons-material/PhoneMissed";
 import CancelIcon from "@mui/icons-material/Cancel";
 import ReportProblemIcon from "@mui/icons-material/ReportProblem";
+import ContentCopyIcon from "@mui/icons-material/ContentCopy";
 
 interface OrderItem {
   id: string;
@@ -302,6 +305,11 @@ function OrderDetail() {
     }
   };
 
+  const handleCopy = (text: string) => {
+    navigator.clipboard.writeText(text);
+    toast.success("Đã sao chép số điện thoại!");
+  };
+
   if (!order) return <Typography>Đang tải...</Typography>;
 
   const deliveryAddress = `${order.roomQueryResult.areaName}, ${order.roomQueryResult.buildingName}, ${order.roomQueryResult.name}`;
@@ -320,17 +328,43 @@ function OrderDetail() {
               <strong>Mã đơn:</strong> {order.id}
             </Typography>
 
-            <Typography>
-              <PersonIcon sx={{ mr: 1, verticalAlign: "middle" }} />
-              <strong>Người đặt:</strong> {order.user.fullName} (
-              {order.user.phoneNumber})
-            </Typography>
+            {/* Người đặt */}
+            <Stack direction="row" alignItems="center" spacing={1}>
+              <PersonIcon />
+              <Typography variant="subtitle1" fontWeight="bold">
+                Người đặt:
+              </Typography>
+              <Typography variant="body1">
+                {order.user.fullName} ({order.user.phoneNumber})
+              </Typography>
+              <Tooltip title="Sao chép số điện thoại">
+                <IconButton
+                  onClick={() => handleCopy(order.user.phoneNumber)}
+                  size="small"
+                >
+                  <ContentCopyIcon fontSize="small" />
+                </IconButton>
+              </Tooltip>
+            </Stack>
 
-            <Typography>
-              <StorefrontIcon sx={{ mr: 1, verticalAlign: "middle" }} />
-              <strong>Cửa hàng:</strong> {order.store.name} (
-              {order.store.phoneNumber})
-            </Typography>
+            {/* Cửa hàng */}
+            <Stack direction="row" alignItems="center" spacing={1}>
+              <StorefrontIcon />
+              <Typography variant="subtitle1" fontWeight="bold">
+                Cửa hàng:
+              </Typography>
+              <Typography variant="body1">
+                {order.store.name} ({order.store.phoneNumber})
+              </Typography>
+              <Tooltip title="Sao chép số điện thoại">
+                <IconButton
+                  onClick={() => handleCopy(order.store.phoneNumber)}
+                  size="small"
+                >
+                  <ContentCopyIcon fontSize="small" />
+                </IconButton>
+              </Tooltip>
+            </Stack>
 
             <Typography>
               <LocationOnIcon sx={{ mr: 1, verticalAlign: "middle" }} />
@@ -397,16 +431,32 @@ function OrderDetail() {
             </Typography>
 
             {order.paymentMethod === "COD" ? (
-              <Typography>
-                <MonetizationOnIcon sx={{ mr: 1, verticalAlign: "middle" }} />
-                <strong>Tổng tiền thu:</strong>{" "}
+              <Typography
+                variant="subtitle1"
+                fontWeight="bold"
+                sx={{
+                  color: "error.main",
+                  display: "flex",
+                  alignItems: "center",
+                }}
+              >
+                <MonetizationOnIcon sx={{ mr: 1 }} />
+                Tổng tiền thu:{" "}
                 {(order.totalPrice + order.shippingFee).toLocaleString()} đ
               </Typography>
             ) : order.paymentMethod === "BankTransfer" &&
               order.paymentStatus === "Paid" ? (
-              <Typography>
-                <MonetizationOnIcon sx={{ mr: 1, verticalAlign: "middle" }} />
-                <strong>Tổng tiền thu:</strong> 0 đ
+              <Typography
+                variant="subtitle1"
+                fontWeight="bold"
+                sx={{
+                  color: "error.main",
+                  display: "flex",
+                  alignItems: "center",
+                }}
+              >
+                <MonetizationOnIcon sx={{ mr: 1 }} />
+                Tổng tiền thu: 0 đ
               </Typography>
             ) : null}
 
