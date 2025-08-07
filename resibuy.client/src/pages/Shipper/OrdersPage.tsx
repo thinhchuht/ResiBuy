@@ -256,7 +256,7 @@ const ShipperOrderHistory: React.FC = () => {
                 </Box>
 
                 <Typography variant="body2" color="text.secondary" mt={0.5}>
-                  🕓 Ngày tạo: {new Date(order.createAt).toLocaleString()}
+                  🕓 Ngày giao: {new Date(order.updateAt).toLocaleString()}
                 </Typography>
 
                 <Divider sx={{ my: 2 }} />
