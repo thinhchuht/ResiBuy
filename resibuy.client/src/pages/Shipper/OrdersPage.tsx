@@ -21,7 +21,9 @@ import { format } from "date-fns";
 const OrderStatusTabs = [
   { label: "Đã giao hàng", value: "Delivered" },
   { label: "Đã hủy", value: "Cancelled" },
+  { label: "Bị tố cáo", value: "Reported" }, 
 ];
+
 
 const getStatusLabel = (status: string) => {
   switch (status) {
@@ -29,6 +31,8 @@ const getStatusLabel = (status: string) => {
       return "Đã giao hàng";
     case "Cancelled":
       return "Đã hủy";
+    case "Reported":
+      return "Bị tố cáo"; 
     default:
       return status;
   }
@@ -40,6 +44,8 @@ const getStatusColor = (status: string) => {
       return "success";
     case "Cancelled":
       return "error";
+    case "Reported":
+      return "warning"; 
     default:
       return "default";
   }
