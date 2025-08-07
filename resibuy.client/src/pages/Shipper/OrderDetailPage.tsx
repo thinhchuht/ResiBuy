@@ -22,6 +22,22 @@ import reportApi from "../../api/report.api";
 import { useAuth } from "../../contexts/AuthContext";
 import { useToastify } from "../../hooks/useToastify";
 
+import ConfirmationNumberIcon from "@mui/icons-material/ConfirmationNumber";
+import PersonIcon from "@mui/icons-material/Person";
+import StorefrontIcon from "@mui/icons-material/Storefront";
+import LocationOnIcon from "@mui/icons-material/LocationOn";
+import LocalShippingIcon from "@mui/icons-material/LocalShipping";
+import PaymentIcon from "@mui/icons-material/Payment";
+import AttachMoneyIcon from "@mui/icons-material/AttachMoney";
+import LocalMallIcon from "@mui/icons-material/LocalMall";
+import MonetizationOnIcon from "@mui/icons-material/MonetizationOn";
+import NoteAltIcon from "@mui/icons-material/NoteAlt";
+import ReceiptLongIcon from "@mui/icons-material/ReceiptLong";
+import DoneAllIcon from "@mui/icons-material/DoneAll";
+import PhoneMissedIcon from "@mui/icons-material/PhoneMissed";
+import CancelIcon from "@mui/icons-material/Cancel";
+import ReportProblemIcon from "@mui/icons-material/ReportProblem";
+
 interface OrderItem {
   id: string;
   productName: string;
@@ -300,20 +316,29 @@ function OrderDetail() {
         <CardContent>
           <Stack spacing={2}>
             <Typography>
+              <ConfirmationNumberIcon sx={{ mr: 1, verticalAlign: "middle" }} />
               <strong>Mã đơn:</strong> {order.id}
             </Typography>
+
             <Typography>
+              <PersonIcon sx={{ mr: 1, verticalAlign: "middle" }} />
               <strong>Người đặt:</strong> {order.user.fullName} (
               {order.user.phoneNumber})
             </Typography>
+
             <Typography>
+              <StorefrontIcon sx={{ mr: 1, verticalAlign: "middle" }} />
               <strong>Cửa hàng:</strong> {order.store.name} (
               {order.store.phoneNumber})
             </Typography>
+
             <Typography>
+              <LocationOnIcon sx={{ mr: 1, verticalAlign: "middle" }} />
               <strong>Địa chỉ giao hàng:</strong> {deliveryAddress}
             </Typography>
+
             <Stack direction="row" spacing={1} alignItems="center">
+              <LocalShippingIcon sx={{ verticalAlign: "middle" }} />
               <Typography variant="body2">
                 <strong>Trạng thái:</strong>
               </Typography>
@@ -337,6 +362,7 @@ function OrderDetail() {
             </Stack>
 
             <Stack direction="row" spacing={1} alignItems="center">
+              <PaymentIcon sx={{ verticalAlign: "middle" }} />
               <Typography variant="body2">
                 <strong>Thanh toán:</strong>{" "}
                 {getPaymentMethodLabel(order.paymentMethod)}
@@ -357,33 +383,43 @@ function OrderDetail() {
             </Stack>
 
             <Typography>
-              <strong>Tổng tiền:</strong> {order.totalPrice.toLocaleString()} đ
+              <AttachMoneyIcon sx={{ mr: 1, verticalAlign: "middle" }} />
+              <strong>
+                Tổng tiền:
+              </strong> {order.totalPrice.toLocaleString()} đ
             </Typography>
+
             <Typography>
-              <strong>Phí ship:</strong> {order.shippingFee?.toLocaleString()} đ
+              <LocalMallIcon sx={{ mr: 1, verticalAlign: "middle" }} />
+              <strong>
+                Phí ship:
+              </strong> {order.shippingFee?.toLocaleString()} đ
             </Typography>
+
             {order.paymentMethod === "COD" ? (
               <Typography>
+                <MonetizationOnIcon sx={{ mr: 1, verticalAlign: "middle" }} />
                 <strong>Tổng tiền thu:</strong>{" "}
                 {(order.totalPrice + order.shippingFee).toLocaleString()} đ
               </Typography>
             ) : order.paymentMethod === "BankTransfer" &&
               order.paymentStatus === "Paid" ? (
               <Typography>
+                <MonetizationOnIcon sx={{ mr: 1, verticalAlign: "middle" }} />
                 <strong>Tổng tiền thu:</strong> 0 đ
               </Typography>
             ) : null}
 
             {order.note && (
               <Typography>
+                <NoteAltIcon sx={{ mr: 1, verticalAlign: "middle" }} />
                 <strong>Ghi chú:</strong> {order.note}
               </Typography>
             )}
 
-            <Divider />
-
             <Typography variant="subtitle1" fontWeight={600}>
-              🧾 Danh sách sản phẩm:
+              <ReceiptLongIcon sx={{ mr: 1, verticalAlign: "middle" }} />
+              Danh sách sản phẩm:
             </Typography>
 
             {order.orderItems.map((item) => (
@@ -444,6 +480,7 @@ function OrderDetail() {
                 <Button
                   variant="contained"
                   color="success"
+                  startIcon={<LocalShippingIcon />}
                   onClick={handlePickedUp}
                 >
                   Đã lấy hàng
@@ -454,6 +491,7 @@ function OrderDetail() {
                 <Button
                   variant="contained"
                   color="primary"
+                  startIcon={<DoneAllIcon />}
                   onClick={handleDelivered}
                 >
                   Đã giao hàng
@@ -464,6 +502,7 @@ function OrderDetail() {
                 <Button
                   variant="contained"
                   color="primary"
+                  startIcon={<DoneAllIcon />}
                   onClick={handleDelivered}
                 >
                   Đã giao hàng
@@ -474,6 +513,7 @@ function OrderDetail() {
                 <Button
                   variant="contained"
                   color="error"
+                  startIcon={<PhoneMissedIcon />}
                   onClick={handleCustomerNotAvailable}
                 >
                   Không liên lạc được với khách
@@ -484,6 +524,7 @@ function OrderDetail() {
                 <Button
                   variant="contained"
                   color="error"
+                  startIcon={<CancelIcon />}
                   onClick={handleCancelled}
                 >
                   Hủy đơn hàng
@@ -494,6 +535,7 @@ function OrderDetail() {
                 <Button
                   variant="contained"
                   color="error"
+                  startIcon={<ReportProblemIcon />}
                   onClick={handleOpenReport}
                 >
                   Báo cáo đơn hàng
