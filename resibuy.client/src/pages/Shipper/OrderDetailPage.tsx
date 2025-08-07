@@ -86,8 +86,9 @@ function OrderDetail() {
   const [reportLoading, setReportLoading] = useState(false);
   const reportReasons = [
     "Hàng không đúng mô tả",
-    "Đơn hàng bị trễ",
-    "Thái độ shipper không tốt",
+    "Khách hàng không nhận hàng",
+    "Khách hàng xúc phạm",
+    "Khách hàng không liên lạc được",
     "Sản phẩm bị hỏng",
     "Khác",
   ];
@@ -525,6 +526,7 @@ function OrderDetail() {
           <WarningAmberIcon color="warning" sx={{ fontSize: 28 }} />
           Báo cáo đơn hàng
         </DialogTitle>
+
         <DialogContent
           sx={{
             display: "flex",
@@ -541,14 +543,13 @@ function OrderDetail() {
             Nếu bạn gặp vấn đề với đơn hàng, hãy gửi báo cáo để chúng tôi hỗ trợ
             nhanh nhất.
           </Typography>
+
           <TextField
             select
             label="Đối tượng báo cáo"
             value={reportTargetType}
             onChange={(e) =>
-              setReportTargetType(
-                e.target.value as "store" | "user" | "shipper"
-              )
+              setReportTargetType(e.target.value as "store" | "user")
             }
             fullWidth
             variant="outlined"
@@ -559,10 +560,9 @@ function OrderDetail() {
             <MenuItem value="user" disabled={user?.id === order?.user.id}>
               Người dùng
             </MenuItem>
-            <MenuItem value="shipper" disabled={!order?.shipper?.id}>
-              Người giao
-            </MenuItem>
+            {/* XÓA MenuItem của shipper */}
           </TextField>
+
           <TextField
             label="Tiêu đề báo cáo"
             value={reportTitle}
@@ -579,6 +579,7 @@ function OrderDetail() {
             }
             error={reportTitle.length === 0}
           />
+
           <TextField
             select
             label="Lý do báo cáo"
@@ -597,6 +598,7 @@ function OrderDetail() {
               </MenuItem>
             ))}
           </TextField>
+
           {reportReason === "Khác" && (
             <Box>
               <TextField
@@ -638,6 +640,7 @@ function OrderDetail() {
             </Box>
           )}
         </DialogContent>
+
         <DialogActions sx={{ px: 3, pb: 2, pt: 1 }}>
           <Button
             onClick={handleCloseReport}
