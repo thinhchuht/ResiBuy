@@ -17,9 +17,6 @@ import orderApi from "../../api/order.api";
 import { useAuth } from "../../contexts/AuthContext";
 import { useOrderEvent } from "../../contexts/OrderEventContext";
 
-
-
-
 interface Order {
   id: string;
   totalPrice: number;
@@ -37,15 +34,14 @@ interface Order {
   } | null;
 }
 
-// ✅ CHỈ 2 trạng thái theo yêu cầu
 const STATUS_OPTIONS = [
-
-    { value: "Assigned", label: "Chờ lấy hàng" },
+  { value: "Assigned", label: "📦 Chờ lấy hàng" },
   { value: "Shipped", label: "🚚 Đang giao" },
-  { value: "CustomerNotAvailable", label: "Không liên lạc được với khách" },
+  {
+    value: "CustomerNotAvailable",
+    label: "📞 Không liên lạc được với khách",
+  },
 ];
-
-
 
 function ShipperHome() {
   const { user } = useAuth();
@@ -112,7 +108,7 @@ function ShipperHome() {
   return (
     <Box sx={{ p: 3 }}>
       <Typography variant="h5" gutterBottom fontWeight="bold">
-        🚚 Đơn hàng của bạn
+        Đơn hàng của bạn
       </Typography>
 
       <Tabs
@@ -143,7 +139,8 @@ function ShipperHome() {
                     </Typography>
 
                     <Typography variant="body2">
-                      <strong>Người mua:</strong> {order.user?.fullName || "---"}
+                      <strong>Người mua:</strong>{" "}
+                      {order.user?.fullName || "---"}
                     </Typography>
 
                     <Typography variant="body2">

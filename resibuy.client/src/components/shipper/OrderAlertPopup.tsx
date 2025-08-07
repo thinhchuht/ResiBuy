@@ -40,7 +40,9 @@ export default function OrderAlertToast() {
           // ✅ Ngăn toast nếu đã show cùng OrderId
           if (parsed.OrderId !== lastToastOrderId.current) {
             toast.info(
-              `📦 Đơn hàng mới từ ${parsed.StoreName} - ${parsed.TotalPrice.toLocaleString()} đ`,
+              `📦 Đơn hàng mới từ ${
+                parsed.StoreName
+              } - ${parsed.TotalPrice.toLocaleString()} đ`,
               { autoClose: 5000 }
             );
             console.log("📦 Nhận đơn hàng:", parsed);
