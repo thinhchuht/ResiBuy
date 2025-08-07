@@ -1,19 +1,28 @@
 import React, { useEffect, useState } from "react";
 import {
   Box,
-  Typography,
   Card,
-  Divider,
-  Avatar,
   Chip,
-  Pagination,
+  Divider,
+  Typography,
+  Avatar,
   Alert,
   Tabs,
   Tab,
+  Pagination,
+  Stack,
 } from "@mui/material";
+import {
+  Store,
+  Person,
+  Phone,
+  Room,
+  ShoppingCart,
+  Payment,
+} from "@mui/icons-material";
 import { DatePicker, LocalizationProvider } from "@mui/x-date-pickers";
 import { AdapterDateFns } from "@mui/x-date-pickers/AdapterDateFns";
-import { vi } from "date-fns/locale/vi";
+import { vi } from "date-fns/locale";
 import orderApi from "../../api/order.api";
 import { useAuth } from "../../contexts/AuthContext";
 import { format } from "date-fns";
@@ -21,9 +30,8 @@ import { format } from "date-fns";
 const OrderStatusTabs = [
   { label: "Đã giao hàng", value: "Delivered" },
   { label: "Đã hủy", value: "Cancelled" },
-  { label: "Bị tố cáo", value: "Reported" }, 
+  { label: "Bị tố cáo", value: "Reported" },
 ];
-
 
 const getStatusLabel = (status: string) => {
   switch (status) {
@@ -32,7 +40,7 @@ const getStatusLabel = (status: string) => {
     case "Cancelled":
       return "Đã hủy";
     case "Reported":
-      return "Bị tố cáo"; 
+      return "Bị tố cáo";
     default:
       return status;
   }
@@ -45,7 +53,7 @@ const getStatusColor = (status: string) => {
     case "Cancelled":
       return "error";
     case "Reported":
-      return "warning"; 
+      return "warning";
     default:
       return "default";
   }
@@ -85,26 +93,42 @@ interface OrderItem {
   price: number;
 }
 
-interface RoomQueryResult {
-  name?: string;
-  buildingName?: string;
-  areaName?: string;
-}
-
 interface Store {
   name?: string;
 }
 
 interface Order {
-  id: number;
-  status: string;
+  id: string;
+  userId: string;
+  user: {
+    id: string;
+    fullName: string;
+    phoneNumber: string;
+  };
+  shipper: {
+    id: string;
+    phoneNumber: string;
+  };
   createAt: string;
-  roomQueryResult?: RoomQueryResult;
-  store?: Store;
-  shippingFee: number;
+  updateAt: string;
+  status: string;
   paymentStatus: string;
   paymentMethod: string;
   totalPrice: number;
+  shippingFee: number;
+  cancelReason: string;
+  note: string;
+  store: {
+    id: string;
+    name: string;
+    phoneNumber: string;
+  };
+  roomQueryResult: {
+    id: string;
+    name: string;
+    buildingName: string;
+    areaName: string;
+  };
   orderItems: OrderItem[];
 }
 
@@ -122,8 +146,12 @@ const ShipperOrderHistory: React.FC = () => {
     if (!user?.id || dateError) return;
 
     try {
-      const formattedStartDate = startDate ? format(startDate, "yyyy-MM-dd") : undefined;
-      const formattedEndDate = endDate ? format(endDate, "yyyy-MM-dd") : undefined;
+      const formattedStartDate = startDate
+        ? format(startDate, "yyyy-MM-dd")
+        : undefined;
+      const formattedEndDate = endDate
+        ? format(endDate, "yyyy-MM-dd")
+        : undefined;
 
       const res = await orderApi.getAll(
         statusFilter,
@@ -211,48 +239,89 @@ const ShipperOrderHistory: React.FC = () => {
         ) : (
           <>
             {orders.map((order) => (
-              <Card key={order.id} variant="outlined" sx={{ mb: 3, p: 2 }}>
-                <Box display="flex" justifyContent="space-between" alignItems="center">
+              <Card key={order.id} variant="outlined" sx={{ mb: 3, p: 3 }}>
+                <Box
+                  display="flex"
+                  justifyContent="space-between"
+                  alignItems="center"
+                >
                   <Typography variant="h6" color="primary">
-                    Đơn hàng #{order.id}
+                    Mã đơn: <strong>{order.id}</strong>
                   </Typography>
-                  <Chip label={getStatusLabel(order.status)} color={getStatusColor(order.status)} />
+                  <Chip
+                    label={getStatusLabel(order.status)}
+                    color={getStatusColor(order.status)}
+                    variant="filled"
+                  />
                 </Box>
 
                 <Typography variant="body2" color="text.secondary" mt={0.5}>
-                  Ngày tạo: {new Date(order.createAt).toLocaleString()}
+                  🕓 Ngày tạo: {new Date(order.createAt).toLocaleString()}
                 </Typography>
 
                 <Divider sx={{ my: 2 }} />
 
-                <Typography>
-                  <strong>Phòng:</strong> {order.roomQueryResult?.name} - {order.roomQueryResult?.buildingName} ({order.roomQueryResult?.areaName})
-                </Typography>
-                <Typography>
-                  <strong>Cửa hàng:</strong> {order.store?.name}
-                </Typography>
-                <Typography>
-                  <strong>Thanh toán:</strong> {getPaymentMethodLabel(order.paymentMethod)} -{" "}
-                  <Chip
-                    label={getPaymentStatusLabel(order.paymentStatus)}
-                    color="warning"
-                    size="small"
-                  />
-                </Typography>
-                <Typography mt={1}>
-                  <strong>Phí giao hàng:</strong> {order.shippingFee?.toLocaleString()}đ
-                </Typography>
-                <Typography>
-                  <strong>Tổng tiền hàng:</strong> {order.totalPrice.toLocaleString()}đ
-                </Typography>
-                <Typography mt={1}>
-                  <strong>Tổng cộng:</strong>{" "}
-                  {(order.totalPrice + (order.shippingFee || 0)).toLocaleString()}đ
-                </Typography>
+                <Stack spacing={1}>
+                  <Typography>
+                    <Room fontSize="small" sx={{ mr: 1 }} />
+                    <strong>Phòng:</strong> {order.roomQueryResult?.name} -{" "}
+                    {order.roomQueryResult?.buildingName} (
+                    {order.roomQueryResult?.areaName})
+                  </Typography>
+
+                  <Typography variant="subtitle1" fontWeight="bold">
+                    <Store fontSize="small" sx={{ mr: 1 }} />
+                    Cửa hàng: {order.store?.name || "Không rõ"}
+                  </Typography>
+                  <Typography color="text.secondary">
+                    <Phone fontSize="small" sx={{ mr: 1 }} />
+                    {order.store?.phoneNumber || "Không có SĐT"}
+                  </Typography>
+
+                  <Typography variant="subtitle1" fontWeight="bold">
+                    <Person fontSize="small" sx={{ mr: 1 }} />
+                    Người mua: {order.user?.fullName || "Không rõ"}
+                  </Typography>
+                  <Typography color="text.secondary">
+                    <Phone fontSize="small" sx={{ mr: 1 }} />
+                    {order.user?.phoneNumber || "Không có SĐT"}
+                  </Typography>
+
+                  <Typography>
+                    <Payment fontSize="small" sx={{ mr: 1 }} />
+                    <strong>Thanh toán:</strong>{" "}
+                    {getPaymentMethodLabel(order.paymentMethod)} -{" "}
+                    <Chip
+                      label={getPaymentStatusLabel(order.paymentStatus)}
+                      color="warning"
+                      size="small"
+                    />
+                  </Typography>
+
+                  <Typography>
+                    <strong>Phí giao hàng:</strong>{" "}
+                    {order.shippingFee?.toLocaleString()}đ
+                  </Typography>
+                  <Typography>
+                    <strong>Tổng tiền hàng:</strong>{" "}
+                    {order.totalPrice.toLocaleString()}đ
+                  </Typography>
+                  <Typography variant="h6" color="error" mt={1}>
+                    <strong>Tổng cộng:</strong>{" "}
+                    {(
+                      order.totalPrice + (order.shippingFee || 0)
+                    ).toLocaleString()}
+                    đ
+                  </Typography>
+                </Stack>
 
                 <Divider sx={{ my: 2 }} />
 
-                <Typography variant="subtitle2">Sản phẩm:</Typography>
+                <Typography variant="subtitle2" fontWeight="bold" gutterBottom>
+                  <ShoppingCart fontSize="small" sx={{ mr: 1 }} />
+                  Sản phẩm:
+                </Typography>
+
                 {order.orderItems.map((item) => (
                   <Box key={item.id} display="flex" alignItems="center" mt={1}>
                     <Avatar
