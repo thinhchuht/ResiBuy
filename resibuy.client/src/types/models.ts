@@ -373,7 +373,7 @@ export interface UpdateTempOrderDto {
 
 export interface UpdateOrderDto {
   id: string;
-  voucherId?: string;
+  voucherId?: string | null;
   note?: string;
 }
 
