@@ -280,20 +280,7 @@ export function CategoryDetailModal({
                   Tổng Sản Phẩm
                 </Typography>
               </Box>
-              <Box>
-                <Typography
-                  variant="h5"
-                  sx={{ color: "success.main", fontWeight: "bold" }}
-                >
-                  {formatCurrency(totalRevenue)}
-                </Typography>
-                <Typography
-                  variant="caption"
-                  sx={{ color: "grey.500" }}
-                >
-                  Tổng Doanh Thu
-                </Typography>
-              </Box>
+              
             </Box>
           </Box>
         )}
@@ -335,9 +322,7 @@ export function CategoryDetailModal({
                     <TableCell sx={{ px: 2, py: 1.5, color: "grey.500", fontSize: "0.75rem", fontWeight: "medium", textTransform: "uppercase" }}>
                       Trạng Thái
                     </TableCell>
-                    <TableCell sx={{ px: 2, py: 1.5, color: "grey.500", fontSize: "0.75rem", fontWeight: "medium", textTransform: "uppercase" }}>
-                      Đã Bán
-                    </TableCell>
+                   
                   </TableRow>
                 </TableHead>
                 <TableBody sx={{ "& tr:hover": { bgcolor: "grey.50" } }}>
@@ -375,9 +360,7 @@ export function CategoryDetailModal({
                             : "Còn hàng"
                           : "N/A"}
                       </TableCell>
-                      <TableCell sx={{ px: 2, py: 1.5, fontSize: "0.875rem", color: "grey.900" }}>
-                        {product.productDetails[0] ? product.productDetails[0].sold : "N/A"}
-                      </TableCell>
+                      
                     </TableRow>
                   ))}
                 </TableBody>
