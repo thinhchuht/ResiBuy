@@ -844,7 +844,7 @@ export function UserDetailModal({ isOpen, onClose, user, onEdit, onToggleLock }:
                   description={`Đơn hàng của ${user.fullName || "người dùng"}`}
                   showExport={false}
                   showBulkActions={false}
-                  showSearch={false}
+                  
                 />
               ) : (
                 <Box sx={{ textAlign: "center", py: 4, color: "grey.500" }}>

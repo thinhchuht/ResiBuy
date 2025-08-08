@@ -4,7 +4,6 @@ import productApi from "../../../../api/product.api";
 import { useToastify } from "../../../../hooks/useToastify";
 import type { CategoryImage, CreateCategoryDto, UpdateCategoryDto } from "../../../../types/dtoModels";
 
-
 export interface Category {
   id: string;
   name: string;
@@ -12,13 +11,11 @@ export interface Category {
   image: CategoryImage & { categoryId?: string };
 }
 
-
 export interface CategoryFormData {
   name: string;
-  status?: string; // Thêm status vào form
+  status?: string;
   image?: CategoryImage;
 }
-
 
 export function useCategoriesLogic() {
   const [categories, setCategories] = useState<Category[]>([]);
@@ -27,8 +24,7 @@ export function useCategoriesLogic() {
   const [isAddModalOpen, setIsAddModalOpen] = useState(false);
   const [editingCategory, setEditingCategory] = useState<Category | null>(null);
 
-  const  toast  = useToastify();
-
+  const toast = useToastify();
 
   const fetchCategories = useCallback(async () => {
     try {
@@ -46,7 +42,6 @@ export function useCategoriesLogic() {
     }
   }, [toast]);
 
-  // Gọi API khi component mount
   useEffect(() => {
     fetchCategories();
   }, []);
@@ -110,7 +105,7 @@ export function useCategoriesLogic() {
       } else {
         const createData: CreateCategoryDto = {
           name: categoryData.name,
-          status: categoryData.status || "", // Sử dụng status từ form, mặc định là "active"
+          status: categoryData.status || "active",
           image: categoryData.image || { id: "", url: "", thumbUrl: "", name: "" },
         };
         console.log("Calling categoryApi.create with:", createData);
@@ -181,7 +176,6 @@ export function useCategoriesLogic() {
     }
   };
 
-
   const countProductsByCategoryId = useCallback(async (categoryId: string): Promise<number> => {
     if (!categoryId) {
       console.error("countProductsByCategoryId: Invalid categoryId", categoryId);
@@ -191,20 +185,31 @@ export function useCategoriesLogic() {
       const response = await categoryApi.countProductsByCategoryId(categoryId);
       console.log(`Count products for ${categoryId} - Full response:`, response);
       console.log(`Count products for ${categoryId}:`, response.data.count);
-      return Number(response.data.count) || 0; // Lấy response.data.count
+      return Number(response.data.count) || 0;
     } catch (err: any) {
       console.error(`Count products error for ${categoryId}:`, err);
       toast.error(err.message || "Lỗi khi đếm sản phẩm theo danh mục");
       return 0;
     }
   }, [toast]);
- const getProductsByCategoryId = useCallback(async (categoryId) => {
+
+  const getProductsByCategoryId = useCallback(async (categoryId: string, pageNumber: number, pageSize: number) => {
+    if (!categoryId) {
+      console.error("getProductsByCategoryId: Invalid categoryId", categoryId);
+      return { items: [], totalCount: 0, totalPages: 0 };
+    }
     try {
-      const response = await productApi.getAll({ categoryId, pageNumber: 1, pageSize: 100 });
-      return response.items || [];
-    } catch (err) {
+      const response = await productApi.getAll({ categoryId, pageNumber, pageSize });
+      console.log(`Products for ${categoryId}:`, response);
+      return {
+        items: response.items || [],
+        totalCount: response.totalCount || 0,
+        totalPages: response.totalPages || 1,
+      };
+    } catch (err: any) {
+      console.error(`Get products error for ${categoryId}:`, err);
       toast.error(err.message || "Lỗi khi lấy danh sách sản phẩm");
-      return [];
+      return { items: [], totalCount: 0, totalPages: 0 };
     }
   }, [toast]);
 
@@ -214,7 +219,6 @@ export function useCategoriesLogic() {
       return 0;
     }
     try {
-    
       return 0;
     } catch (err: any) {
       console.error(`Count sold products error for ${categoryId}:`, err);
@@ -229,7 +233,6 @@ export function useCategoriesLogic() {
       return 0;
     }
     try {
-
       return 0;
     } catch (err: any) {
       console.error(`Calculate revenue error for ${categoryId}:`, err);
@@ -258,8 +261,7 @@ export function useCategoriesLogic() {
     calculateCategoryRevenue,
     fetchCategories,
   };
-};
-
+}
 
 export const useCategoryForm = (editCategory?: Category | null) => {
   const [formData, setFormData] = useState<CategoryFormData>({
@@ -270,7 +272,7 @@ export const useCategoryForm = (editCategory?: Category | null) => {
 
   const [errors, setErrors] = useState<Partial<CategoryFormData>>({});
   const [isSubmitting, setIsSubmitting] = useState(false);
-  const  toast  = useToastify();
+  const toast = useToastify();
 
   useEffect(() => {
     if (editCategory) {
@@ -346,7 +348,6 @@ export const useCategoryForm = (editCategory?: Category | null) => {
   };
 };
 
-// Hàm tính thống kê danh mục
 export const calculateCategoryStats = async () => {
   try {
     const response = await categoryApi.countAll();
@@ -366,7 +367,6 @@ export const calculateCategoryStats = async () => {
   }
 };
 
-// Hàm định dạng tiền tệ
 export const formatCurrency = (amount: number) => {
   return new Intl.NumberFormat("vi-VN", {
     style: "currency",
@@ -374,7 +374,6 @@ export const formatCurrency = (amount: number) => {
   }).format(amount);
 };
 
-// Hàm định dạng ngày
 export const formatDate = (dateString: string) => {
   return new Date(dateString).toLocaleDateString("vi-VN", {
     year: "numeric",
@@ -383,7 +382,6 @@ export const formatDate = (dateString: string) => {
   });
 };
 
-// Hàm định dạng ngày giờ
 export const formatDateTime = (dateString: string) => {
   return new Date(dateString).toLocaleDateString("vi-VN", {
     year: "numeric",

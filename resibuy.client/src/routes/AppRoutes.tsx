@@ -156,22 +156,15 @@ const AppRoutes: React.FC = () => {
             </ProtectedRoute>
           }
         />
-        {
-          /* <Route
-
-        <Route path="/test-hub" element={<TestHub />} />
-        <Route
-
-          path="/admin/*"
-          element={
-            <ProtectedRoute allowedRoles={["ADMIN"]}>
-              <div>Admin Dashboard</div>
-            </ProtectedRoute>
-          }
-        /> */
-          <Route path="/admin" element={<AdminLayout />}>
+         <Route
+            path="/admin"
+            element={
+              <ProtectedRoute allowedRoles={["ADMIN"]}>
+                <AdminLayout />
+              </ProtectedRoute>
+            }
+          >
             <Route index element={<Navigate to="dashboard" replace />} />
-
             <Route path="dashboard" element={<Dashboard />} />
             <Route path="Shipper" element={<ShippersPage />} />
             <Route path="Category" element={<CategoriesPage />} />
@@ -183,7 +176,6 @@ const AppRoutes: React.FC = () => {
             <Route path="user" element={<UserPage />} />
             <Route path="reports" element={<ReportsPage />} />
           </Route>
-        }
         <Route
           path="/seller/*"
           element={
