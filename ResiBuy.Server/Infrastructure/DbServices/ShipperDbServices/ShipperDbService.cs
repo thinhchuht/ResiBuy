@@ -142,6 +142,10 @@ namespace ResiBuy.Server.Infrastructure.DbServices.ShipperDbServices
                     throw new CustomException(ExceptionErrorCode.NotFound, "Shipper không tồn tại");
 
                 shipper.IsOnline = isOnline;
+                if (shipper.FirstTimeLogin == null)
+                {
+                    shipper.FirstTimeLogin = DateTime.Now;
+                }
                 await _context.SaveChangesAsync();
                 return shipper;
             }
