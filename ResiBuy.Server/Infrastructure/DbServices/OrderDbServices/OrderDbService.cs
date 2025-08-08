@@ -309,12 +309,12 @@ public class OrderDbService : BaseDbService<Order>, IOrderDbService
                 .Where(o => o.ShipperId == shipperId && o.Status == OrderStatus.Delivered);
 
             if (startDate.HasValue)
-                query = query.Where(o => o.CreateAt >= startDate.Value);
+                query = query.Where(o => o.UpdateAt >= startDate.Value);
 
             if (endDate.HasValue)
             {
                 var end = endDate.Value.Date.AddDays(1);
-                query = query.Where(o => o.CreateAt < end);
+                query = query.Where(o => o.UpdateAt < end);
             }
 
             return await query.SumAsync(o => o.ShippingFee ?? 0);

@@ -1,11 +1,10 @@
-// OrderList.tsx
 import { Table, TableBody, TableCell, TableHead, TableRow, Paper, TableContainer } from "@mui/material";
 
 interface Order {
   id: string;
   store: string;
   amount: number;
-  deliveredAt: string;
+  updateAt: string;
 }
 
 interface Props {
@@ -13,6 +12,7 @@ interface Props {
 }
 
 export default function OrderList({ orders }: Props) {
+  console.log("OrderList orders:", orders); // Debug
   return (
     <TableContainer component={Paper}>
       <Table>
@@ -30,7 +30,9 @@ export default function OrderList({ orders }: Props) {
               <TableCell>{order.id}</TableCell>
               <TableCell>{order.store}</TableCell>
               <TableCell>{order.amount.toLocaleString()} đ</TableCell>
-              <TableCell>{order.deliveredAt}</TableCell>
+              <TableCell>
+                {order.updateAt ? new Date(order.updateAt).toLocaleString("vi-VN") : "N/A"}
+              </TableCell>
             </TableRow>
           ))}
         </TableBody>
