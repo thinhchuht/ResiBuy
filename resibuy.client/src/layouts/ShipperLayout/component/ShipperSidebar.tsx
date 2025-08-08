@@ -20,6 +20,7 @@ import ArrowBackIcon from "@mui/icons-material/ArrowBack";
 import { useAuth } from "../../../contexts/AuthContext";
 import userApi from "../../../api/user.api";
 import shipperApi from "../../../api/ship.api";
+import MonetizationOnIcon from "@mui/icons-material/MonetizationOn";
 
 const drawerWidth = 240;
 
@@ -123,6 +124,15 @@ const ShipperSidebar: React.FC = () => {
               <HistoryIcon />
             </ListItemIcon>
             <ListItemText primary="Lịch sử đơn hàng" />
+          </ListItemButton>
+        </ListItem>
+
+        <ListItem disablePadding>
+          <ListItemButton component={Link} to="/shipper/statistical">
+            <ListItemIcon>
+              <MonetizationOnIcon />
+            </ListItemIcon>
+            <ListItemText primary="Thu nhập" />
           </ListItemButton>
         </ListItem>
 

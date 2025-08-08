@@ -97,6 +97,8 @@ function getPageTitle(path: string) {
     case "":
     case "shipper":
       return "🚀 Trang chủ";
+    case "statistical":
+      return "📊 Thống kê thu nhập";
     default:
       return "📝 Đơn hàng";
   }
