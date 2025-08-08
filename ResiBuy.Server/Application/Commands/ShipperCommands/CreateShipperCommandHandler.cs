@@ -35,7 +35,7 @@ namespace ResiBuy.Server.Application.Commands.ShipperCommands
             if (!Regex.IsMatch(command.PhoneNumber, Constants.PhoneNumberPattern)) throw new CustomException(ExceptionErrorCode.ValidationFailed, "Số điện thoại không hợp lệ");
             if (!string.IsNullOrEmpty(command.Email) && !Regex.IsMatch(command.Email, Constants.EmailPattern)) throw new CustomException(ExceptionErrorCode.ValidationFailed, "Email không hợp lệ");
             if (!Regex.IsMatch(command.IdentityNumber, Constants.IndentityNumberPattern)) throw new CustomException(ExceptionErrorCode.ValidationFailed, "Số CCCD/CMND không hợp lệ");
-            await _userDbService.CheckUniqueField(command.PhoneNumber, command.Email, command.IdentityNumber);
+            await _userDbService.CheckUniqueField(phoneNumber: command.PhoneNumber,email: command.Email,identityNumber: command.IdentityNumber);
             if (command.DateOfBirth > DateTime.Now)
                 throw new CustomException(ExceptionErrorCode.ValidationFailed, "Ngày sinh phải trước ngày hiện tại.");
             if (command.LastLocationId == Guid.Empty)

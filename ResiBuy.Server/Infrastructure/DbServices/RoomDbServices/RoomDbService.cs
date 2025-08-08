@@ -315,6 +315,11 @@
                 throw new CustomException(ExceptionErrorCode.RepositoryError, ex.Message);
             }
         }
+        public async Task<Room?> GetByNameAsync(string name)
+        {
+            return await _context.Rooms.FirstOrDefaultAsync(r => r.Name == name);
+        }
+
         public async Task<int> CountRoomsByBuildingIdAndStatusAsync(Guid buildingId, bool isActive)
         {
             try

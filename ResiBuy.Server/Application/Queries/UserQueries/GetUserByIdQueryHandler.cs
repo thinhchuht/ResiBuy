@@ -8,8 +8,12 @@
             if (string.IsNullOrEmpty(query.UserId)) throw new CustomException(ExceptionErrorCode.NotFound, "Không tìm thấy người dùng");
             var user = (await UserDbService.GetUserById(query.UserId));
             return ResponseModel.SuccessResponse(new UserQueryResult(user.Id, user.IdentityNumber, user.Email, user.PhoneNumber, user.DateOfBirth, user.IsLocked, user.Roles, user.FullName,
-                user.CreatedAt, user.UpdatedAt, user.Cart == null ? null : user.Cart.Id, user.Avatar != null ? new AvatarQueryResult(user.Avatar.Id, user.Avatar.Name, user.Avatar.Url, user.Avatar.ThumbUrl) : null, user.UserRooms.Select(ur => new RoomQueryResult(ur.RoomId, ur.Room.Name, ur.Room.Building.Name, ur.Room.Building.Area.Name, ur.Room.Building.Area.Id)),
-                user.UserVouchers.Select(ur => ur.VoucherId), user.Reports, user.Stores.Select(s => new
+                user.CreatedAt, user.UpdatedAt, user.Cart == null ? null : user.Cart.Id, 
+                user.Avatar != null ? new AvatarQueryResult(user.Avatar.Id, user.Avatar.Name, user.Avatar.Url, user.Avatar.ThumbUrl) : null, 
+                user.UserRooms.Select(ur => new RoomQueryResult(ur.RoomId, ur.Room.Name, ur.Room.Building.Name, ur.Room.Building.Area.Name, ur.Room.Building.Area.Id)),
+                user.UserVouchers.Select(ur => ur.VoucherId),
+                user.Reports.Select(r => new ReportQueryResult(r.Id, r.IsResolved, r.Title, r.Description, r.CreatedAt, r.CreatedById, r.ReportTarget, r.TargetId, r.OrderId)), 
+                user.Stores.Select(s => new
                 {
                     s.Id,
                     s.Name,

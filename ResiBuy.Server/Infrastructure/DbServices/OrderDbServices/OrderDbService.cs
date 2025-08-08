@@ -1,5 +1,6 @@
 ﻿using ResiBuy.Server.Services.MapBoxService;
 using ResiBuy.Server.Services.OpenRouteService;
+using static Microsoft.EntityFrameworkCore.DbLoggerCategory;
 
 namespace ResiBuy.Server.Infrastructure.DbServices.OrderDbServices;
 
@@ -317,6 +318,29 @@ public class OrderDbService : BaseDbService<Order>, IOrderDbService
             }
 
             return await query.SumAsync(o => o.ShippingFee ?? 0);
+        }
+        catch (Exception ex)
+        {
+            throw new CustomException(ExceptionErrorCode.RepositoryError, ex.ToString());
+        }
+    }
+    public async Task<decimal> GetTotalOrderAmountByUserAndStoreAsync(string? userId, Guid ?storeId)
+    {
+        try
+        {
+            var query = _context.Orders.AsQueryable();
+            if (!string.IsNullOrWhiteSpace(userId))
+            {
+                query = query.Where(o => o.UserId == userId);
+            }
+            if (storeId.HasValue && storeId.Value != Guid.Empty)
+            {
+                query = query.Where(o => o.StoreId == storeId.Value);
+            }
+            query = query.Where(o => o.Status == OrderStatus.Delivered || o.Status == OrderStatus.Reported);
+
+            var total = await query.SumAsync(o => o.TotalPrice);
+            return total;
         }
         catch (Exception ex)
         {

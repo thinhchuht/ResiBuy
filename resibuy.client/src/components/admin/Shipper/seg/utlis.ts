@@ -221,7 +221,7 @@ export const useShipperForm = (editingShipper?: Shipper | null) => {
     try {
       await onSubmit(shipper);
       console.log("Submit shipper success, showing toast:", editingShipper ? "Cập nhật shipper thành công!" : "Thêm shipper thành công!");
-      toast.success(editingShipper ? "Cập nhật shipper thành công!" : "Thêm shipper thành công!");
+      toast.success(editingShipper ? "Cập nhật shipper thành công!" : "Đang kiểm tra");
     } catch (error: any) {
       console.error("Submit shipper error:", error);
       toast.error(error.message || "Lỗi khi lưu shipper");
@@ -488,7 +488,7 @@ export const useShippersLogic = () => {
 
   const handleExportShippers = async () => {
     try {
-      const response = await shipperApi.getAll(1, 100);
+      const response = await shipperApi.getAll(1, 1000);
       console.log("Export shippers response:", response);
       if (response.code !== 0) {
         throw new Error(response.message || "Lỗi khi lấy danh sách shipper");
@@ -498,12 +498,12 @@ export const useShippersLogic = () => {
         fullName: shipper.fullName || "",
         email: shipper.email || "",
         phoneNumber: shipper.phoneNumber || "",
-        isLocked: shipper.isLocked ? "Đã Khóa" : "Không Khóa",
+        isLocked: shipper.isLocked ? "Locked" : "UnLocked",
         workTime: `${formatWorkTime(shipper.startWorkTime)} - ${formatWorkTime(shipper.endWorkTime)}`,
         lastLocationName: shipper.lastLocationName || "",
       }));
       const csv = [
-        ["ID", "Họ Tên", "Email", "Số Điện Thoại", "Trạng Thái Khóa", "Thời Gian Làm Việc", "Vị Trí Cuối"],
+        ["ID", "Full Name", "Email", "Phone Number", "Status", "Work time", "Last Location"],
         ...csvData.map((row) => [
           row.id,
           `"${row.fullName}"`,
@@ -532,7 +532,7 @@ export const useShippersLogic = () => {
   };
 
   const isShipperAvailable = (shipper: Shipper): boolean => {
-    return !shipper.isLocked;
+    return shipper.isLocked;
   };
 
   const getShipperOrders = useCallback(async (shipperId: string): Promise<Order[]> => {

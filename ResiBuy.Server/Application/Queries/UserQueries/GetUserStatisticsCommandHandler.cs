@@ -8,17 +8,15 @@
         {
             try
             {
-                var users = await userDbService.GetAllUsers(); 
-                var totalUsers = users.TotalCount;
-                var lockedUsers = users.Items.Count(u => u.IsLocked);
-
-                var totalReports = users.Items.Sum(u => u.ReportCount);
+                var totalUsers = await userDbService.CountAllUsersAsync();
+                var lockedUsers = await userDbService.CountLockedUsersAsync();
+                var totalReportCount = await userDbService.SumUserReportCountAsync();
 
                 var result = new
                 {
                     TotalUsers = totalUsers,
                     LockedUsers = lockedUsers,
-                    TotalReportCount = totalReports
+                    TotalReportCount = totalReportCount
                 };
 
                 return ResponseModel.SuccessResponse(result);

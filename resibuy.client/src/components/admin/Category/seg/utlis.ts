@@ -214,7 +214,7 @@ export function useCategoriesLogic() {
       return 0;
     }
     try {
-      toast.info("API đếm sản phẩm đã bán theo danh mục chưa được triển khai");
+    
       return 0;
     } catch (err: any) {
       console.error(`Count sold products error for ${categoryId}:`, err);
@@ -229,7 +229,7 @@ export function useCategoriesLogic() {
       return 0;
     }
     try {
-      toast.info("API tính doanh thu theo danh mục chưa được triển khai");
+
       return 0;
     } catch (err: any) {
       console.error(`Calculate revenue error for ${categoryId}:`, err);
