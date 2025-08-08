@@ -12,6 +12,7 @@
         public DateTime             CreatedAt   { get; set; }
         public string               OwnerId     { get; set; }
         public Guid                 RoomId      { get; set; }
+        public bool                 IsPayFee    { get; set; } = false;
         public User                 Owner       { get; set; }
         public Room                 Room        { get; set; }
         public IEnumerable<Product> Products    { get; set; }

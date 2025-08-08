@@ -28,6 +28,7 @@
         public DbSet<UserNotification> UserNotifications { get; set; }
         public DbSet<Image> Images { get; set; }
         public DbSet<Review> Reviews { get; set; }
+        public DbSet<TimeSheet> TimeSheets { get; set; }
 
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {

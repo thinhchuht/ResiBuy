@@ -48,6 +48,8 @@ namespace ResiBuy.Server.Extensions
             services.AddHttpClient<OpenRouteService>();
             services.AddHttpClient<MapBoxService>();
             services.AddHostedService<AssignOrderForShipper>();
+            services.AddHostedService<CheckShipperService>();
+
 
             return services;
         }
