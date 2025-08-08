@@ -7,17 +7,11 @@ import {
   Typography,
   Button,
   IconButton,
-  Table,
-  TableHead,
-  TableBody,
-  TableRow,
-  TableCell,
   CircularProgress,
 } from "@mui/material";
 import {
   Close,
   Edit,
-  Delete,
   Inventory,
 } from "@mui/icons-material";
 import {
@@ -26,13 +20,13 @@ import {
 } from "./seg/utlis";
 import type { Category, Product } from "../../../types/models";
 import { useNavigate } from "react-router-dom";
+import CustomTable from "../../../components/CustomTable";
 
 interface CategoryDetailModalProps {
   isOpen: boolean;
   onClose: () => void;
   category: Category | null;
   onEdit?: (category: Category) => void;
-  onDelete?: (categoryId: string) => void;
 }
 
 export function CategoryDetailModal({
@@ -40,7 +34,6 @@ export function CategoryDetailModal({
   onClose,
   category,
   onEdit,
-  onDelete,
 }: CategoryDetailModalProps) {
   const [products, setProducts] = useState<Product[]>([]);
   const [loadingProducts, setLoadingProducts] = useState(false);
@@ -48,6 +41,10 @@ export function CategoryDetailModal({
   const [totalRevenue, setTotalRevenue] = useState<number>(0);
   const [loadingStats, setLoadingStats] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [pageNumber, setPageNumber] = useState(1);
+  const [pageSize] = useState(10);
+  const [totalCount, setTotalCount] = useState(0);
+  const [totalPages, setTotalPages] = useState(1);
   const {
     getProductsByCategoryId,
     countProductsByCategoryId,
@@ -60,23 +57,27 @@ export function CategoryDetailModal({
     console.log("CategoryDetailModal props:", { isOpen, category });
   }, [isOpen, category]);
 
-  // Fetch sản phẩm và thống kê khi modal mở
+  // Fetch sản phẩm và thống kê khi modal mở hoặc pageNumber thay đổi
   useEffect(() => {
     if (isOpen && category?.id) {
-      console.log("Fetching data for category.id:", category.id);
+      console.log("Fetching data for category.id:", category.id, "pageNumber:", pageNumber);
       setLoadingStats(true);
       setLoadingProducts(true);
       setError(null);
 
-      // Fetch products
-      getProductsByCategoryId(category.id)
-        .then((productsData) => {
-          console.log("Products fetched:", productsData);
-          setProducts(productsData);
+      // Fetch products với phân trang
+      getProductsByCategoryId(category.id, pageNumber, pageSize)
+        .then((response) => {
+          console.log("Products fetched:", response);
+          setProducts(response.items);
+          setTotalCount(response.totalCount);
+          setTotalPages(response.totalPages);
         })
         .catch((err) => {
           console.error("Error fetching products:", err);
           setProducts([]);
+          setTotalCount(0);
+          setTotalPages(1);
           setError("Lỗi khi tải danh sách sản phẩm");
         })
         .finally(() => {
@@ -103,12 +104,90 @@ export function CategoryDetailModal({
           setLoadingStats(false);
         });
     }
-  }, [isOpen, ]);
+  }, [isOpen, category, pageNumber, pageSize]);
 
   if (!isOpen || !category || !category.id) {
     console.log("CategoryDetailModal not rendered due to:", { isOpen, category });
     return null;
   }
+
+  const columns = [
+    {
+      key: "id" as keyof Product,
+      label: "ID Sản Phẩm",
+      sortable: true,
+      render: (product: Product) => (
+        <Typography
+          variant="body2"
+          sx={{
+            fontFamily: "monospace",
+            fontWeight: "medium",
+            color: "primary.main",
+          }}
+        >
+          {product.id}
+        </Typography>
+      ),
+    },
+    {
+      key: "name" as keyof Product,
+      label: "Tên",
+      sortable: true,
+      render: (product: Product) => (
+        <Typography
+          variant="body2"
+          sx={{
+            color: "primary.main",
+            cursor: "pointer",
+            textDecoration: "none",
+            transition: "all 0.3s ease-in-out",
+            "&:hover": {
+              backgroundImage: "linear-gradient(90deg, red, orange, yellow, green, blue, indigo, violet)",
+              WebkitBackgroundClip: "text",
+              WebkitTextFillColor: "transparent",
+            },
+          }}
+          onClick={() => navigate(`/products?id=${product.id}`)}
+        >
+          {product.name}
+        </Typography>
+      ),
+    },
+    {
+      key: "price" as keyof Product,
+      label: "Giá",
+      sortable: true,
+      render: (product: Product) => (
+        <Typography variant="body2" sx={{ color: "grey.900" }}>
+          {product.productDetails[0] ? formatCurrency(product.productDetails[0].price) : "N/A"}
+        </Typography>
+      ),
+    },
+    {
+      key: "isOutOfStock" as keyof Product,
+      label: "Trạng Thái",
+      sortable: true,
+      render: (product: Product) => (
+        <Typography variant="body2" sx={{ color: "grey.900" }}>
+          {product.productDetails[0]
+            ? product.productDetails[0].isOutOfStock
+              ? "Hết hàng"
+              : "Còn hàng"
+            : "N/A"}
+        </Typography>
+      ),
+
+    },
+     {
+      key: "sold",
+      label: "Đã bán",
+      render: (row) => (
+        <Typography sx={{ fontSize: "0.875rem", color: "grey.900" }}>
+          {row.productDetails?.[0] ? (row.sold) : "N/A"}
+        </Typography>
+      ),
+    },
+  ];
 
   return (
     <Dialog
@@ -176,7 +255,6 @@ export function CategoryDetailModal({
               Sửa
             </Button>
           )}
-         
           <IconButton
             onClick={onClose}
             sx={{
@@ -280,7 +358,7 @@ export function CategoryDetailModal({
                   Tổng Sản Phẩm
                 </Typography>
               </Box>
-              
+             
             </Box>
           </Box>
         )}
@@ -306,66 +384,18 @@ export function CategoryDetailModal({
               <CircularProgress />
             </Box>
           ) : products.length > 0 ? (
-            <Box sx={{ border: 1, borderColor: "grey.200", borderRadius: 2, overflow: "hidden" }}>
-              <Table>
-                <TableHead sx={{ bgcolor: "grey.50" }}>
-                  <TableRow>
-                    <TableCell sx={{ px: 2, py: 1.5, color: "grey.500", fontSize: "0.75rem", fontWeight: "medium", textTransform: "uppercase" }}>
-                      ID Sản Phẩm
-                    </TableCell>
-                    <TableCell sx={{ px: 2, py: 1.5, color: "grey.500", fontSize: "0.75rem", fontWeight: "medium", textTransform: "uppercase" }}>
-                      Tên
-                    </TableCell>
-                    <TableCell sx={{ px: 2, py: 1.5, color: "grey.500", fontSize: "0.75rem", fontWeight: "medium", textTransform: "uppercase" }}>
-                      Giá
-                    </TableCell>
-                    <TableCell sx={{ px: 2, py: 1.5, color: "grey.500", fontSize: "0.75rem", fontWeight: "medium", textTransform: "uppercase" }}>
-                      Trạng Thái
-                    </TableCell>
-                   
-                  </TableRow>
-                </TableHead>
-                <TableBody sx={{ "& tr:hover": { bgcolor: "grey.50" } }}>
-                  {products.map((product) => (
-                    <TableRow key={product.id}>
-                      <TableCell sx={{ px: 2, py: 1.5, fontFamily: "monospace", fontSize: "0.875rem", color: "primary.main" }}>
-                        {product.id}
-                      </TableCell>
-                      <TableCell
-                        sx={{
-                          px: 2,
-                          py: 1.5,
-                          fontSize: "0.875rem",
-                          color: "primary.main",
-                          cursor: "pointer",
-                          textDecoration: "none",
-                          transition: "all 0.3s ease-in-out",
-                          "&:hover": {
-                            backgroundImage: "linear-gradient(90deg, red, orange, yellow, green, blue, indigo, violet)",
-                            WebkitBackgroundClip: "text",
-                            WebkitTextFillColor: "transparent",
-                          },
-                        }}
-                        onClick={() => navigate(`/products?id=${product.id}`)}
-                      >
-                        {product.name}
-                      </TableCell>
-                      <TableCell sx={{ px: 2, py: 1.5, fontSize: "0.875rem", color: "grey.900" }}>
-                        {product.productDetails[0] ? formatCurrency(product.productDetails[0].price) : "N/A"}
-                      </TableCell>
-                      <TableCell sx={{ px: 2, py: 1.5, fontSize: "0.875rem", color: "grey.900" }}>
-                        {product.productDetails[0]
-                          ? product.productDetails[0].isOutOfStock
-                            ? "Hết hàng"
-                            : "Còn hàng"
-                          : "N/A"}
-                      </TableCell>
-                      
-                    </TableRow>
-                  ))}
-                </TableBody>
-              </Table>
-            </Box>
+            <CustomTable
+              data={products}
+              totalCount={totalCount}
+              columns={columns}
+              onPageChange={(page) => setPageNumber(page)}
+              headerTitle=""
+              description=""
+              showExport={false}
+              showBulkActions={false}
+              itemsPerPage={pageSize}
+              showSearch={false}
+            />
           ) : (
             <Box sx={{ textAlign: "center", py: 4, color: "grey.500" }}>
               <Inventory sx={{ fontSize: 48, color: "grey.300", mb: 2 }} />

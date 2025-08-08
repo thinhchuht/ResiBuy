@@ -466,6 +466,15 @@ export function StoreDetailModal({
         </Typography>
       ),
     },
+     {
+      key: "sold",
+      label: "Đã bán",
+      render: (row) => (
+        <Typography sx={{ fontSize: "0.875rem", color: "grey.900" }}>
+          {row.productDetails?.[0] ? (row.sold) : "N/A"}
+        </Typography>
+      ),
+    },
     {
       key: "isOutOfStock",
       label: "Trạng Thái",
@@ -507,6 +516,7 @@ export function StoreDetailModal({
         />
       ),
     },
+    
     {
       key: "totalPrice",
       label: "Tổng Tiền",
@@ -906,6 +916,7 @@ export function StoreDetailModal({
                   <Typography sx={{ color: "grey.900" }}>
                     {store.isLocked ? "Khóa" : "Hoạt Động"}
                   </Typography>
+
                 </Box>
                 <Box>
                   <Typography variant="body2" sx={{ color: "grey.500", fontWeight: "medium" }}>
