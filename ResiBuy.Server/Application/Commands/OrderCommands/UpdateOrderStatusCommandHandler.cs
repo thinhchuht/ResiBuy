@@ -1,4 +1,4 @@
-﻿using Microsoft.EntityFrameworkCore.Storage;
+using Microsoft.EntityFrameworkCore.Storage;
 using ResiBuy.Server.Infrastructure.DbServices.OrderDbServices;
 using ResiBuy.Server.Infrastructure.DbServices.ProductDetailDbServices;
 using ResiBuy.Server.Infrastructure.Model.DTOs.OrderDtos;
@@ -12,7 +12,7 @@ namespace ResiBuy.Server.Application.Commands.OrderCommands
         public async Task<ResponseModel> Handle(UpdateOrderStatusCommand request, CancellationToken cancellationToken)
         {
             var dto = request.Dto;
-            var order = await orderDbService.GetByIdBaseAsync(dto.OrderId) ?? throw new CustomException(ExceptionErrorCode.ValidationFailed, "Không tìm thấy đơn hàng");
+            var order = await orderDbService.GetById(dto.OrderId) ?? throw new CustomException(ExceptionErrorCode.ValidationFailed, "Không tìm thấy đơn hàng");
             var store = await storeDbService.GetByIdBaseAsync(order.StoreId) ?? throw new CustomException(ExceptionErrorCode.ValidationFailed, "Không tìm thấy cửa hàng");
             var oldStatus = order.Status;
             if (order.UserId != order.UserId && order.UserId != store.OwnerId.ToString() && dto.UserId != order.ShipperId.ToString())
@@ -43,7 +43,7 @@ namespace ResiBuy.Server.Application.Commands.OrderCommands
                         throw new CustomException(ExceptionErrorCode.ValidationFailed, "Trạng thái đơn hàng không tồn tại.");
                     if (oldStatus == OrderStatus.Cancelled)
                         throw new CustomException(ExceptionErrorCode.ValidationFailed, "Đơn hàng đã bị hủy trước đó.");
-                    if (oldStatus != OrderStatus.Shipped || oldStatus != OrderStatus.CustomerNotAvailable)
+                    if (oldStatus != OrderStatus.Shipped && dto.OrderStatus == OrderStatus.CustomerNotAvailable)
                         throw new CustomException(ExceptionErrorCode.ValidationFailed, "Đơn hàng chưa được vận chuyển");
                     if (oldStatus != OrderStatus.Shipped && oldStatus != OrderStatus.CustomerNotAvailable && dto.OrderStatus == OrderStatus.Delivered)
                         throw new CustomException(ExceptionErrorCode.ValidationFailed, "Đơn hàng chưa ở trong trạng thái giao hàng.");
@@ -105,11 +105,7 @@ namespace ResiBuy.Server.Application.Commands.OrderCommands
                 //await orderDbService.UpdateAsync(order);
                 await orderDbService.UpdateTransactionAsync(order);
                 await orderDbService.SaveChangesAsync();
-            }
-            catch (Exception ex)
-            {
-                if (transaction != null)
-                    await transaction.RollbackAsync();
+                await transaction.CommitAsync();
                 var userIds = new List<string>();
                 if (dto.OrderStatus == OrderStatus.Processing) userIds.Add(order.UserId);
                 if (dto.OrderStatus == OrderStatus.Assigned)
@@ -119,9 +115,14 @@ namespace ResiBuy.Server.Application.Commands.OrderCommands
                 if (dto.OrderStatus == OrderStatus.CustomerNotAvailable) userIds.AddRange([order.UserId, store.OwnerId.ToString()]);
                 if (dto.OrderStatus == OrderStatus.Cancelled) userIds.AddRange([order.UserId, store.OwnerId.ToString()]);
                 await notificationService.SendNotificationAsync($"{Constants.OrderStatusChanged}-{order.Status}", new OrderStatusChangedDto(order.Id, order.StoreId, store.Name, order.Status, oldStatus, order.PaymentStatus, order.CreateAt, order.UpdateAt), "", userIds);
+            }
+            catch (Exception ex)
+            {
+                if (transaction != null)
+                    await transaction.RollbackAsync();
+                
                 throw new CustomException(ExceptionErrorCode.RepositoryError, ex.ToString());
             }
-            
             return ResponseModel.SuccessResponse();
         }
     }

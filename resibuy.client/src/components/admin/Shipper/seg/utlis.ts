@@ -221,7 +221,7 @@ export const useShipperForm = (editingShipper?: Shipper | null) => {
     try {
       await onSubmit(shipper);
       console.log("Submit shipper success, showing toast:", editingShipper ? "Cập nhật shipper thành công!" : "Thêm shipper thành công!");
-      toast.success(editingShipper ? "Cập nhật shipper thành công!" : "Thêm shipper thành công!");
+      toast.success(editingShipper ? "Cập nhật shipper thành công!" : "Đang kiểm tra");
     } catch (error: any) {
       console.error("Submit shipper error:", error);
       toast.error(error.message || "Lỗi khi lưu shipper");
@@ -340,7 +340,7 @@ export const calculateShipperStats = async () => {
 
 // Hook useShippersLogic
 export const useShippersLogic = () => {
-  const [shippers, setShippers] = useState<Shipper[]>([]);
+ const [shippers, setShippers] = useState<Shipper[]>([]);
   const [totalCount, setTotalCount] = useState(0);
   const [pageNumber, setPageNumber] = useState(1);
   const [pageSize] = useState(15);
@@ -349,7 +349,7 @@ export const useShippersLogic = () => {
   const [isAddModalOpen, setIsAddModalOpen] = useState(false);
   const [selectedShipper, setSelectedShipper] = useState<Shipper | null>(null);
   const [editingShipper, setEditingShipper] = useState<Shipper | null>(null);
-  const  toast  = useToastify();
+  const toast = useToastify();
 
   // Lấy danh sách shipper
   const fetchShippers = useCallback(async (page: number = 1, pageSize: number = 15) => {
@@ -488,7 +488,7 @@ export const useShippersLogic = () => {
 
   const handleExportShippers = async () => {
     try {
-      const response = await shipperApi.getAll(1, 100);
+      const response = await shipperApi.getAll(1, 1000);
       console.log("Export shippers response:", response);
       if (response.code !== 0) {
         throw new Error(response.message || "Lỗi khi lấy danh sách shipper");
@@ -498,12 +498,12 @@ export const useShippersLogic = () => {
         fullName: shipper.fullName || "",
         email: shipper.email || "",
         phoneNumber: shipper.phoneNumber || "",
-        isLocked: shipper.isLocked ? "Đã Khóa" : "Không Khóa",
+        isLocked: shipper.isLocked ? "Locked" : "UnLocked",
         workTime: `${formatWorkTime(shipper.startWorkTime)} - ${formatWorkTime(shipper.endWorkTime)}`,
         lastLocationName: shipper.lastLocationName || "",
       }));
       const csv = [
-        ["ID", "Họ Tên", "Email", "Số Điện Thoại", "Trạng Thái Khóa", "Thời Gian Làm Việc", "Vị Trí Cuối"],
+        ["ID", "Full Name", "Email", "Phone Number", "Status", "Work time", "Last Location"],
         ...csvData.map((row) => [
           row.id,
           `"${row.fullName}"`,
@@ -532,21 +532,26 @@ export const useShippersLogic = () => {
   };
 
   const isShipperAvailable = (shipper: Shipper): boolean => {
-    return !shipper.isLocked;
+    return shipper.isLocked;
   };
 
-  const getShipperOrders = useCallback(async (shipperId: string): Promise<Order[]> => {
+  const getShipperOrders = useCallback(async (shipperId: string, pageNumber: number = 1, pageSize: number = 10)=> {
     try {
-      const response = await orderApi.getAll(undefined, undefined, undefined, undefined, undefined, shipperId, 1, 100000);
-      console.log(`Get orders for shipper ${shipperId}:`, response);
-      return response.items || [];
+      const response = await orderApi.getAll(undefined, undefined, undefined, undefined, undefined, shipperId, pageNumber, pageSize);
+      console.log(`Get orders for shipper ${shipperId} response:`, response);
+      return {
+        items: response.items || [],
+        totalCount: response.totalCount || 0,
+        pageNumber: response.pageNumber || 1,
+        pageSize: response.pageSize || pageSize,
+        totalPages: response.totalPages || 1,
+      };
     } catch (error: any) {
       console.error(`Get orders error for shipper ${shipperId}:`, error);
       toast.error(error.message || "Lỗi khi lấy danh sách đơn hàng");
-      return [];
+      return { items: [], totalCount: 0, pageNumber: 1, pageSize, totalPages: 1 };
     }
   }, [toast]);
-
   const handlePageChange = (page: number) => {
     setPageNumber(page);
   };

@@ -53,7 +53,7 @@ const orderApi = {
       note,
     };
     const response = await axiosClient.put(`/api/order`, body);
-    return response.data;
+    return response.data.data;
   },
   updateOrderSatus: async (
     userId: string,
@@ -105,6 +105,7 @@ const orderApi = {
     });
       return response.data;
   },
+  getTotalOrderAmount:async(params: {userId ?: string,storeId?: string})=>{const response =await axiosClient.get(`${orderUrl}/total-amount`,{params});return response.data;}
 };
 
 

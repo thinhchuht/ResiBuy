@@ -238,19 +238,7 @@ export default function CategoriesPage() {
         </Typography>
       ),
     },
-    {
-      key: "totalRevenue" as keyof Category,
-      label: "Tổng Doanh Thu",
-      sortable: true,
-      render: (category: Category) => (
-        <Typography
-          variant="body2"
-          sx={{ fontWeight: "medium", color: "grey.900" }}
-        >
-          {formatCurrency(0)}
-        </Typography>
-      ),
-    },
+    
     {
       key: "actions" as keyof Category,
       label: "Hành Động",
@@ -288,22 +276,7 @@ export default function CategoriesPage() {
           >
             <Edit sx={{ fontSize: 16 }} />
           </IconButton>
-          <IconButton
-            onClick={() => handleDeleteCategory(category.id)}
-            sx={{
-              color: "error.main",
-              p: 0.5,
-              bgcolor: "background.paper",
-              borderRadius: 1,
-              "&:hover": {
-                color: "error.dark",
-                bgcolor: "red[50]",
-              },
-            }}
-            title="Xóa Danh Mục"
-          >
-            <Delete sx={{ fontSize: 16 }} />
-          </IconButton>
+          
         </Box>
       ),
     },

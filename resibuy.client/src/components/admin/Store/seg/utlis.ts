@@ -3,6 +3,7 @@ import storeApi from "../../../../api/storee.api";
 import userApi from "../../../../api/user.api";
 import roomApi from "../../../../api/room.api";
 import productApi from "../../../../api/product.api";
+import orderApi from "../../../../api/order.api";
 import { useToastify } from "../../../../hooks/useToastify";
 import { OrderStatus } from "../../../../types/models";
 export function useStoresLogic() {
@@ -38,6 +39,16 @@ export function useStoresLogic() {
       return [];
     }
   };
+ const getOrdersByStoreId = useCallback(async (storeId: string, pageNumber: number = 1, pageSize: number = 1) => {
+    try {
+      const response = await orderApi.getAll(undefined, undefined, undefined, storeId, undefined, undefined, pageNumber, pageSize);
+      console.log("getOrdersByStoreId response:", response);
+      return response;
+    } catch (err) {
+      toast.error(err.message || "Lỗi khi lấy danh sách đơn hàng");
+      return { items: [], totalCount: 0, pageNumber: 1, pageSize, totalPages: 1 };
+    }
+  }, [toast]);
 
   const fetchStores = useCallback(async () => {
     try {
@@ -68,8 +79,8 @@ export function useStoresLogic() {
 
   const getProductsByStoreId = useCallback(async (storeId) => {
     try {
-      const response = await productApi.getAll({ storeId, pageNumber: 1, pageSize: 99999 });
-      return response.items || [];
+      const response = await productApi.getAll({ storeId, pageNumber: 1, pageSize: 10 });
+      return response || [];
     } catch (err) {
       toast.error(err.message || "Lỗi khi lấy danh sách sản phẩm");
       return [];
@@ -78,7 +89,8 @@ export function useStoresLogic() {
 
   const countProductsByStoreId = useCallback(async (storeId) => {
     try {
-      const response = await productApi.getAll({ storeId, pageNumber: 1, pageSize: 100 });
+      const response = await productApi.getAll({ storeId, pageNumber: 1, pageSize: 1 });
+      console.log("countProductsByStoreId response:", response);
       return response.totalCount || 0;
     } catch (err) {
       toast.error(err.message || "Lỗi khi đếm sản phẩm");
@@ -250,16 +262,16 @@ const handleToggleStoreStatus = async (storeId) => {
       }
       const stores = response.data.items || [];
       const headers = [
-        "ID Cửa hàng",
-        "Tên",
-        "Mô tả",
-        "Số điện thoại",
-        "Hoạt Động",
-        "Mở Cửa",
-        "Ngày tạo",
-        "Phòng",
-        "Tòa nhà",
-        "Khu vực",
+        "Id",
+        "Name",
+        "Description",
+        "Phone Number",
+        "Status",
+        "Open",
+        "Create at",
+        "Room",
+        "BuildinTòa nhà",
+        "Area",
       ];
       const csvContent = [
         headers.join(","),
@@ -269,8 +281,8 @@ const handleToggleStoreStatus = async (storeId) => {
             `"${store.name}"`,
             `"${store.description || ""}"`,
             `"${store.phoneNumber || ""}"`, 
-            store.isLocked ? "Khóa" : "Hoạt động",
-            store.isOpen ? "Mở" : "Đóng",
+            store.isLocked ? "LOcked" : "Unlock",
+            store.isOpen ? "Open" : "Close",
             new Date(store.createdAt).toLocaleDateString(),
             `"${store.room?.name || "N/A"}"`,
             `"${store.room?.buildingName || "N/A"}"`,
@@ -329,7 +341,7 @@ return {
     handleEditStore,
     handleCloseAddModal,
     handleSubmitStore,
-   
+   getOrdersByStoreId,
     handleToggleStoreStatus,
     handleExportStores,
     getUserById,

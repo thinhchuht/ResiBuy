@@ -1,21 +1,23 @@
 import React, { createContext, useContext, useState } from "react";
 
-type OrderEventContextType = {
+interface OrderEventContextValue {
   lastConfirmedOrderId: string | null;
-  confirmOrder: (orderId: string) => void;
-};
+  setLastConfirmedOrderId: (id: string) => void;
 
-const OrderEventContext = createContext<OrderEventContextType | undefined>(undefined);
+  lastNewOrderId: string | null; // ✅ Thêm dòng này
+  setLastNewOrderId: (id: string) => void; // ✅ Và dòng này
+}
+
+const OrderEventContext = createContext<OrderEventContextValue | undefined>(undefined);
 
 export const OrderEventProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const [lastConfirmedOrderId, setLastConfirmedOrderId] = useState<string | null>(null);
-
-  const confirmOrder = (orderId: string) => {
-    setLastConfirmedOrderId(orderId); // Cập nhật trạng thái mới
-  };
+  const [lastNewOrderId, setLastNewOrderId] = useState<string | null>(null); // ✅ thêm
 
   return (
-    <OrderEventContext.Provider value={{ lastConfirmedOrderId, confirmOrder }}>
+    <OrderEventContext.Provider
+      value={{ lastConfirmedOrderId, setLastConfirmedOrderId, lastNewOrderId, setLastNewOrderId }}
+    >
       {children}
     </OrderEventContext.Provider>
   );

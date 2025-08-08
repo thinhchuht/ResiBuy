@@ -234,7 +234,7 @@ const userApi = {
     };
   }
 },
- removeUserRom: async (userId: string, roomId: string) => {
+ removeUserRom: async (userId: string, roomId: string[]) => {
   try {
     const response = await axiosClient.post(userUrl + "/remove-userroom", {
       userId,

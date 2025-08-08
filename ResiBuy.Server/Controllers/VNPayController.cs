@@ -23,8 +23,8 @@ namespace ResiBuy.Server.Controllers
             var checkoutData = JsonSerializer.Deserialize<TempCheckoutDto>(json!);
             var user = dbContext.Users.Include(u => u.Cart).FirstOrDefault(u => u.Id == userId) ?? throw new CustomException(ExceptionErrorCode.NotFound, "Không tồn tại người dùng");
             var cart = dbContext.Carts.FirstOrDefault(c => c.Id == user.Cart.Id) ?? throw new CustomException(ExceptionErrorCode.NotFound, "Không tồn tại giỏ hàng");
-            if (cart.IsCheckingOut)
-                throw new CustomException(ExceptionErrorCode.ValidationFailed, "Giỏ hàng đang được thanh toán ở nơi khác. Thử lại sau ít phút.");
+            //if (cart.IsCheckingOut)
+            //    throw new CustomException(ExceptionErrorCode.ValidationFailed, "Giỏ hàng đang được thanh toán ở nơi khác. Thử lại sau ít phút.");
             // Kiểm tra voucher
             var voucherIds = checkoutData.Orders.Select(o => o.VoucherId).ToList();
             var checkVoucherRs = await voucherDbService.CheckIsActiveVouchers(voucherIds);
@@ -137,13 +137,18 @@ namespace ResiBuy.Server.Controllers
 
         private string GenerateToken()
         {
-            var randomBytes = new byte[32];
+            const string chars = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789";
+            var token = new char[32];
             using (var rng = RandomNumberGenerator.Create())
             {
-                rng.GetBytes(randomBytes);
+                byte[] data = new byte[32];
+                rng.GetBytes(data);
+                for (int i = 0; i < token.Length; i++)
+                {
+                    token[i] = chars[data[i] % chars.Length];
+                }
             }
-            var rawToken = Convert.ToBase64String(randomBytes);
-            return Uri.EscapeDataString(rawToken);
+            return new string(token);
         }
     }
 

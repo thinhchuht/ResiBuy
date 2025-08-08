@@ -1,5 +1,6 @@
 ﻿using ResiBuy.Server.Services.MapBoxService;
 using ResiBuy.Server.Services.OpenRouteService;
+using static Microsoft.EntityFrameworkCore.DbLoggerCategory;
 
 namespace ResiBuy.Server.Infrastructure.DbServices.OrderDbServices;
 
@@ -109,7 +110,7 @@ public class OrderDbService : BaseDbService<Order>, IOrderDbService
 
     public async Task<List<Order>> GetCancelledOrders()
     {
-        return await _context.Orders.Where(o => o.Status == OrderStatus.Cancelled && o.PaymentMethod == PaymentMethod.BankTransfer && o.PaymentStatus == PaymentStatus.Paid).ToListAsync();
+        return await _context.Orders.Include(o => o.Report).Where(o => (o.Status == OrderStatus.Cancelled || (o.Status == OrderStatus.Reported && o.Report.IsResolved)) && o.PaymentMethod == PaymentMethod.BankTransfer && o.PaymentStatus == PaymentStatus.Paid).ToListAsync();
     }
 
     public async Task<decimal> GetMonthlyBankRevenue(Guid storeId, int month)
@@ -296,6 +297,7 @@ public class OrderDbService : BaseDbService<Order>, IOrderDbService
             throw new CustomException(ExceptionErrorCode.RepositoryError, ex.ToString());
         }
     }
+
     public async Task<decimal> GetTotalShippingFeeByshipperAsync(Guid shipperId, DateTime? startDate = null, DateTime? endDate = null)
     {
         try
@@ -307,15 +309,38 @@ public class OrderDbService : BaseDbService<Order>, IOrderDbService
                 .Where(o => o.ShipperId == shipperId && o.Status == OrderStatus.Delivered);
 
             if (startDate.HasValue)
-                query = query.Where(o => o.CreateAt >= startDate.Value);
+                query = query.Where(o => o.UpdateAt >= startDate.Value);
 
             if (endDate.HasValue)
             {
                 var end = endDate.Value.Date.AddDays(1);
-                query = query.Where(o => o.CreateAt < end);
+                query = query.Where(o => o.UpdateAt < end);
             }
 
             return await query.SumAsync(o => o.ShippingFee ?? 0);
+        }
+        catch (Exception ex)
+        {
+            throw new CustomException(ExceptionErrorCode.RepositoryError, ex.ToString());
+        }
+    }
+    public async Task<decimal> GetTotalOrderAmountByUserAndStoreAsync(string? userId, Guid ?storeId)
+    {
+        try
+        {
+            var query = _context.Orders.AsQueryable();
+            if (!string.IsNullOrWhiteSpace(userId))
+            {
+                query = query.Where(o => o.UserId == userId);
+            }
+            if (storeId.HasValue && storeId.Value != Guid.Empty)
+            {
+                query = query.Where(o => o.StoreId == storeId.Value);
+            }
+            query = query.Where(o => o.Status == OrderStatus.Delivered || o.Status == OrderStatus.Reported);
+
+            var total = await query.SumAsync(o => o.TotalPrice);
+            return total;
         }
         catch (Exception ex)
         {

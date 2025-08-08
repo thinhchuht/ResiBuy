@@ -9,7 +9,7 @@ namespace ResiBuy.Server.Application.Commands.OrderCommands
         public async Task<ResponseModel> Handle( UpdateOrderCommand request, CancellationToken cancellationToken)
         {
             var dto = request.Dto;
-            var order = await orderDbService.GetByIdBaseAsync(dto.OrderId) ?? throw new CustomException(ExceptionErrorCode.ValidationFailed, "Không tìm thấy Order");
+            var order = await orderDbService.GetById(dto.OrderId) ?? throw new CustomException(ExceptionErrorCode.ValidationFailed, "Không tìm thấy Order");
             if(order.Status == OrderStatus.Reported) throw new CustomException(ExceptionErrorCode.ValidationFailed, "Đơn hàng bị tạm dừng do đã bị tố cáo");
             if (order.UserId != dto.UserId && dto.UserId != order.StoreId.ToString() && dto.UserId != order.ShipperId.ToString())
                 throw new CustomException(ExceptionErrorCode.ValidationFailed, "Người dùng không có quyền sửa đơn hàng này.");
@@ -33,9 +33,10 @@ namespace ResiBuy.Server.Application.Commands.OrderCommands
                     throw new CustomException(ExceptionErrorCode.ValidationFailed, "Chỉ được đổi địa chỉ giao khi đơn hàng chưa được xử lý.");
                 order.ShippingAddressId = dto.ShippingAddressId;
                 var oldShippingFee = order.ShippingFee;
-                //order.ShippingFee = await orderDbService.ShippingFeeCharged(dto.ShippingAddressId, order.StoreId, order.ProductDetails.Select(pd => pd.Weight).Sum());
-                order.ShippingFee = 7000;
-                order.TotalPrice = order.TotalPrice - oldShippingFee.Value + 7000;
+                var newShippingFee = await orderDbService.ShippingFeeCharged(dto.ShippingAddressId, order.Store.RoomId, order.Items.Select(item => item.ProductDetail.Weight).Sum());
+                //order.ShippingFee = 7000;
+                order.ShippingFee = newShippingFee;
+                order.TotalPrice = order.TotalPrice - oldShippingFee.Value + newShippingFee;
             }
 
             if (!string.IsNullOrEmpty(dto.Note))
@@ -48,7 +49,7 @@ namespace ResiBuy.Server.Application.Commands.OrderCommands
             }
             order.UpdateAt = DateTime.Now;
             await orderDbService.UpdateAsync(order);
-            return ResponseModel.SuccessResponse();
+            return ResponseModel.SuccessResponse(order);
         }
     }
 }

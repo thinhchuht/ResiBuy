@@ -68,16 +68,7 @@
 
         public async Task<PagedResult<User>> GetAllUsers(int pageNumber = 1, int pageSize = 10)
         {
-            var query = context.Users
-                .Include(u => u.Avatar)
-                .Include(u => u.Cart)
-                .Include(u => u.UserRooms)
-                .ThenInclude(ur => ur.Room)
-                .ThenInclude(r => r.Building)
-                .ThenInclude(b => b.Area)
-                .Include(u => u.UserVouchers)
-                .Include(u => u.Reports)
-                .AsQueryable();
+            var query = context.Users.AsQueryable();
 
             var totalCount = await query.CountAsync();
             var users = await query
@@ -156,6 +147,41 @@
                 bool exists = await query.AnyAsync(u => u.IdentityNumber == identityNumber && u.Id != userId);
                 if (exists)
                     throw new CustomException(ExceptionErrorCode.ValidationFailed, "Số CCCD đã được sử dụng");
+            }
+        }
+        public async Task<int> CountAllUsersAsync()
+        {
+            try
+            {
+                return await context.Users.CountAsync();
+            }
+            catch (Exception ex)
+            {
+                throw new CustomException(ExceptionErrorCode.RepositoryError, ex.Message);
+            }
+        }
+
+        public async Task<int> CountLockedUsersAsync()
+        {
+            try
+            {
+                return await context.Users.CountAsync(u => u.IsLocked);
+            }
+            catch (Exception ex)
+            {
+                throw new CustomException(ExceptionErrorCode.RepositoryError, ex.Message);
+            }
+        }
+
+        public async Task<int> SumUserReportCountAsync()
+        {
+            try
+            {
+                return await context.Reports.CountAsync(r => !string.IsNullOrEmpty(r.CreatedById));
+            }
+            catch (Exception ex)
+            {
+                throw new CustomException(ExceptionErrorCode.RepositoryError, ex.Message);
             }
         }
     }

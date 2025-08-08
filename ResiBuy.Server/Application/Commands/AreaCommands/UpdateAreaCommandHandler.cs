@@ -17,7 +17,12 @@ namespace ResiBuy.Server.Application.Commands.AreaCommands
                 if (dto.Id == Guid.Empty)
                        throw new CustomException(ExceptionErrorCode.ValidationFailed,"Id là bắt buộc");
                 if (string.IsNullOrWhiteSpace(dto.Name))
-                    throw new CustomException(ExceptionErrorCode.ValidationFailed, "Name là bắt buộc"); var existingArea = await areaDbService.GetByIdAsync(dto.Id);
+                    throw new CustomException(ExceptionErrorCode.ValidationFailed, "Name là bắt buộc");
+                var isNameExist = await areaDbService.IsNameExistsAsync(command.UpdateAreaDto.Name);
+                if (isNameExist)
+                    return ResponseModel.FailureResponse("Tên khu vực đã tồn tại");
+
+                var existingArea = await areaDbService.GetByIdAsync(dto.Id);
                 if (existingArea == null)
                     throw new CustomException(ExceptionErrorCode.NotFound, $"Area {dto.Id} không tồn tại");
 

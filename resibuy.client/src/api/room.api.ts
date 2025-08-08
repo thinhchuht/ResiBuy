@@ -11,10 +11,10 @@ const roomUrl = "/api/Room";
 
 const roomApi = {
   // Lấy danh sách phòng có phân trang
-  getAll: async (pageNumber = 1, pageSize = 10): Promise<{ items: RoomDto[]; totalCount: number; pageNumber: number; pageSize: number; totalPages: number }> => {
+  getAll: async (pageNumber = 1, pageSize = 10,isActive?: boolean, noUsers?:boolean): Promise<{ items: RoomDto[]; totalCount: number; pageNumber: number; pageSize: number; totalPages: number;  }> => {
     try {
       const response = await axiosClient.get(`${roomUrl}`, {
-        params: { pageNumber, pageSize },
+        params: { pageNumber, pageSize, isActive,noUsers },
       });
       if (response.data.code !== 0) {
         throw new Error(response.data.message || "Lỗi khi lấy danh sách phòng");
@@ -39,10 +39,10 @@ const roomApi = {
   },
 
   // Lấy phòng theo buildingId (có phân trang)
-  getByBuildingId: async (buildingId: string, pageNumber = 1, pageSize = 10): Promise<{ items: RoomDto[]; totalCount: number; pageNumber: number; pageSize: number; totalPages: number }> => {
+  getByBuildingId: async (buildingId: string, pageNumber = 1, pageSize = 10,isActive?: boolean, noUsers?:boolean): Promise<{ items: RoomDto[]; totalCount: number; pageNumber: number; pageSize: number; totalPages: number }> => {
     try {
       const response = await axiosClient.get(`${roomUrl}/building/${buildingId}`, {
-        params: { pageNumber, pageSize },
+        params: { pageNumber, pageSize,isActive,noUsers },
       });
       if (response.data.code !== 0) {
         throw new Error(response.data.message || "Lỗi khi lấy danh sách phòng theo tòa nhà");
@@ -62,6 +62,7 @@ const roomApi = {
       }
       return response.data.data;
     } catch (error: any) {
+
       throw new Error(error.message || "Lỗi khi gọi API tạo phòng");
     }
   },

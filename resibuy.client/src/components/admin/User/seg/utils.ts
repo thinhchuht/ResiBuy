@@ -1,7 +1,7 @@
 import { useState, useEffect, useCallback } from "react";
 import userApi from "../../../../api/user.api";
 import { useToastify } from "../../../../hooks/useToastify";
-import type { UserDto } from "../../../../types/dtoModels";
+import type { UserDto, RoomDto } from "../../../../types/dtoModels";
 
 interface UserFormData {
   email: string;
@@ -58,7 +58,7 @@ export const useUserForm = (editingUser?: UserDto | null) => {
   });
 
   const [isSubmitting, setIsSubmitting] = useState(false);
-  const { toast } = useToastify();
+  const  toast  = useToastify();
 
   useEffect(() => {
     if (editingUser) {
@@ -146,12 +146,22 @@ export const useUserForm = (editingUser?: UserDto | null) => {
       }
 
       if (!formData.password) {
-        newErrors.password = "Mật khẩu là bắt buộc khi tạo mới";
-        isValid = false;
-      } else if (formData.password.length < 6) {
-        newErrors.password = "Mật khẩu phải có ít nhất 6 ký tự";
-        isValid = false;
-      }
+  newErrors.password = "Mật khẩu là bắt buộc khi tạo mới";
+  isValid = false;
+} else if (formData.password.length < 8) {
+  newErrors.password = "Mật khẩu phải có ít nhất 8 ký tự";
+  isValid = false;
+} else if (!/(?=.*[a-z])/.test(formData.password)) {
+  newErrors.password = "Mật khẩu phải có ít nhất 1 chữ thường";
+  isValid = false;
+} else if (!/(?=.*[A-Z])/.test(formData.password)) {
+  newErrors.password = "Mật khẩu phải có ít nhất 1 chữ hoa";
+  isValid = false;
+} else if (!/(?=.*\d)/.test(formData.password)) {
+  newErrors.password = "Mật khẩu phải có ít nhất 1 số";
+  isValid = false;
+}
+
     }
 
     setErrors(newErrors);
@@ -160,15 +170,20 @@ export const useUserForm = (editingUser?: UserDto | null) => {
 
   const handleSubmit = async (
     e: React.FormEvent<HTMLFormElement>,
-    onSubmit: (user: UserFormData) => Promise<void>
+    onSubmit: (user: UserFormData, rooms: RoomDto[]) => Promise<void>,
+    rooms: RoomDto[]
   ) => {
+    console.log("handleSubmit called with formData:", formData);
     e.preventDefault();
-    if (!validateForm()) return;
+    if (!editingUser && !validateForm()) {
+      console.log("Validation failed, stopping submit");
+      return;
+    }
 
     setIsSubmitting(true);
     try {
-      await onSubmit(formData);
-      toast.success(editingUser ? "Cập nhật người dùng thành công!" : "Thêm người dùng thành công!");
+      await onSubmit(formData, rooms);
+      toast.success(editingUser ? "Cập nhật phòng thành công!" : "Đang kiểm tra");
     } catch (error: any) {
       console.error("Submit user error:", error);
       toast.error(error.message || "Lỗi khi lưu người dùng");
@@ -191,7 +206,7 @@ export const calculateUserStats = async () => {
   const { toast } = useToastify();
   try {
     const response = await userApi.getstats();
-    console.log("API getstats response:", response); // Thêm log để debug
+    console.log("API getstats response:", response);
     if (response.code !== 0) {
       throw new Error(response.message || "Lỗi khi lấy thống kê người dùng");
     }
@@ -220,8 +235,10 @@ export const useUsersLogic = () => {
   const [totalPages, setTotalPages] = useState(1);
   const [isDetailModalOpen, setIsDetailModalOpen] = useState(false);
   const [isAddModalOpen, setIsAddModalOpen] = useState(false);
+  const [isEditRoleModalOpen, setIsEditRoleModalOpen] = useState(false);
   const [selectedUser, setSelectedUser] = useState<UserDto | null>(null);
   const [editingUser, setEditingUser] = useState<UserDto | null>(null);
+  const [editingRoleUser, setEditingRoleUser] = useState<string | null>(null);
   const [searchTerm, setSearchTerm] = useState("");
   const  toast  = useToastify();
 
@@ -248,7 +265,7 @@ export const useUsersLogic = () => {
 
   useEffect(() => {
     fetchUsers(pageNumber, pageSize, searchTerm);
-  }, [fetchUsers, pageNumber, pageSize, searchTerm]);
+  }, [pageNumber, pageSize, searchTerm]);
 
   const handleViewUser = async (user: UserDto) => {
     try {
@@ -281,6 +298,7 @@ export const useUsersLogic = () => {
       const response = await userApi.getById(user.id);
       console.log("Get user by ID response:", response);
       if (response.code === 0) {
+        console.log("Setting editingUser:", response.data);
         setEditingUser(response.data);
         setIsAddModalOpen(true);
         setIsDetailModalOpen(false);
@@ -293,29 +311,53 @@ export const useUsersLogic = () => {
     }
   };
 
+  const handleEditRole = async (userId: string) => {
+    setEditingRoleUser(userId);
+    setIsEditRoleModalOpen(true);
+  };
+
   const handleCloseAddModal = () => {
     setIsAddModalOpen(false);
     setEditingUser(null);
   };
 
-  const handleSubmitUser = async (user: UserFormData) => {
+  const handleCloseEditRoleModal = () => {
+    setIsEditRoleModalOpen(false);
+    setEditingRoleUser(null);
+  };
+
+  const handleSubmitUser = async (user: UserFormData, rooms: RoomDto[]) => {
+    console.log("handleSubmitUser called with:", { user, rooms, editingUser });
     try {
       if (editingUser) {
-        // Cập nhật người dùng (chỉ cập nhật các trường cần thiết, API createUser hỗ trợ cả cập nhật)
-        const updateResponse = await userApi.createUser({
-          email: user.email,
-          phoneNumber: user.phoneNumber,
-          fullName: user.fullName,
-          dateOfBirth: new Date(user.dateOfBirth),
-          identityNumber: user.identityNumber,
-          roomIds: user.roomIds,
-          code: editingUser.id,
-        });
-        console.log("Update user response:", updateResponse);
+        console.log("Editing user with ID:", editingUser.id);
+        const currentRoomIds = editingUser.rooms?.map((room) => room.id) || [];
+        const removedRoomIds = currentRoomIds.filter((id) => !user.roomIds.includes(id));
+        console.log("Removed room IDs:", removedRoomIds);
+        if (removedRoomIds.length > 0) {
+          const removeResponse = await userApi.removeUserRom(editingUser.id, removedRoomIds);
+          console.log("Remove user from rooms response:", removeResponse);
+          if (removeResponse.code !== 0) {
+            throw new Error(removeResponse.message || "Lỗi khi xóa người dùng khỏi phòng");
+          }
+        }
+        console.log("Selected room IDs:", user.roomIds);
+        if (user.roomIds.length > 0) {
+          const addResponse = await userApi.addUserToRooms([editingUser.id], user.roomIds);
+          console.log("Add user to rooms response:", addResponse);
+          if (addResponse.error) {
+            throw new Error(addResponse.error.message || "Lỗi khi cập nhật phòng");
+          }
+        }
         setUsers((prev) =>
-          prev.map((u) => (u.id === editingUser.id ? { ...u, ...user, rooms: updateResponse.data.rooms } : u))
+          prev.map((u) =>
+            u.id === editingUser.id
+              ? { ...u, rooms: rooms.filter((room) => user.roomIds.includes(room.id)) }
+              : u
+          )
         );
       } else {
+        console.log("Creating new user");
         const createResponse = await userApi.createUser({
           email: user.email,
           phoneNumber: user.phoneNumber,
@@ -326,13 +368,43 @@ export const useUsersLogic = () => {
           roomIds: user.roomIds,
         });
         console.log("Create user response:", createResponse);
+        if (createResponse.code !== 0) {
+          throw new Error(createResponse.message || "Lỗi khi tạo người dùng");
+        }
         await fetchUsers(pageNumber, pageSize, searchTerm);
       }
       handleCloseAddModal();
-      toast.success(editingUser ? "Cập nhật người dùng thành công!" : "Thêm người dùng thành công!");
+      toast.success(editingUser ? "Cập nhật phòng thành công!" : "Thêm người dùng thành công!");
     } catch (error: any) {
       console.error("Submit user error:", error);
       toast.error(error.message || "Lỗi khi lưu người dùng");
+    }
+  };
+
+  const handleSubmitRole = async (userId: string, data: {
+    roles: string[];
+    shipper?: { lastLocationId: string; startWorkTime: number; endWorkTime: number };
+    store?: { name: string; description: string; phoneNumber: string; roomId: string };
+    customer?: { roomId: string };
+  }) => {
+    try {
+      const response = await userApi.updateUserRoles(userId, data);
+      console.log("Update user roles response:", response);
+      if (response.code === 0) {
+        setUsers((prev) =>
+          prev.map((u) =>
+            u.id === userId
+              ? { ...u, roles: data.roles, stores: data.store ? [{ ...data.store, isLocked: false }] : u.stores }
+              : u
+          )
+        );
+        handleCloseEditRoleModal();
+      } else {
+        throw new Error(response.message || "Lỗi khi cập nhật vai trò");
+      }
+    } catch (error: any) {
+      console.error("Update user roles error:", error);
+      throw error;
     }
   };
 
@@ -358,7 +430,7 @@ export const useUsersLogic = () => {
 
   const handleExportUsers = async () => {
     try {
-      const response = await userApi.getAllUser(1, 100);
+      const response = await userApi.getAllUser(1, 10000);
       console.log("Export users response:", response);
       if (response.code !== 0) {
         throw new Error(response.message || "Lỗi khi lấy danh sách người dùng");
@@ -368,14 +440,14 @@ export const useUsersLogic = () => {
         fullName: user.fullName || "",
         email: user.email || "",
         phoneNumber: user.phoneNumber || "",
-        isLocked: user.isLocked ? "Đã Khóa" : "Hoạt động",
+        isLocked: user.isLocked ? "Locked" : "UnLocked",
         roles: user.roles.join(", "),
         rooms: user.rooms?.map((room) => room.name).join(", ") || "",
         dateOfBirth: formatDate(user.dateOfBirth),
         createdAt: formatDate(user.createdAt),
       }));
       const csv = [
-        ["ID", "Họ Tên", "Email", "Số Điện Thoại", "Trạng Thái", "Vai Trò", "Phòng", "Ngày Sinh", "Ngày Tạo"],
+        ["ID", "Full Name", "Email", "Phone Number", "Status", "Role", "Room", "Date of Birth", "Created at"],
         ...csvData.map((row) => [
           row.id,
           `"${row.fullName}"`,
@@ -422,14 +494,18 @@ export const useUsersLogic = () => {
     selectedUser,
     isDetailModalOpen,
     isAddModalOpen,
+    isEditRoleModalOpen,
     editingUser,
-    searchTerm,
+    editingRoleUser,
     handleViewUser,
     handleCloseDetailModal,
     handleAddUser,
     handleEditUser,
+    handleEditRole,
     handleCloseAddModal,
+    handleCloseEditRoleModal,
     handleSubmitUser,
+    handleSubmitRole,
     handleToggleLockUser,
     handleExportUsers,
     handlePageChange,

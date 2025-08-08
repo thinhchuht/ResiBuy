@@ -7,19 +7,19 @@ import {
   ConfirmationNumber,
   Store,
   DeliveryDiningSharp,
-  Apartment ,
+  Apartment,
+  Report,
 } from "@mui/icons-material";
 
 export const menuItems = [
-  { title: "Dashboard", url: "/admin/dashboard", icon: Dashboard },
-  { title: "Products", url: "/products", icon: Inventory2 },
+  { title: "Bảng điều khiển", url: "/admin/dashboard", icon: Dashboard },
   { title: "Danh mục", url: "/admin/category", icon: Category },
   { title: "Orders", url: "/orders", icon: ShoppingCart },
    { title: "Shipper", url: "/admin/shipper", icon: DeliveryDiningSharp  },
   { title: "Người dùng", url: "/admin/user", icon: People },
-  { title: "Vouchers", url: "/vouchers", icon: ConfirmationNumber },
   { title: "Quản lý chung cư", url: "/admin/resi", icon: Apartment },
   { title: "Cửa hàng", url: "/admin/store", icon: Store },
+  { title: "Báo cáo", url: "/admin/reports", icon: Report },
 ];
 export const categoryData = [
   { name: "Skincare", value: 35, color: "#8884d8" },

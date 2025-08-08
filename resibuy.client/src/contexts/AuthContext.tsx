@@ -9,7 +9,8 @@ interface AuthContextType {
   token: string | null;
   refreshToken: string | null;
   setUser: (user: User | null) => void;
-  login: (phoneNumber: string, password: string) => Promise<{ success: boolean; error?: { message: string } }>;
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  login: (phoneNumber: string, password: string) => Promise<{ success: boolean; error?: { message: string }, data?: any }>;
   logout: () => Promise<void>;
   isAuthenticated: boolean;
 }
@@ -67,6 +68,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         error: {
           message: "Error has occurred, contact website owner",
         },
+        data : null
       };
     }
   };

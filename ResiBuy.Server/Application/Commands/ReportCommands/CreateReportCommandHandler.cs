@@ -22,7 +22,7 @@ namespace ResiBuy.Server.Application.Commands.ReportCommands
             var report = new Report(command.Dto.Title, command.Dto.Description, command.Dto.UserId, command.Dto.ReportTarget, command.Dto.TargetId.ToString(), command.Dto.OrderId);
             var createdReport = await reportDbService.CreateAsync(report);
             order.Status = OrderStatus.Reported;
-            order.PaymentStatus = PaymentStatus.Failed;
+            //order.PaymentStatus = PaymentStatus.Failed;
             await orderDbService.UpdateAsync(order);
             List<string> notiUser = new() { command.Dto.UserId };
             string storeName = "";
