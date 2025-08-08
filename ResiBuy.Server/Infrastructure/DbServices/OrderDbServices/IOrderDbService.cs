@@ -25,5 +25,6 @@ public interface IOrderDbService : IBaseDbService<Order>
     Task<int> CountOrdersAsync(Guid? shipperId, Guid? storeId, string? userId, OrderStatus? status );
     Task<decimal> GetTotalShippingFeeByshipperAsync(Guid shipperId, DateTime? startDate = null, DateTime? endDate = null);
     Task<decimal> GetTotalOrderAmountByUserAndStoreAsync(string? userId, Guid? storeId);
+    Task<OverviewStatsQueryResult> GetOverviewStatsAsync();
 
 }

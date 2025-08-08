@@ -24,5 +24,7 @@
 
         public record VoucherQueryResult(Guid Id ,decimal DiscountAmount ,string Type ,int Quantity,decimal MinOrderPrice , decimal MaxDiscountPrice , DateTime StartDate, DateTime EndDate , bool IsActive , Guid StoreId);
         public record ReportStatusCountQueryResult(int Total, int Resolved, int UnResolved, int CustomerTarget, int StoreTarget, int ShipperTarget);
+        public record OverviewStatsQueryResult(object TotalRevenue, object TotalOrder, object TotalCustomer, object TotalStore, object TotalShipper);
+
     }
 }
