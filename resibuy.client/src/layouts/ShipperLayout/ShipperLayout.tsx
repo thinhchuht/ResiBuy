@@ -12,7 +12,6 @@ import {
 } from "@mui/material";
 import ShipperSidebar from "./component/ShipperSidebar";
 import OrderAlertPopup from "../../components/shipper/OrderAlertPopup";
-
 const drawerWidth = 240;
 
 const ShipperLayout: React.FC = () => {
@@ -86,8 +85,6 @@ const ShipperLayout: React.FC = () => {
           </Paper>
         </Box>
       </Box>
-
-      {/* Popup thông báo đơn hàng */}
       <OrderAlertPopup />
     </Box>
   );
@@ -100,6 +97,8 @@ function getPageTitle(path: string) {
     case "":
     case "shipper":
       return "🚀 Trang chủ";
+    case "statistical":
+      return "📊 Thống kê thu nhập";
     default:
       return "📝 Đơn hàng";
   }

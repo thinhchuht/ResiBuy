@@ -215,6 +215,7 @@ export default function StoresPage() {
             fontSize: "0.75rem",
             fontWeight: "medium",
             borderRadius: 1,
+
             color: store.isLocked ? "error.dark" : "success.dark",
           }}
         >

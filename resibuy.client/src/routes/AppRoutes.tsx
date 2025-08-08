@@ -1,5 +1,10 @@
 import React from "react";
-import { BrowserRouter as Router, Routes, Route, Navigate } from "react-router-dom";
+import {
+  BrowserRouter as Router,
+  Routes,
+  Route,
+  Navigate,
+} from "react-router-dom";
 import { useAuth } from "../contexts/AuthContext";
 import Login from "../components/auth/Login";
 import ProtectedRoute from "../components/auth/ProtectedRoute";
@@ -31,10 +36,11 @@ import RoomsPage from "../components/admin/Room/RoomPage";
 import ListStore from "../pages/Store/ListStore";
 import ShipperLayout from "../layouts/ShipperLayout/ShipperLayout";
 import OrdersPage from "../pages/Shipper/OrdersPage";
-// import HomePage from "../pages/Shipper/HomePage";
 import OrderDetailPage from "../pages/Shipper/OrderDetailPage";
 import HomePage from "../pages/Shipper/HomePage";
 import OrderNotifier from "./../pages/Store/OrderNotifier";
+import StatisticalPage from "../pages/Shipper/StatisticalPage";
+
 const AppRoutes: React.FC = () => {
   const { user } = useAuth();
 
@@ -93,7 +99,9 @@ const AppRoutes: React.FC = () => {
         <Route
           path="/profile"
           element={
-            <ProtectedRoute allowedRoles={["CUSTOMER", "ADMIN", "SHIPPER", "SELLER"]}>
+            <ProtectedRoute
+              allowedRoles={["CUSTOMER", "ADMIN", "SHIPPER", "SELLER"]}
+            >
               <HomeLayout>
                 <Profile />
               </HomeLayout>
@@ -184,10 +192,12 @@ const AppRoutes: React.FC = () => {
             <ProtectedRoute allowedRoles={["SHIPPER"]}>
               <ShipperLayout />
             </ProtectedRoute>
-          }>
+          }
+        >
           <Route index element={<Navigate to="home" replace />} />
           <Route path="home" element={<HomePage />} />
           <Route path="orders" element={<OrdersPage />} />
+          <Route path="statistical" element={<StatisticalPage />} />
           <Route path="order/:id" element={<OrderDetailPage />} />
         </Route>
 
