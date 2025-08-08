@@ -44,6 +44,14 @@ export interface OrderCreateFailedDto {
   errorMessage: string;
 }
 
+export interface ReceiveOrderNotificationDto {
+  orderId: string;
+  totalPrice : number;
+  storeName : string
+  note: string
+  assignedTime: string
+}
+
 export interface CartAddedDto {
   cartId: string;
   productDetailId: number;

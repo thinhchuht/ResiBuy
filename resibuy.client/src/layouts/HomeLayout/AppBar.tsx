@@ -63,6 +63,7 @@ import type {
   OrderCreateFailedDto,
   MonthlyPaymentSettlFailedDto,
   MonthlyPaymentSettledDto,
+  ReceiveOrderNotificationDto,
 } from "../../types/hubEventDto";
 import type { User, Store } from "../../types/models";
 import { useToastify } from "../../hooks/useToastify";
@@ -75,6 +76,7 @@ interface Notification {
   isRead?: boolean;
   orderId?: string;
   storeId?: string;
+  isShipper?: boolean;
 }
 
 interface NotificationApiItem {
@@ -111,12 +113,22 @@ function notifiConvert(item: NotificationApiItem, user?: User): Notification {
   }
 
   let storeId: string | undefined;
+  let isShipper : boolean = false;
+  let displayLabel = "";
   if (dataObj.storeId) {
     storeId = dataObj.storeId as string;
+    const userStore = user?.stores?.find((store: Store) => store.id === storeId);
+    if (userStore) {
+      displayLabel = `[${userStore.name}] `;
+    }
   } else if (dataObj.targetId && dataObj.reportTarget === "Store") {
     storeId = dataObj.targetId as string;
+    const userStore = user?.stores?.find((store: Store) => store.id === storeId);
+    if (userStore) {
+      displayLabel = `[${userStore.name}] `;
+    }
   }
- 
+
   let title = "";
   let message = "";
   let status = dataObj.orderStatus;
@@ -139,36 +151,40 @@ function notifiConvert(item: NotificationApiItem, user?: User): Notification {
   switch (true) {
     case /^OrderStatusChanged/.test(item.eventName):
       title =
-        status === "Processing"
+        displayLabel +
+        (status === "Processing"
           ? "Đơn hàng đã được xác nhận"
+          : status === "Assigned"
+          ? "Đơn hàng đã tìm được người giao"
           : status === "Shipped"
           ? "Đơn hàng đang được giao"
           : status === "Delivered"
           ? "Đơn hàng đã được giao"
           : status === "CustomerNotAvailable"
-          ? "Khách chưa nhận hàng"
-          : "Đơn hàng đã bị hủy";
+          ? "Đơn hàng chưa được nhận"
+          : "Đơn hàng đã bị hủy");
       message =
         `Đơn hàng #${dataObj.id} ` +
         (status === "Processing"
           ? "đã được xử lý"
+          : status === "Assigned"
+          ? "đã tìm được người giao"
           : status === "Shipped"
           ? "đang được giao"
           : status === "Delivered"
           ? "đã được giao"
           : status === "CustomerNotAvailable"
-          ? "khách chưa nhận hàng"
+          ? "chưa được nhận do khách không liên lạc được hoặc đã hẹn lại thời gian giao"
           : "đã bị hủy");
       break;
     case item.eventName === "OrderCreated":
-      title = "Đơn hàng mới";
+      title = displayLabel + "Đơn hàng mới";
       message = `Đơn hàng #${dataObj.id} đã được tạo`;
       break;
     case item.eventName === "OrderReported": {
-      let displayLabel = "";
-      if (dataObj.reportTarget === "Store") {
+      if (dataObj.reportTarget === "Store" && !displayLabel) {
         const userStore = user?.stores?.find((store: Store) => store.id === dataObj.targetId);
-        displayLabel = userStore ? userStore.name : "Cửa hàng";
+        displayLabel = userStore ? `[${userStore.name}] ` : "";
       } else {
         displayLabel = getReportTargetLabel(dataObj.reportTarget as string);
       }
@@ -177,13 +193,12 @@ function notifiConvert(item: NotificationApiItem, user?: User): Notification {
       break;
     }
     case item.eventName === "ReportResolved": {
-      let displayLabel = "";
       let storeLabel = "";
       if (dataObj.reportTarget === "Store") {
         const userStore = user?.stores?.find((store: Store) => store.id === dataObj.targetId);
-        displayLabel = userStore ? userStore.name : "Cửa hàng";
         if (userStore) {
-          storeLabel = `[${dataObj.storeName}] `;
+          displayLabel = `[${userStore.name}] `;
+          storeLabel = displayLabel;
         }
       } else {
         displayLabel = getReportTargetLabel(dataObj.reportTarget as string);
@@ -225,6 +240,11 @@ function notifiConvert(item: NotificationApiItem, user?: User): Notification {
       title = "Tạo đơn hàng thất bại";
       message = dataObj.errorMessage ? dataObj.errorMessage as string : "Đơn hàng của bạn không được tạo thành công. Vui lòng thử lại sau";
       break;
+    case item.eventName === "ReceiveOrderNotification":
+      title = "[Tài khoản giao hàng] Đơn hàng đã được đẩy cho bạn";
+      message = `Đơn hàng #${dataObj.orderId} đã được đẩy cho bạn`;
+      isShipper = true;
+      break;
     default:
       title = "Thông báo";
       message = item.eventName;
@@ -238,6 +258,7 @@ function notifiConvert(item: NotificationApiItem, user?: User): Notification {
     isRead: item.isRead,
     orderId,
     storeId,
+    isShipper,
   };
 }
 
@@ -342,9 +363,16 @@ const AppBar: React.FC = () => {
       const formattedDate = new Date(data.createdAt).toLocaleDateString(
         "vi-VN"
       );
+      let displayLabel = "";
+      if (data.storeId) {
+        const userStore = user?.stores?.find((store: Store) => store.id === data.storeId);
+        if (userStore) {
+          displayLabel = `[${userStore.name}] `;
+        }
+      }
       const newNotifications = {
         id: data.id,
-        title: "Đơn hàng mới",
+        title: `${displayLabel}Đơn hàng mới`,
         message: `Đơn hàng #${data.id} đã được tạo`,
         time: `${formattedTime} ${formattedDate}`,
         isRead: false,
@@ -372,27 +400,39 @@ const AppBar: React.FC = () => {
         const match = ((data as OrderStatusChangedDataWithEvent).eventName as string).match(/^OrderStatusChanged-(.+)$/);
         if (match) status = match[1];
       }
+      let displayLabel = "";
+      if (data.storeId) {
+        const userStore = user?.stores?.find((store: Store) => store.id === data.storeId);
+        if (userStore) {
+          displayLabel = `[${userStore.name}] `;
+        }
+      }
       const newNotifications = {
         id: `order-${data.id}-${status}`,
         title:
-          status === "Processing"
+          displayLabel +
+          (status === "Processing"
             ? "Đơn hàng đã được xử lý"
+            : status === "Assigned"
+            ? "Đơn hàng đã tìm được người giao"
             : status === "Shipped"
             ? "Đơn hàng đang được giao"
             : status === "Delivered"
             ? "Đơn hàng đã được giao"
             : status === "CustomerNotAvailable"
-            ? "Khách chưa nhận hàng"
-            : "Đơn hàng đã bị hủy",
+            ? "Đơn hàng chưa được nhận"
+            : "Đơn hàng đã bị hủy"),
         message: `Đơn hàng #${data.id} ` +
           (status === "Processing"
             ? "đã được xử lý"
+            : status === "Assigned"
+            ? "đã tìm được người giao"
             : status === "Shipped"
             ? "đang được giao"
             : status === "Delivered"
             ? "đã được giao"
             : status === "CustomerNotAvailable"
-            ? "khách chưa nhận hàng"
+            ? "chưa được nhận do khách không liên lạc được hoặc đã hẹn lại thời gian giao"
             : "đã bị hủy"),
         time: `${formattedTime} ${formattedDate}`,
         isRead: false,
@@ -548,6 +588,19 @@ const AppBar: React.FC = () => {
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [fetchUnreadCount]);
 
+  const handleReceiveOrderNotification = useCallback((data: ReceiveOrderNotificationDto) => {
+    setNotifications((prev) => [{
+      id: data.orderId,
+      title: `[Tài khoản giao hàng] Đơn hàng đã được đẩy cho bạn`,
+      message: `Đơn hàng #${data.orderId} đã được đẩy cho bạn`,
+      time: new Date().toLocaleString("vi-VN"),
+      isRead: false,
+    }, ...prev]);
+    toast.success(`Đơn hàng #${data.orderId} đã được đẩy cho bạn`);
+    fetchUnreadCount();
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [fetchUnreadCount]);
+
   const eventHandlers = useMemo(
     () => ({
       [HubEventType.CartItemAdded]: handleCartItemAdded,
@@ -561,6 +614,7 @@ const AppBar: React.FC = () => {
       [HubEventType.MonthlyPaymentSettlFailed]: handleMonthlyPaymentSettlFailed,
       [HubEventType.ProductOutOfStock]: handleProductOutOfStock,
       [HubEventType.OrderCreatedFailed]: handleOrderCreatedFailed,
+      [HubEventType.ReceiveOrderNotification]: handleReceiveOrderNotification,
     }),
     [
       handleCartItemAdded,
@@ -574,6 +628,7 @@ const AppBar: React.FC = () => {
       handleMonthlyPaymentSettlFailed,
       handleProductOutOfStock,
       handleOrderCreatedFailed,
+      handleReceiveOrderNotification
     ]
   );
 
@@ -655,7 +710,6 @@ const AppBar: React.FC = () => {
 
   const handleNotificationClick = async (notification: Notification) => {
     handleNotificationClose();
-    console.log(notification)
     if (notification.isRead === false && user) {
       try {
         await notificationApi.readNotification(
@@ -672,7 +726,9 @@ const AppBar: React.FC = () => {
         console.error("Error reading notification:", error);
       }
     }
-
+    if (notification.isShipper && notification.orderId) {
+      navigate(`/shipper/order/${notification.orderId}`);
+    }
     let orderId: string | null = null;
     if (notification.orderId) {
       orderId = notification.orderId;
