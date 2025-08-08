@@ -20,7 +20,7 @@
                 var shippingTrue = await _shipperDbService.CountShippersByShippingStatusAsync(true);
 
                 var countAllShipper= await _shipperDbService.CountAllShipper();
-                var totalReportCount = await _shipperDbService.SumShipperReportCountAsync();
+                var totalReportCount = await _shipperDbService.SumShipperLockedAsync();
 
                 return ResponseModel.SuccessResponse(new
                 {

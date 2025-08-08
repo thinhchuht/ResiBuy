@@ -198,7 +198,17 @@ namespace ResiBuy.Server.Infrastructure.DbServices.ShipperDbServices
                 throw new CustomException(ExceptionErrorCode.RepositoryError, ex.Message);
             }
         }
-
+        public async Task<int> SumShipperLockedAsync()
+        {
+            try
+            {
+                return await _context.Shippers.CountAsync(s => s.IsLocked);
+            }
+            catch (Exception ex)
+            {
+                throw new CustomException(ExceptionErrorCode.RepositoryError, ex.Message);
+            }
+        }
 
     }
 }

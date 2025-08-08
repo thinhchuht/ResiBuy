@@ -36,7 +36,7 @@
                     ur.Room?.Building.Area.Name,
                     ur.Room.Building.Area.Id)),
                 user.UserVouchers.Select(uv => uv.VoucherId),
-                user.Reports.ToList(),
+                user.Reports.Select(r => new ReportQueryResult(r.Id, r.IsResolved, r.Title, r.Description, r.CreatedAt, r.CreatedById, r.ReportTarget, r.TargetId, r.OrderId)),
                 user.Stores.Select(s => new
                 {
                     s.Id,

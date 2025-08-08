@@ -4,6 +4,7 @@
     {
         Task<Room> GetByIdAsync(Guid id);
         Task<PagedResult<Room>> GetAllRoomsAsync(int pageNumber, int pageSize, bool? IsActive = null,bool? NoUsers = null);
+        Task<Room?> GetByNameAsync(string name);
 
         Task<PagedResult<Room>> GetRoomsByBuildingIdPagedAsync(Guid buildingId, int pageNumber, int pageSize, bool? isActive = null, bool? hasUsers = null);
 

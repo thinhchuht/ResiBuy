@@ -489,6 +489,11 @@ export default function ReportsPage() {
           }}
         >
           <Box>
+
+            <Typography variant="h4" color="text.secondary"  >
+              Quản lý báo cáo
+            </Typography>
+
             <Typography variant="body2" color="text.secondary">
               Thống kê và quản lý các đơn hàng bị tố cáo
             </Typography>

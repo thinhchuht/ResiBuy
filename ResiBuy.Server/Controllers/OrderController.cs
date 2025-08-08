@@ -61,5 +61,12 @@ namespace ResiBuy.Server.Controllers
             var result = await mediator.Send(query);
             return Ok(result);
         }
+        [HttpGet("total-amount")]
+        public async Task<IActionResult> GetTotalOrderAmount([FromQuery] string userId, [FromQuery] Guid storeId)
+        {
+            var result = await mediator.Send(new GetTotalOrderAmountQuery(userId, storeId));
+            return Ok(result);
+        }
+
     }
 }

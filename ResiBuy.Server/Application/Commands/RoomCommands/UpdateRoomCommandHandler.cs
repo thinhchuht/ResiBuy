@@ -36,6 +36,9 @@ namespace ResiBuy.Server.Application.Commands.RoomCommands
                     throw new CustomException(ExceptionErrorCode.NotFound, $"Không tìm thấy phòng có Id: {dto.Id}");
 
                 existingRoom.UpdateRoom(dto.Name, dto.IsActive);
+                var roomWithSameName = await roomDbService.GetByNameAsync(dto.Name);
+                if (roomWithSameName != null && roomWithSameName.Id != dto.Id)
+                    throw new CustomException(ExceptionErrorCode.ValidationFailed, "Tên phòng đã được sử dụng bởi một phòng khác.");
 
                 var result = await roomDbService.UpdateAsync(existingRoom);
 
