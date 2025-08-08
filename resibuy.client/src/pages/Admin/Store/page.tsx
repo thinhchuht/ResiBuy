@@ -246,7 +246,7 @@ export default function StoresPage() {
             fontSize: "0.75rem",
             fontWeight: "medium",
             borderRadius: 1,
-            bgcolor: store.isLocked ? "error.light" : "success.light",
+         
             color: store.isLocked ? "error.dark" : "success.dark",
           }}
         >
@@ -274,7 +274,6 @@ export default function StoresPage() {
             fontSize: "0.75rem",
             fontWeight: "medium",
             borderRadius: 1,
-            bgcolor: store.isOpen ? "success.light" : "warning.light",
             color: store.isOpen ? "success.dark" : "warning.dark",
           }}
         >

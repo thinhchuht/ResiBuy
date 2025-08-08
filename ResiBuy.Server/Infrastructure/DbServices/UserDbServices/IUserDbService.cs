@@ -9,5 +9,8 @@
         Task<User> CreateCustomerUser(RegisterDto user);
         Task<User> CreateAdminUser(User user);
         Task CheckUniqueField(string userId = null, string phoneNumber = null, string email = null, string identityNumber = null);
+        Task<int> CountAllUsersAsync();
+        Task<int> CountLockedUsersAsync();
+        Task<int> SumUserReportCountAsync();
     }
 }

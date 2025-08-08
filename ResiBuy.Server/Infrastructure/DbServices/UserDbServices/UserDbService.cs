@@ -149,5 +149,40 @@
                     throw new CustomException(ExceptionErrorCode.ValidationFailed, "Số CCCD đã được sử dụng");
             }
         }
+        public async Task<int> CountAllUsersAsync()
+        {
+            try
+            {
+                return await context.Users.CountAsync();
+            }
+            catch (Exception ex)
+            {
+                throw new CustomException(ExceptionErrorCode.RepositoryError, ex.Message);
+            }
+        }
+
+        public async Task<int> CountLockedUsersAsync()
+        {
+            try
+            {
+                return await context.Users.CountAsync(u => u.IsLocked);
+            }
+            catch (Exception ex)
+            {
+                throw new CustomException(ExceptionErrorCode.RepositoryError, ex.Message);
+            }
+        }
+
+        public async Task<int> SumUserReportCountAsync()
+        {
+            try
+            {
+                return await context.Reports.CountAsync(r => !string.IsNullOrEmpty(r.CreatedById));
+            }
+            catch (Exception ex)
+            {
+                throw new CustomException(ExceptionErrorCode.RepositoryError, ex.Message);
+            }
+        }
     }
 }

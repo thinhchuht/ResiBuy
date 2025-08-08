@@ -442,27 +442,7 @@ export function EditRoleModal({ isOpen, onClose, onSubmit, userId }: EditRoleMod
                 )}
               </Box>
 
-              {/* Voucher IDs */}
-              <Box sx={{ mb: 3 }}>
-                <Typography
-                  variant="h6"
-                  sx={{
-                    color: "grey.900",
-                    mb: 2,
-                    fontWeight: "medium",
-                  }}
-                >
-                  Voucher
-                </Typography>
-                <TextField
-                  label="ID Voucher"
-                  value={user?.voucherIds?.join(", ") || "Không có voucher"}
-                  fullWidth
-                  disabled
-                  size="small"
-                  sx={{ bgcolor: "grey.100" }}
-                />
-              </Box>
+             
 
               {/* Reports */}
               <Box sx={{ mb: 3 }}>

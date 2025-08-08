@@ -250,16 +250,16 @@ const handleToggleStoreStatus = async (storeId) => {
       }
       const stores = response.data.items || [];
       const headers = [
-        "ID Cửa hàng",
-        "Tên",
-        "Mô tả",
-        "Số điện thoại",
-        "Hoạt Động",
-        "Mở Cửa",
-        "Ngày tạo",
-        "Phòng",
-        "Tòa nhà",
-        "Khu vực",
+        "Id",
+        "Name",
+        "Description",
+        "Phone Number",
+        "Status",
+        "Open",
+        "Create at",
+        "Room",
+        "BuildinTòa nhà",
+        "Area",
       ];
       const csvContent = [
         headers.join(","),
@@ -269,8 +269,8 @@ const handleToggleStoreStatus = async (storeId) => {
             `"${store.name}"`,
             `"${store.description || ""}"`,
             `"${store.phoneNumber || ""}"`, 
-            store.isLocked ? "Khóa" : "Hoạt động",
-            store.isOpen ? "Mở" : "Đóng",
+            store.isLocked ? "LOcked" : "Unlock",
+            store.isOpen ? "Open" : "Close",
             new Date(store.createdAt).toLocaleDateString(),
             `"${store.room?.name || "N/A"}"`,
             `"${store.room?.buildingName || "N/A"}"`,

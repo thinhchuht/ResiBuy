@@ -87,5 +87,10 @@ namespace ResiBuy.Server.Infrastructure.DbServices.AreaDbServices
                 throw new CustomException(ExceptionErrorCode.RepositoryError, ex.Message);
             }
         }
+        public async Task<bool> IsNameExistsAsync(string name)
+        {
+            return await _context.Areas.AnyAsync(a => a.Name.ToLower() == name.ToLower());
+        }
+
     }
 }

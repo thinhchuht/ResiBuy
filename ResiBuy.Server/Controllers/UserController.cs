@@ -15,6 +15,7 @@
         [HttpGet]
         public async Task<IActionResult> GetAllAsync([FromQuery] int pageNumber = 1, [FromQuery] int pageSize = 10)
         {
+            Console.WriteLine($"In : PageNumber: {pageNumber}, PageSize: {pageSize}");
             var result = await mediator.Send(new GetAllUsersQuery(pageNumber, pageSize));
             return Ok(result);
         }
