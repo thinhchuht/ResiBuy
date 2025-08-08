@@ -20,6 +20,7 @@ import {
 import WarningAmberIcon from "@mui/icons-material/WarningAmber";
 import { useParams } from "react-router-dom";
 import orderApi from "../../api/order.api";
+import shipperApi from "../../api/ship.api";
 import reportApi from "../../api/report.api";
 import { useAuth } from "../../contexts/AuthContext";
 import { useToastify } from "../../hooks/useToastify";
@@ -200,6 +201,14 @@ function OrderDetail() {
 
     try {
       await orderApi.updateOrderStatusShip(order.id, "Delivered", user.id);
+
+      if (order.roomQueryResult?.areaId) {
+        await shipperApi.updateLocation({
+          shipperId: user.id, // id của shipper (user.id ở đây)
+          locationId: order.roomQueryResult.areaId, // areaId từ roomQueryResult
+        });
+      }
+
       toast.success("Giao hàng thành công");
       setOrder(
         (prev) =>
