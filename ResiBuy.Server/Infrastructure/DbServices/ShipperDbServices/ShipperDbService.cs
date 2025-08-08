@@ -2,7 +2,6 @@ using Microsoft.EntityFrameworkCore;
 using ResiBuy.Server.Exceptions;
 using ResiBuy.Server.Infrastructure.DbServices.BaseDbServices;
 using ResiBuy.Server.Infrastructure.Filter;
-using ResiBuy.Server.Infrastructure.Model.DTOs.ShipperDtos;
 using ResiBuy.Server.Services.MapBoxService;
 using ResiBuy.Server.Services.OpenRouteService;
 using ResiBuy.Server.Services.ShippingCost;
@@ -213,25 +212,6 @@ namespace ResiBuy.Server.Infrastructure.DbServices.ShipperDbServices
             {
                 throw new CustomException(ExceptionErrorCode.RepositoryError, ex.Message);
             }
-        }
-
-            if (shipper == null)
-                throw new CustomException(ExceptionErrorCode.NotFound, "Shipper not found.");
-
-            var orders = shipper.Orders?
-                .Where(o => o.UpdateAt >= startDate && o.UpdateAt <= endDate && o.Status == OrderStatus.Delivered)
-                ?? Enumerable.Empty<Order>();
-
-            var timeSheets = shipper.TimeSheets?
-                .Where(t => t.DateMark >= startDate && t.DateMark <= endDate)
-                ?? Enumerable.Empty<TimeSheet>();
-
-            int totalOrder = orders.Count();
-            decimal totalShippingFee = orders.Sum(o => (decimal)o.ShippingFee);
-            int numberOfDayLate = timeSheets.Count(t => t.IsLate);
-            int numberOfDayOf = timeSheets.Count(t => !t.IsLate);
-
-            return new ShipperStatistics(totalOrder, totalShippingFee, numberOfDayOf, numberOfDayLate);
         }
     }
 }
