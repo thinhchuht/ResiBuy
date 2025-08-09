@@ -3,6 +3,7 @@ using System;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
 using Microsoft.EntityFrameworkCore.Metadata;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using ResiBuy.Server.Infrastructure;
 
@@ -11,9 +12,11 @@ using ResiBuy.Server.Infrastructure;
 namespace ResiBuy.Server.Migrations
 {
     [DbContext(typeof(ResiBuyContext))]
-    partial class ResiBuyContextModelSnapshot : ModelSnapshot
+    [Migration("20250725082835_add-review")]
+    partial class addreview
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -508,9 +511,6 @@ namespace ResiBuy.Server.Migrations
                     b.Property<int>("Rate")
                         .HasColumnType("int");
 
-                    b.Property<DateTime>("UpdatedAt")
-                        .HasColumnType("datetime2");
-
                     b.Property<string>("UserId")
                         .HasColumnType("nvarchar(450)");
 
@@ -686,19 +686,19 @@ namespace ResiBuy.Server.Migrations
                         new
                         {
                             Id = "adm_df",
-                            CreatedAt = new DateTime(2025, 7, 31, 14, 10, 19, 294, DateTimeKind.Local).AddTicks(5341),
+                            CreatedAt = new DateTime(2025, 7, 25, 15, 28, 35, 499, DateTimeKind.Local).AddTicks(2476),
                             DateOfBirth = new DateTime(1990, 1, 1, 0, 0, 0, 0, DateTimeKind.Unspecified),
                             Email = "admin@123",
                             EmailConfirmed = true,
                             FullName = "Administrator",
                             IdentityNumber = "admin",
                             IsLocked = false,
-                            PasswordHash = "$2a$11$WG.5gWDPzthOylZBKY8O5e7QNx6IPzEzewYkCBdXliDPBC92OQ3Eq",
+                            PasswordHash = "$2a$11$hPV83SuUzhfCzr5ChZJFLeT6Q0kNx0HW7e.gBRq.KvamCRbZAnakK",
                             PhoneNumber = "admin",
                             PhoneNumberConfirmed = true,
                             ReportCount = 0,
                             Roles = "[\"ADMIN\"]",
-                            UpdatedAt = new DateTime(2025, 7, 31, 14, 10, 19, 294, DateTimeKind.Local).AddTicks(5375)
+                            UpdatedAt = new DateTime(2025, 7, 25, 15, 28, 35, 499, DateTimeKind.Local).AddTicks(2490)
                         });
                 });
 

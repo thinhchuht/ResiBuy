@@ -40,21 +40,6 @@ namespace ResiBuy.Server.Migrations
                 });
 
             migrationBuilder.CreateTable(
-                name: "Notifications",
-                columns: table => new
-                {
-                    Id = table.Column<Guid>(type: "uniqueidentifier", nullable: false),
-                    ReadBy = table.Column<string>(type: "nvarchar(max)", nullable: true),
-                    CreatedAt = table.Column<DateTime>(type: "datetime2", nullable: false),
-                    EventName = table.Column<string>(type: "nvarchar(max)", nullable: true),
-                    Data = table.Column<string>(type: "nvarchar(max)", nullable: true)
-                },
-                constraints: table =>
-                {
-                    table.PrimaryKey("PK_Notifications", x => x.Id);
-                });
-
-            migrationBuilder.CreateTable(
                 name: "Users",
                 columns: table => new
                 {
@@ -71,8 +56,7 @@ namespace ResiBuy.Server.Migrations
                     CreatedAt = table.Column<DateTime>(type: "datetime2", nullable: false),
                     UpdatedAt = table.Column<DateTime>(type: "datetime2", nullable: false),
                     EmailConfirmed = table.Column<bool>(type: "bit", nullable: false),
-                    PhoneNumberConfirmed = table.Column<bool>(type: "bit", nullable: false),
-                    ReportCount = table.Column<int>(type: "int", nullable: false)
+                    PhoneNumberConfirmed = table.Column<bool>(type: "bit", nullable: false)
                 },
                 constraints: table =>
                 {
@@ -149,7 +133,6 @@ namespace ResiBuy.Server.Migrations
                 {
                     Id = table.Column<Guid>(type: "uniqueidentifier", nullable: false),
                     UserId = table.Column<string>(type: "nvarchar(450)", nullable: true),
-                    IsLocked = table.Column<bool>(type: "bit", nullable: false),
                     IsOnline = table.Column<bool>(type: "bit", nullable: false),
                     IsShipping = table.Column<bool>(type: "bit", nullable: false),
                     ReportCount = table.Column<int>(type: "int", nullable: false),
@@ -172,30 +155,6 @@ namespace ResiBuy.Server.Migrations
                         column: x => x.UserId,
                         principalTable: "Users",
                         principalColumn: "Id");
-                });
-
-            migrationBuilder.CreateTable(
-                name: "UserNotifications",
-                columns: table => new
-                {
-                    UserId = table.Column<string>(type: "nvarchar(450)", nullable: false),
-                    NotificationId = table.Column<Guid>(type: "uniqueidentifier", nullable: false)
-                },
-                constraints: table =>
-                {
-                    table.PrimaryKey("PK_UserNotifications", x => new { x.UserId, x.NotificationId });
-                    table.ForeignKey(
-                        name: "FK_UserNotifications_Notifications_NotificationId",
-                        column: x => x.NotificationId,
-                        principalTable: "Notifications",
-                        principalColumn: "Id",
-                        onDelete: ReferentialAction.Cascade);
-                    table.ForeignKey(
-                        name: "FK_UserNotifications_Users_UserId",
-                        column: x => x.UserId,
-                        principalTable: "Users",
-                        principalColumn: "Id",
-                        onDelete: ReferentialAction.Cascade);
                 });
 
             migrationBuilder.CreateTable(
@@ -225,7 +184,6 @@ namespace ResiBuy.Server.Migrations
                     Id = table.Column<Guid>(type: "uniqueidentifier", nullable: false),
                     Name = table.Column<string>(type: "nvarchar(max)", nullable: true),
                     Description = table.Column<string>(type: "nvarchar(max)", nullable: true),
-                    PhoneNumber = table.Column<string>(type: "nvarchar(max)", nullable: true),
                     IsLocked = table.Column<bool>(type: "bit", nullable: false),
                     IsOpen = table.Column<bool>(type: "bit", nullable: false),
                     ReportCount = table.Column<int>(type: "int", nullable: false),
@@ -270,28 +228,6 @@ namespace ResiBuy.Server.Migrations
                         name: "FK_UserRooms_Users_UserId",
                         column: x => x.UserId,
                         principalTable: "Users",
-                        principalColumn: "Id",
-                        onDelete: ReferentialAction.Cascade);
-                });
-
-            migrationBuilder.CreateTable(
-                name: "Event",
-                columns: table => new
-                {
-                    Id = table.Column<Guid>(type: "uniqueidentifier", nullable: false),
-                    Title = table.Column<string>(type: "nvarchar(max)", nullable: true),
-                    Description = table.Column<string>(type: "nvarchar(max)", nullable: true),
-                    StoreId = table.Column<Guid>(type: "uniqueidentifier", nullable: false),
-                    StartTime = table.Column<DateTime>(type: "datetime2", nullable: false),
-                    EndTime = table.Column<DateTime>(type: "datetime2", nullable: false)
-                },
-                constraints: table =>
-                {
-                    table.PrimaryKey("PK_Event", x => x.Id);
-                    table.ForeignKey(
-                        name: "FK_Event_Stores_StoreId",
-                        column: x => x.StoreId,
-                        principalTable: "Stores",
                         principalColumn: "Id",
                         onDelete: ReferentialAction.Cascade);
                 });
@@ -364,8 +300,7 @@ namespace ResiBuy.Server.Migrations
                     ProductId = table.Column<int>(type: "int", nullable: false),
                     Sold = table.Column<int>(type: "int", nullable: false),
                     Price = table.Column<decimal>(type: "decimal(18,2)", nullable: false),
-                    Weight = table.Column<float>(type: "real", nullable: false),
-                    Quantity = table.Column<int>(type: "int", nullable: false)
+                    Weight = table.Column<float>(type: "real", nullable: false)
                 },
                 constraints: table =>
                 {
@@ -395,8 +330,7 @@ namespace ResiBuy.Server.Migrations
                     StoreId = table.Column<Guid>(type: "uniqueidentifier", nullable: false),
                     ShipperId = table.Column<Guid>(type: "uniqueidentifier", nullable: true),
                     VoucherId = table.Column<Guid>(type: "uniqueidentifier", nullable: true),
-                    ShippingFee = table.Column<decimal>(type: "decimal(18,2)", nullable: true),
-                    CancelReason = table.Column<string>(type: "nvarchar(max)", nullable: true)
+                    ShippingFee = table.Column<decimal>(type: "decimal(18,2)", nullable: true)
                 },
                 constraints: table =>
                 {
@@ -537,36 +471,6 @@ namespace ResiBuy.Server.Migrations
                 });
 
             migrationBuilder.CreateTable(
-                name: "Reviews",
-                columns: table => new
-                {
-                    Id = table.Column<Guid>(type: "uniqueidentifier", nullable: false),
-                    Rate = table.Column<int>(type: "int", nullable: false),
-                    Comment = table.Column<string>(type: "nvarchar(max)", nullable: true),
-                    IsAnonymous = table.Column<bool>(type: "bit", nullable: false),
-                    UserId = table.Column<string>(type: "nvarchar(450)", nullable: true),
-                    ProductDetailId = table.Column<int>(type: "int", nullable: false),
-                    CreatedAt = table.Column<DateTime>(type: "datetime2", nullable: false),
-                    UpdatedAt = table.Column<DateTime>(type: "datetime2", nullable: false)
-                },
-                constraints: table =>
-                {
-                    table.PrimaryKey("PK_Reviews", x => x.Id);
-                    table.ForeignKey(
-                        name: "FK_Reviews_ProductDetails_ProductDetailId",
-                        column: x => x.ProductDetailId,
-                        principalTable: "ProductDetails",
-                        principalColumn: "Id",
-                        onDelete: ReferentialAction.Restrict);
-                    table.ForeignKey(
-                        name: "FK_Reviews_Users_UserId",
-                        column: x => x.UserId,
-                        principalTable: "Users",
-                        principalColumn: "Id",
-                        onDelete: ReferentialAction.Restrict);
-                });
-
-            migrationBuilder.CreateTable(
                 name: "OrderItems",
                 columns: table => new
                 {
@@ -602,9 +506,6 @@ namespace ResiBuy.Server.Migrations
                     Description = table.Column<string>(type: "nvarchar(max)", nullable: true),
                     CreatedAt = table.Column<DateTime>(type: "datetime2", nullable: false),
                     CreatedById = table.Column<string>(type: "nvarchar(450)", nullable: true),
-                    TargetId = table.Column<string>(type: "nvarchar(max)", nullable: true),
-                    ReportTarget = table.Column<int>(type: "int", nullable: false),
-                    IsResolved = table.Column<bool>(type: "bit", nullable: false),
                     OrderId = table.Column<Guid>(type: "uniqueidentifier", nullable: false)
                 },
                 constraints: table =>
@@ -626,8 +527,8 @@ namespace ResiBuy.Server.Migrations
 
             migrationBuilder.InsertData(
                 table: "Users",
-                columns: new[] { "Id", "AvatarId", "CreatedAt", "DateOfBirth", "Email", "EmailConfirmed", "FullName", "IdentityNumber", "IsLocked", "PasswordHash", "PhoneNumber", "PhoneNumberConfirmed", "ReportCount", "Roles", "UpdatedAt" },
-                values: new object[] { "adm_df", null, new DateTime(2025, 8, 2, 10, 57, 29, 229, DateTimeKind.Local).AddTicks(4132), new DateTime(1990, 1, 1, 0, 0, 0, 0, DateTimeKind.Unspecified), "admin@123", true, "Administrator", "admin", false, "$2a$11$Pto/4vhDqGAxAmSM2efqgOMWEqqMgZD9KP.Q5hs7L572MFZdlLjwO", "admin", true, 0, "[\"ADMIN\"]", new DateTime(2025, 8, 2, 10, 57, 29, 229, DateTimeKind.Local).AddTicks(4148) });
+                columns: new[] { "Id", "AvatarId", "CreatedAt", "DateOfBirth", "Email", "EmailConfirmed", "FullName", "IdentityNumber", "IsLocked", "PasswordHash", "PhoneNumber", "PhoneNumberConfirmed", "Roles", "UpdatedAt" },
+                values: new object[] { "adm_df", null, new DateTime(2025, 7, 6, 16, 31, 34, 583, DateTimeKind.Local).AddTicks(4058), new DateTime(1990, 1, 1, 0, 0, 0, 0, DateTimeKind.Unspecified), "admin@123", true, "Administrator", "admin", false, "$2a$11$p5BtIMLHOFSJR6Ba3R5WD.fuTG/7QXWlhRSTO2u6jQPqvw4ZBOa5m", "admin", true, "[\"ADMIN\"]", new DateTime(2025, 7, 6, 16, 31, 34, 583, DateTimeKind.Local).AddTicks(4074) });
 
             migrationBuilder.CreateIndex(
                 name: "IX_AdditionalDatas_ProductDetailId",
@@ -655,11 +556,6 @@ namespace ResiBuy.Server.Migrations
                 column: "UserId",
                 unique: true,
                 filter: "[UserId] IS NOT NULL");
-
-            migrationBuilder.CreateIndex(
-                name: "IX_Event_StoreId",
-                table: "Event",
-                column: "StoreId");
 
             migrationBuilder.CreateIndex(
                 name: "IX_Images_CategoryId",
@@ -745,18 +641,7 @@ namespace ResiBuy.Server.Migrations
             migrationBuilder.CreateIndex(
                 name: "IX_Reports_OrderId",
                 table: "Reports",
-                column: "OrderId",
-                unique: true);
-
-            migrationBuilder.CreateIndex(
-                name: "IX_Reviews_ProductDetailId",
-                table: "Reviews",
-                column: "ProductDetailId");
-
-            migrationBuilder.CreateIndex(
-                name: "IX_Reviews_UserId",
-                table: "Reviews",
-                column: "UserId");
+                column: "OrderId");
 
             migrationBuilder.CreateIndex(
                 name: "IX_Rooms_BuildingId",
@@ -786,11 +671,6 @@ namespace ResiBuy.Server.Migrations
                 column: "RoomId");
 
             migrationBuilder.CreateIndex(
-                name: "IX_UserNotifications_NotificationId",
-                table: "UserNotifications",
-                column: "NotificationId");
-
-            migrationBuilder.CreateIndex(
                 name: "IX_UserRooms_RoomId",
                 table: "UserRooms",
                 column: "RoomId");
@@ -816,9 +696,6 @@ namespace ResiBuy.Server.Migrations
                 name: "CartItems");
 
             migrationBuilder.DropTable(
-                name: "Event");
-
-            migrationBuilder.DropTable(
                 name: "Images");
 
             migrationBuilder.DropTable(
@@ -831,12 +708,6 @@ namespace ResiBuy.Server.Migrations
                 name: "Reports");
 
             migrationBuilder.DropTable(
-                name: "Reviews");
-
-            migrationBuilder.DropTable(
-                name: "UserNotifications");
-
-            migrationBuilder.DropTable(
                 name: "UserRooms");
 
             migrationBuilder.DropTable(
@@ -846,22 +717,19 @@ namespace ResiBuy.Server.Migrations
                 name: "Carts");
 
             migrationBuilder.DropTable(
-                name: "Orders");
-
-            migrationBuilder.DropTable(
                 name: "ProductDetails");
 
             migrationBuilder.DropTable(
-                name: "Notifications");
+                name: "Orders");
+
+            migrationBuilder.DropTable(
+                name: "Products");
 
             migrationBuilder.DropTable(
                 name: "Shippers");
 
             migrationBuilder.DropTable(
                 name: "Vouchers");
-
-            migrationBuilder.DropTable(
-                name: "Products");
 
             migrationBuilder.DropTable(
                 name: "Categories");
