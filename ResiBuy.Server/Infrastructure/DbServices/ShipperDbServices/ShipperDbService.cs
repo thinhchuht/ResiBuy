@@ -56,7 +56,7 @@ namespace ResiBuy.Server.Infrastructure.DbServices.ShipperDbServices
                 if (currentArea == null || destinationArea == null)
                     throw new CustomException(ExceptionErrorCode.NotFound, "Khu vực không tồn tại");
                 // Giả sử bạn có một phương thức tính khoảng cách giữa hai khu vực
-                return await _mapBoxService.GetDirectionsAsync(currentArea.Longitude,currentArea.Latitude,destinationArea.Longitude,destinationArea.Latitude);
+                return await _mapBoxService.GetDirectionsAsync(currentArea.Longitude, currentArea.Latitude, destinationArea.Longitude, destinationArea.Latitude);
             }
             catch (Exception ex)
             {
@@ -141,6 +141,10 @@ namespace ResiBuy.Server.Infrastructure.DbServices.ShipperDbServices
                     throw new CustomException(ExceptionErrorCode.NotFound, "Shipper không tồn tại");
 
                 shipper.IsOnline = isOnline;
+                if (shipper.FirstTimeLogin == null)
+                {
+                    shipper.FirstTimeLogin = DateTime.Now;
+                }
                 await _context.SaveChangesAsync();
                 return shipper;
             }
@@ -180,7 +184,7 @@ namespace ResiBuy.Server.Infrastructure.DbServices.ShipperDbServices
         {
             try
             {
-                return await _context.Shippers.CountAsync( );
+                return await _context.Shippers.CountAsync();
             }
             catch (Exception ex)
             {
@@ -209,6 +213,5 @@ namespace ResiBuy.Server.Infrastructure.DbServices.ShipperDbServices
                 throw new CustomException(ExceptionErrorCode.RepositoryError, ex.Message);
             }
         }
-
     }
 }
