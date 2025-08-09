@@ -1,4 +1,5 @@
 using ResiBuy.Server.Application.Queriestore.StoreQueries;
+using ResiBuy.Server.Infrastructure.Model;
 
 namespace ResiBuy.Server.Controllers
 {
@@ -96,6 +97,16 @@ namespace ResiBuy.Server.Controllers
         public async Task<IActionResult> GetTopSaleDetail([FromQuery] int productId)
         {
             var query = new TopSaleDetailQuery(productId);
+            ResponseModel response = await _mediator.Send(query);
+            return Ok(response);
+        }
+        [HttpGet("get-chart-data")]
+        public async Task<IActionResult> GetChartData(
+            [FromQuery] Guid storeId,
+            [FromQuery] DateTime startDate,
+            [FromQuery] DateTime endDate)
+        {
+            var query = new GetChartDataQuery(storeId, startDate, endDate);
             ResponseModel response = await _mediator.Send(query);
             return Ok(response);
         }
