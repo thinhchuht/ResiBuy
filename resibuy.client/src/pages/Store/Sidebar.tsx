@@ -80,7 +80,7 @@ const menuItems = [
     id: "analytics",
     label: "Báo cáo",
     icon: <AnalyticsIcon />,
-    path: "analytics",
+    path: "chart-view",
   },
   // {
   //   id: "settings",

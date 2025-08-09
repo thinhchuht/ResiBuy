@@ -19,5 +19,6 @@ namespace ResiBuy.Server.Infrastructure.DbServices.StoreDbServices
         Task<SalesAnalysisDto> SalesAnalysis (Guid storeId, DateTime startDate, DateTime endDate);
         Task<Dictionary<int,ProductAndSale>> TopSaleProduct(Guid storeId, DateTime startDate, DateTime endDate);
         Task<List<ProductDetailAndSale>> TopSaleDetail(int productId);
+        Task<List<Dictionary<string, decimal>>> GetChartData(Guid storeId, DateTime startDate, DateTime endDate);
     }
 }

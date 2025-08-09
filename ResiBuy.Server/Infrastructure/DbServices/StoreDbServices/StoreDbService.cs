@@ -192,8 +192,8 @@ namespace ResiBuy.Server.Infrastructure.DbServices.StoreDbServices
             try
             {
                 var statistical = new StatisticalStoreDto();
-                var store = await _context.Stores.Include(s=>s.Products).Include(s => s.Vouchers).FirstOrDefaultAsync(s => s.Id == storeid);
-                if(store == null)
+                var store = await _context.Stores.Include(s => s.Products).Include(s => s.Vouchers).FirstOrDefaultAsync(s => s.Id == storeid);
+                if (store == null)
                 {
                     throw new CustomException(ExceptionErrorCode.NotFound);
                 }
@@ -271,7 +271,7 @@ namespace ResiBuy.Server.Infrastructure.DbServices.StoreDbServices
             int orderCount = 0;
             decimal totalSale = 0;
             int saleCount = 0;
-            foreach ( var detail in product.ProductDetails)
+            foreach (var detail in product.ProductDetails)
             {
                 saleCount = detail.OrderItems.Sum(oi => oi.Quantity);
                 if (saleCount > 0)
@@ -284,6 +284,63 @@ namespace ResiBuy.Server.Infrastructure.DbServices.StoreDbServices
                 productDetailSales.Add(new ProductDetailAndSale(productDetailDto, orderCount, totalSale, saleCount));
             }
             return productDetailSales;
+        }
+
+        public async Task<List<Dictionary<string, decimal>>> GetChartData(Guid storeId, DateTime startDate, DateTime endDate)
+        {
+            var result = new List<Dictionary<string, decimal>>();
+
+            startDate = startDate.Date;
+            endDate = endDate.Date;
+
+            int totalDays = (endDate - startDate).Days + 1;
+
+            if (totalDays <= 30)
+            {
+                var orders = await _context.Orders
+                    .Where(o => o.StoreId == storeId
+                        && o.Status == OrderStatus.Delivered
+                        && o.UpdateAt >= startDate
+                        && o.UpdateAt < endDate.AddDays(1))
+                    .ToListAsync();
+
+                for (var date = startDate; date <= endDate; date = date.AddDays(1))
+                {
+                    var orderInDay = orders.Where(o => o.UpdateAt.Date == date).ToList();
+                    decimal totalRevenue = orderInDay.Sum(o => o.TotalPrice - (decimal)o.ShippingFee);
+                    result.Add(new Dictionary<string, decimal>
+            {
+                { date.ToString("dd-MM"), totalRevenue }
+            });
+                }
+            }
+            else
+            {
+                DateTime currentMonth = new DateTime(startDate.Year, startDate.Month, 1);
+                DateTime endMonth = new DateTime(endDate.Year, endDate.Month, 1);
+
+                while (currentMonth <= endMonth)
+                {
+                    var nextMonth = currentMonth.AddMonths(1);
+                    var ordersInMonth = await _context.Orders
+                        .Where(o => o.StoreId == storeId
+                            && o.Status == OrderStatus.Delivered
+                            && o.UpdateAt >= currentMonth
+                            && o.UpdateAt < nextMonth)
+                        .ToListAsync();
+
+                    decimal totalRevenue = ordersInMonth.Sum(o => o.TotalPrice - (decimal)o.ShippingFee);
+
+                    result.Add(new Dictionary<string, decimal>
+            {
+                { currentMonth.ToString("MM-yyyy"), totalRevenue }
+            });
+
+                    currentMonth = nextMonth;
+                }
+            }
+
+            return result;
         }
     }
 }
