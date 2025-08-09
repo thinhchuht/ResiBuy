@@ -229,36 +229,37 @@ export function useRoomsLogic(buildingId?: string) {
     setEditingRoom(null);
   }, []);
 
-  const handleSubmitRoom = useCallback(
-    async (roomData: RoomDto) => {
-      setLoading(true);
-      try {
-        if (editingRoom) {
-          const response = await roomApi.update(roomData);
-          await fetchRoomsByBuildingId(buildingId!, pageNumber);
-          if (selectedRoom && selectedRoom.id === roomData.id) {
-            setSelectedRoom({ ...response, users: selectedRoom.users });
-          }
-          toast.success("Cập nhật phòng thành công!");
-        } else {
-          const createData: CreateRoomDto = {
-            name: roomData.name,
-            buildingId: roomData.buildingId || buildingId || "",
-          };
-          const response = await roomApi.create(createData);
-          await fetchRoomsByBuildingId(buildingId!, pageNumber);
-          toast.success("Thêm phòng mới thành công!");
+ const handleSubmitRoom = useCallback(
+  async (roomData: RoomDto) => {
+    setLoading(true);
+    try {
+      if (editingRoom) {
+        const response = await roomApi.update(roomData);
+        await fetchRoomsByBuildingId(buildingId!, pageNumber);
+        if (selectedRoom && selectedRoom.id === roomData.id) {
+          setSelectedRoom({ ...response, users: selectedRoom.users });
         }
-        setIsAddModalOpen(false);
-        setEditingRoom(null);
-      } catch (err: any) {
-        toast.error(err.message || "Lỗi khi lưu phòng");
-      } finally {
-        setLoading(false);
+        toast.success("Cập nhật phòng thành công!");
+      } else {
+        const createData: CreateRoomDto = {
+          name: roomData.name,
+          buildingId: roomData.buildingId || buildingId || "",
+        };
+        const response = await roomApi.create(createData);
+        await fetchRoomsByBuildingId(buildingId!, pageNumber);
+        toast.success("Thêm phòng mới thành công!");
       }
-    },
-    [editingRoom, selectedRoom, fetchRoomsByBuildingId, buildingId, pageNumber, toast]
-  );
+      setIsAddModalOpen(false);
+      setEditingRoom(null);
+    } catch (err: any) {
+      const errorMessage = err.message || "Lỗi khi lưu phòng";
+      console.error("Submit room error:", err);
+      toast.error(errorMessage);
+    } finally {
+      setLoading(false);
+    }
+  },
+  [editingRoom, selectedRoom, fetchRoomsByBuildingId, buildingId, pageNumber, toast]);
 
   const handleUpdateStatus = useCallback(
     async (roomId: string) => {

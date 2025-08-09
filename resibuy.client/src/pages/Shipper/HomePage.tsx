@@ -12,6 +12,14 @@ import {
   Tab,
   Pagination,
 } from "@mui/material";
+import {
+  Person as PersonIcon,
+  Store as StoreIcon,
+  Home as HomeIcon,
+  Paid as PaidIcon,
+  LocalShipping as LocalShippingIcon,
+  Inventory as InventoryIcon,
+} from "@mui/icons-material";
 import { useNavigate } from "react-router-dom";
 import orderApi from "../../api/order.api";
 import { useAuth } from "../../contexts/AuthContext";
@@ -34,23 +42,23 @@ interface Order {
   } | null;
 }
 
-// ✅ CHỈ 2 trạng thái theo yêu cầu
 const STATUS_OPTIONS = [
-
-    { value: "Assigned", label: "Chờ lấy hàng" },
+  { value: "Assigned", label: "📦 Chờ lấy hàng" },
   { value: "Shipped", label: "🚚 Đang giao" },
-  { value: "CustomerNotAvailable", label: "Không liên lạc được với khách" },
+  {
+    value: "CustomerNotAvailable",
+    label: "📞 Không liên lạc được với khách",
+  },
 ];
 
 function ShipperHome() {
   const { user } = useAuth();
-  const { lastConfirmedOrderId } = useOrderEvent();
+  const { lastConfirmedOrderId, lastNewOrderId } = useOrderEvent();
   const [orders, setOrders] = useState<Order[]>([]);
   const [loading, setLoading] = useState<boolean>(true);
-  const [selectedStatus, setSelectedStatus] = useState<string>("Shipped");
+  const [selectedStatus, setSelectedStatus] = useState<string>("Assigned");
   const [currentPage, setCurrentPage] = useState<number>(1);
   const [totalPages, setTotalPages] = useState<number>(1);
-
   const navigate = useNavigate();
 
   const fetchOrders = async (status: string, page: number = 1) => {
@@ -76,27 +84,24 @@ function ShipperHome() {
     }
   };
 
-  // Reset về trang 1 khi đổi trạng thái
   useEffect(() => {
     setCurrentPage(1);
   }, [selectedStatus]);
 
-  // Gọi API khi trạng thái hoặc trang thay đổi
   useEffect(() => {
     fetchOrders(selectedStatus, currentPage);
   }, [user?.id, selectedStatus, currentPage]);
 
-  // Reload lại khi có đơn hàng mới được xác nhận
   useEffect(() => {
-    if (lastConfirmedOrderId) {
+    if (lastNewOrderId || lastConfirmedOrderId) {
       fetchOrders(selectedStatus, currentPage);
     }
-  }, [lastConfirmedOrderId]);
+  }, [lastNewOrderId, lastConfirmedOrderId]);
 
   return (
     <Box sx={{ p: 3 }}>
       <Typography variant="h5" gutterBottom fontWeight="bold">
-        🚚 Đơn hàng của bạn
+        Đơn hàng của bạn
       </Typography>
 
       <Tabs
@@ -123,23 +128,29 @@ function ShipperHome() {
                 <CardContent>
                   <Stack spacing={1}>
                     <Typography variant="subtitle1" fontWeight={600} noWrap>
+                      <InventoryIcon sx={{ fontSize: 18, mr: 1 }} />
                       Mã đơn: {order.id}
                     </Typography>
 
                     <Typography variant="body2">
-                      <strong>Người mua:</strong> {order.user?.fullName || "---"}
+                      <PersonIcon sx={{ fontSize: 18, mr: 1 }} />
+                      <strong>Người mua:</strong>{" "}
+                      {order.user?.fullName || "---"}
                     </Typography>
 
                     <Typography variant="body2">
+                      <HomeIcon sx={{ fontSize: 18, mr: 1 }} />
                       <strong>Địa chỉ giao:</strong>{" "}
                       {`${order.roomQueryResult.name}, ${order.roomQueryResult.buildingName}, ${order.roomQueryResult.areaName}`}
                     </Typography>
 
                     <Typography variant="body2">
+                      <StoreIcon sx={{ fontSize: 18, mr: 1 }} />
                       <strong>Cửa hàng:</strong> {order.store.name}
                     </Typography>
 
                     <Stack direction="row" spacing={1} alignItems="center">
+                      <LocalShippingIcon sx={{ fontSize: 18 }} />
                       <Typography variant="body2">
                         <strong>Trạng thái:</strong>
                       </Typography>
@@ -157,6 +168,7 @@ function ShipperHome() {
                     </Stack>
 
                     <Typography variant="body2" color="primary">
+                      <PaidIcon sx={{ fontSize: 18, mr: 1 }} />
                       <strong>Tổng tiền:</strong>{" "}
                       {order.totalPrice.toLocaleString()} đ
                     </Typography>

@@ -57,7 +57,7 @@ function ShipperStatsCards() {
       valueColor: "#2e7d32",
     },
     {
-      title: "Shipper Bị Tố Cáo",
+      title: "Shipper Bị Khóa",
       value: stats.totalReported.toString(),
       icon: ShipperIcon,
       iconColor: "#ef4444",

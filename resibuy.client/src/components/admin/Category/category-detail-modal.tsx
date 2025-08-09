@@ -7,21 +7,12 @@ import {
   Typography,
   Button,
   IconButton,
-  Tabs,
-  Tab,
-  Table,
-  TableHead,
-  TableBody,
-  TableRow,
-  TableCell,
   CircularProgress,
 } from "@mui/material";
 import {
   Close,
-  Category as CategoryIcon,
-  Inventory,
   Edit,
-  Delete,
+  Inventory,
 } from "@mui/icons-material";
 import {
   formatCurrency,
@@ -29,13 +20,13 @@ import {
 } from "./seg/utlis";
 import type { Category, Product } from "../../../types/models";
 import { useNavigate } from "react-router-dom";
+import CustomTable from "../../../components/CustomTable";
 
 interface CategoryDetailModalProps {
   isOpen: boolean;
   onClose: () => void;
   category: Category | null;
   onEdit?: (category: Category) => void;
-  onDelete?: (categoryId: string) => void;
 }
 
 export function CategoryDetailModal({
@@ -43,20 +34,20 @@ export function CategoryDetailModal({
   onClose,
   category,
   onEdit,
-  onDelete,
 }: CategoryDetailModalProps) {
-  const [activeTab, setActiveTab] = useState<"overview" | "products">("overview");
   const [products, setProducts] = useState<Product[]>([]);
   const [loadingProducts, setLoadingProducts] = useState(false);
   const [totalProducts, setTotalProducts] = useState<number>(0);
-  const [totalSoldProducts, setTotalSoldProducts] = useState<number>(0);
   const [totalRevenue, setTotalRevenue] = useState<number>(0);
   const [loadingStats, setLoadingStats] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [pageNumber, setPageNumber] = useState(1);
+  const [pageSize] = useState(10);
+  const [totalCount, setTotalCount] = useState(0);
+  const [totalPages, setTotalPages] = useState(1);
   const {
     getProductsByCategoryId,
     countProductsByCategoryId,
-    countSoldProductsByCategoryId,
     calculateCategoryRevenue,
   } = useCategoriesLogic();
   const navigate = useNavigate();
@@ -66,71 +57,137 @@ export function CategoryDetailModal({
     console.log("CategoryDetailModal props:", { isOpen, category });
   }, [isOpen, category]);
 
-  // Fetch sản phẩm khi tab "products" được chọn
+  // Fetch sản phẩm và thống kê khi modal mở hoặc pageNumber thay đổi
   useEffect(() => {
-    if (isOpen && category?.id && activeTab === "products") {
+    if (isOpen && category?.id) {
+      console.log("Fetching data for category.id:", category.id, "pageNumber:", pageNumber);
+      setLoadingStats(true);
       setLoadingProducts(true);
-      getProductsByCategoryId(category.id)
-        .then((productsData) => {
-          console.log("Products fetched:", productsData);
-          setProducts(productsData);
-          setLoadingProducts(false);
+      setError(null);
+
+      // Fetch products với phân trang
+      getProductsByCategoryId(category.id, pageNumber, pageSize)
+        .then((response) => {
+          console.log("Products fetched:", response);
+          setProducts(response.items);
+          setTotalCount(response.totalCount);
+          setTotalPages(response.totalPages);
         })
         .catch((err) => {
           console.error("Error fetching products:", err);
           setProducts([]);
-          setLoadingProducts(false);
+          setTotalCount(0);
+          setTotalPages(1);
           setError("Lỗi khi tải danh sách sản phẩm");
-        });
-    }
-  }, [isOpen, category, activeTab, getProductsByCategoryId]);
-
-  // Fetch thống kê danh mục
-  useEffect(() => {
-    if (isOpen && category?.id) {
-      console.log("useEffect for stats triggered with category.id:", category.id);
-      setLoadingStats(true);
-      setError(null);
-
-      // Thử gọi countProductsByCategoryId độc lập để kiểm tra
-      countProductsByCategoryId(category.id)
-        .then((count) => {
-          console.log("Direct countProductsByCategoryId result:", count);
-          setTotalProducts(Number(count) || 0);
         })
-        .catch((err) => {
-          console.error("Direct countProductsByCategoryId error:", err);
-          setTotalProducts(0);
+        .finally(() => {
+          setLoadingProducts(false);
         });
 
+      // Fetch stats
       Promise.all([
         countProductsByCategoryId(category.id),
-        countSoldProductsByCategoryId(category.id),
         calculateCategoryRevenue(category.id),
       ])
-        .then(([productsCount, soldProductsCount, revenue]) => {
-          console.log("Before setting totalProducts:", productsCount);
-          console.log("Stats fetched:", { productsCount, soldProductsCount, revenue });
+        .then(([productsCount, revenue]) => {
+          console.log("Stats fetched:", { productsCount, revenue });
           setTotalProducts(Number(productsCount) || 0);
-          setTotalSoldProducts(Number(soldProductsCount) || 0);
           setTotalRevenue(Number(revenue) || 0);
-          setLoadingStats(false);
         })
         .catch((err) => {
           console.error("Error fetching category stats:", err);
           setError("Lỗi khi tải thống kê danh mục");
           setTotalProducts(0);
-          setTotalSoldProducts(0);
           setTotalRevenue(0);
+        })
+        .finally(() => {
           setLoadingStats(false);
         });
     }
-  }, [isOpen, category, countProductsByCategoryId, countSoldProductsByCategoryId, calculateCategoryRevenue]);
+  }, [isOpen, category, pageNumber, pageSize]);
 
   if (!isOpen || !category || !category.id) {
     console.log("CategoryDetailModal not rendered due to:", { isOpen, category });
     return null;
   }
+
+  const columns = [
+    {
+      key: "id" as keyof Product,
+      label: "ID Sản Phẩm",
+      sortable: true,
+      render: (product: Product) => (
+        <Typography
+          variant="body2"
+          sx={{
+            fontFamily: "monospace",
+            fontWeight: "medium",
+            color: "primary.main",
+          }}
+        >
+          {product.id}
+        </Typography>
+      ),
+    },
+    {
+      key: "name" as keyof Product,
+      label: "Tên",
+      sortable: true,
+      render: (product: Product) => (
+        <Typography
+          variant="body2"
+          sx={{
+            color: "primary.main",
+            cursor: "pointer",
+            textDecoration: "none",
+            transition: "all 0.3s ease-in-out",
+            "&:hover": {
+              backgroundImage: "linear-gradient(90deg, red, orange, yellow, green, blue, indigo, violet)",
+              WebkitBackgroundClip: "text",
+              WebkitTextFillColor: "transparent",
+            },
+          }}
+          onClick={() => navigate(`/products?id=${product.id}`)}
+        >
+          {product.name}
+        </Typography>
+      ),
+    },
+    {
+      key: "price" as keyof Product,
+      label: "Giá",
+      sortable: true,
+      render: (product: Product) => (
+        <Typography variant="body2" sx={{ color: "grey.900" }}>
+          {product.productDetails[0] ? formatCurrency(product.productDetails[0].price) : "N/A"}
+        </Typography>
+      ),
+    },
+    {
+      key: "isOutOfStock" as keyof Product,
+      label: "Trạng Thái",
+      sortable: true,
+      render: (product: Product) => (
+        <Typography variant="body2" sx={{ color: "grey.900" }}>
+          {product.productDetails[0]
+            ? product.productDetails[0].isOutOfStock
+              ? "Hết hàng"
+              : "Còn hàng"
+            : "N/A"}
+        </Typography>
+      ),
+
+    },
+     {
+      key: "sold",
+      label: "Đã bán",
+      render: (row) => (
+        <Typography sx={{ fontSize: "0.875rem", color: "grey.900" }}>
+          {row.productDetails?.[0] ? (row.sold) : "N/A"}
+        </Typography>
+      ),
+    },
+  ];
 
   return (
     <Dialog
@@ -196,22 +253,6 @@ export function CategoryDetailModal({
               }}
             >
               Sửa
-            </Button>
-          )}
-          {onDelete && (
-            <Button
-              onClick={() => onDelete(category.id)}
-              startIcon={<Delete sx={{ fontSize: 16 }} />}
-              sx={{
-                px: 1.5,
-                py: 1,
-                bgcolor: "error.main",
-                color: "white",
-                borderRadius: 2,
-                "&:hover": { bgcolor: "error.dark" },
-              }}
-            >
-              Xóa
             </Button>
           )}
           <IconButton
@@ -317,65 +358,11 @@ export function CategoryDetailModal({
                   Tổng Sản Phẩm
                 </Typography>
               </Box>
-              <Box>
-                <Typography
-                  variant="h5"
-                  sx={{ color: "success.main", fontWeight: "bold" }}
-                >
-                  {formatCurrency(totalRevenue)}
-                </Typography>
-                <Typography
-                  variant="caption"
-                  sx={{ color: "grey.500" }}
-                >
-                  Tổng Doanh Thu
-                </Typography>
-              </Box>
+             
             </Box>
           </Box>
         )}
       </DialogContent>
-
-      <Box
-        sx={{
-          borderBottom: 1,
-          borderColor: "grey.200",
-          position: "sticky",
-          top: 0,
-          zIndex: 9,
-          bgcolor: "background.paper",
-        }}
-      >
-        <Tabs
-          value={activeTab}
-          onChange={(_, newValue) => setActiveTab(newValue)}
-          sx={{ "& .MuiTabs-indicator": { bgcolor: "primary.main" } }}
-        >
-          {[
-            { id: "overview", label: "Tổng Quan", icon: <CategoryIcon sx={{ fontSize: 16 }} /> },
-            { id: "products", label: "Sản Phẩm", icon: <Inventory sx={{ fontSize: 16 }} /> },
-          ].map((tab) => (
-            <Tab
-              key={tab.id}
-              value={tab.id}
-              label={
-                <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
-                  {tab.icon}
-                  {tab.label}
-                </Box>
-              }
-              sx={{
-                px: 3,
-                py: 2,
-                fontSize: "0.875rem",
-                fontWeight: "medium",
-                color: activeTab === tab.id ? "primary.main" : "grey.500",
-                "&:hover": { color: "grey.700" },
-              }}
-            />
-          ))}
-        </Tabs>
-      </Box>
 
       <DialogContent
         sx={{
@@ -388,135 +375,34 @@ export function CategoryDetailModal({
           gap: 3,
         }}
       >
-        {activeTab === "overview" && (
-          <Box>
-            <Typography
-              variant="h6"
-              sx={{ color: "grey.900", mb: 2 }}
-            >
-              Thông Tin Danh Mục
-            </Typography>
-            {loadingStats ? (
-              <Box sx={{ display: "flex", justifyContent: "center", py: 2 }}>
-                <CircularProgress />
-              </Box>
-            ) : (
-              <Box
-                sx={{
-                  display: "grid",
-                  gridTemplateColumns: { xs: "1fr", md: "1fr 1fr" },
-                  gap: 3,
-                }}
-              >
-                <Box>
-                  <Typography
-                    variant="body2"
-                    sx={{ color: "grey.500", fontWeight: "medium" }}
-                  >
-                    Tổng Sản Phẩm Đã Bán
-                  </Typography>
-                  <Typography sx={{ color: "grey.900" }}>
-                    {totalSoldProducts}
-                  </Typography>
-                </Box>
-                <Box>
-                  <Typography
-                    variant="body2"
-                    sx={{ color: "grey.500", fontWeight: "medium" }}
-                  >
-                    Giá Trị Sản Phẩm Trung Bình
-                  </Typography>
-                  <Typography sx={{ color: "grey.900" }}>
-                    {totalProducts > 0 ? formatCurrency(totalRevenue / totalProducts) : "0 VNĐ"}
-                  </Typography>
-                </Box>
-              </Box>
-            )}
-          </Box>
-        )}
-
-        {activeTab === "products" && (
-          <Box>
-            <Typography variant="h6" sx={{ color: "grey.900", mb: 2 }}>
-              Sản Phẩm ({totalProducts} sản phẩm)
-            </Typography>
-            {loadingProducts ? (
-              <Box sx={{ display: "flex", justifyContent: "center", py: 4 }}>
-                <CircularProgress />
-              </Box>
-            ) : products.length > 0 ? (
-              <Box sx={{ border: 1, borderColor: "grey.200", borderRadius: 2, overflow: "hidden" }}>
-                <Table>
-                  <TableHead sx={{ bgcolor: "grey.50" }}>
-                    <TableRow>
-                      <TableCell sx={{ px: 2, py: 1.5, color: "grey.500", fontSize: "0.75rem", fontWeight: "medium", textTransform: "uppercase" }}>
-                        ID Sản Phẩm
-                      </TableCell>
-                      <TableCell sx={{ px: 2, py: 1.5, color: "grey.500", fontSize: "0.75rem", fontWeight: "medium", textTransform: "uppercase" }}>
-                        Tên
-                      </TableCell>
-                      <TableCell sx={{ px: 2, py: 1.5, color: "grey.500", fontSize: "0.75rem", fontWeight: "medium", textTransform: "uppercase" }}>
-                        Giá
-                      </TableCell>
-                      <TableCell sx={{ px: 2, py: 1.5, color: "grey.500", fontSize: "0.75rem", fontWeight: "medium", textTransform: "uppercase" }}>
-                        Trạng Thái
-                      </TableCell>
-                      <TableCell sx={{ px: 2, py: 1.5, color: "grey.500", fontSize: "0.75rem", fontWeight: "medium", textTransform: "uppercase" }}>
-                        Đã Bán
-                      </TableCell>
-                    </TableRow>
-                  </TableHead>
-                  <TableBody sx={{ "& tr:hover": { bgcolor: "grey.50" } }}>
-                    {products.map((product) => (
-                      <TableRow key={product.id}>
-                        <TableCell sx={{ px: 2, py: 1.5, fontFamily: "monospace", fontSize: "0.875rem", color: "primary.main" }}>
-                          {product.id}
-                        </TableCell>
-                        <TableCell
-                          sx={{
-                            px: 2,
-                            py: 1.5,
-                            fontSize: "0.875rem",
-                            color: "primary.main",
-                            cursor: "pointer",
-                            textDecoration: "none",
-                            transition: "all 0.3s ease-in-out",
-                            "&:hover": {
-                              backgroundImage: "linear-gradient(90deg, red, orange, yellow, green, blue, indigo, violet)",
-                              WebkitBackgroundClip: "text",
-                              WebkitTextFillColor: "transparent",
-                            },
-                          }}
-                          onClick={() => navigate(`/products?id=${product.id}`)}
-                        >
-                          {product.name}
-                        </TableCell>
-                        <TableCell sx={{ px: 2, py: 1.5, fontSize: "0.875rem", color: "grey.900" }}>
-                          {product.productDetails[0] ? formatCurrency(product.productDetails[0].price) : "N/A"}
-                        </TableCell>
-                        <TableCell sx={{ px: 2, py: 1.5, fontSize: "0.875rem", color: "grey.900" }}>
-                          {product.productDetails[0]
-                            ? product.productDetails[0].isOutOfStock
-                              ? "Hết hàng"
-                              : "Còn hàng"
-                            : "N/A"}
-                        </TableCell>
-                        <TableCell sx={{ px: 2, py: 1.5, fontSize: "0.875rem", color: "grey.900" }}>
-                          {product.productDetails[0] ? product.productDetails[0].sold : "N/A"}
-                        </TableCell>
-                      </TableRow>
-                    ))}
-                  </TableBody>
-                </Table>
-              </Box>
-            ) : (
-              <Box sx={{ textAlign: "center", py: 4, color: "grey.500" }}>
-                <Inventory sx={{ fontSize: 48, color: "grey.300", mb: 2 }} />
-                <Typography>Không tìm thấy sản phẩm cho danh mục này</Typography>
-              </Box>
-            )}
-          </Box>
-        )}
+        <Box>
+          <Typography variant="h6" sx={{ color: "grey.900", mb: 2 }}>
+            Sản Phẩm ({totalProducts} sản phẩm)
+          </Typography>
+          {loadingProducts ? (
+            <Box sx={{ display: "flex", justifyContent: "center", py: 4 }}>
+              <CircularProgress />
+            </Box>
+          ) : products.length > 0 ? (
+            <CustomTable
+              data={products}
+              totalCount={totalCount}
+              columns={columns}
+              onPageChange={(page) => setPageNumber(page)}
+              headerTitle=""
+              description=""
+              showExport={false}
+              showBulkActions={false}
+              itemsPerPage={pageSize}
+              showSearch={false}
+            />
+          ) : (
+            <Box sx={{ textAlign: "center", py: 4, color: "grey.500" }}>
+              <Inventory sx={{ fontSize: 48, color: "grey.300", mb: 2 }} />
+              <Typography>Không tìm thấy sản phẩm cho danh mục này</Typography>
+            </Box>
+          )}
+        </Box>
       </DialogContent>
     </Dialog>
   );

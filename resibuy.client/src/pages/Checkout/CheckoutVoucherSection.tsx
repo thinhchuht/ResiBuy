@@ -5,9 +5,10 @@ import { VoucherType, type Voucher } from "../../types/models";
 interface CheckoutVoucherSectionProps {
   selectedVoucher?: Voucher;
   onOpenVoucherModal: () => void;
+  onRemoveVoucher?: () => void;
 }
 
-const CheckoutVoucherSection = ({ selectedVoucher, onOpenVoucherModal }: CheckoutVoucherSectionProps) => (
+const CheckoutVoucherSection = ({ selectedVoucher, onOpenVoucherModal, onRemoveVoucher }: CheckoutVoucherSectionProps) => (
   <>
     <Box sx={{ display: "flex", alignItems: "center", justifyContent: "space-between", mt: 4, mb: 2 }}>
       <Box sx={{ display: "flex", alignItems: "center" }}>
@@ -16,9 +17,25 @@ const CheckoutVoucherSection = ({ selectedVoucher, onOpenVoucherModal }: Checkou
           Voucher của Shop
         </Typography>
       </Box>
-      <Button variant="text" sx={{ textTransform: "none", color: "#1976d2", "&:hover": { color: "red" } }} onClick={onOpenVoucherModal}>
-        {selectedVoucher ? "Đổi Voucher" : "Chọn Voucher"}
-      </Button>
+      <Box>
+        <Button
+          variant="text"
+          sx={{ textTransform: "none", color: "#1976d2", "&:hover": { color: "red" } }}
+          onClick={onOpenVoucherModal}
+        >
+          {selectedVoucher ? "Đổi Voucher" : "Chọn Voucher"}
+        </Button>
+        {selectedVoucher && onRemoveVoucher && (
+          <Button
+            variant="text"
+            color="error"
+            sx={{ textTransform: "none", ml: 1 }}
+            onClick={onRemoveVoucher}
+          >
+            Bỏ voucher
+          </Button>
+        )}
+      </Box>
     </Box>
     {selectedVoucher && (
       <Box sx={{ mb: 2, p: 2, bgcolor: "#f5f5f5", borderRadius: 1 }}>

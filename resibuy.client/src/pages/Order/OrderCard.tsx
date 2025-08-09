@@ -118,6 +118,7 @@ interface OrderCardProps {
   ) => void;
   onCancel?: (orderId: string) => void;
   isStore?: boolean; // Prop mới để xác định có phải store không
+  onCloseModal?: () => void; 
 }
 
 const OrderCard = ({
@@ -126,6 +127,7 @@ const OrderCard = ({
   onAddressChange,
   onCancel,
   isStore = false, // Mặc định là false
+  onCloseModal,
 }: OrderCardProps) => {
   const navigate = useNavigate();
   const { user } = useAuth();
@@ -431,25 +433,38 @@ const OrderCard = ({
       return;
     }
     if (!user?.id) return;
-    await orderApi.updateOrder(
-      user?.id,
-      order.id,
-      selectedRoom.id ?? "",
-      noteValue
-    );
-    setOpenAddressModal(false);
-    if (onAddressChange) {
-      const areaObj = areasData.find((a) => a.id === selectedArea);
-      const buildingObj = buildingsData.find((b) => b.id === selectedBuilding);
-      onAddressChange(
+    
+    try {
+      const result = await orderApi.updateOrder(
+        user?.id,
         order.id,
-        areaObj?.name ?? "",
-        buildingObj?.name ?? "",
-        selectedRoom.name ?? "",
-        selectedRoom.id ?? ""
+        selectedRoom.id ?? "",
+        noteValue
       );
+      
+      if (result) {
+        order.shippingFee = result.shippingFee;
+        order.totalPrice = result.totalPrice;
+      }
+      
+      setOpenAddressModal(false);
+      if (onAddressChange) {
+        const areaObj = areasData.find((a) => a.id === selectedArea);
+        const buildingObj = buildingsData.find((b) => b.id === selectedBuilding);
+        onAddressChange(
+          order.id,
+          areaObj?.name ?? "",
+          buildingObj?.name ?? "",
+          selectedRoom.name ?? "",
+          selectedRoom.id ?? ""
+        );
+      }
+      if (onUpdate) onUpdate();
+      
+      toast.success(`Cập nhật địa chỉ thành công! Phí vận chuyển được đã đổi thành ${formatPrice(result.shippingFee)}`);
+    } catch (error) {
+      console.error(error);
     }
-    if (onUpdate) onUpdate();
   };
 
   const handleEditNote = () => setEditNote(true);
@@ -715,7 +730,10 @@ const OrderCard = ({
               }}
             >
               <Box
-                onClick={() => navigate(`/products?id=${item.productId}`)}
+                onClick={() => {
+                  navigate(`/products?id=${item.productId}`);
+                  onCloseModal?.();
+                }}
                 sx={{
                   display: "flex",
                   alignItems: "center",
@@ -746,23 +764,26 @@ const OrderCard = ({
                   </Typography>
                   <Box sx={{ mb: 0.5 }}>
                     {item.addtionalData && item.addtionalData.length > 0 && (
-                      <Typography
-                        variant="caption"
-                        component="div"
-                        sx={{
-                          color: "text.secondary",
-                          lineHeight: 1.5,
-                          overflow: "hidden",
-                          fontWeight: 600,
-                        }}
-                      >
-                        {item.addtionalData.map((data, index) => (
-                          <span key={data.id}>
-                            {data.key} : {data.value}
-                            {index < item.addtionalData.length - 1 && " - "}
-                          </span>
+                      <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 0.5, mt: 0.5, mb: 1 }}>
+                        {item.addtionalData.map((data) => (
+                          <Chip
+                            key={data.id}
+                            label={`${data.key}: ${data.value}`}
+                            size="small"
+                            sx={{
+                              fontSize: '0.7rem',
+                              height: 22,
+                              '& .MuiChip-label': {
+                                px: 1,
+                              },
+                              backgroundColor: 'rgba(25, 118, 210, 0.08)',
+                              color: 'primary.main',
+                              border: '1px solid rgba(25, 118, 210, 0.2)',
+                              borderRadius: 1,
+                            }}
+                          />
                         ))}
-                      </Typography>
+                      </Box>
                     )}
                   </Box>
                   <Typography

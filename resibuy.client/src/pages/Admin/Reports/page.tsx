@@ -47,7 +47,6 @@ import {
   type HubEventHandler,
 } from "../../../hooks/useEventHub";
 import type { ReportCreatedDto } from "../../../types/hubEventDto";
-import { useToastify } from "../../../hooks/useToastify";
 
 export interface Report {
   id: string;
@@ -96,7 +95,7 @@ export default function ReportsPage() {
   const [totalCount, setTotalCount] = useState(0);
   const [pageNumber, setPageNumber] = useState(1);
   const [pageSize] = useState(10);
-  const toast = useToastify();
+
   const [stats, setStats] = useState<ReportStats>({
     total: 0,
     resolved: 0,
@@ -117,12 +116,12 @@ export default function ReportsPage() {
   const [selectedReport, setSelectedReport] = useState<Report | null>(null);
   const [orderDetails, setOrderDetails] = useState<OrderApiResult | null>(null);
   const [isLoadingOrder, setIsLoadingOrder] = useState(false);
+  const [isLoadingStats, setIsLoadingStats] = useState(false);
   const [isDetailModalOpen, setIsDetailModalOpen] = useState(false);
   const [isConfirmModalOpen, setIsConfirmModalOpen] = useState(false);
 
   const handleOrderReported = useCallback(
     (data: ReportCreatedDto) => {
-      toast.success("Vừa có 1 báo cáo mới được tạo");
       const newReport: Report = {
         id: data.id,
         title: data.title,
@@ -241,6 +240,7 @@ export default function ReportsPage() {
   };
 
   const loadStats = async () => {
+    setIsLoadingStats(true);
     try {
       const response = await reportApi.getCount();
       const statsData = response.data;
@@ -254,6 +254,8 @@ export default function ReportsPage() {
       });
     } catch (error) {
       console.error("Error loading stats:", error);
+    } finally {
+      setIsLoadingStats(false);
     }
   };
 
@@ -434,6 +436,7 @@ export default function ReportsPage() {
 
   useEffect(() => {
     loadReports();
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [pageNumber, filters]);
 
   useEffect(() => {
@@ -486,9 +489,11 @@ export default function ReportsPage() {
           }}
         >
           <Box>
-            <Typography variant="h4" fontWeight={600} gutterBottom>
+
+            <Typography variant="h4" color="text.secondary"  >
               Quản lý báo cáo
             </Typography>
+
             <Typography variant="body2" color="text.secondary">
               Thống kê và quản lý các đơn hàng bị tố cáo
             </Typography>
@@ -496,47 +501,74 @@ export default function ReportsPage() {
 
           {/* Statistics Cards */}
           <Box sx={{ display: "flex", flexWrap: "wrap", gap: 3 }}>
-            {[
-              { label: "Tổng số báo cáo", value: stats.total, color: "text.primary" },
-              { label: "Đã xử lý", value: stats.resolved, color: "success.main" },
-              { label: "Chờ xử lý", value: stats.unResolved, color: "warning.main" },
-              { label: "Tỷ lệ xử lý", value: `${stats.total > 0 ? Math.round((stats.resolved / stats.total) * 100) : 0}%`, color: "info.main" }
-            ].map((stat, index) => (
-              <Card key={index} sx={{ flex: { xs: "1 1 100%", sm: "1 1 45%", md: "1 1 22%" }, minWidth: 200 }}>
-                <CardContent>
-                  <Typography color="text.secondary" gutterBottom>
-                    {stat.label}
-                  </Typography>
-                  <Typography variant="h4" fontWeight={600} color={stat.color}>
-                    {stat.value}
-                  </Typography>
-                </CardContent>
-              </Card>
-            ))}
+            {isLoadingStats ? (
+              // Loading skeleton for statistics cards
+              Array.from({ length: 4 }).map((_, index) => (
+                <Card key={index} sx={{ flex: { xs: "1 1 100%", sm: "1 1 45%", md: "1 1 22%" }, minWidth: 200 }}>
+                  <CardContent sx={{ display: "flex", flexDirection: "column", alignItems: "center", py: 3 }}>
+                    <CircularProgress size={24} sx={{ mb: 1 }} />
+                    <Typography variant="body2" color="text.secondary">
+                      Đang tải...
+                    </Typography>
+                  </CardContent>
+                </Card>
+              ))
+            ) : (
+              [
+                { label: "Tổng số báo cáo", value: stats.total, color: "text.primary" },
+                { label: "Đã xử lý", value: stats.resolved, color: "success.main" },
+                { label: "Chờ xử lý", value: stats.unResolved, color: "warning.main" },
+                { label: "Tỷ lệ xử lý", value: `${stats.total > 0 ? Math.round((stats.resolved / stats.total) * 100) : 0}%`, color: "info.main" }
+              ].map((stat, index) => (
+                <Card key={index} sx={{ flex: { xs: "1 1 100%", sm: "1 1 45%", md: "1 1 22%" }, minWidth: 200 }}>
+                  <CardContent>
+                    <Typography color="text.secondary" gutterBottom>
+                      {stat.label}
+                    </Typography>
+                    <Typography variant="h4" fontWeight={600} color={stat.color}>
+                      {stat.value}
+                    </Typography>
+                  </CardContent>
+                </Card>
+              ))
+            )}
           </Box>
 
           {/* Target Statistics */}
           <Box sx={{ display: "flex", flexWrap: "wrap", gap: 2 }}>
-            {[
-              { icon: Person, label: "Báo cáo khách hàng", value: stats.customerTarget, color: "primary.main" },
-              { icon: Store, label: "Báo cáo cửa hàng", value: stats.storeTarget, color: "secondary.main" },
-              { icon: LocalShipping, label: "Báo cáo người giao hàng", value: stats.shipperTarget, color: "warning.main" }
-            ].map((item, index) => {
-              const IconComponent = item.icon;
-              return (
+            {isLoadingStats ? (
+              Array.from({ length: 3 }).map((_, index) => (
                 <Card key={index} sx={{ flex: { xs: "1 1 100%", sm: "1 1 30%" }, minWidth: 200 }}>
-                  <CardContent sx={{ textAlign: "center" }}>
-                    <IconComponent sx={{ fontSize: 40, color: item.color, mb: 1 }} />
-                    <Typography variant="h6" fontWeight={600}>
-                      {item.value}
-                    </Typography>
+                  <CardContent sx={{ textAlign: "center", py: 3 }}>
+                    <CircularProgress size={32} sx={{ mb: 2 }} />
                     <Typography variant="body2" color="text.secondary">
-                      {item.label}
+                      Đang tải...
                     </Typography>
                   </CardContent>
                 </Card>
-              );
-            })}
+              ))
+            ) : (
+              [
+                { icon: Person, label: "Báo cáo khách hàng", value: stats.customerTarget, color: "primary.main" },
+                { icon: Store, label: "Báo cáo cửa hàng", value: stats.storeTarget, color: "secondary.main" },
+                { icon: LocalShipping, label: "Báo cáo người giao hàng", value: stats.shipperTarget, color: "warning.main" }
+              ].map((item, index) => {
+                const IconComponent = item.icon;
+                return (
+                  <Card key={index} sx={{ flex: { xs: "1 1 100%", sm: "1 1 30%" }, minWidth: 200 }}>
+                    <CardContent sx={{ textAlign: "center" }}>
+                      <IconComponent sx={{ fontSize: 40, color: item.color, mb: 1 }} />
+                      <Typography variant="h6" fontWeight={600}>
+                        {item.value}
+                      </Typography>
+                      <Typography variant="body2" color="text.secondary">
+                        {item.label}
+                      </Typography>
+                    </CardContent>
+                  </Card>
+                );
+              })
+            )}
           </Box>
 
           {/* Filters */}

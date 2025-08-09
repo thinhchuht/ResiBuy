@@ -85,7 +85,7 @@ const Checkout: React.FC = () => {
     setSelectedStoreId(null);
   };
 
-  const handleUpdateTempOrder = async (fields: Partial<{ orderId: string; voucherId: string; note: string; paymentMethod: string; addressId: string }>) => {
+  const handleUpdateTempOrder = async (fields: Partial<{ orderId: string; voucherId: string | null; note: string; paymentMethod: string; addressId: string }>) => {
     if (!tempOrderData || !user) return false;
     const paymentMethod = (fields.paymentMethod as PaymentMethod) || tempOrderData.paymentMethod;
     const addressId = fields.addressId || tempOrderData.addressId;
@@ -93,7 +93,10 @@ const Checkout: React.FC = () => {
       id: tempOrderData.id,
       orders: tempOrderData.orders.map((order) => ({
         id: order.id,
-        voucherId: fields.voucherId && fields.orderId === order.id ? fields.voucherId : order.voucherId,
+        voucherId:
+          fields.voucherId !== undefined && fields.orderId === order.id
+            ? fields.voucherId || null 
+            : order.voucherId,
         note: fields.note && fields.orderId === order.id ? fields.note : order.note || "",
       })),
       paymentMethod,
@@ -118,6 +121,18 @@ const Checkout: React.FC = () => {
       setSelectedVouchers((prev) => ({ ...prev, [selectedStoreId]: voucher }));
       handleCloseVoucherModal();
     }
+  };
+
+  const handleRemoveVoucher = async (storeId: string) => {
+    if (!tempOrderData || !user) return;
+    const order = tempOrderData.orders.find((o) => o.storeId === storeId);
+    if (!order) return;
+    await handleUpdateTempOrder({ orderId: order.id, voucherId: null });
+    setSelectedVouchers((prev) => {
+      const newVouchers = { ...prev };
+      delete newVouchers[storeId];
+      return newVouchers;
+    });
   };
 
   const handleNoteSubmit = async (orderId: string, note: string) => {
@@ -191,7 +206,11 @@ const Checkout: React.FC = () => {
                     </Typography>
                   </Box>
                 )}
-                <CheckoutVoucherSection selectedVoucher={selectedVoucher} onOpenVoucherModal={() => handleOpenVoucherModal(order.storeId)} />
+                <CheckoutVoucherSection
+                  selectedVoucher={selectedVoucher}
+                  onOpenVoucherModal={() => handleOpenVoucherModal(order.storeId)}
+                  onRemoveVoucher={selectedVoucher ? () => handleRemoveVoucher(order.storeId) : undefined}
+                />
                 <NoteSection orderId={order.id} onNoteSubmit={handleNoteSubmit} />
                 <Divider sx={{ my: 3 }} />
                 {/* Shipping Fee */}

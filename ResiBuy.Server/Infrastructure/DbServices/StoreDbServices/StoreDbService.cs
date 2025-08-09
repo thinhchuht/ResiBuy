@@ -1,4 +1,3 @@
-using ResiBuy.Server.Infrastructure.Model;
 using ResiBuy.Server.Infrastructure.Model.DTOs.OrderDtos;
 using ResiBuy.Server.Infrastructure.Model.DTOs.StoreDtos;
 
@@ -118,7 +117,7 @@ namespace ResiBuy.Server.Infrastructure.DbServices.StoreDbServices
             try
             {
                 return await _context.Stores
-                    .AnyAsync(s => s.RoomId == roomId);
+                    .AnyAsync(s => s.RoomId == roomId && !s.IsLocked);
             }
             catch (Exception ex)
             {
