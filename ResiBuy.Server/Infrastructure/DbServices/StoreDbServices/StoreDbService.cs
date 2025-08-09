@@ -316,6 +316,13 @@ namespace ResiBuy.Server.Infrastructure.DbServices.StoreDbServices
             }
             else
             {
+                // Chỉ tính từ tháng đầu tiên của năm hiện tại
+                DateTime firstMonthOfCurrentYear = new DateTime(DateTime.Now.Year, 1, 1);
+
+                // Nếu startDate nhỏ hơn mốc đầu năm thì nâng lên thành đầu năm
+                if (startDate < firstMonthOfCurrentYear)
+                    startDate = firstMonthOfCurrentYear;
+
                 DateTime currentMonth = new DateTime(startDate.Year, startDate.Month, 1);
                 DateTime endMonth = new DateTime(endDate.Year, endDate.Month, 1);
 
@@ -331,14 +338,12 @@ namespace ResiBuy.Server.Infrastructure.DbServices.StoreDbServices
 
                     decimal totalRevenue = ordersInMonth.Sum(o => o.TotalPrice - (decimal)o.ShippingFee);
 
-                    result.Add(new Dictionary<string, decimal>
-            {
-                { currentMonth.ToString("MM-yyyy"), totalRevenue }
-            });
+                    result.Add(new Dictionary<string, decimal> { { currentMonth.ToString("MM-yyyy"), totalRevenue } });
 
                     currentMonth = nextMonth;
                 }
             }
+
 
             return result;
         }

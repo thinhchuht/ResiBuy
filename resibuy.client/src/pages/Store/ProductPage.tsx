@@ -162,7 +162,7 @@ const ProductPage: React.FC = () => {
   };
 
   const handleEdit = (id: number) => {
-    navigate(`/store/${storeId}/update/${id}`);
+    navigate(`/store/${storeId}/product-update/${id}`);
   };
 
   const handleToggleStatus = async (product: Product) => {
