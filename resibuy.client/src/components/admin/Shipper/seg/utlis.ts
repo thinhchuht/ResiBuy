@@ -340,7 +340,7 @@ export const calculateShipperStats = async () => {
 
 // Hook useShippersLogic
 export const useShippersLogic = () => {
-  const [shippers, setShippers] = useState<Shipper[]>([]);
+ const [shippers, setShippers] = useState<Shipper[]>([]);
   const [totalCount, setTotalCount] = useState(0);
   const [pageNumber, setPageNumber] = useState(1);
   const [pageSize] = useState(15);
@@ -349,7 +349,7 @@ export const useShippersLogic = () => {
   const [isAddModalOpen, setIsAddModalOpen] = useState(false);
   const [selectedShipper, setSelectedShipper] = useState<Shipper | null>(null);
   const [editingShipper, setEditingShipper] = useState<Shipper | null>(null);
-  const  toast  = useToastify();
+  const toast = useToastify();
 
   // Lấy danh sách shipper
   const fetchShippers = useCallback(async (page: number = 1, pageSize: number = 15) => {
@@ -535,18 +535,23 @@ export const useShippersLogic = () => {
     return shipper.isLocked;
   };
 
-  const getShipperOrders = useCallback(async (shipperId: string): Promise<Order[]> => {
+  const getShipperOrders = useCallback(async (shipperId: string, pageNumber: number = 1, pageSize: number = 10)=> {
     try {
-      const response = await orderApi.getAll(undefined, undefined, undefined, undefined, undefined, shipperId, 1, 100000);
-      console.log(`Get orders for shipper ${shipperId}:`, response);
-      return response.items || [];
+      const response = await orderApi.getAll(undefined, undefined, undefined, undefined, undefined, shipperId, pageNumber, pageSize);
+      console.log(`Get orders for shipper ${shipperId} response:`, response);
+      return {
+        items: response.items || [],
+        totalCount: response.totalCount || 0,
+        pageNumber: response.pageNumber || 1,
+        pageSize: response.pageSize || pageSize,
+        totalPages: response.totalPages || 1,
+      };
     } catch (error: any) {
       console.error(`Get orders error for shipper ${shipperId}:`, error);
       toast.error(error.message || "Lỗi khi lấy danh sách đơn hàng");
-      return [];
+      return { items: [], totalCount: 0, pageNumber: 1, pageSize, totalPages: 1 };
     }
   }, [toast]);
-
   const handlePageChange = (page: number) => {
     setPageNumber(page);
   };

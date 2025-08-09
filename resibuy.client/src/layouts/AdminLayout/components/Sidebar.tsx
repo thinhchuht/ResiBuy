@@ -1,5 +1,5 @@
 import Logo from "../../../assets/Images/Logo.png";
-import { useLocation, Link } from "react-router-dom";
+import { useLocation, Link, useNavigate } from "react-router-dom";
 import {
   Box,
   Typography,
@@ -18,22 +18,51 @@ import { menuItems } from "../../../constants/share";
 import { useCallback, useMemo } from "react";
 import { HubEventType, useEventHub, type HubEventHandler } from "../../../hooks/useEventHub";
 import { useToastify } from "../../../hooks/useToastify";
+import { useAuth } from "../../../contexts/AuthContext";
 
 export function Sidebar() {
   const location = useLocation();
   const pathname = location.pathname;
+  const navigate = useNavigate();
   const toast = useToastify();
+  const { user, logout } = useAuth();
+
   const handleOrderReported = useCallback(() => {
     toast.success("Vừa có 1 báo cáo mới được tạo");
-  // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
+  }, [toast]);
+
   const eventHandlers = useMemo(
     () => ({
       [HubEventType.OrderReported]: handleOrderReported,
     }),
     [handleOrderReported]
   );
+
   useEventHub(eventHandlers as Partial<Record<HubEventType, HubEventHandler>>);
+
+  const handleLogout = async () => {
+    try {
+      await logout();
+      toast.success("Đăng xuất thành công!");
+      navigate("/login");
+    } catch (error) {
+      console.error("Logout error:", error);
+      toast.error("Lỗi khi đăng xuất");
+    }
+  };
+
+  // Lấy tên và email người dùng, hoặc giá trị mặc định nếu user là null
+  const displayName = user?.fullName || "Admin User";
+  const displayEmail = user?.email || "admin@b";
+  const avatarInitials = user?.fullName
+    ? user.fullName
+        .split(" ")
+        .map((n) => n[0])
+        .join("")
+        .toUpperCase()
+        .slice(0, 2)
+    : "AD";
+
   return (
     <Paper
       elevation={0}
@@ -112,14 +141,14 @@ export function Sidebar() {
       <Box sx={{ p: 2 }}>
         <Stack direction="row" spacing={1} alignItems="center" mb={1}>
           <Avatar sx={{ bgcolor: "grey.200", width: 32, height: 32 }}>
-            <Typography fontSize={12}>AD</Typography>
+            <Typography fontSize={12}>{avatarInitials}</Typography>
           </Avatar>
           <Box sx={{ minWidth: 0 }}>
             <Typography variant="body2" noWrap fontWeight={500}>
-              Admin User
+              {displayName}
             </Typography>
             <Typography variant="caption" color="text.secondary" noWrap>
-              admin@b
+              {displayEmail}
             </Typography>
           </Box>
         </Stack>
@@ -128,7 +157,7 @@ export function Sidebar() {
           <IconButton size="small" sx={{ color: "text.secondary" }}>
             <Settings sx={{ width: 16, height: 16 }} />
           </IconButton>
-          <IconButton size="small" sx={{ color: "text.secondary" }}>
+          <IconButton size="small" sx={{ color: "text.secondary" }} onClick={handleLogout}>
             <Logout sx={{ width: 16, height: 16 }} />
           </IconButton>
         </Stack>

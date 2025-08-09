@@ -1,4 +1,5 @@
 ﻿using ResiBuy.Server.Infrastructure.DbServices.OrderDbServices;
+using ResiBuy.Server.Infrastructure.Model.EventDataDto;
 
 namespace ResiBuy.Server.Services.MyBackgroundService
 {
@@ -68,7 +69,8 @@ namespace ResiBuy.Server.Services.MyBackgroundService
                                         Note = order.Note,
                                         StoreName = order.Store?.Name,
                                         AssignedTime = DateTimeOffset.Now
-                                    }, Constants.ShipperHubGroup, [shipper.Id.ToString()]);
+                                    }, Constants.NoHubGroup, [shipper.Id.ToString()]);
+                                    await notificationService.SendNotificationAsync($"{Constants.OrderStatusChanged}-{OrderStatus.Assigned}", new OrderStatusChangedDto(order.Id, order.StoreId, order.Store.Name, order.Status, OrderStatus.Processing, order.PaymentStatus, order.CreateAt, order.UpdateAt), "", [order.UserId, order.Store.OwnerId]);
                                     order.ShipperId = shipper.Id;
                                     order.Status = OrderStatus.Assigned;
                                     order.UpdateAt = DateTime.Now;

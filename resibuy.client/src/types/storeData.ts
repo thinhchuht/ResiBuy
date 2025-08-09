@@ -9,7 +9,7 @@ export interface Product {
   storeId: string;
   categoryId: string;
   store: Store;
-  category: Category;
+  category: CategoryDto;
   productDetails: ProductDetail[];
 }
 
@@ -37,7 +37,7 @@ export interface Image {
   productDetail?: ProductDetail; // tham chiếu ProductDetail đã khai báo trước
   user: User;
   categoryId: string;
-  category?: Category; // Category? => Category | undefined
+  category?: CategoryDto; // Category? => Category | undefined
 }
 
 export interface User {
@@ -79,7 +79,7 @@ export interface Store {
   orders: Order[];
 }
 
-export interface Category {
+export interface CategoryDto {
   id: string; // Guid → string
   name: string;
   status?: string;
