@@ -2,7 +2,6 @@ import { useEffect, useState } from "react";
 import {
   Box,
   Button,
-  Card,
   CardContent,
   IconButton,
   TextField,
@@ -14,26 +13,23 @@ import {
   TableBody,
   Checkbox,
   MenuItem,
+  Divider,
   Chip,
   Avatar,
-  Divider,
-  Container,
+  CircularProgress,
+  Stack,
   Paper,
-  Fade,
-  Tooltip,
-  Alert,
-  LinearProgress,
+  Container,
 } from "@mui/material";
 import {
   Add,
   Delete,
-  PhotoCamera,
+  CloudUpload,
   CheckCircle,
   Warning,
   Category,
   Inventory,
-  LocalOffer,
-  Description,
+  PhotoCamera,
 } from "@mui/icons-material";
 import { v4 } from "uuid";
 import axiosClient from "../../api/base.api";
@@ -44,14 +40,12 @@ interface AdditionalDataInput {
   key: string;
   value: string;
 }
-
 interface Image {
   id: string;
   url: string;
   thumbUrl: string;
   name: string;
 }
-
 interface ProductDetailInput {
   price: number;
   weight: number;
@@ -60,7 +54,6 @@ interface ProductDetailInput {
   image: Image;
   additionalData: AdditionalDataInput[];
 }
-
 interface ProductInput {
   name: string;
   describe: string;
@@ -69,12 +62,12 @@ interface ProductInput {
   categoryId: string;
   productDetails: ProductDetailInput[];
 }
-
 interface Classify {
   key: string;
   value: string[];
 }
 
+// Main component
 export default function CreateProduct() {
   useEffect(() => {
     axiosClient
@@ -91,7 +84,9 @@ export default function CreateProduct() {
 
   const [listCategory, setListCategory] = useState<CategoryDto[]>([]);
   const [priceErrors, setPriceErrors] = useState<{ [key: number]: string }>({});
-  const [isLoading, setIsLoading] = useState(false);
+  const [uploadingImages, setUploadingImages] = useState<{
+    [key: number]: boolean;
+  }>({});
 
   const [product, setProduct] = useState<ProductInput>({
     name: "",
@@ -101,7 +96,6 @@ export default function CreateProduct() {
     categoryId: "",
     productDetails: [],
   });
-
   const [listProductDetail, setListProductDetail] = useState<
     ProductDetailInput[]
   >([]);
@@ -109,10 +103,8 @@ export default function CreateProduct() {
 
   const addClassifies = () =>
     setClassifies((prev) => [...prev, { key: "", value: [] }]);
-
   const removeClassify = (index: number) =>
     setClassifies((prev) => prev.filter((_, i) => i !== index));
-
   const removeclassifyValue = (classifyIndex: number, valueIndex: number) =>
     setClassifies((prev) =>
       prev.map((item, idx) =>
@@ -152,6 +144,7 @@ export default function CreateProduct() {
       )
     );
 
+  // Validate price function
   const validatePrice = (price: number, index: number) => {
     const newErrors = { ...priceErrors };
 
@@ -166,6 +159,7 @@ export default function CreateProduct() {
     setPriceErrors(newErrors);
   };
 
+  // HÀM sinh tổ hợp các thuộc tính
   const generateProductDetail = () => {
     if (classifies.length === 0) {
       alert("nhập đủ thông tin thêm");
@@ -182,7 +176,7 @@ export default function CreateProduct() {
         ]);
       });
     });
-
+    console.log(listAdditionalData);
     addToProductDetail(listAdditionalData);
   };
 
@@ -201,20 +195,29 @@ export default function CreateProduct() {
       });
     } else {
       setListProductDetail([]);
-      setPriceErrors({});
+      setPriceErrors({}); // Clear price errors when regenerating
       addToProductDetail(listAdditionalData);
     }
   };
 
   function classyfyText(productDetail: ProductDetailInput) {
-    return productDetail.additionalData
-      .map((data) => `${data.key}: ${data.value}`)
-      .join(", ");
+    let text = "";
+    productDetail.additionalData.forEach((data) => {
+      if (text !== "") {
+        text = text + ", ";
+      }
+      text = text + `${data.key}: ${data.value}`;
+    });
+    return text;
   }
 
   async function uploadImg(file: File, index: number) {
-    setIsLoading(true);
+    setUploadingImages((prev) => ({ ...prev, [index]: true }));
+
     try {
+      // Simulate loading delay for better UX (remove this in production)
+      await new Promise((resolve) => setTimeout(resolve, 500));
+
       const formData = new FormData();
       const id = v4();
       formData.append("id", id);
@@ -236,15 +239,18 @@ export default function CreateProduct() {
           name: data.name,
         };
         setListProductDetail(newList);
+        console.log("listProductDetail", listProductDetail[index]);
       }
     } catch (error) {
-      console.error("Upload failed:", error);
+      console.error("Error uploading image:", error);
+      alert("Lỗi khi tải ảnh lên. Vui lòng thử lại!");
     } finally {
-      setIsLoading(false);
+      setUploadingImages((prev) => ({ ...prev, [index]: false }));
     }
   }
 
   const CreateProductAsync = async () => {
+    // Validate if there are no product details
     if (listProductDetail.length === 0) {
       alert(
         "Vui lòng tạo ít nhất một chi tiết sản phẩm trước khi tạo sản phẩm."
@@ -252,6 +258,7 @@ export default function CreateProduct() {
       return;
     }
 
+    // Validate all images are uploaded
     const missingImages = listProductDetail.some(
       (detail) => !detail.image?.url || detail.image.url === ""
     );
@@ -260,6 +267,7 @@ export default function CreateProduct() {
       return;
     }
 
+    // Validate all prices before creating product
     const hasErrors = Object.keys(priceErrors).length > 0;
     const hasInvalidPrices = listProductDetail.some((detail, index) => {
       if (detail.price <= 0 || detail.price % 500 !== 0) {
@@ -276,109 +284,95 @@ export default function CreateProduct() {
       return;
     }
 
-    setIsLoading(true);
-    try {
-      const tempProduct: ProductInput = {
-        ...product,
-        productDetails: listProductDetail,
-      };
-      const res = await axiosClient.post("api/Product", tempProduct);
+    const tempProduct: ProductInput = {
+      ...product,
+      productDetails: listProductDetail,
+    };
+    await axiosClient.post("api/Product", tempProduct).then((res) => {
       if (res.status === 200) {
         navigate(`/store/${storeId}/productPage`);
       }
-    } catch (error) {
-      console.error("Create product failed:", error);
-    } finally {
-      setIsLoading(false);
-    }
+    });
   };
 
   return (
-    <Container maxWidth="xl" sx={{ py: 4 }}>
-      {isLoading && <LinearProgress sx={{ mb: 2 }} />}
+    <Box sx={{ p: 3, backgroundColor: "#f5f7fa", minHeight: "100vh" }}>
+      <Container maxWidth="lg">
+        <Stack spacing={4}>
+          {/* Header */}
+          <Paper elevation={0} sx={{ p: 3, bgcolor: "white", borderRadius: 2 }}>
+            <Typography
+              variant="h4"
+              fontWeight="bold"
+              color="primary"
+              gutterBottom
+            >
+              Tạo sản phẩm mới
+            </Typography>
+            <Typography variant="body1" color="text.secondary">
+              Điền thông tin chi tiết để tạo sản phẩm cho cửa hàng của bạn
+            </Typography>
+          </Paper>
 
-      <Box display="flex" flexDirection="column" gap={4}>
-        {/* Header */}
-        <Paper
-          elevation={0}
-          sx={{
-            p: 3,
-            background: "linear-gradient(135deg, #667eea 0%, #764ba2 100%)",
-            color: "white",
-            borderRadius: 3,
-          }}
-        >
-          <Typography variant="h4" fontWeight="bold" gutterBottom>
-            Tạo sản phẩm mới
-          </Typography>
-          <Typography variant="body1" sx={{ opacity: 0.9 }}>
-            Điền thông tin chi tiết để tạo sản phẩm mới cho cửa hàng
-          </Typography>
-        </Paper>
-
-        {/* Product Information */}
-        <Fade in timeout={300}>
-          <Card elevation={3} sx={{ borderRadius: 3, overflow: "hidden" }}>
-            <CardContent sx={{ p: 4 }}>
-              <Box display="flex" alignItems="center" gap={2} mb={3}>
-                <Avatar sx={{ bgcolor: "primary.main" }}>
+          {/* Product Basic Information */}
+          <Paper elevation={0} sx={{ borderRadius: 3, overflow: "hidden" }}>
+            <Box
+              sx={{
+                p: 3,
+                background: "linear-gradient(135deg, #667eea 0%, #764ba2 100%)",
+                color: "white",
+              }}
+            >
+              <Stack direction="row" alignItems="center" spacing={2}>
+                <Avatar sx={{ bgcolor: "rgba(255,255,255,0.2)" }}>
                   <Inventory />
                 </Avatar>
-                <Typography variant="h6" fontWeight="600">
-                  Thông tin sản phẩm
+                <Typography variant="h6" fontWeight="bold">
+                  Thông tin cơ bản
                 </Typography>
-              </Box>
+              </Stack>
+            </Box>
+            <CardContent sx={{ p: 4 }}>
+              <Stack spacing={3}>
+                <Stack direction="row" spacing={3}>
+                  <TextField
+                    label="Tên sản phẩm"
+                    fullWidth
+                    required
+                    variant="outlined"
+                    value={product.name}
+                    onChange={(e) =>
+                      setProduct({ ...product, name: e.target.value })
+                    }
+                    sx={{
+                      "& .MuiOutlinedInput-root": {
+                        borderRadius: 2,
+                      },
+                    }}
+                  />
+                  <TextField
+                    select
+                    label="Danh mục"
+                    fullWidth
+                    variant="outlined"
+                    value={product.categoryId || ""}
+                    onChange={(e) =>
+                      setProduct({ ...product, categoryId: e.target.value })
+                    }
+                    sx={{
+                      "& .MuiOutlinedInput-root": {
+                        borderRadius: 2,
+                      },
+                    }}
+                  >
+                    {listCategory.map((category) => (
+                      <MenuItem key={category.id} value={category.id}>
+                        {category.name}
+                      </MenuItem>
+                    ))}
+                  </TextField>
+                </Stack>
 
-              <Box display="flex" flexDirection="column" gap={3}>
-                {/* First Row - Name and Category */}
-                <Box display="flex" gap={3} flexWrap="wrap">
-                  <Box flex="1" minWidth="300px">
-                    <TextField
-                      label="Tên sản phẩm"
-                      fullWidth
-                      required
-                      variant="outlined"
-                      value={product.name}
-                      onChange={(e) =>
-                        setProduct({ ...product, name: e.target.value })
-                      }
-                      InputProps={{
-                        startAdornment: (
-                          <Description
-                            sx={{ mr: 1, color: "text.secondary" }}
-                          />
-                        ),
-                      }}
-                    />
-                  </Box>
-
-                  <Box flex="1" minWidth="300px">
-                    <TextField
-                      select
-                      label="Danh mục"
-                      fullWidth
-                      required
-                      variant="outlined"
-                      value={product.categoryId || ""}
-                      onChange={(e) =>
-                        setProduct({ ...product, categoryId: e.target.value })
-                      }
-                      InputProps={{
-                        startAdornment: (
-                          <Category sx={{ mr: 1, color: "text.secondary" }} />
-                        ),
-                      }}
-                    >
-                      {listCategory.map((category) => (
-                        <MenuItem key={category.id} value={category.id}>
-                          {category.name}
-                        </MenuItem>
-                      ))}
-                    </TextField>
-                  </Box>
-                </Box>
-
-                {/* Second Row - Description */}
                 <TextField
                   label="Mô tả sản phẩm"
                   fullWidth
@@ -389,423 +383,463 @@ export default function CreateProduct() {
                   onChange={(e) =>
                     setProduct({ ...product, describe: e.target.value })
                   }
-                />
-
-                {/* Third Row - Discount */}
-                <Box display="flex" gap={3}>
-                  <Box flex="0 0 300px">
-                    <TextField
-                      label="Giảm giá (%)"
-                      type="number"
-                      fullWidth
-                      variant="outlined"
-                      value={product.discount}
-                      error={product.discount > 99}
-                      helperText={
-                        product.discount > 99
-                          ? "Giảm giá không được vượt quá 99%"
-                          : ""
-                      }
-                      inputProps={{ min: 0, max: 100 }}
-                      onChange={(e) => {
-                        const value = Number(e.target.value);
-                        if (value >= 0 && value <= 100) {
-                          setProduct({ ...product, discount: value });
-                        }
-                      }}
-                      InputProps={{
-                        startAdornment: (
-                          <LocalOffer sx={{ mr: 1, color: "text.secondary" }} />
-                        ),
-                      }}
-                    />
-                  </Box>
-                  <Box flex="1"></Box> {/* Spacer */}
-                </Box>
-              </Box>
-            </CardContent>
-          </Card>
-        </Fade>
-
-        {/* Product Classification */}
-        <Fade in timeout={600}>
-          <Card elevation={3} sx={{ borderRadius: 3, overflow: "hidden" }}>
-            <CardContent sx={{ p: 4 }}>
-              <Box
-                display="flex"
-                alignItems="center"
-                justifyContent="space-between"
-                mb={3}
-              >
-                <Box display="flex" alignItems="center" gap={2}>
-                  <Avatar sx={{ bgcolor: "secondary.main" }}>
-                    <Category />
-                  </Avatar>
-                  <Typography variant="h6" fontWeight="600">
-                    Phân loại sản phẩm
-                  </Typography>
-                </Box>
-
-                <Button
-                  variant="contained"
-                  startIcon={<Add />}
-                  onClick={addClassifies}
-                  sx={{ borderRadius: 2 }}
-                >
-                  Thêm phân loại
-                </Button>
-              </Box>
-
-              {classifies.length === 0 && (
-                <Alert severity="info" sx={{ mb: 2 }}>
-                  Thêm phân loại để tạo các biến thể sản phẩm (ví dụ: Màu sắc,
-                  Kích thước)
-                </Alert>
-              )}
-
-              {classifies.map((data, classifiesIndex) => (
-                <Paper
-                  key={classifiesIndex}
-                  elevation={1}
                   sx={{
-                    p: 3,
-                    mb: 2,
-                    borderRadius: 2,
-                    border: "1px solid",
-                    borderColor: "divider",
-                    "&:hover": {
-                      borderColor: "primary.main",
-                      boxShadow: 2,
+                    "& .MuiOutlinedInput-root": {
+                      borderRadius: 2,
                     },
                   }}
-                >
-                  <Box display="flex" gap={2} alignItems="center" mb={2}>
-                    <TextField
-                      label={`Tên phân loại ${classifiesIndex + 1}`}
-                      value={data.key}
-                      required
-                      variant="outlined"
-                      sx={{ flexGrow: 1 }}
-                      onChange={(e) =>
-                        updateClassifyKey(classifiesIndex, e.target.value)
-                      }
-                    />
-                    <Tooltip title="Xóa phân loại">
-                      <IconButton
-                        color="error"
-                        onClick={() => removeClassify(classifiesIndex)}
-                        sx={{
-                          bgcolor: "error.light",
-                          color: "white",
-                          "&:hover": { bgcolor: "error.main" },
-                        }}
-                      >
-                        <Delete />
-                      </IconButton>
-                    </Tooltip>
-                  </Box>
+                />
 
-                  <Box
-                    display="flex"
-                    flexWrap="wrap"
-                    gap={2}
-                    alignItems="center"
+                <Box sx={{ maxWidth: 300 }}>
+                  <TextField
+                    label="Giảm giá (%)"
+                    type="number"
+                    fullWidth
+                    variant="outlined"
+                    value={product.discount}
+                    error={product.discount > 99}
+                    helperText={
+                      product.discount > 99
+                        ? "Giảm giá không được vượt quá 99%"
+                        : ""
+                    }
+                    inputProps={{ min: 0, max: 100 }}
+                    onChange={(e) => {
+                      const value = Number(e.target.value);
+                      if (value >= 0 && value <= 100) {
+                        setProduct({ ...product, discount: value });
+                      }
+                    }}
+                    sx={{
+                      "& .MuiOutlinedInput-root": {
+                        borderRadius: 2,
+                      },
+                    }}
+                  />
+                </Box>
+              </Stack>
+            </CardContent>
+          </Paper>
+
+          {/* Product Classifications */}
+          <Paper elevation={0} sx={{ borderRadius: 3, overflow: "hidden" }}>
+            <Box
+              sx={{
+                p: 3,
+                background: "linear-gradient(135deg, #f093fb 0%, #f5576c 100%)",
+                color: "white",
+              }}
+            >
+              <Stack direction="row" alignItems="center" spacing={2}>
+                <Avatar sx={{ bgcolor: "rgba(255,255,255,0.2)" }}>
+                  <Category />
+                </Avatar>
+                <Typography variant="h6" fontWeight="bold">
+                  Phân loại sản phẩm
+                </Typography>
+              </Stack>
+            </Box>
+            <CardContent sx={{ p: 4 }}>
+              <Stack spacing={3}>
+                {classifies.map((data, classifiesIndex) => (
+                  <Paper
+                    key={classifiesIndex}
+                    elevation={1}
+                    sx={{ p: 3, borderRadius: 3, border: "2px solid #f0f0f0" }}
                   >
-                    {data.value.map((classifyValue, valueIndex) => (
-                      <Paper
-                        key={valueIndex}
-                        elevation={0}
-                        sx={{
-                          p: 2,
-                          display: "flex",
-                          alignItems: "center",
-                          gap: 1,
-                          bgcolor: "grey.50",
-                          borderRadius: 2,
-                        }}
-                      >
+                    <Stack spacing={3}>
+                      <Stack direction="row" alignItems="center" spacing={2}>
                         <TextField
-                          label="Giá trị"
-                          value={classifyValue}
+                          label={`Phân loại ${classifiesIndex + 1}`}
+                          value={data.key}
                           required
-                          size="small"
                           variant="outlined"
+                          size="medium"
                           onChange={(e) =>
-                            updateClassifyValue(
-                              classifiesIndex,
-                              valueIndex,
-                              e.target.value
-                            )
+                            updateClassifyKey(classifiesIndex, e.target.value)
                           }
+                          sx={{
+                            flex: 1,
+                            "& .MuiOutlinedInput-root": { borderRadius: 2 },
+                          }}
                         />
                         <IconButton
                           color="error"
-                          size="small"
-                          onClick={() =>
-                            removeclassifyValue(classifiesIndex, valueIndex)
-                          }
-                        >
-                          <Delete fontSize="small" />
-                        </IconButton>
-                      </Paper>
-                    ))}
-
-                    <Button
-                      variant="outlined"
-                      size="small"
-                      startIcon={<Add />}
-                      onClick={() => addClassifyValue(classifiesIndex)}
-                      sx={{ borderRadius: 2 }}
-                    >
-                      Thêm giá trị
-                    </Button>
-                  </Box>
-                </Paper>
-              ))}
-
-              {classifies.length > 0 && (
-                <Box display="flex" justifyContent="center" mt={3}>
-                  <Button
-                    variant="contained"
-                    color="success"
-                    size="large"
-                    onClick={generateProductDetail}
-                    startIcon={<CheckCircle />}
-                    sx={{ borderRadius: 3, px: 4, py: 1.5 }}
-                  >
-                    Tạo biến thể sản phẩm
-                  </Button>
-                </Box>
-              )}
-            </CardContent>
-          </Card>
-        </Fade>
-
-        {/* Product Details Table */}
-        {listProductDetail.length > 0 && (
-          <Fade in timeout={900}>
-            <Card elevation={3} sx={{ borderRadius: 3, overflow: "hidden" }}>
-              <CardContent sx={{ p: 0 }}>
-                <Box p={3} pb={0}>
-                  <Typography variant="h6" fontWeight="600" gutterBottom>
-                    Chi tiết sản phẩm ({listProductDetail.length} biến thể)
-                  </Typography>
-                  <Divider />
-                </Box>
-
-                <Box sx={{ overflowX: "auto" }}>
-                  <Table>
-                    <TableHead sx={{ bgcolor: "grey.50" }}>
-                      <TableRow>
-                        <TableCell sx={{ fontWeight: 600 }}>
-                          Phân loại
-                        </TableCell>
-                        <TableCell sx={{ fontWeight: 600 }}>
-                          Giá (VNĐ)
-                        </TableCell>
-                        <TableCell sx={{ fontWeight: 600 }}>
-                          Cân nặng (g)
-                        </TableCell>
-                        <TableCell sx={{ fontWeight: 600 }}>Số lượng</TableCell>
-                        <TableCell sx={{ fontWeight: 600 }}>Hết hàng</TableCell>
-                        <TableCell sx={{ fontWeight: 600 }}>Hình ảnh</TableCell>
-                      </TableRow>
-                    </TableHead>
-                    <TableBody>
-                      {listProductDetail.map((productDetail, index) => (
-                        <TableRow
-                          key={index}
+                          onClick={() => removeClassify(classifiesIndex)}
                           sx={{
-                            "&:hover": { bgcolor: "grey.50" },
-                            "&:nth-of-type(odd)": { bgcolor: "grey.25" },
+                            bgcolor: "error.lighter",
+                            "&:hover": { bgcolor: "error.light" },
                           }}
                         >
-                          <TableCell>
-                            <Box display="flex" flexWrap="wrap" gap={0.5}>
-                              {productDetail.additionalData.map((data, i) => (
-                                <Chip
-                                  key={i}
-                                  label={`${data.key}: ${data.value}`}
-                                  size="small"
-                                  color="primary"
-                                  variant="outlined"
-                                />
-                              ))}
-                            </Box>
-                          </TableCell>
+                          <Delete />
+                        </IconButton>
+                      </Stack>
 
-                          <TableCell>
-                            <TextField
-                              size="small"
-                              type="number"
-                              value={productDetail.price}
-                              error={!!priceErrors[index]}
-                              helperText={priceErrors[index]}
-                              onChange={(e) => {
-                                const newList = [...listProductDetail];
-                                const newPrice = Number(e.target.value);
-                                newList[index].price = newPrice;
-                                setListProductDetail(newList);
-                              }}
-                              onBlur={() =>
-                                validatePrice(productDetail.price, index)
-                              }
-                              inputProps={{ min: 0, step: 500 }}
-                            />
-                          </TableCell>
-
-                          <TableCell>
-                            <TextField
-                              size="small"
-                              type="number"
-                              value={productDetail.weight}
-                              onChange={(e) => {
-                                const newList = [...listProductDetail];
-                                newList[index].weight = Number(e.target.value);
-                                setListProductDetail(newList);
-                              }}
-                              inputProps={{ min: 0 }}
-                            />
-                          </TableCell>
-
-                          <TableCell>
-                            <TextField
-                              size="small"
-                              type="number"
-                              value={productDetail.quantity}
-                              onChange={(e) => {
-                                const newList = [...listProductDetail];
-                                newList[index].quantity = Number(
-                                  e.target.value
-                                );
-                                setListProductDetail(newList);
-                              }}
-                              inputProps={{ min: 0 }}
-                            />
-                          </TableCell>
-
-                          <TableCell>
-                            <Checkbox
-                              checked={productDetail.isOutOfStock}
-                              onChange={(e) => {
-                                const newList = [...listProductDetail];
-                                newList[index].isOutOfStock = e.target.checked;
-                                setListProductDetail(newList);
-                              }}
-                              color={
-                                productDetail.isOutOfStock ? "error" : "primary"
-                              }
-                            />
-                          </TableCell>
-
-                          <TableCell>
-                            <Box
-                              display="flex"
-                              flexDirection="column"
+                      <Box>
+                        <Typography
+                          variant="subtitle2"
+                          color="text.secondary"
+                          gutterBottom
+                        >
+                          Thuộc tính:
+                        </Typography>
+                        <Stack
+                          direction="row"
+                          flexWrap="wrap"
+                          gap={2}
+                          alignItems="center"
+                        >
+                          {data.value.map((classifyValue, valueIndex) => (
+                            <Stack
+                              key={valueIndex}
+                              direction="row"
                               alignItems="center"
-                              gap={1}
+                              spacing={1}
                             >
-                              <Button
-                                variant={
-                                  productDetail.image?.thumbUrl
-                                    ? "outlined"
-                                    : "contained"
-                                }
-                                component="label"
+                              <TextField
+                                label="Thuộc tính"
+                                value={classifyValue}
+                                required
                                 size="small"
-                                startIcon={<PhotoCamera />}
-                                sx={{ borderRadius: 2 }}
-                                color={
-                                  productDetail.image?.thumbUrl
-                                    ? "primary"
-                                    : "warning"
+                                variant="outlined"
+                                onChange={(e) =>
+                                  updateClassifyValue(
+                                    classifiesIndex,
+                                    valueIndex,
+                                    e.target.value
+                                  )
+                                }
+                                sx={{
+                                  "& .MuiOutlinedInput-root": {
+                                    borderRadius: 2,
+                                  },
+                                }}
+                              />
+                              <IconButton
+                                color="error"
+                                size="small"
+                                onClick={() =>
+                                  removeclassifyValue(
+                                    classifiesIndex,
+                                    valueIndex
+                                  )
                                 }
                               >
-                                {productDetail.image?.thumbUrl
-                                  ? "Đổi ảnh"
-                                  : "Tải ảnh"}
+                                <Delete fontSize="small" />
+                              </IconButton>
+                            </Stack>
+                          ))}
+                          <Button
+                            variant="outlined"
+                            size="small"
+                            startIcon={<Add />}
+                            onClick={() => addClassifyValue(classifiesIndex)}
+                            sx={{ borderRadius: 2 }}
+                          >
+                            Thêm thuộc tính
+                          </Button>
+                        </Stack>
+                      </Box>
+                    </Stack>
+                  </Paper>
+                ))}
+
+                <Button
+                  variant="outlined"
+                  startIcon={<Add />}
+                  onClick={addClassifies}
+                  sx={{ alignSelf: "flex-start", borderRadius: 2, px: 3 }}
+                >
+                  Thêm phân loại
+                </Button>
+
+                <Divider />
+
+                <Button
+                  variant="contained"
+                  color="primary"
+                  onClick={generateProductDetail}
+                  size="large"
+                  sx={{
+                    alignSelf: "flex-end",
+                    borderRadius: 2,
+                    px: 4,
+                    py: 1.5,
+                    boxShadow: 3,
+                  }}
+                >
+                  Tạo chi tiết sản phẩm
+                </Button>
+              </Stack>
+            </CardContent>
+          </Paper>
+
+          {/* Product Details Table */}
+          {listProductDetail.length > 0 && (
+            <Paper elevation={0} sx={{ borderRadius: 3, overflow: "hidden" }}>
+              <Box
+                sx={{
+                  p: 3,
+                  background:
+                    "linear-gradient(135deg, #4facfe 0%, #00f2fe 100%)",
+                  color: "white",
+                }}
+              >
+                <Stack direction="row" alignItems="center" spacing={2}>
+                  <Avatar sx={{ bgcolor: "rgba(255,255,255,0.2)" }}>
+                    <PhotoCamera />
+                  </Avatar>
+                  <Typography variant="h6" fontWeight="bold">
+                    Chi tiết sản phẩm
+                  </Typography>
+                </Stack>
+              </Box>
+              <Box sx={{ overflow: "auto" }}>
+                <Table sx={{ minWidth: 800 }}>
+                  <TableHead>
+                    <TableRow sx={{ bgcolor: "grey.50" }}>
+                      <TableCell sx={{ fontWeight: "bold" }}>
+                        Phân loại
+                      </TableCell>
+                      <TableCell sx={{ fontWeight: "bold" }}>
+                        Giá (VNĐ)
+                      </TableCell>
+                      <TableCell sx={{ fontWeight: "bold" }}>
+                        Cân nặng (g)
+                      </TableCell>
+                      <TableCell sx={{ fontWeight: "bold" }}>
+                        Số lượng
+                      </TableCell>
+                      <TableCell sx={{ fontWeight: "bold" }}>
+                        Hết hàng
+                      </TableCell>
+                      <TableCell sx={{ fontWeight: "bold" }}>
+                        Ảnh sản phẩm
+                      </TableCell>
+                    </TableRow>
+                  </TableHead>
+                  <TableBody>
+                    {listProductDetail.map((productDetail, index) => (
+                      <TableRow key={index} hover>
+                        <TableCell>
+                          <Chip
+                            label={classyfyText(productDetail)}
+                            variant="outlined"
+                            size="small"
+                            sx={{ maxWidth: 200 }}
+                          />
+                        </TableCell>
+                        <TableCell>
+                          <TextField
+                            size="small"
+                            type="number"
+                            value={productDetail.price}
+                            error={!!priceErrors[index]}
+                            helperText={priceErrors[index]}
+                            onChange={(e) => {
+                              const newList = [...listProductDetail];
+                              const newPrice = Number(e.target.value);
+                              newList[index].price = newPrice;
+                              setListProductDetail(newList);
+                            }}
+                            onBlur={() =>
+                              validatePrice(productDetail.price, index)
+                            }
+                            sx={{
+                              "& .MuiOutlinedInput-root": { borderRadius: 2 },
+                            }}
+                          />
+                        </TableCell>
+                        <TableCell>
+                          <TextField
+                            size="small"
+                            type="number"
+                            value={productDetail.weight}
+                            onChange={(e) => {
+                              const newList = [...listProductDetail];
+                              newList[index].weight = Number(e.target.value);
+                              setListProductDetail(newList);
+                            }}
+                            sx={{
+                              "& .MuiOutlinedInput-root": { borderRadius: 2 },
+                            }}
+                          />
+                        </TableCell>
+                        <TableCell>
+                          <TextField
+                            size="small"
+                            type="number"
+                            value={productDetail.quantity}
+                            onChange={(e) => {
+                              const newList = [...listProductDetail];
+                              newList[index].quantity = Number(e.target.value);
+                              setListProductDetail(newList);
+                            }}
+                            sx={{
+                              "& .MuiOutlinedInput-root": { borderRadius: 2 },
+                            }}
+                          />
+                        </TableCell>
+                        <TableCell>
+                          <Checkbox
+                            checked={productDetail.isOutOfStock}
+                            onChange={(e) => {
+                              const newList = [...listProductDetail];
+                              newList[index].isOutOfStock = e.target.checked;
+                              setListProductDetail(newList);
+                            }}
+                            color="primary"
+                          />
+                        </TableCell>
+                        <TableCell>
+                          <Stack
+                            spacing={2}
+                            alignItems="center"
+                            sx={{ minWidth: 120 }}
+                          >
+                            {uploadingImages[index] ? (
+                              <Box
+                                sx={{
+                                  display: "flex",
+                                  flexDirection: "column",
+                                  alignItems: "center",
+                                  gap: 1,
+                                }}
+                              >
+                                <CircularProgress size={24} color="primary" />
+                                <Typography variant="caption" color="primary">
+                                  Đang tải...
+                                </Typography>
+                              </Box>
+                            ) : (
+                              <Button
+                                variant="outlined"
+                                component="label"
+                                size="small"
+                                startIcon={<CloudUpload />}
+                                sx={{ borderRadius: 2, minWidth: 100 }}
+                              >
+                                Tải ảnh
                                 <input
                                   hidden
                                   accept="image/*"
                                   type="file"
                                   onChange={(e) => {
                                     const file = e.target.files?.[0];
-                                    if (file) uploadImg(file, index);
+                                    if (file) {
+                                      // Reset input value để có thể chọn lại cùng file
+                                      e.target.value = "";
+                                      uploadImg(file, index);
+                                    }
                                   }}
                                 />
                               </Button>
+                            )}
 
-                              {productDetail.image?.thumbUrl ? (
-                                <Box
-                                  component="img"
+                            {uploadingImages[index] ? (
+                              <Box
+                                sx={{
+                                  width: 80,
+                                  height: 80,
+                                  borderRadius: 2,
+                                  border: "2px dashed #ccc",
+                                  display: "flex",
+                                  alignItems: "center",
+                                  justifyContent: "center",
+                                  bgcolor: "grey.50",
+                                }}
+                              >
+                                <CircularProgress size={32} />
+                              </Box>
+                            ) : productDetail.image?.thumbUrl ? (
+                              <Box position="relative">
+                                <img
                                   src={productDetail.image.thumbUrl}
                                   alt="Ảnh sản phẩm"
-                                  sx={{
-                                    width: 64,
-                                    height: 64,
+                                  style={{
+                                    width: 80,
+                                    height: 80,
                                     objectFit: "cover",
-                                    borderRadius: 2,
-                                    border: "2px solid",
-                                    borderColor: "success.main",
+                                    borderRadius: 8,
+                                    border: "2px solid #e0e0e0",
                                   }}
                                 />
-                              ) : (
-                                <Box
+                                <CheckCircle
                                   sx={{
-                                    width: 64,
-                                    height: 64,
-                                    display: "flex",
-                                    alignItems: "center",
-                                    justifyContent: "center",
-                                    bgcolor: "grey.100",
-                                    borderRadius: 2,
-                                    border: "2px dashed",
-                                    borderColor: "grey.300",
+                                    position: "absolute",
+                                    top: -4,
+                                    right: -4,
+                                    color: "success.main",
+                                    bgcolor: "white",
+                                    borderRadius: "50%",
+                                    fontSize: 20,
                                   }}
+                                />
+                              </Box>
+                            ) : (
+                              <Box
+                                sx={{
+                                  width: 80,
+                                  height: 80,
+                                  borderRadius: 2,
+                                  border: "2px dashed #ccc",
+                                  display: "flex",
+                                  flexDirection: "column",
+                                  alignItems: "center",
+                                  justifyContent: "center",
+                                  bgcolor: "grey.50",
+                                }}
+                              >
+                                <Warning
+                                  color="warning"
+                                  sx={{ fontSize: 24 }}
+                                />
+                                <Typography
+                                  variant="caption"
+                                  color="text.secondary"
+                                  textAlign="center"
+                                  sx={{ mt: 0.5 }}
                                 >
-                                  <PhotoCamera color="disabled" />
-                                </Box>
-                              )}
-                            </Box>
-                          </TableCell>
-                        </TableRow>
-                      ))}
-                    </TableBody>
-                  </Table>
-                </Box>
-              </CardContent>
-            </Card>
-          </Fade>
-        )}
+                                  Chưa có ảnh
+                                </Typography>
+                              </Box>
+                            )}
+                          </Stack>
+                        </TableCell>
+                      </TableRow>
+                    ))}
+                  </TableBody>
+                </Table>
+              </Box>
+            </Paper>
+          )}
 
-        {/* Create Product Button */}
-        {listProductDetail.length > 0 && (
-          <Box display="flex" justifyContent="center" mt={2}>
-            <Button
-              variant="contained"
-              color="success"
-              size="large"
-              onClick={CreateProductAsync}
-              disabled={isLoading}
-              startIcon={<CheckCircle />}
-              sx={{
-                borderRadius: 3,
-                px: 6,
-                py: 2,
-                fontSize: "1.1rem",
-                fontWeight: 600,
-                boxShadow: 3,
-                "&:hover": {
-                  boxShadow: 6,
-                  transform: "translateY(-2px)",
-                },
-              }}
-            >
-              {isLoading ? "Đang tạo sản phẩm..." : "Tạo sản phẩm"}
-            </Button>
-          </Box>
-        )}
-      </Box>
-    </Container>
+          {/* Create Product Button */}
+          {listProductDetail.length > 0 && (
+            <Stack direction="row" justifyContent="flex-end" spacing={2}>
+              <Button
+                variant="contained"
+                color="primary"
+                onClick={CreateProductAsync}
+                size="large"
+                sx={{
+                  borderRadius: 3,
+                  px: 6,
+                  py: 2,
+                  boxShadow: 4,
+                  background:
+                    "linear-gradient(135deg, #667eea 0%, #764ba2 100%)",
+                  "&:hover": {
+                    boxShadow: 6,
+                  },
+                }}
+              >
+                Tạo sản phẩm
+              </Button>
+            </Stack>
+          )}
+        </Stack>
+      </Container>
+    </Box>
   );
 }

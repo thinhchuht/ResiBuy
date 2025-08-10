@@ -317,7 +317,10 @@ const StorePage: React.FC = () => {
               <Route path="productPage" element={<ProductPage />} />
               <Route path="orders" element={<Orders />} />
               <Route path="product-create" element={<CreateProduct />} />
-              <Route path="product-update/:id" element={<UpdateProduct />} />
+              <Route
+                path="product-update/:productId"
+                element={<UpdateProduct />}
+              />
               <Route path="vouchers" element={<VoucherPage />} />
               <Route path="voucher-create" element={<CreateVoucher />} />
               <Route
