@@ -14,13 +14,8 @@ namespace ResiBuy.Server.Application.Queries.StatisticsAdminQueries
 
         public async Task<(List<TopStatisticsResponse>, List<CategoryPercentageDto>)> Handle(GetTopAndCategoryStatisticsQuery request, CancellationToken cancellationToken)
         {
-            // Lấy top statistics
             var topStatistics = await orderDbService.GetTopStatisticsAsync(request.StartTime, request.EndTime);
-
-            // Lấy category percentages
             var categoryPercentages = await categoryDbService.GetCategoryPercentagesAsync();
-
-            // Trả về dạng tuple
             return (new List<TopStatisticsResponse> { topStatistics }, categoryPercentages);
         }
     }
