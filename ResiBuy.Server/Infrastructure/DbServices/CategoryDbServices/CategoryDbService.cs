@@ -2,6 +2,7 @@
 using Microsoft.EntityFrameworkCore;
 using ResiBuy.Server.Infrastructure.Filter;
 using ResiBuy.Server.Infrastructure.Model;
+using ResiBuy.Server.Infrastructure.Model.DTOs.StatisticAdminDtos;
 
 namespace ResiBuy.Server.Infrastructure.DbServices.CategoryDbServices
 {
@@ -63,6 +64,31 @@ namespace ResiBuy.Server.Infrastructure.DbServices.CategoryDbServices
                 throw new CustomException(ExceptionErrorCode.RepositoryError, ex.Message);
             }
         }
+        public async Task<List<CategoryPercentageDto>> GetCategoryPercentagesAsync()
+        {
+            try
+            {
+                var totalProducts = await _context.Products.CountAsync();
 
+                var productCounts = await _context.Products
+                    .GroupBy(p => p.CategoryId)
+                    .Select(g => new { CategoryId = g.Key, Count = g.Count() })
+                    .ToDictionaryAsync(g => g.CategoryId, g => g.Count);
+
+                var percentages = await _context.Categories
+                    .Select(c => new CategoryPercentageDto
+                    {
+                        Name = c.Name,
+                        Value = Math.Round(totalProducts > 0 ? (double)(productCounts.ContainsKey(c.Id) ? productCounts[c.Id] : 0) / totalProducts * 100 : 0,2)
+                    })
+                    .ToListAsync();
+
+                return percentages;
+            }
+            catch (Exception ex)
+            {
+                throw new CustomException(ExceptionErrorCode.RepositoryError, ex.Message);
+            }
+        }
     }
 }

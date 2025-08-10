@@ -16,8 +16,8 @@ namespace ResiBuy.Server.Application.Commands.CheckoutComands
             var cart = await cartDbService.GetByIdAsync(user.Cart.Id);
             if (cart == null)
                 throw new CustomException(ExceptionErrorCode.NotFound, "Không tìm thấy giỏ hàng");
-            if (cart.IsCheckingOut)
-                throw new CustomException(ExceptionErrorCode.NotFound, "Giỏ hàng đang được thanh toán ở nơi khác.");
+            //if (cart.IsCheckingOut)
+            //    throw new CustomException(ExceptionErrorCode.NotFound, "Giỏ hàng đang được thanh toán ở nơi khác.");
             if (string.IsNullOrWhiteSpace(request.UserId) || request.CheckoutId == Guid.Empty)
                 throw new CustomException(ExceptionErrorCode.InvalidInput, "Thiếu userId hoặc danh sách Id đơn hàng");
             var db = redisService.GetDatabase();

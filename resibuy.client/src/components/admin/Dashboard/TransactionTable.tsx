@@ -1,134 +1,66 @@
-import { Box, Paper, Typography, TextField, Button } from "@mui/material";
-import { FilterList, ArrowDropDown } from "@mui/icons-material";
+import { useState } from "react";
 import {
-  formatCurrency,
-  getStatusBadgeConfig,
-  getPaymentMethodIcon,
-  getRecentTransactions,
-} from "../../../components/admin/Dashboard/seg/utils";
-
-import CustomTable from "../../CustomTable"; // Giả định CustomTable.tsx cùng thư mục
-
+  Box,
+  Paper,
+  Typography,
+  Table,
+  TableBody,
+  TableCell,
+  TableContainer,
+  TableHead,
+  TableRow,
+  Button,
+  TextField,
+  MenuItem,
+  Select,
+  InputLabel,
+  FormControl,
+} from "@mui/material";
+import { FilterList, ArrowDropDown } from "@mui/icons-material";
+import { formatCurrency } from "./seg/utils";
+import { ArrowBack, ArrowForward } from "@mui/icons-material";
 interface Transaction {
-  id: string;
-  customer: string;
-  isRefund: boolean;
   date: string;
-  amount: number;
-  reference: string;
-  paymentMethod: string;
-  status: string;
+  totalOrderAmount: number;
+  orderCount: number;
+  productQuantity: number;
+  uniqueBuyers: number;
 }
 
-export function TransactionsTable() {
-  const transactions = getRecentTransactions();
+interface TransactionsTableProps {
+  startTime: string;
+  endTime: string;
+  apiData: Transaction[];
+}
 
-  // Định nghĩa cột cho CustomTable
-  const columns: ColumnDef<Transaction>[] = [
-    {
-      key: "id",
-      label: "Giao Dịch",
-      sortable: true,
-      render: (order) => (
-        <Typography variant="body2" sx={{ fontWeight: "medium" }}>
-          {order.isRefund ? `Hoàn tiền đến ${order.id}` : `Thanh toán từ ${order.customer}`}
-        </Typography>
-      ),
-    },
-    {
-      key: "date",
-      label: "Ngày & Giờ",
-      sortable: true,
-      render: (order) => (
-        <Typography variant="body2" sx={{ color: "text.secondary" }}>
-          {order.date}
-        </Typography>
-      ),
-    },
-    {
-      key: "amount",
-      label: "Số Tiền",
-      sortable: true,
-      render: (order) => (
-        <Typography
-          variant="body2"
-          sx={{ color: order.amount < 0 ? "error.main" : "text.primary" }}
-        >
-          {order.amount < 0 ? "-" : ""}
-          {formatCurrency(Math.abs(order.amount))}
-        </Typography>
-      ),
-    },
-    {
-      key: "reference",
-      label: "Số Tham Chiếu",
-      sortable: true,
-      render: (order) => (
-        <Typography variant="body2" sx={{ color: "text.secondary" }}>
-          {order.reference}
-        </Typography>
-      ),
-    },
-    {
-      key: "paymentMethod",
-      label: "Phương Thức Thanh Toán",
-      sortable: true,
-      render: (order) => {
-        const paymentIcon = getPaymentMethodIcon(order.paymentMethod);
-        return (
-          <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
-            <Box sx={{ color: paymentIcon.className?.includes("text-blue-500") ? "primary.main" : "text.primary" }}>
-              {paymentIcon.text}
-            </Box>
-            <Typography variant="body2" sx={{ color: "text.secondary" }}>
-              ••• {order.paymentMethod === "mastercard" ? "475" : "924"}
-            </Typography>
-          </Box>
-        );
-      },
-    },
-    {
-      key: "status",
-      label: "Trạng Thái",
-      sortable: true,
-      filterable: true,
-      render: (order) => {
-        const statusConfig = getStatusBadgeConfig(order.status);
-        return (
-          <Box
-            sx={{
-              display: "inline-flex",
-              px: 1,
-              py: 0.5,
-              fontSize: "0.75rem",
-              fontWeight: "medium",
-              borderRadius: 1,
-              bgcolor: statusConfig.className?.includes("bg-green-100")
-                ? "success.light"
-                : statusConfig.className?.includes("bg-red-100")
-                ? "error.light"
-                : "grey.100",
-              color: statusConfig.className?.includes("text-green-800")
-                ? "success.dark"
-                : statusConfig.className?.includes("text-red-800")
-                ? "error.dark"
-                : "grey.800",
-            }}
-          >
-            {statusConfig.label}
-          </Box>
-        );
-      },
-    },
-  ];
+export function TransactionsTable({ startTime, endTime, apiData }: TransactionsTableProps) {
+  const [page, setPage] = useState(1);
+  const [rowsPerPage, setRowsPerPage] = useState(10);
 
-  // Định nghĩa bộ lọc trạng thái
-  const filters = {
-    status: [
-      { label: "Thành Công", value: "success" },
-      { label: "Thất Bại", value: "failed" },
-      { label: "Đang Xử Lý", value: "pending" },
-    ],
+  // Tính toán phân trang
+  const totalRows = apiData.length;
+  const totalPages = Math.ceil(totalRows / rowsPerPage);
+  const startRow = (page - 1) * rowsPerPage;
+  const endRow = Math.min(startRow + rowsPerPage, totalRows);
+  const paginatedData = apiData.slice(startRow, endRow);
+
+  // Xử lý thay đổi số hàng mỗi trang
+  const handleRowsPerPageChange = (event: React.ChangeEvent<{ value: unknown }>) => {
+    setRowsPerPage(Number(event.target.value));
+    setPage(1); // Reset về trang 1 khi thay đổi rowsPerPage
+  };
+
+  // Xử lý chuyển trang
+  const handlePreviousPage = () => {
+    if (page > 1) {
+      setPage(page - 1);
+    }
+  };
+
+  const handleNextPage = () => {
+    if (page < totalPages) {
+      setPage(page + 1);
+    }
   };
 
   return (
@@ -143,7 +75,7 @@ export function TransactionsTable() {
     >
       <Box
         sx={{
-          p: 3, // Thay p-6
+          p: 3,
           borderBottom: 1,
           borderColor: "divider",
         }}
@@ -158,57 +90,128 @@ export function TransactionsTable() {
           <Box>
             <Typography
               variant="h6"
-              sx={{ color: "text.primary", fontWeight: "medium" }} // Thay text-lg font-semibold
+              sx={{ color: "text.primary", fontWeight: "medium" }}
             >
-              Giao Dịch
+              Dữ liệu từng ngày
             </Typography>
             <Typography
               variant="body2"
-              sx={{ color: "grey.600", mt: 0.5 }} // Thay text-sm text-gray-600
+              sx={{ color: "grey.600", mt: 0.5 }}
             >
-              Danh sách các giao dịch mới nhất
+              Danh sách thống kê giao dịch theo ngày
             </Typography>
           </Box>
           <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
-            <Button
-              endIcon={<ArrowDropDown />}
-              sx={{
-                px: 2, // Thay px-4
-                py: 1, // Thay py-2
-                border: 1,
-                borderColor: "grey.300",
-                borderRadius: 1,
-                fontSize: "0.875rem",
-                color: "text.primary",
-                "&:hover": { bgcolor: "grey.50" }, // Thay hover:bg-gray-50
-              }}
-            >
-              <FilterList sx={{ mr: 1, fontSize: 16 }} /> {/* Thay h-4 w-4 mr-2 */}
-              Lọc theo trạng thái
-            </Button>
+            
             <TextField
               placeholder="Từ"
               size="small"
-              sx={{ width: 128 }} // Thay w-32
+              value={startTime}
+              onChange={(e) => {}}
+              disabled
+              sx={{ width: 128 }}
             />
             <TextField
               placeholder="Đến"
               size="small"
-              sx={{ width: 128 }} // Thay w-32
+              value={endTime}
+              onChange={(e) => {}}
+              disabled
+              sx={{ width: 128 }}
             />
           </Box>
         </Box>
       </Box>
       <Box sx={{ p: 3, color: "text.primary" }}>
-        <CustomTable
-          data={transactions}
-          columns={columns}
-          headerTitle="Giao Dịch"
-          description="Danh sách các giao dịch mới nhất"
-          showSearch={false}
-          
-          onFilterChange={(newFilters) => console.log("Filters changed:", newFilters)}
-        />
+        {apiData.length === 0 ? (
+          <Typography color="text.secondary" sx={{ textAlign: "center", py: 4 }}>
+            Chưa có dữ liệu
+          </Typography>
+        ) : (
+          <>
+            <TableContainer sx={{ maxHeight: 400, overflowY: "auto" }}>
+              <Table stickyHeader>
+                <TableHead>
+                  <TableRow>
+                    <TableCell sx={{ fontWeight: "medium", bgcolor: "grey.100" }}>
+                      Ngày
+                    </TableCell>
+                    <TableCell sx={{ fontWeight: "medium", bgcolor: "grey.100" }}>
+                      Tổng Tiền Đơn Hàng
+                    </TableCell>
+                    <TableCell sx={{ fontWeight: "medium", bgcolor: "grey.100" }}>
+                      Số Đơn Hàng
+                    </TableCell>
+                    <TableCell sx={{ fontWeight: "medium", bgcolor: "grey.100" }}>
+                      Số Sản Phẩm bán
+                    </TableCell>
+                    <TableCell sx={{ fontWeight: "medium", bgcolor: "grey.100" }}>
+                      Số Khách Hàng
+                    </TableCell>
+                  </TableRow>
+                </TableHead>
+                <TableBody>
+                  {paginatedData.map((transaction: Transaction, index: number) => (
+                    <TableRow key={index}>
+                      <TableCell>{transaction.date}</TableCell>
+                      <TableCell>{formatCurrency(transaction.totalOrderAmount)}</TableCell>
+                      <TableCell>{transaction.orderCount}</TableCell>
+                      <TableCell>{transaction.productQuantity}</TableCell>
+                      <TableCell>{transaction.uniqueBuyers}</TableCell>
+                    </TableRow>
+                  ))}
+                </TableBody>
+              </Table>
+            </TableContainer>
+            <Box
+              sx={{
+                display: "flex",
+                justifyContent: "space-between",
+                alignItems: "center",
+                mt: 2,
+              }}
+            >
+              <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
+                <Typography variant="body2" sx={{ color: "text.secondary" }}>
+                  Hiển thị {startRow + 1} - {endRow} của {totalRows}
+                </Typography>
+                <FormControl size="small">
+                  <InputLabel>Hàng mỗi trang</InputLabel>
+                  <Select
+                    value={rowsPerPage}
+                    onChange={handleRowsPerPageChange}
+                    label="Hàng mỗi trang"
+                    sx={{ minWidth: 80 }}
+                  >
+                    <MenuItem value={10}>10</MenuItem>
+                    <MenuItem value={50}>50</MenuItem>
+                    <MenuItem value={100}>100</MenuItem>
+                  </Select>
+                </FormControl>
+              </Box>
+             <Box sx={{ display: "flex", gap: 1 }}>
+  <Button
+    variant="outlined"
+    size="small"
+    onClick={handlePreviousPage}
+    disabled={page === 1}
+    sx={{ borderRadius: 1 }}
+  >
+    <ArrowBack fontSize="small" />
+  </Button>
+  <Button
+    variant="outlined"
+    size="small"
+    onClick={handleNextPage}
+    disabled={page === totalPages}
+    sx={{ borderRadius: 1 }}
+  >
+    <ArrowForward fontSize="small" />
+  </Button>
+</Box>
+            </Box>
+          </>
+        )}
       </Box>
     </Paper>
   );
