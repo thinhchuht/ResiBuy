@@ -1,11 +1,4 @@
 import _ from "lodash";
-import {
-  monthlyRevenueData,
-  topProducts,
-  topCustomers,
-  recentOrders,
-} from "../../../../constants/share/dashboard/index";
-import { categoryData } from "../../../../constants/share/index";
 import type { SxProps, Theme } from "@mui/material";
 
 // #region formatCurrency
@@ -30,34 +23,14 @@ export const formatCurrencyShort = (amount: number): string => {
 };
 // #endregion
 
-// #region getCurrentMonth
-export const getCurrentMonth = (): number => {
-  return new Date().getMonth(); // 0-11, May = 4
-};
-// #endregion
-
-// #region calculateMonthlyGrowth
-export const calculateMonthlyGrowth = (): string => {
-  const currentMonth = getCurrentMonth();
-  if (currentMonth === 0) return "0";
-
-  const currentRevenue = monthlyRevenueData[currentMonth]?.revenue || 0;
-  const previousRevenue = monthlyRevenueData[currentMonth - 1]?.revenue || 0;
-
-  if (previousRevenue === 0) return "0";
-
-  const growth = (
-    ((currentRevenue - previousRevenue) / previousRevenue) *
-    100
-  ).toFixed(1);
-  return growth;
-};
-// #endregion
-
-// #region getTotalYearRevenue
-export const getTotalYearRevenue = (): number => {
-  const currentMonth = getCurrentMonth();
-  return _.sumBy(_.take(monthlyRevenueData, currentMonth + 1), "revenue");
+// #region getCurrentDate
+export const getCurrentDate = (): string => {
+  return new Date().toLocaleDateString("en-US", {
+    weekday: "long",
+    year: "numeric",
+    month: "long",
+    day: "numeric",
+  });
 };
 // #endregion
 
@@ -185,67 +158,22 @@ export const getPaymentMethodIcon = (
 };
 // #endregion
 
-// #region getCurrentDate
-export const getCurrentDate = (): string => {
-  return new Date().toLocaleDateString("en-US", {
-    weekday: "long",
-    year: "numeric",
-    month: "long",
-    day: "numeric",
-  });
-};
-// #endregion
+// #region calculateStatsFromApi
+export const calculateStatsFromApi = (apiData: any) => {
+  const data = apiData?.data || [];
+  const comparison = apiData?.comparison || {};
 
-// #region getMonthlyRevenueData
-export const getMonthlyRevenueData = () => {
-  const currentMonth = getCurrentMonth();
-  return _.map(monthlyRevenueData, (item, index) => ({
-    ...item,
-    revenue: index <= currentMonth ? item.revenue : 0,
-    hasData: index <= currentMonth,
-  }));
-};
-// #endregion
-
-// #region getTopProductsData
-export const getTopProductsData = () => {
-  return _.take(_.orderBy(topProducts, ["revenue"], ["desc"]), 5);
-};
-// #endregion
-
-// #region getTopCustomersData
-export const getTopCustomersData = () => {
-  return _.take(_.orderBy(topCustomers, ["spent"], ["desc"]), 5);
-};
-// #endregion
-
-// #region getCategoryDistribution
-export const getCategoryDistribution = () => {
-  return _.map(categoryData, (category) => ({
-    ...category,
-    percentage: `${category.value}%`,
-  }));
-};
-// #endregion
-
-// #region getRecentTransactions
-export const getRecentTransactions = () => {
-  return _.take(_.orderBy(recentOrders, ["date"], ["desc"]), 10);
-};
-// #endregion
-
-// #region getOverviewMetrics
-export const getOverviewMetrics = () => {
-  const totalRevenue = getTotalYearRevenue();
-  const totalOrders = 1234;
-  const totalCustomers = 8945;
-  const averageRating = 4.8;
+  const totalOrderAmount = _.sumBy(data, "totalOrderAmount") || 0;
+  const orderCount = _.sumBy(data, "orderCount") || 0;
+  const productQuantity = _.sumBy(data, "productQuantity") || 0;
+  const uniqueBuyers = _.sumBy(data, "uniqueBuyers") || 0;
 
   return {
-    revenue: totalRevenue,
-    orders: totalOrders,
-    customers: totalCustomers,
-    rating: averageRating,
+    totalOrderAmount,
+    orderCount,
+    productQuantity,
+    uniqueBuyers,
+    comparison,
   };
 };
 // #endregion
