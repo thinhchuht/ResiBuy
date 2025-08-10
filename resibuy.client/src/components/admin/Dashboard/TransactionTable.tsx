@@ -98,7 +98,7 @@ export function TransactionsTable({ startTime, endTime, apiData }: TransactionsT
               variant="body2"
               sx={{ color: "grey.600", mt: 0.5 }}
             >
-              Danh sách thống kê giao dịch theo ngày
+              Danh sách thống kê dữ liệu theo ngày
             </Typography>
           </Box>
           <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
