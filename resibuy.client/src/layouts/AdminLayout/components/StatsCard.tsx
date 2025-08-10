@@ -4,11 +4,13 @@ import { Box, Typography, Paper } from "@mui/material";
 interface StatsCardProps {
   title: string;
   value: string | number;
-  icon: React.ComponentType; // Hỗ trợ biểu tượng MUI
+  icon: React.ComponentType;
   iconColor: string;
   iconBgColor: string;
   valueColor?: string;
   description?: React.ReactNode;
+  onClick?: () => void;
+  isSelected?: boolean; // Thêm prop isSelected
 }
 
 export function StatsCard({
@@ -19,42 +21,47 @@ export function StatsCard({
   iconBgColor,
   valueColor = "text.primary",
   description,
+  onClick,
+  isSelected = false, // Mặc định false
 }: StatsCardProps) {
   return (
     <Paper
       elevation={1}
+      onClick={onClick}
       sx={{
-        p: 3, // Thay p-6 (3 × 8px = 24px)
-        borderRadius: 2, // Thay rounded-xl
+        p: 3,
+        borderRadius: 2,
         border: "1px solid",
-        borderColor: "grey.100", // Thay border-gray-100
-        transition: "box-shadow 0.3s",
+        borderColor: "grey.100",
+        borderBottom: isSelected ? "3px solid #1976d2" : "1px solid grey.100", // Đổi màu viền dưới khi được chọn
+        transition: "box-shadow 0.3s, border-bottom 0.3s",
+        cursor: onClick ? "pointer" : "default",
         "&:hover": {
-          boxShadow: 3, // Thay hover:shadow-md
+          boxShadow: 3,
         },
       }}
     >
       <Box sx={{ display: "flex", alignItems: "center" }}>
         <Box
           sx={{
-            p: 1.5, // Thay p-3 (1.5 × 8px = 12px)
-            bgcolor: iconBgColor, // Sử dụng màu nền động
-            borderRadius: 2, // Thay rounded-xl
-            mr: 2, // Thay mr-4 (2 × 8px = 16px)
+            p: 1.5,
+            bgcolor: iconBgColor,
+            borderRadius: 2,
+            mr: 2,
           }}
         >
-          <Icon sx={{ fontSize: 24, color: iconColor }} /> {/* Thay w-6 h-6 */}
+          <Icon sx={{ fontSize: 24, color: iconColor }} />
         </Box>
         <Box>
           <Typography
             variant="body2"
-            sx={{ color: "text.secondary", mb: 0.5 }} // Thay text-sm text-gray-500 mb-1
+            sx={{ color: "text.secondary", mb: 0.5 }}
           >
             {title}
           </Typography>
           <Typography
             variant="h5"
-            sx={{ fontWeight: "bold", color: valueColor }} // Thay text-2xl font-bold
+            sx={{ fontWeight: "bold", color: valueColor }}
           >
             {value}
           </Typography>
@@ -80,25 +87,25 @@ export function MiniStatsCard({ value, label, valueColor }: MiniStatsCardProps) 
     <Paper
       elevation={1}
       sx={{
-        p: 2, // Thay p-4 (2 × 8px = 16px)
-        borderRadius: 2, // Thay rounded-xl
+        p: 2,
+        borderRadius: 2,
         border: "1px solid",
-        borderColor: "grey.100", // Thay border-gray-100
-        textAlign: "center", // Thay text-center
+        borderColor: "grey.100",
+        textAlign: "center",
         transition: "box-shadow 0.3s",
         "&:hover": {
-          boxShadow: 3, // Thay hover:shadow-md
+          boxShadow: 3,
         },
       }}
     >
       <Typography
         variant="h5"
-        sx={{ fontWeight: "bold", color: valueColor, mb: 0.5 }} // Thay text-2xl font-bold mb-1
+        sx={{ fontWeight: "bold", color: valueColor, mb: 0.5 }}
       >
         {value}
       </Typography>
       <Typography variant="body2" sx={{ color: "text.secondary" }}>
-        {label} {/* Thay text-sm text-gray-500 */}
+        {label}
       </Typography>
     </Paper>
   );
