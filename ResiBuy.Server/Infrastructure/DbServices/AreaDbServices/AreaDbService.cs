@@ -1,4 +1,5 @@
 ﻿using ResiBuy.Server.Services.MapBoxService;
+using ResiBuy.Server.Services.MyBackgroundService;
 
 namespace ResiBuy.Server.Infrastructure.DbServices.AreaDbServices
 {
@@ -6,10 +7,12 @@ namespace ResiBuy.Server.Infrastructure.DbServices.AreaDbServices
     {
         private readonly ResiBuyContext _context;
         private readonly MapBoxService _mapBoxService;
-        public AreaDbService(ResiBuyContext context, MapBoxService mapBoxService) : base(context)
+        private readonly ILogger<AreaDbService> _logger;
+        public AreaDbService(ResiBuyContext context, MapBoxService mapBoxService, ILogger<AreaDbService> logger) : base(context)
         {
             _context = context;
             _mapBoxService = mapBoxService;
+            _logger = logger;
         }
 
         public async Task<IEnumerable<Area>> GetAllAreaAsync()
@@ -71,13 +74,17 @@ namespace ResiBuy.Server.Infrastructure.DbServices.AreaDbServices
                 foreach (var area in areas)
                 {
                     var router = await _mapBoxService.GetDirectionsAsync(curentAreas.Longitude, curentAreas.Latitude, area.Longitude, area.Latitude);
-                    if (router == null && router.Routes.Count() > 0)
+                    if (router != null && router.Routes.Count() > 0)
                     {
                         if (distance == 0 || router.Routes[0].Distance < distance)
                         {
                             distance = router.Routes[0].Distance;
                             nearestArea = area;
                         }
+                    }
+                    else
+                    {
+                        _logger.LogInformation("Router exception");
                     }
                 }
                 return nearestArea;

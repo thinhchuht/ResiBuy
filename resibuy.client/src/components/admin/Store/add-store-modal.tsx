@@ -92,7 +92,7 @@ export function AddStoreModal({ isOpen, onClose, onSubmit, editStore }) {
     };
 
     fetchData();
-  }, [isOpen, editStore, ]);
+  }, [isOpen, editStore ]);
 
   useEffect(() => {
     if (isOpen && !editStore && formData.ownerId) {

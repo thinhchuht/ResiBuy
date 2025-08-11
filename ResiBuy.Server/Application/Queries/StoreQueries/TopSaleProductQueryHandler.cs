@@ -1,7 +1,7 @@
 ﻿namespace ResiBuy.Server.Application.Queries.StoreQueries
 {
     public record TopSaleProductQuery(Guid StoreId, DateTime StartDate, DateTime EndDate) : IRequest<ResponseModel>;
-    public class TopSaleProductQueryHandler
+    public class TopSaleProductQueryHandler : IRequestHandler<TopSaleProductQuery, ResponseModel>
     {
         private readonly IStoreDbService _storeDbService;
 

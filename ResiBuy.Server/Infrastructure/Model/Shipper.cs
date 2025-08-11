@@ -11,9 +11,11 @@
         public float              StartWorkTime  { get; set; }
         public float              EndWorkTime    { get; set; }
         public Guid               LastLocationId { get; set; }
+        public DateTime?           FirstTimeLogin { get; set; }
         public DateTime? LastDelivered { get; set; } // Last delivered time
         public User               User           { get; set; }
         public Area               LastLocation   { get; set; } //Area Id
         public IEnumerable<Order> Orders         { get; set; }
+        public IEnumerable<TimeSheet> TimeSheets { get; set; }
     }
 }

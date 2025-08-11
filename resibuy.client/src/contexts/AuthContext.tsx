@@ -124,9 +124,13 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         const { token, refreshToken, user } = response.data;
         setAuthData(token, refreshToken, user.id);
         
-        setTimeout(() => {
-          window.location.reload();
-        }, 100);
+        if (user.roles && user.roles.includes('ADMIN')) {
+          window.location.href = '/admin';
+        } else {
+          setTimeout(() => {
+            window.location.reload();
+          }, 100);
+        }
       }
       return response;
     } catch (error) {

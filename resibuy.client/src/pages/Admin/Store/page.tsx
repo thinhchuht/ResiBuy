@@ -5,12 +5,12 @@ import {
   Edit,
   Visibility,
   ToggleOff,
-  Delete,
   Store as StoreIcon,
 } from "@mui/icons-material";
 import CustomTable from "../../../components/CustomTable";
 import { AddStoreModal } from "../../../components/admin/Store/add-store-modal";
 import { StoreDetailModal } from "../../../components/admin/Store/store-detail-modal";
+import { StatsCard } from "../../../layouts/AdminLayout/components/StatsCard";
 import { getStatusColor, useStoresLogic } from "../../../components/admin/Store/seg/utlis";
 
 function StoreStatsCards({ calculateStoreStats }) {
@@ -74,7 +74,7 @@ function StoreStatsCards({ calculateStoreStats }) {
       iconBgColor: "#e8f5e9",
       valueColor: "#2e7d32",
     },
-     {
+    {
       title: "Cửa Hàng Đang Đóng",
       value: stats.closeStore.toString(),
       icon: ToggleOff,
@@ -111,45 +111,15 @@ function StoreStatsCards({ calculateStoreStats }) {
         </Box>
       ) : (
         cards.map((card, index) => (
-          <Box
+          <StatsCard
             key={index}
-            sx={{
-              bgcolor: "background.paper",
-              p: 2,
-              borderRadius: 2,
-              boxShadow: 1,
-              display: "flex",
-              alignItems: "center",
-              gap: 2,
-            }}
-          >
-            <Box
-              sx={{
-                bgcolor: card.iconBgColor,
-                p: 1,
-                borderRadius: "50%",
-                display: "flex",
-                alignItems: "center",
-                justifyContent: "center",
-              }}
-            >
-              <card.icon sx={{ color: card.iconColor, fontSize: 24 }} />
-            </Box>
-            <Box>
-              <Typography
-                variant="body2"
-                sx={{ color: "grey.600", fontWeight: "medium" }}
-              >
-                {card.title}
-              </Typography>
-              <Typography
-                variant="h6"
-                sx={{ color: card.valueColor, fontWeight: "bold" }}
-              >
-                {card.value}
-              </Typography>
-            </Box>
-          </Box>
+            title={card.title}
+            value={card.value}
+            icon={card.icon}
+            iconColor={card.iconColor}
+            iconBgColor={card.iconBgColor}
+            valueColor={card.valueColor}
+          />
         ))
       )}
     </Box>
@@ -226,7 +196,6 @@ export default function StoresPage() {
             >
               {store.name}
             </Typography>
-            
           </Box>
         </Box>
       ),
@@ -246,7 +215,7 @@ export default function StoresPage() {
             fontSize: "0.75rem",
             fontWeight: "medium",
             borderRadius: 1,
-         
+
             color: store.isLocked ? "error.dark" : "success.dark",
           }}
         >
@@ -295,13 +264,14 @@ export default function StoresPage() {
           {store.reportCount || 0}
         </Typography>
       ),
-    },{
+    },
+    {
       key: "phoneNumber",
       label: "Số điện thoại",
       sortable: true,
       render: (store) => (
         <Typography variant="body2" sx={{ color: "grey.900" }}>
-          {store.phoneNumber || 0}
+          {store.phoneNumber || "N/A"}
         </Typography>
       ),
     },
@@ -379,7 +349,6 @@ export default function StoresPage() {
               <ToggleOff sx={{ fontSize: 16 }} />
             )}
           </IconButton>
-          
         </Box>
       ),
     },
@@ -448,15 +417,14 @@ export default function StoresPage() {
           itemsPerPage={15}
         />
       </Box>
-   <StoreDetailModal
+
+      <StoreDetailModal
         isOpen={isDetailModalOpen}
         onClose={handleCloseDetailModal}
         store={selectedStore}
         onEdit={handleEditStore}
-        
         onToggleStatus={handleToggleStoreStatus}
       />
-     
 
       <AddStoreModal
         isOpen={isAddModalOpen}
@@ -464,7 +432,6 @@ export default function StoresPage() {
         onSubmit={handleSubmitStore}
         editStore={editingStore}
       />
-      
     </Box>
   );
 }

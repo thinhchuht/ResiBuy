@@ -1,4 +1,5 @@
-﻿using ResiBuy.Server.Services.MapBoxService;
+﻿using ResiBuy.Server.Infrastructure.Model.DTOs.StatisticAdminDtos;
+using ResiBuy.Server.Services.MapBoxService;
 using ResiBuy.Server.Services.OpenRouteService;
 
 namespace ResiBuy.Server.Infrastructure.DbServices.OrderDbServices;
@@ -346,4 +347,228 @@ public class OrderDbService : BaseDbService<Order>, IOrderDbService
             throw new CustomException(ExceptionErrorCode.RepositoryError, ex.ToString());
         }
     }
+    public async Task<StatisticResponse> GetOrderStatisticsAsync(DateTime startTime, DateTime endTime)
+    {
+        var firstOrderDate = await _context.Orders.Where(o => o.Status == OrderStatus.Delivered || o.Status == OrderStatus.Reported).OrderBy(o => o.CreateAt)
+            .Select(o => o.CreateAt.Date)
+            .FirstOrDefaultAsync();
+
+        if (firstOrderDate == default)
+            throw new CustomException(ExceptionErrorCode.NotFound, "Không có đơn hàng nào.");
+        if (startTime < firstOrderDate)
+            startTime = firstOrderDate;
+        var orders = await _context.Orders
+            .Include(o => o.Items)
+            .Where(o => (o.Status == OrderStatus.Delivered || o.Status == OrderStatus.Reported) &&
+                        o.CreateAt.Date >= startTime.Date &&
+                        o.CreateAt.Date <= endTime.Date)
+            .ToListAsync();
+        var dailyStats = orders
+            .GroupBy(o => o.CreateAt.Date)
+            .Select(g => new DailyOrderStatisticDto
+            {
+                Date = g.Key.ToString("yyyy-MM-dd"),
+                TotalOrderAmount = g.Sum(x => x.TotalPrice),
+                OrderCount = g.Count(),
+                ProductQuantity = g.Sum(x => x.Items.Sum(i => i.Quantity)),
+                UniqueBuyers = g.Select(x => x.UserId).Distinct().Count()
+            })
+            .OrderBy(d => d.Date)
+            .ToList();
+        var daysRange = (endTime.Date - startTime.Date).Days + 1;
+        var prevStart = startTime.AddDays(-daysRange);
+        var prevEnd = startTime.AddDays(-1);
+
+        var prevOrders = await _context.Orders
+            .Include(o => o.Items)
+            .Where(o => (o.Status == OrderStatus.Delivered || o.Status == OrderStatus.Reported) && o.CreateAt.Date >= prevStart.Date &&o.CreateAt.Date <= prevEnd.Date)
+            .ToListAsync();
+        var currentTotals = new
+        {
+            Amount = dailyStats.Sum(d => d.TotalOrderAmount),
+            Count = dailyStats.Sum(d => d.OrderCount),
+            Quantity = dailyStats.Sum(d => d.ProductQuantity),
+            Buyers = dailyStats.Sum(d => d.UniqueBuyers)
+        };
+        var prevTotals = new
+        {
+            Amount = prevOrders.Sum(o => o.TotalPrice),
+            Count = prevOrders.Count,
+            Quantity = prevOrders.Sum(o => o.Items.Sum(i => i.Quantity)),
+            Buyers = prevOrders.Select(o => o.UserId).Distinct().Count()
+        };
+        string Diff(decimal current, decimal previous)
+        {
+            if (previous == 0) // Tránh chia cho 0
+                return current == 0 ? "0%" : "+100%";
+
+            var percentChange = ((current - previous) / previous) * 100;
+            return percentChange == 0
+                ? "0%": (percentChange > 0 ? $"+{percentChange:F2}%" : $"{percentChange:F2}%");
+        }
+
+        return new StatisticResponse
+        {
+            ActualStartDate = startTime,
+            EndDate = endTime,
+            Data = dailyStats,
+            Comparison = new ComparisonDto
+            {
+                ChangeOrderAmount = Diff(currentTotals.Amount, prevTotals.Amount),ChangeOrderCount = Diff(currentTotals.Count, prevTotals.Count), ChangeProductQuantity = Diff(currentTotals.Quantity, prevTotals.Quantity), ChangeUniqueBuyers = Diff(currentTotals.Buyers, prevTotals.Buyers)
+            }
+        };
+    }
+
+    public async Task<TopStatisticsResponse> GetTopStatisticsAsync(DateTime startDate, DateTime endDate)
+    {
+        try
+        {
+            var firstOrderDate = await _context.Orders
+                .Where(o => o.Status == OrderStatus.Delivered || o.Status == OrderStatus.Reported)
+                .OrderBy(o => o.CreateAt)
+                .Select(o => o.CreateAt)
+                .FirstOrDefaultAsync();
+
+            if (firstOrderDate == default)
+                throw new CustomException(ExceptionErrorCode.NotFound, "Không có đơn hàng nào.");
+
+            var startTime = startDate;
+            if (startTime < firstOrderDate)
+                startTime = firstOrderDate;
+
+            var ordersQuery = _context.Orders
+                .Where(o => (o.Status == OrderStatus.Delivered || o.Status == OrderStatus.Reported)
+                    && o.CreateAt >= startTime && o.CreateAt < endDate.AddDays(1));
+            var topBuyersQuery = ordersQuery
+                .GroupBy(o => o.UserId)
+                .Select(g => new
+                {
+                    UserId = g.Key,
+                    TotalOrders = g.Count(),
+                    TotalValue = g.Sum(o => o.TotalPrice)
+                })
+                .OrderByDescending(g => g.TotalOrders)
+                .Take(20);
+
+            var topBuyers = await topBuyersQuery.ToListAsync();
+
+            var userIds = topBuyers.Select(b => b.UserId).ToList();
+
+            var users = await _context.Users
+                .Where(u => userIds.Contains(u.Id))
+                 .Include(u => u.Avatar)
+                .Include(u => u.UserRooms)
+                    .ThenInclude(ur => ur.Room)
+                        .ThenInclude(r => r.Building)
+                            .ThenInclude(b => b.Area)
+                .ToDictionaryAsync(u => u.Id);
+
+            var topBuyerDtos = topBuyers.Select(b =>
+            {
+                if (!users.TryGetValue(b.UserId, out var user))
+                    return null;
+
+                var room = user.UserRooms.FirstOrDefault()?.Room;
+                var address = room != null ? $"{room.Name}-{room.Building.Name}-{room.Building.Area.Name}" : "N/A";
+
+                return new TopBuyerDto
+                {
+                    FullName = user.FullName,
+                    PhoneNumber = user.PhoneNumber,
+                    Address = address,
+                    Avatar = user.Avatar?.ThumbUrl,
+                    TotalOrders = b.TotalOrders,
+                    TotalValue = b.TotalValue
+                };
+            }).Where(dto => dto != null).ToList();
+
+            var topProductsQuery = ordersQuery
+                .SelectMany(o => o.Items, (o, oi) => new { o, oi })
+                .GroupBy(x => new
+                {
+                    ProductId = x.oi.ProductDetail.Product.Id,
+                    ProductName = x.oi.ProductDetail.Product.Name,
+                    StoreName = x.o.Store.Name,
+                    ProductImg = x.oi.ProductDetail.Image.ThumbUrl
+
+                })
+                .Select(g => new
+                {
+                    g.Key.ProductImg,
+                    g.Key.ProductId,
+                    g.Key.ProductName,
+                    g.Key.StoreName,
+                    SoldQuantity = g.Sum(x => x.oi.Quantity),
+                    TotalRevenue = g.Sum(x => x.oi.Quantity * x.oi.Price)
+                })
+                .OrderByDescending(g => g.SoldQuantity)
+                .Take(20);
+
+            var topProducts = await topProductsQuery.ToListAsync();
+
+            var topProductDtos = topProducts.Select(p => new TopProductDto
+            {
+                Id = p.ProductId,
+                Name = p.ProductName,
+                ProductImg = p.ProductImg,
+                StoreName = p.StoreName,
+                SoldQuantity = p.SoldQuantity,
+                TotalRevenue = p.TotalRevenue
+            }).ToList();
+
+
+            var topStoresQuery = ordersQuery
+                .GroupBy(o => o.StoreId)
+                .Select(g => new
+                {
+                    StoreId = g.Key,
+                    TotalOrders = g.Count(),
+                    TotalRevenue = g.Sum(o => o.TotalPrice)
+                })
+                .OrderByDescending(g => g.TotalOrders)
+                .Take(20);
+
+            var topStores = await topStoresQuery.ToListAsync();
+
+            var storeIds = topStores.Select(s => s.StoreId).ToList();
+
+            var stores = await _context.Stores
+                .Where(s => storeIds.Contains(s.Id))
+                .Include(s => s.Room)
+                    .ThenInclude(r => r.Building)
+                        .ThenInclude(b => b.Area)
+                .ToDictionaryAsync(s => s.Id);
+
+            var topStoreDtos = topStores.Select(s =>
+            {
+                if (!stores.TryGetValue(s.StoreId, out var store))
+                    return null;
+
+                var address = $"{store.Room.Name}-{store.Room.Building.Name}-{store.Room.Building.Area.Name}";
+
+                return new TopStoreDto
+                {
+                    StoreName = store.Name,
+                    PhoneNumber = store.PhoneNumber,
+                    Address = address,
+                    TotalOrders = s.TotalOrders,
+                    TotalRevenue = s.TotalRevenue
+                };
+            }).Where(dto => dto != null).ToList();
+
+            return new TopStatisticsResponse
+            {
+                ActualStartDate = startTime,
+                EndDate = endDate,
+                TopBuyers = topBuyerDtos,
+                TopProducts = topProductDtos,
+                TopStores = topStoreDtos
+            };
+        }
+        catch (Exception ex)
+        {
+            throw new CustomException(ExceptionErrorCode.RepositoryError, ex.ToString());
+        }
+    }
+
 }

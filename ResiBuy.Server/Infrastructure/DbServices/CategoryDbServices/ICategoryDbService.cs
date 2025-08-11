@@ -1,4 +1,5 @@
 ﻿using ResiBuy.Server.Infrastructure.Filter;
+using ResiBuy.Server.Infrastructure.Model.DTOs.StatisticAdminDtos;
 
 namespace ResiBuy.Server.Infrastructure.DbServices.CategoryDbServices
 {
@@ -8,6 +9,6 @@ namespace ResiBuy.Server.Infrastructure.DbServices.CategoryDbServices
         Task<IEnumerable<Category>> GetAllCategoryAsync();
         Task<int> CountAllCategoriesAsync();
         Task<int> CountProductsByCategoryIdAsync(Guid categoryId);
-
+        Task<List<CategoryPercentageDto>> GetCategoryPercentagesAsync();
     }
 }

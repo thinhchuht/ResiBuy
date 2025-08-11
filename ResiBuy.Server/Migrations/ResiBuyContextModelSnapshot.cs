@@ -554,6 +554,9 @@ namespace ResiBuy.Server.Migrations
                     b.Property<float>("EndWorkTime")
                         .HasColumnType("real");
 
+                    b.Property<DateTime?>("FirstTimeLogin")
+                        .HasColumnType("datetime2");
+
                     b.Property<bool>("IsLocked")
                         .HasColumnType("bit");
 
@@ -607,6 +610,9 @@ namespace ResiBuy.Server.Migrations
                     b.Property<bool>("IsOpen")
                         .HasColumnType("bit");
 
+                    b.Property<bool>("IsPayFee")
+                        .HasColumnType("bit");
+
                     b.Property<string>("Name")
                         .HasColumnType("nvarchar(max)");
 
@@ -629,6 +635,30 @@ namespace ResiBuy.Server.Migrations
                     b.HasIndex("RoomId");
 
                     b.ToTable("Stores");
+                });
+
+            modelBuilder.Entity("ResiBuy.Server.Infrastructure.Model.TimeSheet", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int");
+
+                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
+
+                    b.Property<DateTime>("DateMark")
+                        .HasColumnType("datetime2");
+
+                    b.Property<bool>("IsLate")
+                        .HasColumnType("bit");
+
+                    b.Property<Guid>("ShipperId")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("ShipperId");
+
+                    b.ToTable("TimeSheets");
                 });
 
             modelBuilder.Entity("ResiBuy.Server.Infrastructure.Model.User", b =>
@@ -686,19 +716,19 @@ namespace ResiBuy.Server.Migrations
                         new
                         {
                             Id = "adm_df",
-                            CreatedAt = new DateTime(2025, 7, 31, 14, 10, 19, 294, DateTimeKind.Local).AddTicks(5341),
+                            CreatedAt = new DateTime(2025, 8, 9, 15, 6, 39, 341, DateTimeKind.Local).AddTicks(9213),
                             DateOfBirth = new DateTime(1990, 1, 1, 0, 0, 0, 0, DateTimeKind.Unspecified),
                             Email = "admin@123",
                             EmailConfirmed = true,
                             FullName = "Administrator",
                             IdentityNumber = "admin",
                             IsLocked = false,
-                            PasswordHash = "$2a$11$WG.5gWDPzthOylZBKY8O5e7QNx6IPzEzewYkCBdXliDPBC92OQ3Eq",
+                            PasswordHash = "$2a$11$hx7l7gtVKumVZqDQrIxOL.1nnFiC8E0IB0gB3qEGaezexDmYg/jjS",
                             PhoneNumber = "admin",
                             PhoneNumberConfirmed = true,
                             ReportCount = 0,
                             Roles = "[\"ADMIN\"]",
-                            UpdatedAt = new DateTime(2025, 7, 31, 14, 10, 19, 294, DateTimeKind.Local).AddTicks(5375)
+                            UpdatedAt = new DateTime(2025, 8, 9, 15, 6, 39, 341, DateTimeKind.Local).AddTicks(9267)
                         });
                 });
 
@@ -1051,6 +1081,17 @@ namespace ResiBuy.Server.Migrations
                     b.Navigation("Room");
                 });
 
+            modelBuilder.Entity("ResiBuy.Server.Infrastructure.Model.TimeSheet", b =>
+                {
+                    b.HasOne("ResiBuy.Server.Infrastructure.Model.Shipper", "Shipper")
+                        .WithMany("TimeSheets")
+                        .HasForeignKey("ShipperId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("Shipper");
+                });
+
             modelBuilder.Entity("ResiBuy.Server.Infrastructure.Model.UserNotification", b =>
                 {
                     b.HasOne("ResiBuy.Server.Infrastructure.Model.Notification", "Notification")
@@ -1185,6 +1226,8 @@ namespace ResiBuy.Server.Migrations
             modelBuilder.Entity("ResiBuy.Server.Infrastructure.Model.Shipper", b =>
                 {
                     b.Navigation("Orders");
+
+                    b.Navigation("TimeSheets");
                 });
 
             modelBuilder.Entity("ResiBuy.Server.Infrastructure.Model.Store", b =>
