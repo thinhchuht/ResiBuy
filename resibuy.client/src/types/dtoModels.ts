@@ -36,8 +36,6 @@ export interface UserDto {
   isLocked: boolean;
   createdAt: string;
   updatedAt: string;
-  emailConfirmed: boolean;
-  phoneNumberConfirmed: boolean;
 }
 
 export interface RoomDetailDto {

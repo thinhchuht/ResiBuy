@@ -14,8 +14,6 @@
         public string AvatarId { get; set; }
         public DateTime CreatedAt { get; set; }
         public DateTime UpdatedAt { get; set; }
-        public bool EmailConfirmed { get; set; }
-        public bool PhoneNumberConfirmed { get; set; }
         public int ReportCount { get; set; }
         public Cart Cart { get; set; }
         public Image Avatar { get; set; }
@@ -42,8 +40,6 @@
             IsLocked = false;
             CreatedAt = DateTime.Now;
             UpdatedAt = DateTime.Now;
-            PhoneNumberConfirmed = true;
-            EmailConfirmed = true;
         }
 
         public static User CreateDefaultAdmin(string buildingName, string areaName)
@@ -53,9 +49,7 @@
                 Id = $"{Constants.DefaultAdmidId}{buildingName}{areaName}",
                 Email = $"{buildingName}_{areaName}_{Constants.DefaultAdminEmail}",
                 PasswordHash = CustomPasswordHasher.HashPassword(Constants.DefaultAdminPassword),
-                EmailConfirmed = true,
                 PhoneNumber = $"{Constants.DefaultAdminPhone}_{buildingName}_{areaName}",
-                PhoneNumberConfirmed = true,
                 IdentityNumber = $"{Constants.DefaultAdminIdnetityNumber}_{buildingName}_{areaName}",
                 DateOfBirth = new DateTime(1990, 1, 1),
                 IsLocked = false,
