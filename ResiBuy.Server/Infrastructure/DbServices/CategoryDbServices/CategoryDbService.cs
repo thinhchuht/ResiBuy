@@ -1,8 +1,4 @@
-﻿
-using Microsoft.EntityFrameworkCore;
-using ResiBuy.Server.Infrastructure.Filter;
-using ResiBuy.Server.Infrastructure.Model;
-using ResiBuy.Server.Infrastructure.Model.DTOs.StatisticAdminDtos;
+﻿using ResiBuy.Server.Infrastructure.Model.DTOs.StatisticAdminDtos;
 
 namespace ResiBuy.Server.Infrastructure.DbServices.CategoryDbServices
 {
@@ -14,11 +10,11 @@ namespace ResiBuy.Server.Infrastructure.DbServices.CategoryDbServices
             this._context = context;
         }
 
-        public async Task<IEnumerable<Category>> GetAllCategoryAsync()
+        public async Task<IEnumerable<Category>> GetAllCategoryAsync(bool status)
         {
             try
             {
-                var categories = await _context.Categories.Include(c => c.Image).ToListAsync();
+                var categories = await _context.Categories.Include(c => c.Image).Where(c => c.Status.Equals()).ToListAsync();
                 return categories;
             }
             catch (Exception ex)

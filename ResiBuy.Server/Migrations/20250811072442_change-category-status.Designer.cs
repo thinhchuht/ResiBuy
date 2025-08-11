@@ -3,6 +3,7 @@ using System;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
 using Microsoft.EntityFrameworkCore.Metadata;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using ResiBuy.Server.Infrastructure;
 
@@ -11,9 +12,11 @@ using ResiBuy.Server.Infrastructure;
 namespace ResiBuy.Server.Migrations
 {
     [DbContext(typeof(ResiBuyContext))]
-    partial class ResiBuyContextModelSnapshot : ModelSnapshot
+    [Migration("20250811072442_change-category-status")]
+    partial class changecategorystatus
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
