@@ -7,6 +7,7 @@ namespace ResiBuy.Server.Application.Queries.StatisticsAdminQueries
 
     public class GetStatisticsQueryHandler(IOrderDbService orderDbService) : IRequestHandler<GetOrderStatisticsQuery, StatisticResponse>
     {
+
         public async Task<StatisticResponse> Handle(GetOrderStatisticsQuery request, CancellationToken cancellationToken)
 
         {
