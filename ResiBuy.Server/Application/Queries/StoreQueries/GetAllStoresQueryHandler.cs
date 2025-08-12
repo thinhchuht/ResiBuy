@@ -16,7 +16,7 @@ namespace ResiBuy.Server.Application.Queries.StoreQueries
         public async Task<ResponseModel> Handle(GetAllStoresQuery query, CancellationToken cancellationToken)
         {
             var pagedResult = await _storeDbService.GetAllStoresAsync(query.pageSize,query.pageNumber);
-            var items = pagedResult.Items.Select(s => new StoreQueryResult(s.Id, s.Name, s.Description, s.IsLocked, s.IsOpen, s.ReportCount, s.CreatedAt, s.OwnerId, s.PhoneNumber, new
+            var items = pagedResult.Items.Select(s => new StoreQueryResult(s.Id, s.Name, s.Description, s.IsLocked, s.IsOpen, s.ReportCount, s.CreatedAt, s.OwnerId, s.PhoneNumber,s.IsPayFee, new
             {
                 Id = s.RoomId,
                 Name = s.Room.Name,

@@ -20,7 +20,7 @@ namespace ResiBuy.Server.Application.Queriestore.StoreQueries
             if (store == null)
                 throw new CustomException(ExceptionErrorCode.ValidationFailed, "Cửa hàng không tồn tại");
 
-            return ResponseModel.SuccessResponse(new StoreQueryResult(store.Id, store.Name, store.Description, store.IsLocked, store.IsOpen, store.ReportCount, store.CreatedAt, store.OwnerId,store.PhoneNumber, new
+            return ResponseModel.SuccessResponse(new StoreQueryResult(store.Id, store.Name, store.Description, store.IsLocked, store.IsOpen, store.ReportCount, store.CreatedAt, store.OwnerId,store.PhoneNumber,store.IsPayFee, new
             {
                 Id = store.RoomId,
                 Name = store.Room.Name,
