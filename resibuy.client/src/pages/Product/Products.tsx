@@ -1,9 +1,9 @@
 import { Container, Box } from "@mui/material";
-import { useEffect, useState } from "react";
+import { useEffect, useState, useCallback } from "react";
 import { Visibility, Store } from "@mui/icons-material";
 import { useToastify } from "../../hooks/useToastify";
 import { useNavigate, useSearchParams } from "react-router-dom";
-import type { Product } from "../../types/models";
+import type { Category, Product } from "../../types/models";
 import Carousel from "../../animations/Carousel";
 import { fakeEventData } from "../../fakeData/fakeEventData";
 import ProductDetail from "./ProductDetail/ProductDetail";
@@ -12,6 +12,7 @@ import SortBarSection from "./SortBarSection";
 import ProductGridSection from "./ProductGridSection";
 import ProductFilterSection from "./ProductFilterSection";
 import productApi from "../../api/product.api";
+import categoryApi from "../../api/category.api";
 import Pagination from "@mui/material/Pagination";
 
 const getProductMinPrice = (product: Product) => {
@@ -27,7 +28,7 @@ const Products = () => {
   const categoryId = searchParams.get("categoryId");
   const storeId = searchParams.get("storeId");
   const searchKeyword = searchParams.get("search") || "";
-  const [selectedCategory, setSelectedCategory] = useState(categoryId || null);
+  const [selectedCategory, setSelectedCategory] = useState<Category | null>(null);
   const [sortBy, setSortBy] = useState("newest");
   const [priceRange, setPriceRange] = useState([0, 50000000]);
   const [products, setProducts] = useState<Product[]>([]);
@@ -35,13 +36,33 @@ const Products = () => {
   const [pageSize] = useState(6);
   const [total, setTotal] = useState(0);
 
+  const fetchCategoryById = useCallback(async (id: string) => {
+    try {
+      const res = await categoryApi.getById(id);
+      if (res.data) {
+        setSelectedCategory(res.data);
+      }
+    } catch (error) {
+      console.error("Error fetching category:", error);
+      setSelectedCategory(null);
+    }
+  }, []);
+
+  useEffect(() => {
+    if (categoryId) {
+      fetchCategoryById(categoryId);
+    } else {
+      setSelectedCategory(null);
+    }
+  }, [categoryId, fetchCategoryById]);
+
   useEffect(() => {
     const fetchProducts = async () => {
       try {
         const res = await productApi.getAll({
           pageNumber: page,
           pageSize,
-          categoryId: selectedCategory || undefined,
+          categoryId: selectedCategory?.id || undefined,
           minPrice: priceRange[0],
           maxPrice: priceRange[1],
           storeId: storeId || undefined,
@@ -59,9 +80,7 @@ const Products = () => {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [page, pageSize, selectedCategory, priceRange, storeId, sortBy, searchKeyword]);
 
-  useEffect(() => {
-    setSelectedCategory(categoryId || null);
-  }, [categoryId]);
+
 
   const handleQuickView = (product: Product) => {
     setSelectedCategory(null);
@@ -86,8 +105,8 @@ const Products = () => {
     },
   ];
 
-  const handleCategoryChange = (catId: string | null) => {
-    setSelectedCategory(catId);
+  const handleCategoryChange = (category: Category | null) => {
+    setSelectedCategory(category);
     setPage(1);
   };
 

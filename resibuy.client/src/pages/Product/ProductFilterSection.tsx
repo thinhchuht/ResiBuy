@@ -5,8 +5,8 @@ import categoryApi from "../../api/category.api";
 import { debounce } from "lodash";
 
 interface ProductFilterProps {
-  selectedCategory: string | null;
-  setSelectedCategory: (id: string | null) => void;
+  selectedCategory: Category | null;
+  setSelectedCategory: (category: Category | null) => void;
   priceRange: number[];
   setPriceRange: (range: number[]) => void;
   storeId?: string;
@@ -19,7 +19,7 @@ const ProductFilterSection = ({ selectedCategory, setSelectedCategory, priceRang
   useEffect(() => {
     const fetchCategories = async () => {
       try {
-        const res = await categoryApi.getAll();
+        const res = await categoryApi.getAll(true);
         setCategories(res.data || []);
       } catch {
         setCategories([]);
@@ -87,14 +87,14 @@ const ProductFilterSection = ({ selectedCategory, setSelectedCategory, priceRang
           {categories.map((category) => (
             <Button
               key={category.id}
-              variant={selectedCategory === category.id ? "contained" : "text"}
-              onClick={() => setSelectedCategory(category.id)}
+              variant={selectedCategory?.id === category.id ? "contained" : "text"}
+              onClick={() => setSelectedCategory(category)}
               sx={{
                 justifyContent: "flex-start",
-                color: selectedCategory === category.id ? "#fff" : "#666",
-                bgcolor: selectedCategory === category.id ? "#FF6B6B" : "transparent",
+                color: selectedCategory?.id === category.id ? "#fff" : "#666",
+                bgcolor: selectedCategory?.id === category.id ? "#FF6B6B" : "transparent",
                 "&:hover": {
-                  bgcolor: selectedCategory === category.id ? "#FF6B6B" : "#f5f5f5",
+                  bgcolor: selectedCategory?.id === category.id ? "#FF6B6B" : "#f5f5f5",
                 },
               }}>
               {category.name}

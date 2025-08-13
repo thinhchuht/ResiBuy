@@ -34,7 +34,7 @@ namespace ResiBuy.Server.Controllers
         }
 
         [HttpGet("categories")]
-        public async Task<IActionResult> GetAllCategory(bool status = true)
+        public async Task<IActionResult> GetAllCategory(bool? status)
         {
                 var result = await mediator.Send(new GetAllCategoriesQuery(status));
                 return Ok(result);

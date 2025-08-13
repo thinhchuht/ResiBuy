@@ -95,17 +95,26 @@ export function useCategoriesLogic() {
         const updateData: UpdateCategoryDto = {
           id: editingCategory.id,
           name: categoryData.name,
-          status: categoryData.status || editingCategory.status || true,
+          status: categoryData.status !== undefined ? categoryData.status : true,
           image: categoryData.image || editingCategory.image || { id: "", url: "", thumbUrl: "", name: "" },
         };
         console.log("Calling categoryApi.update with:", updateData);
-        await categoryApi.update(updateData);
+        const response = await categoryApi.update(updateData);
         console.log("Update successful");
         await fetchCategories();
+        
+        // Update the selected category if it's the one being edited
+        if (selectedCategory && selectedCategory.id === editingCategory.id) {
+          setSelectedCategory({
+            ...selectedCategory,
+            ...updateData,
+            image: updateData.image || selectedCategory.image
+          });
+        }
       } else {
         const createData: CreateCategoryDto = {
           name: categoryData.name,
-          status: categoryData.status ||true,
+          status: categoryData.status !== undefined ? categoryData.status : true,
           image: categoryData.image || { id: "", url: "", thumbUrl: "", name: "" },
         };
         console.log("Calling categoryApi.create with:", createData);
@@ -298,13 +307,15 @@ export const useCategoryForm = (editCategory?: Category | null) => {
   };
 
   const validateForm = (data: CategoryFormData) => {
-    const errors: Partial<CategoryFormData> = {};
+    const errors: Record<string, string> = {};
 
     if (!data.name?.trim()) {
       errors.name = "Tên danh mục là bắt buộc";
     }
-    if (!data.status) {
-      errors.status = true;
+    
+    // Status is a required field
+    if (data.status === undefined || data.status === null) {
+      errors.status = "Trạng thái là bắt buộc";
     }
 
     return errors;

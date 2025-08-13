@@ -297,17 +297,9 @@ export function AddCategoryModal({
                     <MenuItem value="false">Không hoạt động</MenuItem>
                   </Select>
                   {errors.status && (
-                    <FormHelperText>{errors.status}</FormHelperText>
+                    <FormHelperText error>{errors.status}</FormHelperText>
                   )}
                 </FormControl>
-                {errors.status && (
-                  <Typography
-                    variant="caption"
-                    sx={{ color: "error.main", mt: 0.5 }}
-                  >
-                    {errors.status}
-                  </Typography>
-                )}
               </Box>
 
               {/* Upload Hình Ảnh */}
@@ -359,7 +351,7 @@ export function AddCategoryModal({
                     variant="caption"
                     sx={{ color: "error.main", mt: 0.5 }}
                   >
-                    {errors.image}
+                    {typeof errors.image === 'string' ? errors.image : 'Có lỗi xảy ra với hình ảnh'}
                   </Typography>
                 )}
               </Box>

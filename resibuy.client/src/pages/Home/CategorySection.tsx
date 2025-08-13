@@ -10,7 +10,7 @@ const CategorySection = () => {
   useEffect(() => {
     const fetchCategories = async () => {
       try {
-        const res = await categoryApi.getAll();
+        const res = await categoryApi.getAll(true);
         setCategories(res.data || []);
       } catch {
         setCategories([]);
