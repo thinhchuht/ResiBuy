@@ -58,7 +58,7 @@ export const useShipperForm = (editingShipper?: Shipper | null) => {
   });
 
   const [isSubmitting, setIsSubmitting] = useState(false);
-  const  toast  = useToastify();
+  const toast = useToastify();
 
   useEffect(() => {
     if (editingShipper) {
@@ -184,7 +184,7 @@ export const useShipperForm = (editingShipper?: Shipper | null) => {
   };
 
   const handleSubmit = async (
-    e: FormEvent<HTMLFormElement>,
+    e: React.FormEvent<HTMLFormElement>,
     onSubmit: (shipper: Shipper) => void
   ) => {
     e.preventDefault();
@@ -221,7 +221,7 @@ export const useShipperForm = (editingShipper?: Shipper | null) => {
     try {
       await onSubmit(shipper);
       console.log("Submit shipper success, showing toast:", editingShipper ? "Cập nhật shipper thành công!" : "Thêm shipper thành công!");
-      toast.success(editingShipper ? "Cập nhật shipper thành công!" : "Đang kiểm tra");
+      toast.success(editingShipper ? "Cập nhật shipper thành công!" : "Thêm shipper thành công!");
     } catch (error: any) {
       console.error("Submit shipper error:", error);
       toast.error(error.message || "Lỗi khi lưu shipper");
@@ -247,10 +247,11 @@ export const formatCurrency = (amount: number | null | undefined): string => {
   return new Intl.NumberFormat("vi-VN", {
     style: "currency",
     currency: "VND",
-    minimumFractionDigits: Number.isInteger(amount) ? 0 : 1, // Hiển thị 1 chữ số thập phân nếu amount không phải số nguyên
-    maximumFractionDigits: 3, // Giới hạn tối đa 1 chữ số thập phân
+    minimumFractionDigits: Number.isInteger(amount) ? 0 : 1,
+    maximumFractionDigits: 3,
   }).format(amount);
 };
+
 // Hàm định dạng ngày giờ
 export const formatDate = (date: string): string => {
   return new Date(date).toLocaleString("vi-VN", {
@@ -259,7 +260,7 @@ export const formatDate = (date: string): string => {
     year: "numeric",
     hour: "2-digit",
     minute: "2-digit",
-    hour12: false, // Force 24-hour format
+    hour12: false,
   });
 };
 
@@ -340,7 +341,7 @@ export const calculateShipperStats = async () => {
 
 // Hook useShippersLogic
 export const useShippersLogic = () => {
- const [shippers, setShippers] = useState<Shipper[]>([]);
+  const [shippers, setShippers] = useState<Shipper[]>([]);
   const [totalCount, setTotalCount] = useState(0);
   const [pageNumber, setPageNumber] = useState(1);
   const [pageSize] = useState(15);
@@ -349,12 +350,17 @@ export const useShippersLogic = () => {
   const [isAddModalOpen, setIsAddModalOpen] = useState(false);
   const [selectedShipper, setSelectedShipper] = useState<Shipper | null>(null);
   const [editingShipper, setEditingShipper] = useState<Shipper | null>(null);
+  const [searchParams, setSearchParams] = useState<{
+    keyWord?: string;
+    isOnline?: boolean;
+    isLocked?: boolean;
+  }>({});
   const toast = useToastify();
 
   // Lấy danh sách shipper
-  const fetchShippers = useCallback(async (page: number = 1, pageSize: number = 15) => {
+  const fetchShippers = useCallback(async (page: number = 1, size: number = 15) => {
     try {
-      const response = await shipperApi.getAll(page, pageSize);
+      const response = await shipperApi.getAll(page, size);
       console.log("Fetch shippers response:", response);
       if (response.code === 0 && Array.isArray(response.data.items)) {
         setShippers(response.data.items);
@@ -367,12 +373,53 @@ export const useShippersLogic = () => {
     } catch (error: any) {
       console.error("Fetch shippers error:", error);
       toast.error(error.message || "Lỗi khi lấy danh sách shipper");
+      setShippers([]);
+      setTotalCount(0);
+      setTotalPages(1);
+    }
+  }, [toast]);
+
+  // Tìm kiếm shipper với bộ lọc
+  const fetchShippersWithFilters = useCallback(async (
+    keyWord?: string,
+    isOnline?: boolean,
+    isLocked?: boolean,
+    page: number = 1,
+    size: number = 15
+  ) => {
+    try {
+      const response = await shipperApi.search(keyWord, isOnline, isLocked, page, size);
+      console.log("Search shippers response:", response);
+      if (response.code === 0 && Array.isArray(response.data.items)) {
+        setShippers(response.data.items);
+        setTotalCount(response.data.totalCount || 0);
+        setPageNumber(response.data.pageNumber || 1);
+        setTotalPages(response.data.totalPages || 1);
+      } else {
+        throw new Error(response.message || "Dữ liệu shipper không hợp lệ");
+      }
+    } catch (error: any) {
+      console.error("Search shippers error:", error);
+      toast.error(error.message || "Lỗi khi tìm kiếm shipper");
+      setShippers([]);
+      setTotalCount(0);
+      setTotalPages(1);
     }
   }, [toast]);
 
   useEffect(() => {
-    fetchShippers(pageNumber, pageSize);
-  }, [ pageNumber]);
+    if (Object.keys(searchParams).length === 0) {
+      fetchShippers(pageNumber, pageSize);
+    } else {
+      fetchShippersWithFilters(
+        searchParams.keyWord,
+        searchParams.isOnline,
+        searchParams.isLocked,
+        pageNumber,
+        pageSize
+      );
+    }
+  }, [ pageNumber, searchParams]);
 
   const handleViewShipper = async (shipper: Shipper) => {
     try {
@@ -535,7 +582,7 @@ export const useShippersLogic = () => {
     return shipper.isLocked;
   };
 
-  const getShipperOrders = useCallback(async (shipperId: string, pageNumber: number = 1, pageSize: number = 10)=> {
+  const getShipperOrders = useCallback(async (shipperId: string, pageNumber: number = 1, pageSize: number = 10) => {
     try {
       const response = await orderApi.getAll(undefined, undefined, undefined, undefined, undefined, shipperId, pageNumber, pageSize);
       console.log(`Get orders for shipper ${shipperId} response:`, response);
@@ -552,9 +599,6 @@ export const useShippersLogic = () => {
       return { items: [], totalCount: 0, pageNumber: 1, pageSize, totalPages: 1 };
     }
   }, [toast]);
-  const handlePageChange = (page: number) => {
-    setPageNumber(page);
-  };
 
   return {
     shippers,
@@ -566,6 +610,8 @@ export const useShippersLogic = () => {
     isDetailModalOpen,
     isAddModalOpen,
     editingShipper,
+    searchParams,
+    setSearchParams,
     handleViewShipper,
     handleCloseDetailModal,
     handleAddShipper,
@@ -574,7 +620,6 @@ export const useShippersLogic = () => {
     handleSubmitShipper,
     handleToggleLockShipper,
     handleExportShippers,
-    handlePageChange,
     formatCurrency,
     formatDate,
     formatWorkTime,
@@ -584,5 +629,6 @@ export const useShippersLogic = () => {
     getShipperOrders,
     calculateShipperStats,
     fetchShippers,
+    fetchShippersWithFilters,
   };
 };
