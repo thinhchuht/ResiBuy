@@ -8,7 +8,7 @@
         public record NotificationQueryResult(Guid Id, string EventName, DateTime CreatedAt,bool IsRead, string Data);
 
         public record AvatarQueryResult(string Id, string Name, string Url, string ThumbUrl);
-        public record StoreQueryResult(Guid Id, string Name, string Description, bool IsLocked, bool IsOpen, int ReportCount, DateTime CreatedAt, string OwnerId,string PhoneNumber, object Room);
+        public record StoreQueryResult(Guid Id, string Name, string Description, bool IsLocked, bool IsOpen,int ReportCount, DateTime CreatedAt, string OwnerId,string PhoneNumber, bool IsPayFee, object Room);
         //Room query result
         public record ReportQueryResult(Guid Id, bool IsResolved, string Title, string Description, DateTime CreatedAt, string CreatedById, ReportTarget ReportTarget, string TargetId, Guid OrderId);
         public record RoomQueryResult(Guid Id, string Name, string BuildingName, string AreaName, Guid AreaId);

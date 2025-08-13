@@ -228,12 +228,11 @@ export function AddBuildingModal({
                       borderColor: "grey.300",
                     }}
                   >
-                   {areasLoading
-  ? "Đang tải khu vực..."
-  : selectedArea
-  ? selectedArea.name
-  : "Không tìm thấy khu vực"}
-
+                    {areasLoading
+                      ? "Đang tải khu vực..."
+                      : selectedArea
+                      ? selectedArea.name
+                      : "Không tìm thấy khu vực"}
                   </Typography>
                 ) : (
                   <FormControl fullWidth size="small" error={!!errors.areaId}>
@@ -287,25 +286,27 @@ export function AddBuildingModal({
               </Box>
 
               {/* Trạng Thái */}
-              <Box>
-                <FormControlLabel
-                  control={
-                    <Checkbox
-                      checked={formData.isActive}
-                      onChange={(e) => handleInputChange("isActive", e.target.checked)}
-                      color="primary"
-                    />
-                  }
-                  label={
-                    <Typography
-                      variant="body2"
-                      sx={{ color: "grey.700", fontWeight: "medium" }}
-                    >
-                      Hoạt động
-                    </Typography>
-                  }
-                />
-              </Box>
+              {editBuilding && (
+                <Box>
+                  <FormControlLabel
+                    control={
+                      <Checkbox
+                        checked={formData.isActive}
+                        onChange={(e) => handleInputChange("isActive", e.target.checked)}
+                        color="primary"
+                      />
+                    }
+                    label={
+                      <Typography
+                        variant="body2"
+                        sx={{ color: "grey.700", fontWeight: "medium" }}
+                      >
+                        Hoạt động
+                      </Typography>
+                    }
+                  />
+                </Box>
+              )}
             </Box>
           </Box>
         </form>

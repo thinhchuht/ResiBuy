@@ -53,6 +53,10 @@ const shipperApi = {
     const response = await axiosClient.get(`${shipperUrl}/stats`);
     return response.data;
   },
+  search: async(keyWord?: string,isOnline?: boolean,isLocked?:boolean,pageNumber: number=1,pageSize: number=10)=>{
+    const response =await axiosClient.get(`${shipperUrl}/search`,{params :{keyWord,isOnline,isLocked,pageNumber,pageSize}});
+    return response.data;
+  },
 };
 
 export default shipperApi;

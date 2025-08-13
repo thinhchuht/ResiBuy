@@ -62,7 +62,7 @@ export default function AddRoomModal({ isOpen, onClose, onSubmit, editRoom }: Ad
       handleInputChange("isActive", true);
       handleInputChange("buildingId", buildingId || "");
     }
-  }, [editRoom, buildingId,  buildings]);
+  }, [editRoom, buildingId, buildings]);
 
   // Tìm tên tòa nhà dựa trên buildingId
   const selectedBuilding = buildings.find((building) => building.id === formData.buildingId);
@@ -145,15 +145,17 @@ export default function AddRoomModal({ isOpen, onClose, onSubmit, editRoom }: Ad
               </FormControl>
             )}
           </Box>
-          <FormControlLabel
-            control={
-              <Checkbox
-                checked={formData.isActive ?? true}
-                onChange={(e) => handleInputChange("isActive", e.target.checked)}
-              />
-            }
-            label="Hoạt động"
-          />
+          {editRoom && (
+            <FormControlLabel
+              control={
+                <Checkbox
+                  checked={formData.isActive ?? true}
+                  onChange={(e) => handleInputChange("isActive", e.target.checked)}
+                />
+              }
+              label="Hoạt động"
+            />
+          )}
         </Box>
       </DialogContent>
       <DialogActions>
