@@ -29,7 +29,6 @@ import {
   Delete,
   PhotoCamera,
   CheckCircle,
-  Warning,
   Category,
   Inventory,
   LocalOffer,
@@ -78,7 +77,11 @@ interface Classify {
 export default function CreateProduct() {
   useEffect(() => {
     axiosClient
-      .get("api/Category/categories")
+      .get("api/Category/categories",{
+        params: {
+          status: true,
+        },
+      })
       .then((res) => {
         const templist: CategoryDto[] = res.data.data || [];
         setListCategory(templist);
@@ -206,11 +209,11 @@ export default function CreateProduct() {
     }
   };
 
-  function classyfyText(productDetail: ProductDetailInput) {
-    return productDetail.additionalData
-      .map((data) => `${data.key}: ${data.value}`)
-      .join(", ");
-  }
+  // function classyfyText(productDetail: ProductDetailInput) {
+  //   return productDetail.additionalData
+  //     .map((data) => `${data.key}: ${data.value}`)
+  //     .join(", ");
+  // }
 
   async function uploadImg(file: File, index: number) {
     setIsLoading(true);

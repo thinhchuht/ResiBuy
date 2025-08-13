@@ -80,7 +80,7 @@ export interface CategoryImage {
 
 export interface CreateCategoryDto {
   name: string;
-  status: string;
+  status: boolean;
   image: CategoryImage;
 }
 

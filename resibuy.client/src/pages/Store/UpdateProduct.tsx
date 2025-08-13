@@ -76,7 +76,11 @@ export default function CreateProduct() {
   useEffect(() => {
     // lấy category
     axiosClient
-      .get("api/Category/categories")
+      .get("api/Category/categories", {
+        params: {
+          status: true,
+        },
+      })
       .then((res) => {
         setListCategory(res.data.data || []);
       })
@@ -130,6 +134,7 @@ export default function CreateProduct() {
         }
       })
       .catch((err) => console.error(err));
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [id]); // chạy lại khi id thay đổi
 
   const navigate = useNavigate();

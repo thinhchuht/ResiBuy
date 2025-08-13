@@ -1,8 +1,4 @@
-﻿
-using Microsoft.EntityFrameworkCore;
-using ResiBuy.Server.Infrastructure.Filter;
-using ResiBuy.Server.Infrastructure.Model;
-using ResiBuy.Server.Infrastructure.Model.DTOs.StatisticAdminDtos;
+﻿using ResiBuy.Server.Infrastructure.Model.DTOs.StatisticAdminDtos;
 
 namespace ResiBuy.Server.Infrastructure.DbServices.CategoryDbServices
 {
@@ -14,12 +10,20 @@ namespace ResiBuy.Server.Infrastructure.DbServices.CategoryDbServices
             this._context = context;
         }
 
-        public async Task<IEnumerable<Category>> GetAllCategoryAsync()
+        public async Task<IEnumerable<Category>> GetAllCategoryAsync(bool? status)
         {
             try
             {
-                var categories = await _context.Categories.Include(c => c.Image).ToListAsync();
-                return categories;
+                var query = _context.Categories
+                    .Include(c => c.Image)
+                    .AsQueryable();
+
+                if (status.HasValue)
+                {
+                    query = query.Where(c => c.Status == status.Value);
+                }
+
+                return await query.ToListAsync();
             }
             catch (Exception ex)
             {
@@ -79,11 +83,26 @@ namespace ResiBuy.Server.Infrastructure.DbServices.CategoryDbServices
                     .Select(c => new CategoryPercentageDto
                     {
                         Name = c.Name,
-                        Value = Math.Round(totalProducts > 0 ? (double)(productCounts.ContainsKey(c.Id) ? productCounts[c.Id] : 0) / totalProducts * 100 : 0,2)
+                        Value = Math.Round(totalProducts > 0 ? (double)(productCounts.ContainsKey(c.Id) ? productCounts[c.Id] : 0) / totalProducts * 100 : 0, 2)
                     })
                     .ToListAsync();
 
                 return percentages;
+            }
+            catch (Exception ex)
+            {
+                throw new CustomException(ExceptionErrorCode.RepositoryError, ex.Message);
+            }
+        }
+
+        public async Task<ResponseModel> CheckIfExistName(string Name)
+        {
+            try
+            {
+                if (await _context.Categories
+                    .AnyAsync(c => c.Name.ToLower() == Name.ToLower()))
+                    throw new CustomException(ExceptionErrorCode.DuplicateValue, "Đã tồn tại tên danh mục");
+                return ResponseModel.FailureResponse("Đã tồn tại");
             }
             catch (Exception ex)
             {

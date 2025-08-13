@@ -3,16 +3,16 @@ import { Box, Typography, IconButton } from "@mui/material";
 import {
   Edit,
   Visibility,
-  Inventory,
   Category as CategoryIcon,
-  Delete,
+  CheckCircle,
+  Cancel,
 } from "@mui/icons-material";
+import { Chip } from "@mui/material";
 import CustomTable from "../../../components/CustomTable";
 import { AddCategoryModal } from "../../../components/admin/Category/add-category-model";
 import { CategoryDetailModal } from "../../../components/admin/Category/category-detail-modal";
 import {
   calculateCategoryStats,
-  formatCurrency,
   useCategoriesLogic,
 } from "../../../components/admin/Category/seg/utlis";
 import { StatsCard } from "../../../layouts/AdminLayout/components/StatsCard";
@@ -21,7 +21,7 @@ import { StatsCard } from "../../../layouts/AdminLayout/components/StatsCard";
 interface Category {
   id: string;
   name: string;
-  status: string;
+  status: boolean;
   image?: {
     id: string;
     url: string;
@@ -48,7 +48,7 @@ function CategoryStatsCards() {
         setStats(data);
         setLoading(false);
       })
-      .catch((err: any) => {
+      .catch((err: Error) => {
         console.error("Error in calculateCategoryStats:", err);
         setError(err.message || "Lỗi khi tải thống kê");
         setStats({ totalCategories: 0, totalProducts: 0, totalRevenue: 0 });
@@ -114,8 +114,7 @@ export default function CategoriesPage() {
     handleSubmitCategory,
     handleDeleteCategory,
     handleExportCategories,
-    countProductsByCategoryId,
-    calculateCategoryRevenue,
+
   } = useCategoriesLogic();
 
   const [pageNumber, setPageNumber] = useState(1); // 1-based, khớp với API
@@ -144,9 +143,10 @@ export default function CategoriesPage() {
         setTotalCount(categories.length);
       }
       setLoading(false);
-    } catch (err: any) {
+    } catch (err: unknown) {
+      const errorMessage = err instanceof Error ? err.message : 'Lỗi không xác định';
       console.error("Error in CategoriesPage useEffect:", err);
-      setError("Lỗi khi xử lý danh sách danh mục: " + (err.message || "Không xác định"));
+      setError(`Lỗi khi xử lý danh sách danh mục: ${errorMessage}`);
       setFetchedCategories([]);
       setTotalCount(0);
       setLoading(false);
@@ -226,16 +226,27 @@ export default function CategoriesPage() {
       label: "Trạng thái",
       sortable: true,
       render: (category: Category) => (
-        <Typography
-          variant="body2"
+        <Chip
+          icon={
+            category.status ? (
+              <CheckCircle fontSize="small" />
+            ) : (
+              <Cancel fontSize="small" />
+            )
+          }
+          label={category.status ? "Hoạt động" : "Không hoạt động"}
+          color={category.status ? "success" : "error"}
+          variant="outlined"
+          size="small"
           sx={{
-            fontFamily: "monospace",
-            fontWeight: "medium",
-            color: "primary.main",
+            fontWeight: 'medium',
+            '& .MuiChip-icon': {
+              color: category.status ? 'success.main' : 'error.main',
+            },
+            borderColor: category.status ? 'success.main' : 'error.main',
+            color: category.status ? 'success.dark' : 'error.dark',
           }}
-        >
-          {category.status}
-        </Typography>
+        />
       ),
     },
     

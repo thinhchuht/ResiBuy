@@ -25,10 +25,8 @@ import {
   Slider,
   Chip,
   Tooltip,
-  Grid,
   Badge,
   Collapse,
-  Alert,
   Divider,
 } from "@mui/material";
 import {
@@ -135,7 +133,11 @@ const ProductPage: React.FC = () => {
 
   const fetchCategories = async () => {
     try {
-      const res = await axios.get("/api/Category/categories");
+      const res = await axios.get("/api/Category/categories", {
+        params: {
+          status: true,
+        },
+      });
       setCategories(res.data.data || []);
     } catch (err) {
       console.error("Không thể tải danh mục:", err);
@@ -147,6 +149,7 @@ const ProductPage: React.FC = () => {
       fetchProducts();
       fetchCategories();
     }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [storeId]);
 
   const handleFilterSubmit = (e: React.FormEvent<HTMLFormElement>) => {

@@ -4,7 +4,7 @@ namespace ResiBuy.Server.Application.Commands.CategoryCommands
 {
 
     public record CreateCategoryCommand(CreateCategoryDto CategoryDto) : IRequest<ResponseModel>;
-    public class CreateCategoryCommandHandler(ICategoryDbService CategoryDbService) : IRequestHandler<CreateCategoryCommand, ResponseModel>
+    public class CreateCategoryCommandHandler(ICategoryDbService categoryDbService) : IRequestHandler<CreateCategoryCommand, ResponseModel>
     {
         public async Task<ResponseModel> Handle(CreateCategoryCommand command, CancellationToken cancellationToken)
         {
@@ -13,6 +13,7 @@ namespace ResiBuy.Server.Application.Commands.CategoryCommands
                 var dto = command.CategoryDto;
              
                 if (string.IsNullOrEmpty(dto.Name)) throw new CustomException(ExceptionErrorCode.ValidationFailed, $"CategoryName là bắt buộc");
+                await categoryDbService.CheckIfExistName(dto.Name);
                 var category = new Category(dto.Name, dto.Status);
                 if (dto.Image != null && !string.IsNullOrEmpty(dto.Image.Id))
                 {
@@ -27,7 +28,7 @@ namespace ResiBuy.Server.Application.Commands.CategoryCommands
                     category.Image = image;
 
                 }
-                var createCategory = await CategoryDbService.CreateAsync(category);
+                var createCategory = await categoryDbService.CreateAsync(category);
 
                 if (createCategory == null)
                     throw new CustomException(ExceptionErrorCode.CreateFailed, "Không thể tạo Category mới. Vui lòng kiểm tra lại dữ liệu.");
