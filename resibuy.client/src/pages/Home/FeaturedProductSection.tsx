@@ -18,7 +18,7 @@ const FeaturedProductSection = () => {
     const fetchProducts = async () => {
       try {
         setLoading(true);
-        const response = await productApi.getAll({ pageNumber: 1, pageSize: 12, sortBy: "sold", sortDirection: "desc" });
+        const response = await productApi.getAll({ pageNumber: 1, pageSize: 12, sortBy: "sold", sortDirection: "desc", IsGettingCategory: true });
         console.log(response);
         if (response) {
           setProducts(response.items);
@@ -139,22 +139,36 @@ const FeaturedProductSection = () => {
         </MuiLink>
       </Box>
       <Divider sx={{ backgroundColor: "#e04225", width: "80%", margin: "10px auto" }} />
-      <Box
-        sx={{
-          display: "grid",
-          gridTemplateColumns: {
-            xs: "1fr",
-            sm: "1fr 1fr",
-            md: "1fr 1fr 1fr 1fr",
-          },
-          gap: 5,
-          marginBottom: 5,
-          marginTop: 5,
-        }}>
-        {products.map((product) => (
-          <ProductCard key={product.id} product={product} productActions={productActions} />
-        ))}
-      </Box>
+      {products.length > 0 ? (
+        <Box
+          sx={{
+            display: "grid",
+            gridTemplateColumns: {
+              xs: "1fr",
+              sm: "1fr 1fr",
+              md: "1fr 1fr 1fr 1fr",
+            },
+            gap: 5,
+            marginBottom: 5,
+            marginTop: 5,
+          }}>
+          {products.map((product) => (
+            <ProductCard key={product.id} product={product} productActions={productActions} />
+          ))}
+        </Box>
+      ) : (
+        <Box 
+          sx={{ 
+            textAlign: 'center', 
+            py: 8,
+            color: 'text.secondary'
+          }}
+        >
+          <Typography variant="h6">
+            Hiện tại chưa có sản phẩm
+          </Typography>
+        </Box>
+      )}
     </Box>
   );
 };

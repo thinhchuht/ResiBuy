@@ -1,4 +1,4 @@
-import { Container, Box } from "@mui/material";
+import { Container, Box, Typography, Button } from "@mui/material";
 import { useEffect, useState, useCallback } from "react";
 import { Visibility, Store } from "@mui/icons-material";
 import { useToastify } from "../../hooks/useToastify";
@@ -32,9 +32,24 @@ const Products = () => {
   const [sortBy, setSortBy] = useState("newest");
   const [priceRange, setPriceRange] = useState([0, 50000000]);
   const [products, setProducts] = useState<Product[]>([]);
+  const [categories, setCategories] = useState<Category[]>([]);
   const [page, setPage] = useState(1);
   const [pageSize] = useState(6);
   const [total, setTotal] = useState(0);
+  
+  // Fetch categories on component mount
+  useEffect(() => {
+    const fetchCategories = async () => {
+      try {
+        const res = await categoryApi.getAll(true);
+        setCategories(res.data || []);
+      } catch (error) {
+        console.error("Error fetching categories:", error);
+        setCategories([]);
+      }
+    };
+    fetchCategories();
+  }, []);
 
   const fetchCategoryById = useCallback(async (id: string) => {
     try {
@@ -69,6 +84,7 @@ const Products = () => {
           sortBy: sortBy === "price_asc" ? "price" : sortBy === "price_desc" ? "price" : sortBy === "popular" ? "sold" : "createdAt",
           sortDirection: sortBy === "price_asc" ? "asc" : sortBy === "price_desc" ? "desc" : sortBy === "popular" ? "desc" : "desc",
           search: searchKeyword || undefined,
+          IsGettingCategory: true
         });
         setProducts(res.items || []);
         setTotal(res.totalCount || 0);
@@ -145,6 +161,117 @@ const Products = () => {
     return <ProductDetail />;
   }
 
+  if (categories.length === 0) {
+    return (
+      <Container maxWidth="lg" sx={{ py: 8 }}>
+        <Box sx={{
+          display: 'flex',
+          flexDirection: 'column',
+          alignItems: 'center',
+          justifyContent: 'center',
+          minHeight: '60vh',
+          textAlign: 'center',
+          p: { xs: 3, sm: 4 },
+          bgcolor: 'background.paper',
+          borderRadius: 4,
+          boxShadow: '0 4px 20px rgba(0,0,0,0.08)',
+          border: '1px solid',
+          borderColor: 'divider',
+          maxWidth: 600,
+          mx: 'auto',
+          position: 'relative',
+          overflow: 'hidden',
+          '&:before': {
+            content: '""',
+            position: 'absolute',
+            top: 0,
+            left: 0,
+            right: 0,
+            height: 4,
+            background: 'linear-gradient(90deg, #FF6B6B 0%, #FF8E53 100%)',
+          }
+        }}>
+          <Box sx={{ 
+            width: 80, 
+            height: 80, 
+            mb: 3,
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            borderRadius: '50%',
+            bgcolor: 'rgba(255, 107, 107, 0.1)'
+          }}>
+            <Box component="span" sx={{ fontSize: 40, color: 'primary.main' }}>📦</Box>
+          </Box>
+          
+          <Typography variant="h5" sx={{ 
+            color: 'text.primary',
+            fontWeight: 700,
+            mb: 2,
+            fontSize: { xs: '1.5rem', sm: '1.75rem' }
+          }}>
+            Danh mục chưa sẵn sàng
+          </Typography>
+          
+          <Typography variant="body1" color="text.secondary" sx={{ 
+            mb: 4,
+            maxWidth: '80%',
+            mx: 'auto',
+            lineHeight: 1.6
+          }}>
+            Hiện chưa có danh mục sản phẩm nào để hiển thị. Vui lòng thử lại sau hoặc quay về trang chủ.
+          </Typography>
+          
+          <Box sx={{ display: 'flex', gap: 2, flexWrap: 'wrap', justifyContent: 'center' }}>
+            <Button 
+              variant="contained"
+              color="primary"
+              onClick={() => window.location.reload()}
+              sx={{
+                px: 4,
+                py: 1.5,
+                borderRadius: 2,
+                textTransform: 'none',
+                fontWeight: 600,
+                minWidth: 140,
+                boxShadow: '0 4px 12px rgba(255, 107, 107, 0.3)',
+                '&:hover': {
+                  boxShadow: '0 6px 16px rgba(255, 107, 107, 0.4)',
+                  transform: 'translateY(-1px)'
+                },
+                transition: 'all 0.2s ease-in-out'
+              }}
+            >
+              Tải lại trang
+            </Button>
+            
+            <Button 
+              variant="outlined"
+              color="primary"
+              onClick={() => navigate('/')}
+              sx={{
+                px: 4,
+                py: 1.5,
+                borderRadius: 2,
+                textTransform: 'none',
+                fontWeight: 600,
+                minWidth: 140,
+                borderWidth: 2,
+                '&:hover': {
+                  borderWidth: 2,
+                  transform: 'translateY(-1px)'
+                },
+                transition: 'all 0.2s ease-in-out'
+              }}
+            >
+              Về trang chủ
+            </Button>
+          </Box>
+        </Box>
+      </Container>
+    );
+  }
+
   return (
     <Box>
       <Carousel items={fakeEventData} />
@@ -152,6 +279,7 @@ const Products = () => {
         <Box sx={{ display: "flex", gap: 3 }}>
           <Box sx={{ width: { xs: "100%", md: "25%" } }}>
             <ProductFilterSection
+              categories={categories}
               selectedCategory={selectedCategory}
               setSelectedCategory={handleCategoryChange}
               priceRange={priceRange}
@@ -160,7 +288,12 @@ const Products = () => {
             />
           </Box>
           <Box sx={{ flex: 1 }}>
-            <SortBarSection selectedCategory={selectedCategory} sortBy={sortBy} setSortBy={setSortBy} />
+            <SortBarSection 
+              categories={categories}
+              selectedCategory={selectedCategory} 
+              sortBy={sortBy} 
+              setSortBy={setSortBy} 
+            />
             {filteredProducts.length > 0 ? <ProductGridSection filteredProducts={filteredProducts} productActions={productActions} onResetState={handleResetState} /> : <ProductEmptySection />}
             <Box sx={{ display: "flex", justifyContent: "center", mt: 3 }}>
               <Pagination

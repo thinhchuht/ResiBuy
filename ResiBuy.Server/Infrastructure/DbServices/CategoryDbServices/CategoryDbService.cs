@@ -99,10 +99,9 @@ namespace ResiBuy.Server.Infrastructure.DbServices.CategoryDbServices
         {
             try
             {
-                if (await _context.Categories
-                    .AnyAsync(c => c.Name.ToLower() == Name.ToLower()))
+                if (await _context.Categories.AnyAsync(c => c.Name.ToLower() == Name.ToLower()))
                     throw new CustomException(ExceptionErrorCode.DuplicateValue, "Đã tồn tại tên danh mục");
-                return ResponseModel.FailureResponse("Đã tồn tại");
+                return ResponseModel.SuccessResponse();
             }
             catch (Exception ex)
             {

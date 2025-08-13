@@ -133,11 +133,7 @@ const ProductPage: React.FC = () => {
 
   const fetchCategories = async () => {
     try {
-      const res = await axios.get("/api/Category/categories", {
-        params: {
-          status: true,
-        },
-      });
+      const res = await axios.get("/api/Category/categories");
       setCategories(res.data.data || []);
     } catch (err) {
       console.error("Không thể tải danh mục:", err);
@@ -648,7 +644,7 @@ const ProductPage: React.FC = () => {
                               sx={{ width: 24, height: 24 }}
                             />
                             <Typography variant="body2">
-                              {category.name}
+                              {category.name} {category.status ? "" : "(Tạm ngưng hoạt động)"}
                             </Typography>
                           </Box>
                         ) : (

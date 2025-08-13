@@ -21,7 +21,8 @@ namespace ResiBuy.Server.Application.Commands.CategoryCommands
 
                 if (string.IsNullOrWhiteSpace(dto.Name))
                     throw new CustomException(ExceptionErrorCode.ValidationFailed, $"CategoryName là bắt buộc");
-                await categoryDbService.CheckIfExistName(dto.Name);
+                if (category.Name != dto.Name)
+                    await categoryDbService.CheckIfExistName(dto.Name);
                 category.UpdateCategory(dto.Name, dto.Status);
 
                 if (string.IsNullOrEmpty(dto.Image?.Id))
