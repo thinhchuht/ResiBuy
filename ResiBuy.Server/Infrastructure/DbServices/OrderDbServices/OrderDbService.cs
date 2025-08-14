@@ -1,7 +1,6 @@
 ﻿using ResiBuy.Server.Infrastructure.Model.DTOs.StatisticAdminDtos;
 using ResiBuy.Server.Services.MapBoxService;
 using ResiBuy.Server.Services.OpenRouteService;
-using static Microsoft.EntityFrameworkCore.DbLoggerCategory;
 
 namespace ResiBuy.Server.Infrastructure.DbServices.OrderDbServices;
 

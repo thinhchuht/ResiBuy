@@ -4,7 +4,7 @@
     {
         public Guid Id { get; set; }
         public string Name { get; set; }
-        public string Status { get; set; }
+        public bool Status { get; set; }
         public ImageCategoryDto Image { get; set; } = new();
     }
 }

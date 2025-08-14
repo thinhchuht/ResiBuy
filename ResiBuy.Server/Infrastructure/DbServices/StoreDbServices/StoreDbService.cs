@@ -347,5 +347,67 @@ namespace ResiBuy.Server.Infrastructure.DbServices.StoreDbServices
 
             return result;
         }
+        public async Task<PagedResult<Store>> SearchStoresAsync(
+    string keyword,
+    bool? isOpen,
+    bool? isLocked,
+    bool? isPayFee,
+    int pageNumber = 1,
+    int pageSize = 5)
+        {
+            try
+            {
+                var query = _context.Stores
+                    .Include(s => s.Room)
+                        .ThenInclude(r => r.Building)
+                        .ThenInclude(b => b.Area)
+                    .AsQueryable();
+
+                // Search theo tên
+                if (!string.IsNullOrWhiteSpace(keyword))
+                {
+                    query = query.Where(s => s.Name.Contains(keyword));
+                }
+
+                // Filter theo trạng thái mở cửa
+                if (isOpen.HasValue)
+                {
+                    query = query.Where(s => s.IsOpen == isOpen.Value);
+                }
+
+                // Filter theo trạng thái khóa
+                if (isLocked.HasValue)
+                {
+                    query = query.Where(s => s.IsLocked == isLocked.Value);
+                }
+
+                // Filter theo trạng thái đóng phí
+                if (isPayFee.HasValue)
+                {
+                    query = query.Where(s => s.IsPayFee == isPayFee.Value);
+                }
+
+                var totalCount = await query.CountAsync();
+
+                var items = await query
+                    .OrderBy(s => s.Id)
+                    .Skip((pageNumber - 1) * pageSize)
+                    .Take(pageSize)
+                    .ToListAsync();
+
+                return new PagedResult<Store>
+                {
+                    Items = items,
+                    TotalCount = totalCount,
+                    PageNumber = pageNumber,
+                    PageSize = pageSize
+                };
+            }
+            catch (Exception ex)
+            {
+                throw new CustomException(ExceptionErrorCode.RepositoryError, ex.Message);
+            }
+        }
+
     }
 }

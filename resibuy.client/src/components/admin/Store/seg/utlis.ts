@@ -6,6 +6,7 @@ import productApi from "../../../../api/product.api";
 import orderApi from "../../../../api/order.api";
 import { useToastify } from "../../../../hooks/useToastify";
 import { OrderStatus } from "../../../../types/models";
+
 export function useStoresLogic() {
   const [stores, setStores] = useState([]);
   const [selectedStore, setSelectedStore] = useState(null);
@@ -13,7 +14,15 @@ export function useStoresLogic() {
   const [isAddModalOpen, setIsAddModalOpen] = useState(false);
   const [editingStore, setEditingStore] = useState(null);
   const [selectedOrder, setSelectedOrder] = useState(null);
-
+  const [pageNumber, setPageNumber] = useState(1);
+  const [pageSize] = useState(1);
+  const [totalCount, setTotalCount] = useState(0);
+  const [searchParams, setSearchParams] = useState<{
+    keyWord?: string;
+    isOnline?: boolean;
+    isLocked?: boolean;
+    isPayFee?: boolean;
+  }>({});
   const toast = useToastify();
 
   const getUserById = async (userId) => {
@@ -39,7 +48,8 @@ export function useStoresLogic() {
       return [];
     }
   };
- const getOrdersByStoreId = useCallback(async (storeId: string, pageNumber: number = 1, pageSize: number = 1) => {
+
+  const getOrdersByStoreId = useCallback(async (storeId: string, pageNumber: number = 1, pageSize: number = 1) => {
     try {
       const response = await orderApi.getAll(undefined, undefined, undefined, storeId, undefined, undefined, pageNumber, pageSize);
       console.log("getOrdersByStoreId response:", response);
@@ -50,16 +60,42 @@ export function useStoresLogic() {
     }
   }, [toast]);
 
-  const fetchStores = useCallback(async () => {
+  const fetchStores = useCallback(async (page: number = 1, size: number = 1) => {
     try {
-      const response = await storeApi.getAll(1, 15);
+      const response = await storeApi.getAll(page, size);
       if (response.code === 0) {
         setStores(response.data.items || []);
+        setTotalCount(response.data.totalCount || 0);
       } else {
         throw new Error(response.message || "Lỗi khi lấy danh sách cửa hàng");
       }
     } catch (err) {
       toast.error(err.message || "Lỗi khi lấy danh sách cửa hàng");
+      setStores([]);
+      setTotalCount(0);
+    }
+  }, [toast]);
+
+  const fetchStoresWithFilters = useCallback(async (
+    keyWord?: string,
+    isOnline?: boolean,
+    isLocked?: boolean,
+    isPayFee?: boolean,
+    page: number = 1,
+    size: number = 1
+  ) => {
+    try {
+      const response = await storeApi.search(keyWord, isOnline, isLocked, isPayFee, page, size);
+      if (response.code === 0) {
+        setStores(response.data.items || []);
+        setTotalCount(response.data.totalCount || 0);
+      } else {
+        throw new Error(response.message || "Lỗi khi tìm kiếm cửa hàng");
+      }
+    } catch (err) {
+      toast.error(err.message || "Lỗi khi tìm kiếm cửa hàng");
+      setStores([]);
+      setTotalCount(0);
     }
   }, [toast]);
 
@@ -123,17 +159,10 @@ export function useStoresLogic() {
     return null;
   };
 
-
-
-  
   const handleViewOrderDetails = (orderId) => {
     toast.info("API chi tiết đơn hàng chưa được triển khai");
     setSelectedOrder(null);
   };
-
-  useEffect(() => {
-    fetchStores();
-  }, []);
 
   const handleViewStore = async (store) => {
     const storeDetail = await fetchStoreById(store.id);
@@ -171,7 +200,7 @@ export function useStoresLogic() {
           id: editingStore.id,
           name: storeData.name,
           description: storeData.description,
-          phoneNumber:storeData.phoneNumber,
+          phoneNumber: storeData.phoneNumber,
         });
         if (updateResponse.code !== 0) {
           throw new Error(updateResponse.message || "Lỗi khi cập nhật cửa hàng");
@@ -191,14 +220,14 @@ export function useStoresLogic() {
           }
         }
 
-        await fetchStores();
+        await fetchStores(pageNumber, pageSize);
         if (selectedStore && selectedStore.id === storeData.id) {
           setSelectedStore({
             ...selectedStore,
             name: storeData.name,
             description: storeData.description,
             isLocked: storeData.isLocked,
-            isOpen: storeData.isOpen, 
+            isOpen: storeData.isOpen,
             phoneNumber: storeData.phoneNumber,
           });
         }
@@ -209,10 +238,10 @@ export function useStoresLogic() {
           description: storeData.description,
           ownerId: storeData.ownerId,
           roomId: storeData.roomId,
-           phoneNumber: storeData.phoneNumber,
+          phoneNumber: storeData.phoneNumber,
         });
         if (response.code === 0) {
-          await fetchStores();
+          await fetchStores(pageNumber, pageSize);
           toast.success("Thêm cửa hàng mới thành công!");
         } else {
           throw new Error(response.message || "Lỗi khi thêm cửa hàng");
@@ -225,34 +254,32 @@ export function useStoresLogic() {
     }
   };
 
-const handleToggleStoreStatus = async (storeId) => {
-  try {
-    const store = stores.find((s) => s.id === storeId);
-    if (!store) throw new Error("Cửa hàng không tồn tại");
+  const handleToggleStoreStatus = async (storeId) => {
+    try {
+      const store = stores.find((s) => s.id === storeId);
+      if (!store) throw new Error("Cửa hàng không tồn tại");
 
-    const response = await storeApi.updateStatus(storeId, !store.isLocked);
+      const response = await storeApi.updateStatus(storeId, !store.isLocked);
 
-    if (response.code === 0) {
-      await fetchStores();
+      if (response.code === 0) {
+        await fetchStores(pageNumber, pageSize);
 
-      // ✅ Cập nhật lại selectedStore nếu đang mở modal chi tiết
-      if (selectedStore && selectedStore.id === storeId) {
-        const updatedStore = await storeApi.getById(storeId);
-        if (updatedStore.code === 0) {
-          setSelectedStore(updatedStore.data); // <-- cập nhật modal
+        if (selectedStore && selectedStore.id === storeId) {
+          const updatedStore = await storeApi.getById(storeId);
+          if (updatedStore.code === 0) {
+            setSelectedStore(updatedStore.data);
+          }
         }
+
+        const newStatus = !store.isLocked ? "khóa" : "mở khóa";
+        toast.info(`Cửa hàng đã được ${newStatus}.`);
+      } else {
+        throw new Error(response.message || "Lỗi khi cập nhật trạng thái");
       }
-
-      const newStatus = !store.isLocked ? "khóa" : "mở khóa";
-      toast.info(`Cửa hàng đã được ${newStatus}.`);
-    } else {
-      throw new Error(response.message || "Lỗi khi cập nhật trạng thái");
+    } catch (err) {
+      toast.error(err.message || "Lỗi khi cập nhật trạng thái cửa hàng");
     }
-  } catch (err) {
-    toast.error(err.message || "Lỗi khi cập nhật trạng thái cửa hàng");
-  }
-};
-
+  };
 
   const handleExportStores = async () => {
     try {
@@ -270,7 +297,7 @@ const handleToggleStoreStatus = async (storeId) => {
         "Open",
         "Create at",
         "Room",
-        "BuildinTòa nhà",
+        "Building",
         "Area",
       ];
       const csvContent = [
@@ -280,8 +307,8 @@ const handleToggleStoreStatus = async (storeId) => {
             store.id,
             `"${store.name}"`,
             `"${store.description || ""}"`,
-            `"${store.phoneNumber || ""}"`, 
-            store.isLocked ? "LOcked" : "Unlock",
+            `"${store.phoneNumber || ""}"`,
+            store.isLocked ? "Locked" : "Unlock",
             store.isOpen ? "Open" : "Close",
             new Date(store.createdAt).toLocaleDateString(),
             `"${store.room?.name || "N/A"}"`,
@@ -305,43 +332,48 @@ const handleToggleStoreStatus = async (storeId) => {
   };
 
   const calculateStoreStats = async () => {
-  try {
-    const totalStores = await storeApi.count();
-   const statusCounts = await storeApi.countByIsOpenAndIsLoc();
-return {
-  totalStores: totalStores || 0,
-  activeStores: statusCounts?.isLocked?.["false"] ?? 0,
-  inactiveStores: statusCounts?.isLocked?.["true"] ?? 0,
-  openStore: statusCounts?.isOpen?.["true"] ?? 0,
-  closeStore: statusCounts?.isOpen?.["false"] ?? 0,
-};
-
-  } catch (err) {
-    toast.error(err.message || "Lỗi khi tính thống kê cửa hàng");
-    return {
-      totalStores: 0,
-      activeStores: 0,
-      inactiveStores: 0,
-      openStore: 0,
-      closeStore: 0,
-    };
-  }
-};
+    try {
+      const totalStores = await storeApi.count();
+      const statusCounts = await storeApi.countByIsOpenAndIsLoc();
+      return {
+        totalStores: totalStores || 0,
+        activeStores: statusCounts?.isLocked?.["false"] ?? 0,
+        inactiveStores: statusCounts?.isLocked?.["true"] ?? 0,
+        openStore: statusCounts?.isOpen?.["true"] ?? 0,
+        closeStore: statusCounts?.isOpen?.["false"] ?? 0,
+      };
+    } catch (err) {
+      toast.error(err.message || "Lỗi khi tính thống kê cửa hàng");
+      return {
+        totalStores: 0,
+        activeStores: 0,
+        inactiveStores: 0,
+        openStore: 0,
+        closeStore: 0,
+      };
+    }
+  };
 
   return {
     stores,
+    setStores,
     selectedStore,
     isDetailModalOpen,
     isAddModalOpen,
     editingStore,
     selectedOrder,
+    pageNumber,
+    setPageNumber,
+    totalCount,
+    searchParams,
+    setSearchParams,
     handleViewStore,
     handleCloseDetailModal,
     handleAddStore,
     handleEditStore,
     handleCloseAddModal,
     handleSubmitStore,
-   getOrdersByStoreId,
+    getOrdersByStoreId,
     handleToggleStoreStatus,
     handleExportStores,
     getUserById,
@@ -357,23 +389,26 @@ return {
     formatOrderStatus,
     getOrderStatusColor,
     handleViewOrderDetails,
+    fetchStores,
+    fetchStoresWithFilters,
   };
 };
 
+// ... (Các hàm khác như useStoreForm, getStatusColor, formatCurrency, formatOrderStatus, getOrderStatusColor, formatDate không thay đổi)
 export const useStoreForm = (editStore) => {
   const [formData, setFormData] = useState({
     name: "",
     description: "",
     ownerId: "",
     roomId: "",
-      phoneNumber: "", 
+    phoneNumber: "",
     isLocked: false,
     isOpen: true,
   });
 
   const [errors, setErrors] = useState({});
   const [isSubmitting, setIsSubmitting] = useState(false);
-  const  toast  = useToastify();
+  const toast = useToastify();
 
   useEffect(() => {
     if (editStore) {
@@ -490,7 +525,8 @@ export const formatCurrency = (value) => {
     currency: "VND",
   }).format(value);
 };
- export const formatOrderStatus = (status: OrderStatus): string => {
+
+export const formatOrderStatus = (status: OrderStatus): string => {
   switch (status) {
     case OrderStatus.Pending:
       return "Chờ Xử Lý";
@@ -508,7 +544,8 @@ export const formatCurrency = (value) => {
       return status;
   }
 };
- export const getOrderStatusColor = (
+
+export const getOrderStatusColor = (
   status: OrderStatus
 ): { bgcolor: string; color: string } => {
   switch (status) {
@@ -528,6 +565,7 @@ export const formatCurrency = (value) => {
       return { bgcolor: "#F3F4F6", color: "#6B7280" };
   }
 };
+
 export const formatDate = (date) => {
   if (!date) return "N/A";
   return new Date(date).toLocaleDateString("vi-VN", {

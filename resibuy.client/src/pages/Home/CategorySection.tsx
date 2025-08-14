@@ -3,14 +3,15 @@ import { useState, useEffect } from "react";
 import CircularGallery from "../../animations/CircularGallery";
 import CategoryIcon from "../../assets/icons/Category";
 import categoryApi from "../../api/category.api";
+import type { Category } from "../../types/models";
 
 const CategorySection = () => {
-  const [categories, setCategories] = useState([]);
+  const [categories, setCategories] = useState<Category[]>([]);
 
   useEffect(() => {
     const fetchCategories = async () => {
       try {
-        const res = await categoryApi.getAll();
+        const res = await categoryApi.getAll(true);
         setCategories(res.data || []);
       } catch {
         setCategories([]);
@@ -52,7 +53,21 @@ const CategorySection = () => {
         <CategoryIcon width={24} height={24} />
         DANH MỤC
       </Typography>
-      <CircularGallery bend={2} textColor="#ff6b6b" borderRadius={0.08} items={categories} />
+      {categories.length === 0 ? (
+        <Box 
+          sx={{ 
+            textAlign: 'center', 
+            py: 8,
+            color: 'text.secondary'
+          }}
+        >
+          <Typography variant="h6">
+            Hiện tại chưa có danh mục sản phẩm
+          </Typography>
+        </Box>
+      ) : (
+        <CircularGallery bend={2} textColor="#ff6b6b" borderRadius={0.08} items={categories} />
+      )}
     </Box>
   );
 };

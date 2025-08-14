@@ -10,6 +10,10 @@ import {
   Button,
   IconButton,
   Input,
+  MenuItem,
+  Select,
+  FormControl,
+  FormHelperText,
 } from "@mui/material";
 import { Close, Category as CategoryIcon } from "@mui/icons-material";
 import { useCategoryForm, type CategoryFormData } from "./seg/utlis";
@@ -269,43 +273,33 @@ export function AddCategoryModal({
                 >
                   Trạng Thái *
                 </Typography>
-                <TextField
-                  fullWidth
-                  value={formData.status}
-                  onChange={(e) => handleInputChange("status", e.target.value)}
-                  placeholder="Nhập trạng thái "
-                  size="small"
-                  error={!!errors.status}
-                  sx={{
-                    bgcolor: "background.paper",
-                    "& .MuiOutlinedInput-root": {
+                <FormControl fullWidth size="small" error={!!errors.status}>
+                  <Select
+                    value={formData.status}
+                    onChange={(e) => handleInputChange("status", e.target.value === 'true')}
+                    displayEmpty
+                    sx={{
+                      bgcolor: "background.paper",
                       borderRadius: 2,
-                      "& fieldset": {
+                      "& .MuiOutlinedInput-notchedOutline": {
                         borderColor: errors.status ? "error.main" : "grey.300",
                       },
-                      "&:hover fieldset": {
+                      "&:hover .MuiOutlinedInput-notchedOutline": {
                         borderColor: errors.status ? "error.main" : "grey.500",
                       },
-                      "&.Mui-focused fieldset": {
+                      "&.Mui-focused .MuiOutlinedInput-notchedOutline": {
                         borderColor: "primary.main",
                         boxShadow: "0 0 0 2px rgba(59, 130, 246, 0.5)",
                       },
-                    },
-                    "& .MuiInputBase-input": {
-                      color: "grey.700",
-                      px: 1.5,
-                      py: 1,
-                    },
-                  }}
-                />
-                {errors.status && (
-                  <Typography
-                    variant="caption"
-                    sx={{ color: "error.main", mt: 0.5 }}
+                    }}
                   >
-                    {errors.status}
-                  </Typography>
-                )}
+                    <MenuItem value="true">Hoạt động</MenuItem>
+                    <MenuItem value="false">Không hoạt động</MenuItem>
+                  </Select>
+                  {errors.status && (
+                    <FormHelperText error>{errors.status}</FormHelperText>
+                  )}
+                </FormControl>
               </Box>
 
               {/* Upload Hình Ảnh */}
@@ -357,7 +351,7 @@ export function AddCategoryModal({
                     variant="caption"
                     sx={{ color: "error.main", mt: 0.5 }}
                   >
-                    {errors.image}
+                    {typeof errors.image === 'string' ? errors.image : 'Có lỗi xảy ra với hình ảnh'}
                   </Typography>
                 )}
               </Box>

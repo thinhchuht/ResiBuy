@@ -30,6 +30,7 @@ import userApi from "../../../api/user.api";
 import roomApi from "../../../api/room.api";
 import type { RoomDetailDto, BuildingDto, UserDto } from "../../../types/dtoModels";
 import { useToastify } from "../../../hooks/useToastify";
+import { formatDateWithoutTime } from "../User/seg/utils";
 
 interface RoomDetailModalProps {
   isOpen: boolean;
@@ -847,7 +848,7 @@ const handleDeleteUser = async () => {
                             />
                           </TableCell>
                           <TableCell sx={{ px: 2, py: 1.5, fontSize: "0.875rem", color: "grey.900" }}>
-                            {formatDate(user.dateOfBirth)}
+                            {formatDateWithoutTime(user.dateOfBirth)}
                           </TableCell>
                           <TableCell sx={{ px: 2, py: 1.5, fontSize: "0.875rem", color: "grey.900" }}>
                             {formatDate(user.createdAt)}

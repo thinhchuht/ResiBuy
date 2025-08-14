@@ -35,6 +35,7 @@
                         .ThenInclude(pd => pd.Image)
                     .Include(p => p.ProductDetails)
                         .ThenInclude(pd => pd.AdditionalData)
+                     .Include(p => p.Category)
                     .FirstOrDefaultAsync(p => p.Id == id);
 
                 return product; 

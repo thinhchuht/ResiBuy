@@ -96,6 +96,7 @@ const Orders = () => {
       setOrders([]);
       setTotalPages(1);
     }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [user?.id, page, currentTab, startDate, endDate]);
 
   useEffect(() => {

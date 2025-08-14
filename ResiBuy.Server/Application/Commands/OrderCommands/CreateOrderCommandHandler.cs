@@ -33,8 +33,8 @@ namespace ResiBuy.Server.Application.Commands.OrderCommands
                 throw new CustomException(ExceptionErrorCode.ValidationFailed, "Không có tồn tại giỏ hàng.");
             var cart = await cartDbService.GetByIdAsync(user.Cart.Id);
             if (!cart.CartItems.Any() && !dto.IsInstance) throw new CustomException(ExceptionErrorCode.ValidationFailed, "Giỏ hàng không có sản phẩm nào.");
-            //if (!cart.IsCheckingOut)
-            //    throw new CustomException(ExceptionErrorCode.ValidationFailed, "Giỏ hàng chưa ở trạng thái thanh toán.");
+            if (!cart.IsCheckingOut)
+                throw new CustomException(ExceptionErrorCode.ValidationFailed, "Giỏ hàng chưa ở trạng thái thanh toán.");
             var voucherIds = dto.Orders.Select(o => o.VoucherId);
             var checkVoucherRs = await voucherDbService.CheckIsActiveVouchers(voucherIds);
             if (!checkVoucherRs.IsSuccess()) throw new CustomException(ExceptionErrorCode.ValidationFailed, checkVoucherRs.Message);
@@ -56,18 +56,19 @@ namespace ResiBuy.Server.Application.Commands.OrderCommands
                 var notiProductDetails = new List<ProductDetail>();
                 var orders = dto.Orders.Select(o => new Order(o.Id, o.TotalPrice, o.ShippingFee, dto.PaymentMethod, o.Note, dto.AddressId, dto.UserId, o.StoreId, o.Items.Select(i => new OrderItem(i.Quantity, i.Price, o.Id, i.ProductDetailId)).ToList(), o.VoucherId));
                 var createdOrders = await orderDbService.CreateBatchTransactionAsync(orders);
-                if (createdOrders == null || !createdOrders.Any()) throw new CustomException(ExceptionErrorCode.CreateFailed, "Không thể tạo đơn hàng");
+                if (createdOrders == null || !createdOrders.Any()) throw new CustomException(ExceptionErrorCode.CreateFailed, "Không tồn tại đơn hàng");
                 if (voucherIds.Any()) await voucherDbService.UpdateQuantityBatchAsync(voucherIds);
-                if (!dto.IsInstance)
-                    await cartItemDbService.DeleteBatchByProductDetailIdAsync(cart.Id, createdOrders.SelectMany(o => o.Items).Select(ci => ci.ProductDetailId));
+
                 var productDetails = await productDetailDbService.GetBatchAsync(productDetailIds);
                 foreach (var productDetail in productDetails)
                 {
+                    if(!productDetail.Product.Category.Status) throw new CustomException(ExceptionErrorCode.ValidationFailed, $"Danh mục sản phẩm {productDetail.Product.Name} đã tạm thời ngừng hoạt động");
+                    if(!dto.IsInstance && !cart.CartItems.Any(ci => ci.ProductDetailId == productDetail.Id)) throw new CustomException(ExceptionErrorCode.ValidationFailed, $"Không tồn tài sản phẩm trong giỏ hàng");
+                    if (productDetail.Product.IsOutOfStock || productDetail.IsOutOfStock || productDetail.Quantity <= 0) throw new CustomException(ExceptionErrorCode.ValidationFailed, $"Sản phẩm {productDetail.Product.Name} đã hết hàng");
                     var totalOrderedQuantity = createdOrders
                         .SelectMany(o => o.Items)
                         .Where(oi => oi.ProductDetailId == productDetail.Id)
                         .Sum(oi => oi.Quantity);
-
                     if (productDetail.Quantity < totalOrderedQuantity)
                         throw new CustomException(ExceptionErrorCode.CreateFailed,
                             $"Số lượng tồn kho không đủ cho sản phẩm ID {productDetail.Id}");
@@ -85,6 +86,8 @@ namespace ResiBuy.Server.Application.Commands.OrderCommands
                         }
                     }
                 }
+                if (!dto.IsInstance)
+                    await cartItemDbService.DeleteBatchByProductDetailIdAsync(cart.Id, createdOrders.SelectMany(o => o.Items).Select(ci => ci.ProductDetailId));
                 await userDbService.SaveChangesAsync();
                 await transaction.CommitAsync();
                 foreach (var order in createdOrders)
