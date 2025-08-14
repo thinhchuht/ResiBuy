@@ -31,7 +31,7 @@ import userApi from "../../../api/user.api";
 import orderApi from "../../../api/order.api";
 import { useToastify } from "../../../hooks/useToastify";
 import type { UserDto, OrderDto } from "../../../types/dtoModels";
-import { formatDate } from "./seg/utils";
+import { formatDate, formatDateWithoutTime } from "./seg/utils";
 import CustomTable from "../../../components/CustomTable";
 
 interface UserDetailModalProps {
@@ -616,7 +616,7 @@ export function UserDetailModal({ isOpen, onClose, user, onEdit, onToggleLock }:
                     Ngày Sinh
                   </Typography>
                   <Typography sx={{ color: "grey.600" }}>
-                    {user.dateOfBirth ? formatDate(user.dateOfBirth) : "N/A"}
+                    {user.dateOfBirth ? formatDateWithoutTime(user.dateOfBirth) : "N/A"}
                   </Typography>
                 </Box>
                 <Box>
