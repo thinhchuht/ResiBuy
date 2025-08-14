@@ -25,10 +25,8 @@ import {
   Slider,
   Chip,
   Tooltip,
-  Grid,
   Badge,
   Collapse,
-  Alert,
   Divider,
 } from "@mui/material";
 import {
@@ -163,6 +161,10 @@ const ProductPage: React.FC = () => {
 
   const handleEdit = (id: number) => {
     navigate(`/store/${storeId}/product-update/${id}`);
+  };
+
+  const handleDetail = (id: number) => {
+    navigate(`/store/${storeId}/product-detail/${id}`);
   };
 
   const handleToggleStatus = async (product: Product) => {
@@ -503,7 +505,7 @@ const ProductPage: React.FC = () => {
                   min={0}
                   max={10000000}
                   step={100000}
-                  onChange={(e, newValue) =>
+                  onChange={(_e, newValue) =>
                     setPriceRange(newValue as number[])
                   }
                   valueLabelDisplay="auto"
@@ -618,6 +620,7 @@ const ProductPage: React.FC = () => {
                                 textOverflow: "ellipsis",
                                 whiteSpace: "nowrap",
                               }}
+                              onClick={() => handleDetail(product.id)}
                             >
                               {product.name}
                             </Typography>

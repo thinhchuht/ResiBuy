@@ -132,7 +132,7 @@ const ChartCard: React.FC<ChartCardProps> = ({
     <Card
       elevation={0}
       sx={{
-        height: "100%",
+        width: "100%",
         border: `1px solid ${alpha(theme.palette.divider, 0.12)}`,
         borderRadius: 3,
         transition: "all 0.3s ease-in-out",
@@ -345,47 +345,43 @@ const ChartView: React.FC = () => {
         </Box>
       </Paper>
 
-      {/* Charts Container */}
+      {/* Charts Container - Hiển thị theo 3 dòng */}
       <Box
         sx={{
           display: "flex",
+          flexDirection: "column",
           gap: 3,
-          flexWrap: "wrap",
-          "@media (max-width: 1200px)": {
-            flexDirection: "column",
-          },
         }}
       >
-        <Box sx={{ flex: "1 1 300px", minWidth: "300px" }}>
-          <ChartCard
-            title="Tuần này"
-            data={weekData}
-            loading={loading}
-            icon={<CalendarTodayIcon />}
-            color="#1976d2"
-            period="7 ngày"
-          />
-        </Box>
-        <Box sx={{ flex: "1 1 300px", minWidth: "300px" }}>
-          <ChartCard
-            title="Tháng này"
-            data={monthData}
-            loading={loading}
-            icon={<DateRangeIcon />}
-            color="#ed6c02"
-            period="30 ngày"
-          />
-        </Box>
-        <Box sx={{ flex: "1 1 300px", minWidth: "300px" }}>
-          <ChartCard
-            title="Năm này"
-            data={yearData}
-            loading={loading}
-            icon={<EventIcon />}
-            color="#2e7d32"
-            period="365 ngày"
-          />
-        </Box>
+        {/* Biểu đồ tuần - Dòng 1 */}
+        <ChartCard
+          title="Tuần này"
+          data={weekData}
+          loading={loading}
+          icon={<CalendarTodayIcon />}
+          color="#1976d2"
+          period="7 ngày"
+        />
+
+        {/* Biểu đồ tháng - Dòng 2 */}
+        <ChartCard
+          title="Tháng này"
+          data={monthData}
+          loading={loading}
+          icon={<DateRangeIcon />}
+          color="#ed6c02"
+          period="30 ngày"
+        />
+
+        {/* Biểu đồ năm - Dòng 3 */}
+        <ChartCard
+          title="Năm này"
+          data={yearData}
+          loading={loading}
+          icon={<EventIcon />}
+          color="#2e7d32"
+          period="365 ngày"
+        />
       </Box>
     </Container>
   );
