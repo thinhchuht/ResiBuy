@@ -1,4 +1,4 @@
-﻿namespace ResiBuy.Server.Controllers
+namespace ResiBuy.Server.Controllers
 {
     [Route("api/[controller]")]
     [ApiController]
@@ -15,7 +15,6 @@
         [HttpGet]
         public async Task<IActionResult> GetAllAsync([FromQuery] int pageNumber = 1, [FromQuery] int pageSize = 10)
         {
-            Console.WriteLine($"In : PageNumber: {pageNumber}, PageSize: {pageSize}");
             var result = await mediator.Send(new GetAllUsersQuery(pageNumber, pageSize));
             return Ok(result);
         }
@@ -41,6 +40,7 @@
         [HttpPost("code")]
         public async Task<IActionResult> GenCodeAsync([FromBody] RegisterDto dto)
         {
+            var rs = UserChecker.CheckUserInExcel(dto.IdentityNumber, dto.FullName, dto.DateOfBirth);
             var result = await mediator.Send(new GenerateCreateUserCodeCommand(dto));
             return Ok(result);
         }
@@ -138,6 +138,18 @@
         public async Task<IActionResult> GetStatistics()
         {
             var result = await mediator.Send(new GetUserStatisticsCommand());
+            return Ok(result);
+        }
+
+        [HttpPost("import-excel")]
+        public async Task<IActionResult> ImportExcelFile(IFormFile file)
+        {
+            if (file == null || file.Length == 0)
+            {
+                return BadRequest(ResponseModel.FailureResponse("Vui lòng chọn file Excel để tải lên"));
+            }
+
+            var result = await mediator.Send(new ImportResidentExcelCommand(file));
             return Ok(result);
         }
 

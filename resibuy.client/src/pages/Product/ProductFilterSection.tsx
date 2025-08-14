@@ -1,32 +1,26 @@
 import { Box, Typography, Button, Slider, Stack, Paper } from "@mui/material";
 import type { Category } from "../../types/models";
 import { useEffect, useState, useMemo } from "react";
-import categoryApi from "../../api/category.api";
 import { debounce } from "lodash";
 
 interface ProductFilterProps {
-  selectedCategory: string | null;
-  setSelectedCategory: (id: string | null) => void;
+  categories: Category[];
+  selectedCategory: Category | null;
+  setSelectedCategory: (category: Category | null) => void;
   priceRange: number[];
   setPriceRange: (range: number[]) => void;
   storeId?: string;
 }
 
-const ProductFilterSection = ({ selectedCategory, setSelectedCategory, priceRange, setPriceRange, storeId }: ProductFilterProps) => {
-  const [categories, setCategories] = useState<Category[]>([]);
+const ProductFilterSection = ({
+  categories,
+  selectedCategory,
+  setSelectedCategory,
+  priceRange,
+  setPriceRange,
+  storeId,
+}: ProductFilterProps) => {
   const [sliderValue, setSliderValue] = useState(priceRange);
-
-  useEffect(() => {
-    const fetchCategories = async () => {
-      try {
-        const res = await categoryApi.getAll();
-        setCategories(res.data || []);
-      } catch {
-        setCategories([]);
-      }
-    };
-    fetchCategories();
-  }, []);
 
   useEffect(() => {
     setSliderValue(priceRange);
@@ -87,14 +81,14 @@ const ProductFilterSection = ({ selectedCategory, setSelectedCategory, priceRang
           {categories.map((category) => (
             <Button
               key={category.id}
-              variant={selectedCategory === category.id ? "contained" : "text"}
-              onClick={() => setSelectedCategory(category.id)}
+              variant={selectedCategory?.id === category.id ? "contained" : "text"}
+              onClick={() => setSelectedCategory(category)}
               sx={{
                 justifyContent: "flex-start",
-                color: selectedCategory === category.id ? "#fff" : "#666",
-                bgcolor: selectedCategory === category.id ? "#FF6B6B" : "transparent",
+                color: selectedCategory?.id === category.id ? "#fff" : "#666",
+                bgcolor: selectedCategory?.id === category.id ? "#FF6B6B" : "transparent",
                 "&:hover": {
-                  bgcolor: selectedCategory === category.id ? "#FF6B6B" : "#f5f5f5",
+                  bgcolor: selectedCategory?.id === category.id ? "#FF6B6B" : "#f5f5f5",
                 },
               }}>
               {category.name}

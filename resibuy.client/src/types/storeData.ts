@@ -53,8 +53,6 @@ export interface User {
   avatarId: string;
   createdAt: Date;
   updatedAt: Date;
-  emailConfirmed: boolean;
-  phoneNumberConfirmed: boolean;
   cart: Cart;
   avatar: Image;
   userRooms: UserRoom[];

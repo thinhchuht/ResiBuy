@@ -30,7 +30,7 @@ import userApi from "../../../api/user.api";
 import roomApi from "../../../api/room.api";
 import areaApi from "../../../api/area.api";
 import type { UserDto, RoomDto, AreaDto, UserRoomDto } from "../../../types/dtoModels";
-import { formatDate } from "./seg/utils";
+import { formatDate, formatDateWithoutTime } from "./seg/utils";
 
 interface EditRoleModalProps {
   isOpen: boolean;
@@ -378,7 +378,7 @@ export function EditRoleModal({ isOpen, onClose, onSubmit, userId }: EditRoleMod
                   />
                   <TextField
                     label="Ngày Sinh"
-                    value={user?.dateOfBirth ? formatDate(user.dateOfBirth) : "N/A"}
+                    value={user?.dateOfBirth ? formatDateWithoutTime(user.dateOfBirth) : "N/A"}
                     fullWidth
                     disabled
                     size="small"

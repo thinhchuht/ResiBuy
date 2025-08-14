@@ -24,6 +24,7 @@ import {
   FilterList,
   FileDownload,
   ArrowDropDown,
+  Upload,
 } from "@mui/icons-material";
 
 interface ColumnDef<T> {
@@ -57,6 +58,8 @@ interface TableProps<T> {
   showBulkActions?: boolean;
   showExport?: boolean;
   itemsPerPage?: number; // pageSize mặc định
+  showImport?: boolean;
+  onImport?: () => void;
 }
 
 const CustomTable = <T extends { id?: number | string }>({
@@ -77,6 +80,8 @@ const CustomTable = <T extends { id?: number | string }>({
   showBulkActions = false,
   showExport = false,
   itemsPerPage = 10,
+  showImport = false,
+  onImport,
 }: TableProps<T>) => {
   const [searchTerm, setSearchTerm] = useState("");
   const [selectedItems, setSelectedItems] = useState<T[]>([]);
@@ -212,6 +217,24 @@ const CustomTable = <T extends { id?: number | string }>({
             )}
           </Box>
           <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
+            {showImport && onImport && (
+              <Button
+                onClick={onImport}
+                startIcon={<Upload />}
+                sx={{
+                  bgcolor: "success.light",
+                  color: "success.contrastText",
+                  px: 1.5,
+                  py: 1,
+                  fontSize: "0.875rem",
+                  fontWeight: "medium",
+                  borderRadius: 1,
+                  "&:hover": { bgcolor: "success.main" },
+                }}
+              >
+                Nhập Excel
+              </Button>
+            )}
             {showExport && onExport && (
               <Button
                 onClick={onExport}

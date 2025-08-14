@@ -1,18 +1,31 @@
-import { useState, useEffect } from "react";
-import { Box, Typography, IconButton, CircularProgress } from "@mui/material";
+import { useState } from "react";
+import {
+  Box,
+  Typography,
+  IconButton,
+  CircularProgress,
+  TextField,
+  InputAdornment,
+  Button,
+  FormControl,
+  InputLabel,
+  Select,
+  MenuItem,
+} from "@mui/material";
 import {
   CheckCircle,
   Edit,
   Visibility,
   ToggleOff,
   Store as StoreIcon,
+  Search as SearchIcon,
 } from "@mui/icons-material";
 import CustomTable from "../../../components/CustomTable";
 import { AddStoreModal } from "../../../components/admin/Store/add-store-modal";
 import { StoreDetailModal } from "../../../components/admin/Store/store-detail-modal";
 import { StatsCard } from "../../../layouts/AdminLayout/components/StatsCard";
 import { getStatusColor, useStoresLogic } from "../../../components/admin/Store/seg/utlis";
-
+import { useEffect } from "react";
 function StoreStatsCards({ calculateStoreStats }) {
   const [stats, setStats] = useState({
     totalStores: 0,
@@ -129,10 +142,16 @@ function StoreStatsCards({ calculateStoreStats }) {
 export default function StoresPage() {
   const {
     stores,
+    setStores,
     selectedStore,
     isDetailModalOpen,
     isAddModalOpen,
     editingStore,
+    pageNumber,
+    setPageNumber,
+    totalCount,
+    searchParams,
+    setSearchParams,
     handleViewStore,
     handleCloseDetailModal,
     handleAddStore,
@@ -142,7 +161,52 @@ export default function StoresPage() {
     handleToggleStoreStatus,
     handleExportStores,
     calculateStoreStats,
+    fetchStores,
+    fetchStoresWithFilters,
   } = useStoresLogic();
+
+  const [searchInput, setSearchInput] = useState("");
+  const [localFilters, setLocalFilters] = useState<{
+    isOnline?: boolean;
+    isLocked?: boolean;
+    isPayFee?: boolean;
+  }>({});
+
+  useEffect(() => {
+    if (Object.keys(searchParams).length === 0) {
+      fetchStores(pageNumber, 15);
+    } else {
+      fetchStoresWithFilters(
+        searchParams.keyWord,
+        searchParams.isOnline,
+        searchParams.isLocked,
+        searchParams.isPayFee,
+        pageNumber,
+        15
+      );
+    }
+  }, [pageNumber, searchParams]);
+
+  const handleSearch = () => {
+    setSearchParams({
+      keyWord: searchInput || undefined,
+      isOnline: localFilters.isOnline,
+      isLocked: localFilters.isLocked,
+      isPayFee: localFilters.isPayFee,
+    });
+    setPageNumber(1);
+  };
+
+  const handleFilterChange = (key: string, value: string | boolean | undefined) => {
+    setLocalFilters((prev) => ({
+      ...prev,
+      [key]: value === "" ? undefined : value,
+    }));
+  };
+
+  const handlePageChange = (newPage: number) => {
+    setPageNumber(newPage);
+  };
 
   const columns = [
     {
@@ -215,7 +279,6 @@ export default function StoresPage() {
             fontSize: "0.75rem",
             fontWeight: "medium",
             borderRadius: 1,
-
             color: store.isLocked ? "error.dark" : "success.dark",
           }}
         >
@@ -354,6 +417,21 @@ export default function StoresPage() {
     },
   ];
 
+  const filters = {
+    isOnline: [
+      { label: "Mở", value: "true" },
+      { label: "Đóng", value: "false" },
+    ],
+    isLocked: [
+      { label: "Hoạt động", value: "false" },
+      { label: "Khóa", value: "true" },
+    ],
+    isPayFee: [
+      { label: "Đã thanh toán", value: "true" },
+      { label: "Chưa thanh toán", value: "false" },
+    ],
+  };
+
   return (
     <Box
       sx={{
@@ -405,16 +483,115 @@ export default function StoresPage() {
 
         <StoreStatsCards calculateStoreStats={calculateStoreStats} />
 
+        <Box
+          sx={{
+            display: "flex",
+            flexDirection: { xs: "column", md: "row" },
+            gap: 2,
+            mb: 2,
+          }}
+        >
+          <TextField
+            placeholder="Tìm kiếm cửa hàng..."
+            value={searchInput}
+            onChange={(e) => setSearchInput(e.target.value)}
+            size="small"
+            sx={{ maxWidth: 300, flex: 1 }}
+            InputProps={{
+              startAdornment: (
+                <InputAdornment position="start">
+                  <SearchIcon sx={{ color: "grey.400" }} />
+                </InputAdornment>
+              ),
+            }}
+          />
+          <Box sx={{ display: "flex", gap: 2, flexWrap: "wrap" }}>
+            <FormControl size="small" sx={{ minWidth: 120 }}>
+              <InputLabel>Trạng thái cửa hàng</InputLabel>
+              <Select
+                value={localFilters.isOnline ?? ""}
+                onChange={(e) => handleFilterChange("isOnline", e.target.value)}
+                label="Trạng thái cửa hàng"
+              >
+                <MenuItem value="">Tất cả</MenuItem>
+                {filters.isOnline.map((option) => (
+                  <MenuItem key={option.value} value={option.value}>
+                    {option.label}
+                  </MenuItem>
+                ))}
+              </Select>
+            </FormControl>
+            <FormControl size="small" sx={{ minWidth: 120 }}>
+              <InputLabel>Khóa</InputLabel>
+              <Select
+                value={localFilters.isLocked ?? ""}
+                onChange={(e) => handleFilterChange("isLocked", e.target.value)}
+                label="Khóa"
+              >
+                <MenuItem value="">Tất cả</MenuItem>
+                {filters.isLocked.map((option) => (
+                  <MenuItem key={option.value} value={option.value}>
+                    {option.label}
+                  </MenuItem>
+                ))}
+              </Select>
+            </FormControl>
+            <FormControl size="small" sx={{ minWidth: 120 }}>
+              <InputLabel>Phí</InputLabel>
+              <Select
+                value={localFilters.isPayFee ?? ""}
+                onChange={(e) => handleFilterChange("isPayFee", e.target.value)}
+                label="Phí"
+              >
+                <MenuItem value="">Tất cả</MenuItem>
+                {filters.isPayFee.map((option) => (
+                  <MenuItem key={option.value} value={option.value}>
+                    {option.label}
+                  </MenuItem>
+                ))}
+              </Select>
+            </FormControl>
+            <Button
+              variant="contained"
+              onClick={handleSearch}
+              sx={{
+                bgcolor: "primary.main",
+                color: "white",
+                px: 2,
+                py: 1,
+                borderRadius: 1,
+                "&:hover": { bgcolor: "primary.dark" },
+              }}
+            >
+              Tìm kiếm
+            </Button>
+          </Box>
+        </Box>
+
         <CustomTable
           data={stores}
+          totalCount={totalCount}
           columns={columns}
           onAddItem={handleAddStore}
           onExport={handleExportStores}
+          onPageChange={handlePageChange}
           headerTitle="Tất Cả Cửa Hàng"
           description="Quản lý cửa hàng, đơn hàng, sản phẩm"
           showExport={true}
           showBulkActions={false}
           itemsPerPage={15}
+          filters={filters}
+          onFilterChange={(newFilters) => {
+            setLocalFilters((prev) => ({
+              ...prev,
+              ...Object.fromEntries(
+                Object.entries(newFilters).map(([key, value]) => [
+                  key,
+                  value === "" ? undefined : value === "true",
+                ])
+              ),
+            }));
+          }}
         />
       </Box>
 

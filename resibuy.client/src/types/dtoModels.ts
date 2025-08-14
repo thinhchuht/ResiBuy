@@ -36,8 +36,6 @@ export interface UserDto {
   isLocked: boolean;
   createdAt: string;
   updatedAt: string;
-  emailConfirmed: boolean;
-  phoneNumberConfirmed: boolean;
 }
 
 export interface RoomDetailDto {
@@ -82,7 +80,7 @@ export interface CategoryImage {
 
 export interface CreateCategoryDto {
   name: string;
-  status: string;
+  status: boolean;
   image: CategoryImage;
 }
 

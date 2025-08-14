@@ -33,8 +33,6 @@
                             ur.User.IsLocked,
                             ur.User.CreatedAt,
                             ur.User.UpdatedAt,
-                            ur.User.EmailConfirmed,
-                            ur.User.PhoneNumberConfirmed
                         })
                 };
 

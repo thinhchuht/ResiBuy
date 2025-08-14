@@ -1,17 +1,16 @@
-﻿using ResiBuy.Server.Infrastructure.DbServices.CategoryDbServices;
-
-namespace ResiBuy.Server.Application.Queries.CategoryQueries
+﻿namespace ResiBuy.Server.Application.Queries.CategoryQueries
 {
-    public record GetAllCategoriesQuery() : IRequest<ResponseModel>;
+    public record GetAllCategoriesQuery(bool? status) : IRequest<ResponseModel>;
 
     public class GetAllCategoriesQueryHandler(ICategoryDbService CategoryDbService)
         : IRequestHandler<GetAllCategoriesQuery, ResponseModel>
     {
         public async Task<ResponseModel> Handle(GetAllCategoriesQuery query, CancellationToken cancellationToken)
         {
-            var categories = await CategoryDbService.GetAllCategoryAsync();
+            var categories = await CategoryDbService.GetAllCategoryAsync(query.status);
             return ResponseModel.SuccessResponse(categories);
         }
     }
 
 }
+ 

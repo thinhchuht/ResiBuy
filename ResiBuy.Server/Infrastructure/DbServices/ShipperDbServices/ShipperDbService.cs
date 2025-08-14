@@ -180,6 +180,55 @@ namespace ResiBuy.Server.Infrastructure.DbServices.ShipperDbServices
                 throw new CustomException(ExceptionErrorCode.RepositoryError, ex.Message);
             }
         }
+        public async Task<PagedResult<Shipper>> SearchShippersAsync(string keyword, bool? isOnline, bool? isLocked, int pageNumber = 1, int pageSize = 5)
+        {
+            try
+            {
+                var query = _context.Shippers
+                    .Include(s => s.User)
+                    .Include(s => s.LastLocation)
+                    .AsQueryable();
+                if (!string.IsNullOrWhiteSpace(keyword))
+                {
+                    keyword = keyword.Trim().ToLower();
+                    query = query.Where(s =>
+                        (s.User.FullName != null && s.User.FullName.ToLower().Contains(keyword)) ||
+                        (s.User.PhoneNumber != null && s.User.PhoneNumber.ToLower().Contains(keyword)) ||
+                        (s.User.Email != null && s.User.Email.ToLower().Contains(keyword))
+                    );
+                }
+
+                if (isOnline.HasValue)
+                {
+                    query = query.Where(s => s.IsOnline == isOnline.Value);
+                }
+                if (isLocked.HasValue)
+                {
+                    query = query.Where(s => s.IsLocked == isLocked.Value);
+                }
+
+                var totalCount = await query.CountAsync();
+                var items = await query
+                    .OrderBy(s => s.Id)
+                    .Skip((pageNumber - 1) * pageSize)
+                    .Take(pageSize)
+                    .ToListAsync();
+
+                return new PagedResult<Shipper>
+                {
+                    Items = items,
+                    TotalCount = totalCount,
+                    PageNumber = pageNumber,
+                    PageSize = pageSize
+                };
+            }
+            catch (Exception ex)
+            {
+                throw new CustomException(ExceptionErrorCode.RepositoryError, ex.Message);
+            }
+        }
+
+
         public async Task<int> CountAllShipper()
         {
             try
