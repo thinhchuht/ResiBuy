@@ -39,11 +39,11 @@ export function useBuildingsLogic(areaId?: string) {
   }, [toast]);
 
   // Lấy tòa nhà theo areaId
-  const fetchBuildingsByAreaId = useCallback(async (areaId: string) => {
+  const fetchBuildingsByAreaId = useCallback(async (areaId: string, getActive: boolean = false) => {
     setLoading(true);
     setError(null);
     try {
-      const response = await buildingApi.getByAreaId(areaId);
+      const response = await buildingApi.getByAreaId(areaId, getActive);
       setBuildings(response || []);
     } catch (err: any) {
       const errorMessage = err.message || "Lỗi khi lấy danh sách tòa nhà theo khu vực";

@@ -93,14 +93,6 @@ export function Sidebar() {
 
       {/* Main Menu */}
       <Box sx={{ flex: 1, py: 2, px: 2 }}>
-        <Typography
-          variant="caption"
-          fontWeight={600}
-          color="text.secondary"
-          sx={{ mb: 1.5, px: 1, display: "block", textTransform: "uppercase" }}
-        >
-          Main Menu
-        </Typography>
         <List disablePadding>
           {menuItems.map((item) => {
             const isActive = pathname === item.url;

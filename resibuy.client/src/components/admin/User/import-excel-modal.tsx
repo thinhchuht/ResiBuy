@@ -116,7 +116,7 @@ export function ImportExcelModal({ isOpen, onClose, onSubmit }: ImportExcelModal
         <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
           <Description sx={{ color: "primary.main" }} />
           <Typography variant="h6" sx={{ color: "grey.900" }}>
-            Import Excel
+            Gửi lên Excel
           </Typography>
         </Box>
       </DialogTitle>
@@ -124,7 +124,7 @@ export function ImportExcelModal({ isOpen, onClose, onSubmit }: ImportExcelModal
       <DialogContent sx={{ pt: 2 }}>
         <Box sx={{ mb: 2 }}>
           <Typography variant="body2" sx={{ color: "grey.600", mb: 2 }}>
-            Chọn file Excel để cho phép cư dân đăng kí tài khoản. File phải có định dạng .xlsx hoặc .xls.
+            Chọn file Excel để <span style={{ fontWeight: "bold", color: "red" }}>CHO PHÉP CƯ DÂN ĐĂNG KÍ TÀI KHOẢN, KHÔNG PHẢI TẠO NGƯỜI DÙNG MỚI TRÊN HỆ THỐNG</span>. File phải có định dạng .xlsx hoặc .xls.
           </Typography>
           
           {error && (

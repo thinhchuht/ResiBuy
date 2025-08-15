@@ -79,15 +79,27 @@ namespace ResiBuy.Server.Infrastructure.DbServices.ReportServices
             return await _context.Reports.FirstOrDefaultAsync(r => r.OrderId == id);
         }
 
-        public async Task<ReportStatusCountQueryResult> GetReportStatusCountAsync()
+        public async Task<ReportStatusCountQueryResult> GetReportStatusCountAsync(DateTime? startDate = null, DateTime? endDate = null)
         {
-            var total = await _context.Reports.CountAsync();
-            var resolved = await _context.Reports.CountAsync(r => r.IsResolved);
+            var query = _context.Reports.AsQueryable();
+
+            if (startDate.HasValue)
+            {
+                query = query.Where(r => r.CreatedAt >= startDate.Value);
+            }
+            if (endDate.HasValue)
+            {
+                var end = endDate.Value.Date.AddDays(1);
+                query = query.Where(r => r.CreatedAt < end);
+            }
+
+            var total = await query.CountAsync();
+            var resolved = await query.CountAsync(r => r.IsResolved);
             var unresolved = total - resolved;
 
-            var customerTarget = await _context.Reports.CountAsync(r => r.ReportTarget == ReportTarget.Customer);
-            var storeTarget = await _context.Reports.CountAsync(r => r.ReportTarget == ReportTarget.Store);
-            var shipperTarget = await _context.Reports.CountAsync(r => r.ReportTarget == ReportTarget.Shipper);
+            var customerTarget = await query.CountAsync(r => r.ReportTarget == ReportTarget.Customer);
+            var storeTarget = await query.CountAsync(r => r.ReportTarget == ReportTarget.Store);
+            var shipperTarget = await query.CountAsync(r => r.ReportTarget == ReportTarget.Shipper);
 
             return new ReportStatusCountQueryResult(total, resolved, unresolved, customerTarget, storeTarget, shipperTarget);
         }

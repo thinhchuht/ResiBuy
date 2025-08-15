@@ -1,5 +1,4 @@
 ﻿using ResiBuy.Server.Services.MapBoxService;
-using ResiBuy.Server.Services.MyBackgroundService;
 
 namespace ResiBuy.Server.Infrastructure.DbServices.AreaDbServices
 {
@@ -15,15 +14,16 @@ namespace ResiBuy.Server.Infrastructure.DbServices.AreaDbServices
             _logger = logger;
         }
 
-        public async Task<IEnumerable<Area>> GetAllAreaAsync()
+        public async Task<IEnumerable<Area>> GetAllAreaAsync(bool getActive)
         {
             try
             {
-                IEnumerable<Area> areas = await _context.Areas
-                    .Include(a => a.Buildings)
-                    .ThenInclude(b => b.Rooms)
-                    .ToListAsync();
-                return areas;
+                var query = _context.Areas.AsQueryable();
+                if (getActive)
+                {
+                    query = query.Where(a => a.IsActive);
+                }
+                return await query.ToListAsync();
             }
             catch (Exception ex)
             {

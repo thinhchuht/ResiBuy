@@ -94,7 +94,7 @@
         {
             try
             {
-                return await _context.Rooms.Include(a => a.UserRooms).ThenInclude(ur => ur.User).FirstOrDefaultAsync(r => r.Id == id);
+                return await _context.Rooms.Include(a => a.UserRooms).ThenInclude(ur => ur.User).Include(r => r.Building).ThenInclude(b => b.Area).FirstOrDefaultAsync(r => r.Id == id);
             }
             catch (Exception ex)
             {

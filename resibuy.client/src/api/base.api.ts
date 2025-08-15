@@ -40,7 +40,7 @@ const refreshToken = async () => {
       throw new Error("No refresh token available");
     }
     const response = await axios.post(
-      `${import.meta.env.VITE_BASE_API_URL}/auth/refresh-token`,
+      `${import.meta.env.VITE_BASE_API_URL}/api/auth/refresh-token`,
       { refreshToken }
     );
 

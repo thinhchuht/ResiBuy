@@ -252,7 +252,7 @@ const Login: React.FC = () => {
   };
   const fetchRooms = async (buildingId: string, page = 1, pageSize = 6, search = "") => {
     try {
-      const roomsRes = await roomApi.searchInBuilding({ buildingId, pageNumber: page, pageSize, keyword: search });
+      const roomsRes = await roomApi.searchInBuilding({ buildingId, isActive: true, pageNumber: page, pageSize, keyword: search });
       setRoomsData((prev) => {
         const newRooms = roomsRes.items.filter((r) => !prev.some((p) => p.id === r.id));
         return [...prev, ...newRooms];

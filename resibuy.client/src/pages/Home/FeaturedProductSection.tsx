@@ -18,7 +18,7 @@ const FeaturedProductSection = () => {
     const fetchProducts = async () => {
       try {
         setLoading(true);
-        const response = await productApi.getAll({ pageNumber: 1, pageSize: 12, sortBy: "sold", sortDirection: "desc", IsGettingCategory: true });
+        const response = await productApi.getAll({ pageNumber: 1, pageSize: 12, sortBy: "sold", sortDirection: "desc", isNotGetOutOfStock : true, IsGettingCategory: true });
         console.log(response);
         if (response) {
           setProducts(response.items);
