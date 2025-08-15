@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
 import axiosClient from "./base.api";
 import type { BuildingDto, CreateBuildingDto, UpdateStatusBuildingDto } from "../types/dtoModels";
 
@@ -31,9 +32,13 @@ const buildingApi = {
   },
 
   // Lấy theo areaId
-  getByAreaId: async (areaId: string): Promise<BuildingDto[]> => {
+  getByAreaId: async (areaId: string, getActive: boolean = true): Promise<BuildingDto[]> => {
     try {
-      const response = await axiosClient.get(`${buildingUrl}/area/${areaId}`);
+      const response = await axiosClient.get(`${buildingUrl}/area/${areaId}`, {
+        params: {
+          getActive,
+        },
+      });
       if (response.data.code !== 0) {
         throw new Error(response.data.message || "Lỗi khi lấy danh sách tòa nhà theo khu vực");
       }

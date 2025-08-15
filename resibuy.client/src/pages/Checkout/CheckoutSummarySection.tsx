@@ -137,7 +137,7 @@ const CheckoutSummarySection = ({ orders, grandTotal, onCheckout, userRooms = []
     if (roomLoadingMore) return;
     setRoomLoadingMore(true);
     try {
-      const roomsRes = await roomApi.searchInBuilding({ buildingId, pageNumber: page, pageSize, keyword: search });
+      const roomsRes = await roomApi.searchInBuilding({ buildingId, isActive: true, pageNumber: page, pageSize, keyword: search });
       const roomsWithBuildingId = roomsRes.items.map((room: RoomDto) => ({
         ...room,
         buildingId,

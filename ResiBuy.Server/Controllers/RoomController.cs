@@ -134,12 +134,12 @@ namespace ResiBuy.Server.Controllers
         }
 
         [HttpGet("searchrom/building")]
-        public async Task<IActionResult> SearchRoomsByNameAndBuilding([FromQuery] Guid buildingId, [FromQuery] string keyword, [FromQuery] int pageNumber = 1, [FromQuery] int pageSize = 10, [FromQuery] bool? isActive = null,[FromQuery] bool? noUsers = null)
+        public async Task<IActionResult> SearchRoomsByNameAndBuilding([FromQuery] Guid buildingId, [FromQuery] string keyword, [FromQuery] int pageNumber = 1, 
+            [FromQuery] int pageSize = 10, [FromQuery] bool? isActive = null,[FromQuery] bool? noUsers = null)
         {
 
             var result = await mediator.Send(new GetRoomsByNameAndBuildingQuery(
-    buildingId, keyword, pageNumber, pageSize, isActive, noUsers
-));
+                buildingId, keyword, pageNumber, pageSize, isActive, noUsers));
                 return Ok(result);
           
         }

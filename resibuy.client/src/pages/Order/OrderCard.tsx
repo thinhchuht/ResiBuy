@@ -87,6 +87,7 @@ export interface OrderApiResult {
   };
   shipper: {
     id: string;
+    fullName: string;
     phoneNumber: string;
   };
   createAt: string;
@@ -355,6 +356,7 @@ const OrderCard = ({
       try {
         const rooms = await roomApi.searchInBuilding({
           buildingId,
+          isActive : true,
           pageNumber: 1,
           pageSize: 6,
           keyword: "",
@@ -381,6 +383,7 @@ const OrderCard = ({
       try {
         const rooms = await roomApi.searchInBuilding({
           buildingId: selectedBuilding,
+          isActive : true,
           pageNumber: 1,
           pageSize: 6,
           keyword: text,
@@ -412,6 +415,7 @@ const OrderCard = ({
         const nextPage = roomPage + 1;
         const rooms = await roomApi.searchInBuilding({
           buildingId: selectedBuilding,
+          isActive : true,
           pageNumber: nextPage,
           pageSize: 6,
           keyword: "",
@@ -587,12 +591,14 @@ const OrderCard = ({
             })} - ${new Date(order.updateAt).toLocaleDateString("vi-VN")}`}
           </Typography>
           {order.shipper && order.shipper.phoneNumber && (
+
             <Typography
               variant="subtitle2"
               sx={{ color: "#1976d2", fontWeight: 600, mt: 0.5 }}
             >
-              SĐT người giao hàng: {order.shipper.phoneNumber}
+              Người giao hàng: {order.shipper.fullName} - SĐT: {order.shipper.phoneNumber}
             </Typography>
+            
           )}
           {order.status === OrderStatus.Cancelled && order.cancelReason && (
             <Typography

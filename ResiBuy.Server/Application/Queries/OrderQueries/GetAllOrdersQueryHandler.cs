@@ -46,6 +46,7 @@ namespace ResiBuy.Server.Application.Queries.OrderQueries
                 item.Shipper == null ? null : new
                 {
                     Id = item.ShipperId,
+                    FullName = item.Shipper.User.FullName,
                     PhoneNumber = item.Shipper.User.PhoneNumber
                 },
                 item.CreateAt,

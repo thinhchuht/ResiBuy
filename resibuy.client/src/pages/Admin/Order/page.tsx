@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useCallback, useMemo } from "react";
+import { useState, useEffect } from "react";
 import {
   Box,
   Typography,
@@ -22,14 +22,14 @@ import {
 } from "@mui/material";
 import {
   Visibility,
-  CheckCircle,
-  Warning,
   Store,
   Person,
   LocalShipping,
-  CheckCircleOutline,
   Clear,
   Close,
+  ShoppingCart,
+  Payment,
+  LocalOffer,
 } from "@mui/icons-material";
 import { LocalizationProvider } from "@mui/x-date-pickers/LocalizationProvider";
 import { AdapterDateFns } from "@mui/x-date-pickers/AdapterDateFns";
@@ -37,148 +37,149 @@ import { DatePicker } from "@mui/x-date-pickers/DatePicker";
 import { format } from "date-fns";
 import { vi } from "date-fns/locale";
 import CustomTable from "../../../components/CustomTable";
-import reportApi from "../../../api/report.api";
 import orderApi from "../../../api/order.api";
-import type { OrderApiResult } from "../../Order/OrderCard";
 import { OrderStatus, PaymentStatus } from "../../../types/models";
-import {
-  HubEventType,
-  useEventHub,
-  type HubEventHandler,
-} from "../../../hooks/useEventHub";
-import type { ReportCreatedDto } from "../../../types/hubEventDto";
 
-export interface Report {
+export interface Order {
   id: string;
-  title: string;
-  description: string;
-  createdAt: string;
-  createdById: string;
-  targetId: string;
-  reportTarget: string;
-  orderId: string;
-  isResolved: boolean;
+  totalPrice: number;
+  shippingFee: number;
+  status: OrderStatus;
+  paymentStatus: PaymentStatus;
+  paymentMethod: number;
+  createAt: string;
+  user?: {
+    id: string;
+    fullName: string;
+    phoneNumber: string;
+    email: string;
+  };
+  store?: {
+    id: string;
+    name: string;
+    phoneNumber: string;
+    description: string;
+  };
+  shipper?: {
+    id: string;
+    fullName: string;
+    phoneNumber: string;
+  };
+  orderItems?: Array<{
+    id: string;
+    productName: string;
+    quantity: number;
+    price: number;
+    image?: {
+      url: string;
+      thumbUrl: string;
+    };
+    addtionalData?: Array<{
+      key: string;
+      value: string;
+    }>;
+  }>;
 }
 
-interface ReportStats {
+interface OrderStats {
   total: number;
-  resolved: number;
-  unResolved: number;
-  customerTarget: number;
-  storeTarget: number;
-  shipperTarget: number;
+  pending: number;
+  processing: number;
+  shipped: number;
+  delivered: number;
+  cancelled: number;
+  reported: number;
 }
 
-enum ReportTarget {
+enum OrderStatusFilter {
   None = "None",
-  Customer = "Customer",
-  Store = "Store",
-  Shipper = "Shipper",
+  Pending = "Pending",
+  Processing = "Processing",
+  Shipped = "Shipped",
+  Delivered = "Delivered",
+  Cancelled = "Cancelled",
+  Reported = "Reported",
+  Assigned = "Assigned",
+  CustomerNotAvailable = "CustomerNotAvailable",
 }
 
-const ReportTargetLabels: Record<ReportTarget, string> = {
-  [ReportTarget.None]: "Không xác định",
-  [ReportTarget.Customer]: "Khách hàng",
-  [ReportTarget.Store]: "Cửa hàng",
-  [ReportTarget.Shipper]: "Người giao hàng",
+enum PaymentStatusFilter {
+  None = "None",
+  Paid = "Paid",
+  Pending = "Pending",
+  Failed = "Failed",
+  Refunded = "Refunded",
+}
+
+enum PaymentMethodFilter {
+  None = "None",
+  Cash = 1,
+  Online = 2,
+}
+
+const OrderStatusLabels: Record<OrderStatusFilter, string> = {
+  [OrderStatusFilter.None]: "Tất cả trạng thái",
+  [OrderStatusFilter.Pending]: "Chờ xác nhận",
+  [OrderStatusFilter.Processing]: "Đang xử lý",
+  [OrderStatusFilter.Shipped]: "Đang giao",
+  [OrderStatusFilter.Delivered]: "Đã giao",
+  [OrderStatusFilter.Cancelled]: "Đã hủy",
+  [OrderStatusFilter.Reported]: "Bị báo cáo",
+  [OrderStatusFilter.Assigned]: "Đang lấy hàng",
+  [OrderStatusFilter.CustomerNotAvailable]: "Chờ nhận",
 };
 
-const ReportTargetIcons: Record<ReportTarget, React.ReactElement> = {
-  [ReportTarget.None]: <Person />,
-  [ReportTarget.Customer]: <Person />,
-  [ReportTarget.Store]: <Store />,
-  [ReportTarget.Shipper]: <LocalShipping />,
+const PaymentStatusLabels: Record<PaymentStatusFilter, string> = {
+  [PaymentStatusFilter.None]: "Tất cả thanh toán",
+  [PaymentStatusFilter.Paid]: "Đã thanh toán",
+  [PaymentStatusFilter.Pending]: "Chưa thanh toán",
+  [PaymentStatusFilter.Failed]: "Thanh toán thất bại",
+  [PaymentStatusFilter.Refunded]: "Đã hoàn tiền",
 };
 
-export default function ReportsPage() {
-  const [reports, setReports] = useState<Report[]>([]);
+const PaymentMethodLabels: Record<PaymentMethodFilter, string> = {
+  [PaymentMethodFilter.None]: "Tất cả phương thức",
+  [PaymentMethodFilter.Cash]: "Tiền mặt",
+  [PaymentMethodFilter.Online]: "Trực tuyến",
+};
+
+export default function OrderPage() {
+  const [orders, setOrders] = useState<Order[]>([]);
   const [totalCount, setTotalCount] = useState(0);
   const [pageNumber, setPageNumber] = useState(1);
   const [pageSize] = useState(10);
 
-  const [stats, setStats] = useState<ReportStats>({
+  const [stats, setStats] = useState<OrderStats>({
     total: 0,
-    resolved: 0,
-    unResolved: 0,
-    customerTarget: 0,
-    storeTarget: 0,
-    shipperTarget: 0,
+    pending: 0,
+    processing: 0,
+    shipped: 0,
+    delivered: 0,
+    cancelled: 0,
+    reported: 0,
   });
 
   const [filters, setFilters] = useState({
     keyword: "",
     startDate: null,
     endDate: new Date(),
-    reportTarget: ReportTarget.None,
+    orderStatus: OrderStatusFilter.None,
+    paymentStatus: PaymentStatusFilter.None,
+    paymentMethod: PaymentMethodFilter.None,
   } as {
     keyword: string;
     startDate: Date | null;
     endDate: Date | null;
-    reportTarget: ReportTarget;
+    orderStatus: OrderStatusFilter;
+    paymentStatus: PaymentStatusFilter;
+    paymentMethod: PaymentMethodFilter;
   });
 
   const [searchKeyword, setSearchKeyword] = useState("");
-  const [selectedReport, setSelectedReport] = useState<Report | null>(null);
-  const [orderDetails, setOrderDetails] = useState<OrderApiResult | null>(null);
+  const [selectedOrder, setSelectedOrder] = useState<Order | null>(null);
   const [isLoadingOrder, setIsLoadingOrder] = useState(false);
   const [isLoadingStats, setIsLoadingStats] = useState(false);
   const [isDetailModalOpen, setIsDetailModalOpen] = useState(false);
-  const [isConfirmModalOpen, setIsConfirmModalOpen] = useState(false);
-
-  const handleOrderReported = useCallback(
-    (data: ReportCreatedDto) => {
-      const newReport: Report = {
-        id: data.id,
-        title: data.title,
-        description: data.description,
-        createdAt: data.createdAt,
-        isResolved: false,
-        orderId: data.orderId,
-        reportTarget: data.reportTarget,
-        createdById: data.createdById,
-        targetId: data.targetId,
-      };
-
-      const matchesFilters = (
-        (!filters.keyword ||
-         newReport.title.toLowerCase().includes(filters.keyword.toLowerCase()) ||
-         newReport.description.toLowerCase().includes(filters.keyword.toLowerCase())) &&
-        (filters.reportTarget === ReportTarget.None ||
-         newReport.reportTarget === filters.reportTarget) &&
-        (!filters.startDate || new Date(newReport.createdAt) >= filters.startDate) &&
-        (!filters.endDate || new Date(newReport.createdAt) <= filters.endDate)
-      );
-
-      if (matchesFilters) {
-        setReports((prevReports) => [newReport, ...prevReports]);
-        setTotalCount((prevCount) => prevCount + 1);
-      }
-
-      setStats((prevStats) => ({
-        ...prevStats,
-        total: prevStats.total + 1,
-        unResolved: prevStats.unResolved + 1,
-        ...(data.reportTarget === 'Customer' && {
-          customerTarget: prevStats.customerTarget + 1,
-        }),
-        ...(data.reportTarget === 'Store' && {
-          storeTarget: prevStats.storeTarget + 1,
-        }),
-        ...(data.reportTarget === 'Shipper' && {
-          shipperTarget: prevStats.shipperTarget + 1,
-        }),
-      }));
-    },
-    [filters]
-  );
-
-  const eventHandlers = useMemo(
-    () => ({
-      [HubEventType.OrderReported]: handleOrderReported,
-    }),
-    [handleOrderReported]
-  );
-  useEventHub(eventHandlers as Partial<Record<HubEventType, HubEventHandler>>);
 
   const getStatusText = (status: OrderStatus) => {
     switch (status) {
@@ -226,40 +227,83 @@ export default function ReportsPage() {
     }
   };
 
-  const loadReports = async () => {
+  const getStatusColor = (status: OrderStatus): "warning" | "info" | "primary" | "success" | "error" | "secondary" | "default" => {
+    switch (status) {
+      case OrderStatus.Pending:
+        return "warning";
+      case OrderStatus.Processing:
+        return "info";
+      case OrderStatus.Shipped:
+        return "primary";
+      case OrderStatus.Delivered:
+        return "success";
+      case OrderStatus.Cancelled:
+        return "error";
+      case OrderStatus.Reported:
+        return "error";
+      case OrderStatus.Assigned:
+        return "secondary";
+      case OrderStatus.CustomerNotAvailable:
+        return "warning";
+      default:
+        return "default";
+    }
+  };
+
+  const getPaymentStatusColor = (status: PaymentStatus): "success" | "warning" | "error" | "info" | "default" => {
+    switch (status) {
+      case PaymentStatus.Paid:
+        return "success";
+      case PaymentStatus.Pending:
+        return "warning";
+      case PaymentStatus.Failed:
+        return "error";
+      case PaymentStatus.Refunded:
+        return "info";
+      default:
+        return "default";
+    }
+  };
+
+  const loadOrders = async () => {
     try {
       const params = {
-        keyword: filters.keyword || undefined,
-        startDate: filters.startDate ? format(filters.startDate, "yyyy-MM-dd") : undefined,
-        endDate: filters.endDate ? format(filters.endDate, "yyyy-MM-dd") : undefined,
-        reportTarget: filters.reportTarget !== ReportTarget.None ? filters.reportTarget.toString() : undefined,
+        orderStatus: filters.orderStatus !== OrderStatusFilter.None ? filters.orderStatus.toString() : "None",
+        paymentMethod: filters.paymentMethod !== PaymentMethodFilter.None ? filters.paymentMethod.toString() : "None",
+        paymentStatus: filters.paymentStatus !== PaymentStatusFilter.None ? filters.paymentStatus.toString() : "None",
         pageNumber,
         pageSize,
+        startDate: filters.startDate ? format(filters.startDate, "yyyy-MM-dd") : undefined,
+        endDate: filters.endDate ? format(filters.endDate, "yyyy-MM-dd") : undefined,
       };
-      const response = await reportApi.getAll(params);
-      setReports(response.data.items || []);
-      setTotalCount(response.data.totalCount || 0);
+      const response = await orderApi.getAll(
+        params.orderStatus,
+        params.paymentMethod,
+        params.paymentStatus,
+        undefined,
+        undefined,
+        undefined,
+        params.pageNumber,
+        params.pageSize,
+        params.startDate,
+        params.endDate
+      );
+      setOrders(response.items || []);
+      setTotalCount(response.totalCount || 0);
     } catch (error) {
-      console.error("Error loading reports:", error);
+      console.error("Error loading orders:", error);
     }
   };
 
   const loadStats = async () => {
     setIsLoadingStats(true);
     try {
-      const response = await reportApi.getCount({
+      const statsData = await orderApi.getOverviewStats({
         startDate: filters.startDate ? format(filters.startDate, "yyyy-MM-dd") : undefined,
         endDate: filters.endDate ? format(filters.endDate, "yyyy-MM-dd") : undefined,
       });
-      const statsData = response.data;
-      setStats({
-        total: statsData.total,
-        resolved: statsData.resolved,
-        unResolved: statsData.unResolved,
-        customerTarget: statsData.customerTarget,
-        storeTarget: statsData.storeTarget,
-        shipperTarget: statsData.shipperTarget,
-      });
+      
+      setStats(statsData);
     } catch (error) {
       console.error("Error loading stats:", error);
     } finally {
@@ -298,64 +342,41 @@ export default function ReportsPage() {
         const now = new Date();
         return new Date(now.getFullYear(), now.getMonth() + 1, 0);
       })(),
-      reportTarget: ReportTarget.None,
+      orderStatus: OrderStatusFilter.None,
+      paymentStatus: PaymentStatusFilter.None,
+      paymentMethod: PaymentMethodFilter.None,
     });
     setPageNumber(1);
   };
 
-  const handleViewReport = async (report: Report) => {
-    setSelectedReport(report);
+  const handleViewOrder = async (order: Order) => {
+    setSelectedOrder(order);
     setIsDetailModalOpen(true);
 
-    if (report.orderId) {
-      setIsLoadingOrder(true);
-      try {
-        const orderData = await orderApi.getById(report.orderId);
-        setOrderDetails(orderData);
-      } catch (error) {
-        console.error('Error fetching order details:', error);
-        setOrderDetails(null);
-      } finally {
-        setIsLoadingOrder(false);
-      }
+    setIsLoadingOrder(true);
+    try {
+      const orderData = await orderApi.getById(order.id);
+      setSelectedOrder(orderData);
+    } catch (error) {
+      console.error('Error fetching order details:', error);
+      setSelectedOrder(null);
+    } finally {
+      setIsLoadingOrder(false);
     }
   };
 
   const handleCloseDetailModal = () => {
     setIsDetailModalOpen(false);
-    setSelectedReport(null);
-    setOrderDetails(null);
+    setSelectedOrder(null);
     setIsLoadingOrder(false);
-  };
-
-  const handleOpenConfirmModal = () => {
-    setIsConfirmModalOpen(true);
-  };
-
-  const handleCloseConfirmModal = () => {
-    setIsConfirmModalOpen(false);
-  };
-
-  const handleResolveReport = async (reportId: string, isAddReportTarget: boolean = false) => {
-    try {
-      await reportApi.resolve(reportId, isAddReportTarget);
-      loadReports();
-      loadStats();
-      setIsConfirmModalOpen(false);
-      if (isDetailModalOpen) {
-        handleCloseDetailModal();
-      }
-    } catch (error) {
-      console.error("Error resolving report:", error);
-    }
   };
 
   const columns = [
     {
-      key: "index" as keyof Report,
+      key: "index" as keyof Order,
       label: "STT",
-      render: (report: Report) => {
-        const index = reports.indexOf(report);
+      render: (order: Order) => {
+        const index = orders.indexOf(order);
         return (
           <Typography variant="body2" color="text.secondary">
             {(pageNumber - 1) * pageSize + index + 1}
@@ -364,97 +385,134 @@ export default function ReportsPage() {
       },
     },
     {
-      key: "title" as keyof Report,
-      label: "Tiêu đề",
-      render: (report: Report) => (
-        <Typography variant="body2" fontWeight={500}>
-          {report.title}
+      key: "id" as keyof Order,
+      label: "Mã đơn hàng",
+      render: (order: Order) => (
+        <Typography variant="body2" fontFamily="monospace" sx={{ fontSize: '0.875rem', fontWeight: 500 }}>
+          {order.id}
         </Typography>
       ),
     },
     {
-      key: "reportTarget" as keyof Report,
-      label: "Đối tượng",
-      render: (report: Report) => (
+      key: "user" as keyof Order,
+      label: "Khách hàng",
+      render: (order: Order) => (
+        <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
+          <Person sx={{ fontSize: 20, color: "primary.main" }} />
+          <Box>
+            <Typography variant="body2" fontWeight={500}>
+              {order.user?.fullName || "Không có thông tin"}
+            </Typography>
+            <Typography variant="caption" color="text.secondary">
+              {order.user?.phoneNumber || "Không có số điện thoại"}
+            </Typography>
+          </Box>
+        </Box>
+      ),
+    },
+    {
+      key: "store" as keyof Order,
+      label: "Cửa hàng",
+      render: (order: Order) => (
+        <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
+          <Store sx={{ fontSize: 20, color: "secondary.main" }} />
+          <Box>
+            <Typography variant="body2" fontWeight={500}>
+              {order.store?.name || "Không có thông tin"}
+            </Typography>
+            <Typography variant="caption" color="text.secondary">
+              {order.store?.phoneNumber || "Không có số điện thoại"}
+            </Typography>
+          </Box>
+        </Box>
+      ),
+    },
+    {
+      key: "shipper" as keyof Order,
+      label: "Người giao hàng",
+      render: (order: Order) => (
+        <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
+          <LocalShipping sx={{ fontSize: 20, color: "warning.main" }} />
+          <Box>
+            <Typography variant="body2" fontWeight={500}>
+              {order.shipper?.fullName || "Chưa phân công"}
+            </Typography>
+            <Typography variant="caption" color="text.secondary">
+              {order.shipper?.phoneNumber || "Không có số điện thoại"}
+            </Typography>
+          </Box>
+        </Box>
+      ),
+    },
+    {
+      key: "totalPrice" as keyof Order,
+      label: "Tổng tiền",
+      render: (order: Order) => (
+        <Typography variant="body2" fontWeight={600} color="primary.main">
+          {order.totalPrice?.toLocaleString('vi-VN')} VNĐ
+        </Typography>
+      ),
+    },
+    {
+      key: "status" as keyof Order,
+      label: "Trạng thái",
+      render: (order: Order) => (
         <Chip
-          icon={ReportTargetIcons[report.reportTarget as ReportTarget]}
-          label={ReportTargetLabels[report.reportTarget as ReportTarget]}
+          label={getStatusText(order.status)}
           size="small"
-          color="primary"
+          color={getStatusColor(order.status)}
           variant="outlined"
         />
       ),
     },
     {
-      key: "orderId" as keyof Report,
-      label: "Đơn hàng",
-      render: (report: Report) => (
-        <Typography variant="body2" fontFamily="monospace" sx={{ fontSize: '0.875rem' }}>
-          {report.orderId}
-        </Typography>
-      ),
-    },
-    {
-      key: "createdAt" as keyof Report,
-      label: "Ngày tạo",
-      render: (report: Report) => (
-        <Typography variant="body2">
-          {format(new Date(report.createdAt), "dd/MM/yyyy HH:mm", { locale: vi })}
-        </Typography>
-      ),
-    },
-    {
-      key: "isResolved" as keyof Report,
-      label: "Trạng thái",
-      render: (report: Report) => (
+      key: "paymentStatus" as keyof Order,
+      label: "Thanh toán",
+      render: (order: Order) => (
         <Chip
-          icon={report.isResolved ? <CheckCircle /> : <Warning />}
-          label={report.isResolved ? "Đã xử lý" : "Chờ xử lý"}
+          label={getPaymentStatusText(order.paymentStatus, order.paymentMethod)}
           size="small"
-          color={report.isResolved ? "success" : "warning"}
+          color={getPaymentStatusColor(order.paymentStatus)}
+          variant="outlined"
         />
       ),
     },
     {
-      key: "actions" as keyof Report,
+      key: "createAt" as keyof Order,
+      label: "Ngày tạo",
+      render: (order: Order) => (
+        <Typography variant="body2">
+          {order.createAt ? format(new Date(order.createAt), "dd/MM/yyyy HH:mm", { locale: vi }) : "Không rõ"}
+        </Typography>
+      ),
+    },
+    {
+      key: "actions" as keyof Order,
       label: "Thao tác",
-      render: (report: Report) => (
+      render: (order: Order) => (
         <Box sx={{ display: "flex", gap: 0.5 }}>
           <Tooltip title="Xem chi tiết">
             <IconButton
               size="small"
-              onClick={() => handleViewReport(report)}
+              onClick={() => handleViewOrder(order)}
               color="primary"
             >
               <Visibility />
             </IconButton>
           </Tooltip>
-          {!report.isResolved && (
-            <Tooltip title="Xử lý báo cáo">
-              <IconButton
-                size="small"
-                onClick={() => {
-                  setSelectedReport(report);
-                  handleOpenConfirmModal();
-                }}
-                color="success"
-              >
-                <CheckCircleOutline />
-              </IconButton>
-            </Tooltip>
-          )}
         </Box>
       ),
     },
   ];
 
   useEffect(() => {
-    loadReports();
+    loadOrders();
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [pageNumber, filters]);
 
   useEffect(() => {
     loadStats();
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [filters.startDate, filters.endDate]);
 
   return (
@@ -488,7 +546,7 @@ export default function ReportsPage() {
               fontWeight: theme.typography.fontWeightMedium,
             })}
           >
-            Quản Lý Báo Cáo
+            Quản Lý Đơn Hàng
           </Typography>
         </Box>
 
@@ -503,13 +561,11 @@ export default function ReportsPage() {
           }}
         >
           <Box>
-
-            <Typography variant="h4" color="text.secondary"  >
-              Quản lý báo cáo
+            <Typography variant="h4" color="text.secondary">
+              Quản lý đơn hàng
             </Typography>
-
             <Typography variant="body2" color="text.secondary">
-              Thống kê và quản lý các đơn hàng bị tố cáo
+              Theo dõi và quản lý tất cả đơn hàng trong hệ thống
             </Typography>
           </Box>
 
@@ -529,26 +585,32 @@ export default function ReportsPage() {
               ))
             ) : (
               [
-                { label: "Tổng số báo cáo", value: stats.total, color: "text.primary" },
-                { label: "Đã xử lý", value: stats.resolved, color: "success.main" },
-                { label: "Chờ xử lý", value: stats.unResolved, color: "warning.main" },
-                { label: "Tỷ lệ xử lý", value: `${stats.total > 0 ? Math.round((stats.resolved / stats.total) * 100) : 0}%`, color: "info.main" }
-              ].map((stat, index) => (
-                <Card key={index} sx={{ flex: { xs: "1 1 100%", sm: "1 1 45%", md: "1 1 22%" }, minWidth: 200 }}>
-                  <CardContent>
-                    <Typography color="text.secondary" gutterBottom>
-                      {stat.label}
-                    </Typography>
-                    <Typography variant="h4" fontWeight={600} color={stat.color}>
-                      {stat.value}
-                    </Typography>
-                  </CardContent>
-                </Card>
-              ))
+                { label: "Tổng đơn hàng", value: stats.total, color: "text.primary", icon: ShoppingCart },
+                { label: "Chờ xác nhận", value: stats.pending, color: "warning.main", icon: Payment },
+                { label: "Đang xử lý", value: stats.processing, color: "info.main", icon: LocalOffer },
+                { label: "Đã giao", value: stats.delivered, color: "success.main", icon: Store },
+              ].map((stat, index) => {
+                const IconComponent = stat.icon;
+                return (
+                  <Card key={index} sx={{ flex: { xs: "1 1 100%", sm: "1 1 45%", md: "1 1 22%" }, minWidth: 200 }}>
+                    <CardContent>
+                      <Box sx={{ display: "flex", alignItems: "center", gap: 2, mb: 1 }}>
+                        <IconComponent sx={{ color: stat.color, fontSize: 24 }} />
+                        <Typography color="text.secondary" variant="body2">
+                          {stat.label}
+                        </Typography>
+                      </Box>
+                      <Typography variant="h4" fontWeight={600} color={stat.color}>
+                        {stat.value}
+                      </Typography>
+                    </CardContent>
+                  </Card>
+                );
+              })
             )}
           </Box>
 
-          {/* Target Statistics */}
+          {/* Additional Statistics */}
           <Box sx={{ display: "flex", flexWrap: "wrap", gap: 2 }}>
             {isLoadingStats ? (
               Array.from({ length: 3 }).map((_, index) => (
@@ -563,25 +625,21 @@ export default function ReportsPage() {
               ))
             ) : (
               [
-                { icon: Person, label: "Báo cáo khách hàng", value: stats.customerTarget, color: "primary.main" },
-                { icon: Store, label: "Báo cáo cửa hàng", value: stats.storeTarget, color: "secondary.main" },
-                { icon: LocalShipping, label: "Báo cáo người giao hàng", value: stats.shipperTarget, color: "warning.main" }
-              ].map((item, index) => {
-                const IconComponent = item.icon;
-                return (
-                  <Card key={index} sx={{ flex: { xs: "1 1 100%", sm: "1 1 30%" }, minWidth: 200 }}>
-                    <CardContent sx={{ textAlign: "center" }}>
-                      <IconComponent sx={{ fontSize: 40, color: item.color, mb: 1 }} />
-                      <Typography variant="h6" fontWeight={600}>
-                        {item.value}
-                      </Typography>
-                      <Typography variant="body2" color="text.secondary">
-                        {item.label}
-                      </Typography>
-                    </CardContent>
-                  </Card>
-                );
-              })
+                { label: "Đang giao", value: stats.shipped, color: "primary.main" },
+                { label: "Đã hủy", value: stats.cancelled, color: "error.main" },
+                { label: "Bị báo cáo", value: stats.reported, color: "warning.main" }
+              ].map((item, index) => (
+                <Card key={index} sx={{ flex: { xs: "1 1 100%", sm: "1 1 30%" }, minWidth: 200 }}>
+                  <CardContent sx={{ textAlign: "center" }}>
+                    <Typography variant="h6" fontWeight={600} color={item.color}>
+                      {item.value}
+                    </Typography>
+                    <Typography variant="body2" color="text.secondary">
+                      {item.label}
+                    </Typography>
+                  </CardContent>
+                </Card>
+              ))
             )}
           </Box>
 
@@ -634,39 +692,76 @@ export default function ReportsPage() {
               </Box>
               <Box sx={{ flex: { xs: "1 1 100%", sm: "1 1 45%", md: "1 1 30%" }, minWidth: 200 }}>
                 <FormControl fullWidth size="small">
-                  <InputLabel>Đối tượng</InputLabel>
+                  <InputLabel>Trạng thái đơn hàng</InputLabel>
                   <Select
-                    value={filters.reportTarget}
+                    value={filters.orderStatus}
                     onChange={(e) => {
-                      setFilters(prev => ({ ...prev, reportTarget: e.target.value as ReportTarget }));
+                      setFilters(prev => ({ ...prev, orderStatus: e.target.value as OrderStatusFilter }));
                     }}
-                    label="Đối tượng"
+                    label="Trạng thái đơn hàng"
                   >
-                    <MenuItem value={ReportTarget.None}>Tất cả</MenuItem>
-                    <MenuItem value={ReportTarget.Customer}>Khách hàng</MenuItem>
-                    <MenuItem value={ReportTarget.Store}>Cửa hàng</MenuItem>
-                    <MenuItem value={ReportTarget.Shipper}>Người giao hàng</MenuItem>
+                    {Object.entries(OrderStatusLabels).map(([key, label]) => (
+                      <MenuItem key={key} value={key}>
+                        {label}
+                      </MenuItem>
+                    ))}
+                  </Select>
+                </FormControl>
+              </Box>
+              <Box sx={{ flex: { xs: "1 1 100%", sm: "1 1 45%", md: "1 1 30%" }, minWidth: 200 }}>
+                <FormControl fullWidth size="small">
+                  <InputLabel>Trạng thái thanh toán</InputLabel>
+                  <Select
+                    value={filters.paymentStatus}
+                    onChange={(e) => {
+                      setFilters(prev => ({ ...prev, paymentStatus: e.target.value as PaymentStatusFilter }));
+                    }}
+                    label="Trạng thái thanh toán"
+                  >
+                    {Object.entries(PaymentStatusLabels).map(([key, label]) => (
+                      <MenuItem key={key} value={key}>
+                        {label}
+                      </MenuItem>
+                    ))}
+                  </Select>
+                </FormControl>
+              </Box>
+              <Box sx={{ flex: { xs: "1 1 100%", sm: "1 1 45%", md: "1 1 30%" }, minWidth: 200 }}>
+                <FormControl fullWidth size="small">
+                  <InputLabel>Phương thức thanh toán</InputLabel>
+                  <Select
+                    value={filters.paymentMethod}
+                    onChange={(e) => {
+                      setFilters(prev => ({ ...prev, paymentMethod: e.target.value as PaymentMethodFilter }));
+                    }}
+                    label="Phương thức thanh toán"
+                  >
+                    {Object.entries(PaymentMethodLabels).map(([key, label]) => (
+                      <MenuItem key={key} value={key}>
+                        {label}
+                      </MenuItem>
+                    ))}
                   </Select>
                 </FormControl>
               </Box>
             </Box>
           </Paper>
 
-          {/* Reports Table */}
+          {/* Orders Table */}
           <CustomTable
-            data={reports}
+            data={orders}
             totalCount={totalCount}
             columns={columns}
             onPageChange={handlePageChange}
-            headerTitle="Danh sách báo cáo"
-            description="Quản lý các báo cáo về đơn hàng"
+            headerTitle="Danh sách đơn hàng"
+            description="Quản lý tất cả đơn hàng trong hệ thống"
             showSearch={false}
             showBulkActions={false}
             showExport={false}
             itemsPerPage={pageSize}
           />
 
-          {/* Report Detail Modal */}
+          {/* Order Detail Modal */}
           <Dialog
             open={isDetailModalOpen}
             onClose={handleCloseDetailModal}
@@ -692,9 +787,9 @@ export default function ReportsPage() {
               }}
             >
               <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-                <Warning sx={{ fontSize: 24 }} />
+                <ShoppingCart sx={{ fontSize: 24 }} />
                 <Typography variant="h6" fontWeight={600}>
-                  Chi tiết báo cáo
+                  Chi tiết đơn hàng
                 </Typography>
               </Box>
               <IconButton
@@ -706,61 +801,8 @@ export default function ReportsPage() {
               </IconButton>
             </DialogTitle>
             <DialogContent sx={{ p: 0 }}>
-              {orderDetails && (
+              {selectedOrder && (
                 <Box>
-                  {/* Report Section */}
-                  {orderDetails.report && (
-                    <Box sx={{ p: 3, bgcolor: "background.paper" }}>
-                      <Typography variant="h6" gutterBottom sx={{ color: 'grey.900', fontWeight: 600 }}>
-                        Thông tin báo cáo
-                      </Typography>
-                      <Card sx={{ mb: 2, boxShadow: '0 2px 8px rgba(0,0,0,0.1)' }}>
-                        <CardContent>
-                          <Typography variant="h6" gutterBottom sx={{ color: 'error.main', fontWeight: 600 }}>
-                            {orderDetails.report.title}
-                          </Typography>
-                          <Typography variant="body1" paragraph sx={{ color: 'grey.800', lineHeight: 1.6 }}>
-                            {orderDetails.report.description}
-                          </Typography>
-                          <Box sx={{ display: "flex", flexWrap: "wrap", gap: 2, mt: 2 }}>
-                            <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-                              <Typography variant="body2" color="text.secondary">
-                                Đối tượng:
-                              </Typography>
-                              <Chip
-                                icon={ReportTargetIcons[orderDetails.report.reportTarget as ReportTarget]}
-                                label={ReportTargetLabels[orderDetails.report.reportTarget as ReportTarget]}
-                                size="small"
-                                color="primary"
-                                variant="filled"
-                              />
-                            </Box>
-                            <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-                              <Typography variant="body2" color="text.secondary">
-                                Trạng thái:
-                              </Typography>
-                              <Chip
-                                icon={orderDetails.report.isResolved ? <CheckCircle /> : <Warning />}
-                                label={orderDetails.report.isResolved ? "Đã xử lý" : "Chờ xử lý"}
-                                size="small"
-                                color={orderDetails.report.isResolved ? "success" : "warning"}
-                                variant="filled"
-                              />
-                            </Box>
-                            <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-                              <Typography variant="body2" color="text.secondary">
-                                Ngày tạo:
-                              </Typography>
-                              <Typography variant="body2" fontWeight={500}>
-                                {format(new Date(orderDetails.report.createdAt), "dd/MM/yyyy HH:mm", { locale: vi })}
-                              </Typography>
-                            </Box>
-                          </Box>
-                        </CardContent>
-                      </Card>
-                    </Box>
-                  )}
-
                   {/* Order Details Section */}
                   <Box sx={{ p: 3, bgcolor: "background.paper" }}>
                     <Typography variant="h6" gutterBottom sx={{ color: 'grey.900', fontWeight: 600, mb: 2 }}>
@@ -770,7 +812,7 @@ export default function ReportsPage() {
                       <Box sx={{ display: "flex", justifyContent: "center", py: 4 }}>
                         <CircularProgress size={32} />
                       </Box>
-                    ) : orderDetails ? (
+                    ) : selectedOrder ? (
                       <Card sx={{ boxShadow: '0 2px 8px rgba(0,0,0,0.1)' }}>
                         <CardContent>
                           <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 3, mb: 3 }}>
@@ -785,7 +827,7 @@ export default function ReportsPage() {
                                 border: '1px solid',
                                 borderColor: 'grey.200'
                               }}>
-                                {orderDetails.id}
+                                {selectedOrder.id}
                               </Typography>
                             </Box>
                             <Box sx={{ flex: 1, minWidth: 200 }}>
@@ -793,7 +835,7 @@ export default function ReportsPage() {
                                 Tổng tiền
                               </Typography>
                               <Typography variant="h6" color="primary.main" fontWeight={600}>
-                                {orderDetails.totalPrice?.toLocaleString('vi-VN')} VNĐ
+                                {selectedOrder.totalPrice?.toLocaleString('vi-VN')} VNĐ
                               </Typography>
                             </Box>
                             <Box sx={{ flex: 1, minWidth: 200 }}>
@@ -801,25 +843,25 @@ export default function ReportsPage() {
                                 Phí giao hàng
                               </Typography>
                               <Typography variant="body1" color="text.secondary">
-                                {orderDetails.shippingFee?.toLocaleString('vi-VN')} VNĐ
+                                {selectedOrder.shippingFee?.toLocaleString('vi-VN')} VNĐ
                               </Typography>
                             </Box>
                           </Box>
                           <Box sx={{ display: 'flex', gap: 2, mb: 3, flexWrap: 'wrap' }}>
                             <Chip
-                              label={`Trạng thái: ${getStatusText(orderDetails.status)}`}
-                              color="info"
+                              label={`Trạng thái: ${getStatusText(selectedOrder.status)}`}
+                              color={getStatusColor(selectedOrder.status)}
                               variant="outlined"
                               sx={{ fontWeight: 500 }}
                             />
                             <Chip
-                              label={`Thanh toán: ${getPaymentStatusText(orderDetails.paymentStatus, orderDetails.paymentMethod)}`}
-                              color="secondary"
+                              label={`Thanh toán: ${getPaymentStatusText(selectedOrder.paymentStatus, selectedOrder.paymentMethod)}`}
+                              color={getPaymentStatusColor(selectedOrder.paymentStatus)}
                               variant="outlined"
                               sx={{ fontWeight: 500 }}
                             />
                             <Chip
-                              label={`Ngày tạo: ${orderDetails.createAt ? format(new Date(orderDetails.createAt), "dd/MM/yyyy", { locale: vi }) : 'Không rõ'}`}
+                              label={`Ngày tạo: ${selectedOrder.createAt ? format(new Date(selectedOrder.createAt), "dd/MM/yyyy", { locale: vi }) : 'Không rõ'}`}
                               color="default"
                               variant="outlined"
                               sx={{ fontWeight: 500 }}
@@ -834,10 +876,13 @@ export default function ReportsPage() {
                                 </Typography>
                               </Box>
                               <Typography variant="body1" fontWeight={500}>
-                                {orderDetails.user?.fullName || 'Không có thông tin'}
+                                {selectedOrder.user?.fullName || 'Không có thông tin'}
                               </Typography>
                               <Typography variant="body2" color="text.secondary">
-                                {orderDetails.user?.phoneNumber || 'Không có số điện thoại'}
+                                {selectedOrder.user?.phoneNumber || 'Không có số điện thoại'}
+                              </Typography>
+                              <Typography variant="body2" color="text.secondary">
+                                {selectedOrder.user?.email || 'Không có email'}
                               </Typography>
                             </Box>
                             <Box sx={{ flex: 1, minWidth: 250, p: 2, bgcolor: 'grey.100', borderRadius: 2 }}>
@@ -848,13 +893,16 @@ export default function ReportsPage() {
                                 </Typography>
                               </Box>
                               <Typography variant="body1" fontWeight={500}>
-                                {orderDetails.store?.name || 'Không có thông tin'}
+                                {selectedOrder.store?.name || 'Không có thông tin'}
                               </Typography>
                               <Typography variant="body2" color="text.secondary">
-                                {orderDetails.store?.phoneNumber || 'Không có số điện thoại'}
+                                {selectedOrder.store?.phoneNumber || 'Không có số điện thoại'}
+                              </Typography>
+                              <Typography variant="body2" color="text.secondary">
+                                {selectedOrder.store?.description || 'Không có mô tả'}
                               </Typography>
                             </Box>
-                            {orderDetails.shipper?.id && (
+                            {selectedOrder.shipper?.id && (
                               <Box sx={{ flex: 1, minWidth: 250, p: 2, bgcolor: 'grey.100', borderRadius: 2 }}>
                                 <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 1 }}>
                                   <LocalShipping sx={{ color: 'warning.main', fontSize: 20 }} />
@@ -863,21 +911,21 @@ export default function ReportsPage() {
                                   </Typography>
                                 </Box>
                                 <Typography variant="body1" fontWeight={500}>
-                                  {orderDetails.shipper.fullName}
+                                  {selectedOrder.shipper.fullName}
                                 </Typography>
                                 <Typography variant="body2" color="text.secondary">
-                                  {orderDetails.shipper.phoneNumber || 'Không có số điện thoại'}
+                                  {selectedOrder.shipper.phoneNumber || 'Không có số điện thoại'}
                                 </Typography>
                               </Box>
                             )}
                           </Box>
-                          {orderDetails.orderItems && orderDetails.orderItems.length > 0 && (
+                          {selectedOrder.orderItems && selectedOrder.orderItems.length > 0 && (
                             <Box sx={{ mt: 3 }}>
                               <Typography variant="subtitle1" fontWeight={600} gutterBottom sx={{ color: 'grey.900', mb: 2 }}>
-                                Sản phẩm trong đơn hàng ({orderDetails.orderItems.length})
+                                Sản phẩm trong đơn hàng ({selectedOrder.orderItems.length})
                               </Typography>
                               <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
-                                {orderDetails.orderItems.map((item, index) => (
+                                {selectedOrder.orderItems.map((item, index) => (
                                   <Card key={index} sx={{
                                     border: '1px solid',
                                     borderColor: 'grey.200',
@@ -990,67 +1038,17 @@ export default function ReportsPage() {
                 </Box>
               )}
             </DialogContent>
-            {orderDetails && orderDetails.report && !orderDetails.report.isResolved && (
-              <DialogActions>
-                <Button
-                  onClick={handleOpenConfirmModal}
-                  color="primary"
-                  variant="contained"
-                  startIcon={<CheckCircleOutline />}
-                >
-                  Xử lý
-                </Button>
-              </DialogActions>
-            )}
-          </Dialog>
-
-          <Dialog
-            open={isConfirmModalOpen}
-            onClose={handleCloseConfirmModal}
-            maxWidth="sm"
-            fullWidth
-            PaperProps={{ sx: { bgcolor: "background.paper" } }}
-          >
-            <DialogTitle sx={{ display: "flex", justifyContent: "space-between", alignItems: "center", pr: 1, bgcolor: "background.paper" }}>
-              Xác nhận xử lý
-              <IconButton
-                onClick={handleCloseConfirmModal}
-                size="small"
-                sx={{ color: "text.secondary" }}
-              >
-                <Close />
-              </IconButton>
-            </DialogTitle>
-            <DialogContent sx={{ bgcolor: "background.paper" }}>
-              <Typography variant="body1" sx={{ mb: 2 }}>
-                Bạn muốn xử lý báo cáo này như thế nào?
-              </Typography>
-            </DialogContent>
-            <DialogActions sx={{ gap: 1, p: 2, bgcolor: "background.paper" }}>
+            <DialogActions>
               <Button
-                onClick={handleCloseConfirmModal}
+                onClick={handleCloseDetailModal}
                 color="inherit"
                 variant="outlined"
               >
-                Hủy
-              </Button>
-              <Button
-                onClick={() => selectedReport && handleResolveReport(selectedReport.id, false)}
-                color="success"
-                variant="contained"
-              >
-                Xử lý (Không thêm cảnh cáo)
-              </Button>
-              <Button
-                onClick={() => selectedReport && handleResolveReport(selectedReport.id, true)}
-                color="warning"
-                variant="contained"
-              >
-                Xử lý & Thêm cảnh cáo
+                Đóng
               </Button>
             </DialogActions>
           </Dialog>
-        </Box>a
+        </Box>
       </Box>
     </LocalizationProvider>
   );

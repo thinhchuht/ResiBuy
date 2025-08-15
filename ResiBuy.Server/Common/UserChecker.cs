@@ -23,7 +23,7 @@ namespace ResiBuy.Server.Common
                     return ResponseModel.SuccessResponse();
                 }
             }
-            throw new CustomException(ExceptionErrorCode.CreateFailed, "Không tồn tại người dùng");
+            throw new CustomException(ExceptionErrorCode.CreateFailed, "Bạn chưa ở trong danh sách dân cư, hãy liên hệ ban quản lý tòa nhà để được làm việc");
         }
     }
 }

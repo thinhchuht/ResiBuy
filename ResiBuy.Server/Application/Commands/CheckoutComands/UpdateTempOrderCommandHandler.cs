@@ -7,7 +7,7 @@ using ResiBuy.Server.Services.RedisServices;
 namespace ResiBuy.Server.Application.Commands.CheckoutComands
 {
     public record UpdateTempOrderCommand(string UserId, TempCheckoutDto Dto) : IRequest<ResponseModel>;
-    public class UpdateTempOrderCommandHandler(ICartItemDbService cartItemDbService, IStoreDbService storeDbService,
+    public class UpdateTempOrderCommandHandler(ICartItemDbService cartItemDbService, IRoomDbService roomDbService, IStoreDbService storeDbService,
         IVoucherDbService voucherDbService, IOrderDbService orderDbService, IRedisService redisService) : IRequestHandler<UpdateTempOrderCommand, ResponseModel>
     {
         public async Task<ResponseModel> Handle(UpdateTempOrderCommand request, CancellationToken cancellationToken)
@@ -24,7 +24,13 @@ namespace ResiBuy.Server.Application.Commands.CheckoutComands
                 throw new CustomException(ExceptionErrorCode.InvalidInput, "Không thể đọc dữ liệu đơn hàng tạm thời");
             // Cập nhật addressId và paymentMethod nếu có
             if (request.Dto.AddressId.HasValue)
+            {
+                var room = await roomDbService.GetByIdAsync(request.Dto.AddressId.Value);
+                if(!room.IsActive) throw new CustomException(ExceptionErrorCode.ValidationFailed, $"Phòng {room.Name} hiện đang không hoạt động, hãy chọn địa chỉ khác");
+                if (!room.Building.IsActive) throw new CustomException(ExceptionErrorCode.ValidationFailed, $"Tòa nhà {room.Building.Name} hiện đang không hoạt động, hãy chọn địa chỉ khác");
+                if (!room.Building.IsActive) throw new CustomException(ExceptionErrorCode.ValidationFailed, $"Tòa nhà {room.Building.Area.Name} hiện đang không hoạt động, hãy chọn địa chỉ khác");
                 checkoutData.AddressId = request.Dto.AddressId;
+            }
             checkoutData.PaymentMethod = request.Dto.PaymentMethod;
             // Cập nhật voucher và note cho từng order
             foreach (var updateOrder in request.Dto.Orders)

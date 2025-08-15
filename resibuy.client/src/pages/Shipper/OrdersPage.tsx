@@ -174,6 +174,7 @@ const ShipperOrderHistory: React.FC = () => {
 
   useEffect(() => {
     fetchOrders();
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [user?.id, page, startDate, endDate, statusFilter, dateError]);
 
   const handleStartDateChange = (date: Date | null) => {
