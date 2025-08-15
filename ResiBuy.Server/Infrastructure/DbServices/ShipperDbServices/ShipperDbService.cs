@@ -1,5 +1,6 @@
 using DocumentFormat.OpenXml.Office2021.Excel.RichDataWebImage;
 using Microsoft.EntityFrameworkCore;
+using ResiBuy.Server.Application.Queries.ShipperQueries.DTOs;
 using ResiBuy.Server.Exceptions;
 using ResiBuy.Server.Infrastructure.DbServices.BaseDbServices;
 using ResiBuy.Server.Infrastructure.Filter;
@@ -316,6 +317,30 @@ namespace ResiBuy.Server.Infrastructure.DbServices.ShipperDbServices
             {
                 throw new CustomException(ExceptionErrorCode.RepositoryError, ex.Message);
             }
+        }
+
+
+        public async Task<TimeSheetSummaryDto> GetTimeSheetSummaryAsync(Guid shipperId, DateTime? startDate, DateTime? endDate)
+        {
+            var query = _context.TimeSheets
+                .Where(ts => ts.ShipperId == shipperId)
+                .AsQueryable();
+
+            if (startDate.HasValue)
+                query = query.Where(ts => ts.DateMark >= startDate.Value);
+
+            if (endDate.HasValue)
+                query = query.Where(ts => ts.DateMark <= endDate.Value);
+
+            var data = await query.ToListAsync();
+
+            return new TimeSheetSummaryDto
+            {
+                CountAll = data.Count,
+                CountLate = data.Count(ts => ts.IsLate),
+                CountOnTime = data.Count(ts => !ts.IsLate),
+                Data = data
+            };
         }
     }
 }
