@@ -1,4 +1,5 @@
 ﻿using ResiBuy.Server.Infrastructure.Model.DTOs.StatisticAdminDtos;
+using ResiBuy.Server.Infrastructure.Model.DTOs.OrderDtos;
 using ResiBuy.Server.Services.MapBoxService;
 using ResiBuy.Server.Services.OpenRouteService;
 
@@ -564,6 +565,41 @@ public class OrderDbService : BaseDbService<Order>, IOrderDbService
                 TopProducts = topProductDtos,
                 TopStores = topStoreDtos
             };
+        }
+        catch (Exception ex)
+        {
+            throw new CustomException(ExceptionErrorCode.RepositoryError, ex.ToString());
+        }
+    }
+
+    public async Task<OrderOverviewStats> GetOverviewStats(DateTime? startDate = null, DateTime? endDate = null)
+    {
+        try
+        {
+            var query = _context.Orders.AsQueryable();
+
+            if (startDate.HasValue)
+            {
+                query = query.Where(o => o.UpdateAt >= startDate.Value);
+            }
+            if (endDate.HasValue)
+            {
+                var end = endDate.Value.Date.AddDays(1);
+                query = query.Where(o => o.UpdateAt < end);
+            }
+
+            var stats = new OrderOverviewStats
+            {
+                Total = await query.CountAsync(),
+                Pending = await query.CountAsync(o => o.Status == OrderStatus.Pending),
+                Processing = await query.CountAsync(o => o.Status == OrderStatus.Processing),
+                Shipped = await query.CountAsync(o => o.Status == OrderStatus.Shipped),
+                Delivered = await query.CountAsync(o => o.Status == OrderStatus.Delivered),
+                Cancelled = await query.CountAsync(o => o.Status == OrderStatus.Cancelled),
+                Reported = await query.CountAsync(o => o.Status == OrderStatus.Reported)
+            };
+
+            return stats;
         }
         catch (Exception ex)
         {

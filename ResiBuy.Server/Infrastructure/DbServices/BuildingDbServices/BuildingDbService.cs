@@ -23,7 +23,7 @@
                 var area = await areaDbService.GetByIdAsync(areaId) ?? throw new CustomException(ExceptionErrorCode.NotFound, "Area not found");
                 var building = new Building
                 {
-                    Name   = name,
+                    Name = name,
                     AreaId = areaId,
                     IsActive = true,
                 };
@@ -41,7 +41,8 @@
         {
             try
             {
-                return await context.Buildings.Include(a => a.Rooms).ToListAsync();
+                var query = context.Buildings.Include(a => a.Rooms).AsQueryable();
+                return await query.ToListAsync();
             }
             catch (Exception ex)
             {
@@ -56,11 +57,14 @@
             return building;
         }
 
-        public async Task<IEnumerable<Building>> GetByAreaIdAsync(Guid id)
+        public async Task<IEnumerable<Building>> GetByAreaIdAsync(Guid id, bool getActive)
         {
             try
             {
-                return await context.Buildings.Where(b => b.AreaId == id).ToListAsync();
+                var query = context.Buildings.Where(b => b.AreaId == id).AsQueryable();
+                if (getActive)
+                    query = query.Where(b => b.IsActive);
+                return await query.ToListAsync();
             }
             catch (Exception ex)
             {

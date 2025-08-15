@@ -17,9 +17,9 @@ namespace ResiBuy.Server.Controllers
         }
 
         [HttpGet("count")]
-        public async Task<IActionResult> CountReport()
+        public async Task<IActionResult> CountReport([FromQuery] DateTime? startDate, [FromQuery] DateTime? endDate)
         {
-            var result = await mediator.Send(new ReportStatusCountQuery());
+            var result = await mediator.Send(new ReportStatusCountQuery(startDate, endDate));
             return Ok(result);
         }
 

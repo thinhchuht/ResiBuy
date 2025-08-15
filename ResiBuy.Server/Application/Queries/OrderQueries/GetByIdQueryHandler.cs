@@ -22,6 +22,7 @@ namespace ResiBuy.Server.Application.Queries.OrderQueries
                 order.Shipper == null ? null : new
                 {
                     Id = order.ShipperId,
+                    FullName = order.Shipper.User.FullName,
                     PhoneNumber = order.Shipper.User.PhoneNumber
                 },
                 order.CreateAt,

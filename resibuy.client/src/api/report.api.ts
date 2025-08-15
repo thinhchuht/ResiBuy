@@ -17,8 +17,11 @@ const reportApi = {
     const response = await axiosClient.get(`/api/report/${id}`);
     return response.data;
   },
-  getCount: async () => {
-    const response = await axiosClient.get("/api/report/count");
+  getCount: async (params?: {
+    startDate?: string;
+    endDate?: string;
+  }) => {
+    const response = await axiosClient.get("/api/report/count", { params });
     return response.data;
   },
   create: async (data: {

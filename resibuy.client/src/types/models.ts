@@ -328,6 +328,7 @@ export interface ProductFilter {
   pageNumber?: number;
   pageSize?: number;
   IsGettingCategory?: boolean;
+  isNotGetOutOfStock?: boolean;
 }
 
 // Temp checkout DTOs for checkout process

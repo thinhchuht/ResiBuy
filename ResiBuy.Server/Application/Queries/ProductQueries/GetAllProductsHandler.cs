@@ -34,6 +34,8 @@ namespace ResiBuy.Server.Application.Queries.ProductQueries
 
             if (filter.MaxPrice.HasValue)
                 query = query.Where(p => p.ProductDetails.Any(d => d.Price <= filter.MaxPrice.Value));
+            if (filter.IsNotGetOutOfStock.HasValue)
+                query = query.Where(p => !p.IsOutOfStock);
 
             // Project to DTO
             var productDtosQuery = query.Select(p => new ProductQueriesDto
