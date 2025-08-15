@@ -346,6 +346,9 @@ const ProductInfoSection: React.FC<ProductInfoSectionProps> = ({ product, quanti
               </Typography>
             </AccordionSummary>
             <AccordionDetails>
+            <Typography variant="body1" color="text.secondary" paragraph>
+                Danh mục : {product.category.name}
+              </Typography>
               <Typography variant="body1" color="text.secondary" paragraph>
                 {product.describe}
               </Typography>

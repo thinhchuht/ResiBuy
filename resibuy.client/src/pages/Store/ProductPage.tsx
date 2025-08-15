@@ -25,10 +25,8 @@ import {
   Slider,
   Chip,
   Tooltip,
-  Grid,
   Badge,
   Collapse,
-  Alert,
   Divider,
 } from "@mui/material";
 import {
@@ -147,6 +145,7 @@ const ProductPage: React.FC = () => {
       fetchProducts();
       fetchCategories();
     }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [storeId]);
 
   const handleFilterSubmit = (e: React.FormEvent<HTMLFormElement>) => {
@@ -645,7 +644,7 @@ const ProductPage: React.FC = () => {
                               sx={{ width: 24, height: 24 }}
                             />
                             <Typography variant="body2">
-                              {category.name}
+                              {category.name} {category.status ? "" : "(Tạm ngưng hoạt động)"}
                             </Typography>
                           </Box>
                         ) : (

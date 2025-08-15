@@ -85,5 +85,14 @@ namespace ResiBuy.Server.Controllers
             var result = await _mediator.Send(new GetStatsShipperQuery());
             return Ok(result);
         }
+        [HttpGet("search")]
+        public async Task<IActionResult> SearchShipper([FromQuery]string? keyWord,[FromQuery] bool? isOnline,
+        [FromQuery] bool? isLocked,
+        [FromQuery] int pageNumber = 1,
+        [FromQuery] int pageSize = 5)
+        {
+            var result = await _mediator.Send(new SearchShippersQuery(keyWord,isOnline, isLocked, pageNumber, pageSize));
+            return Ok(result);
+        }
     }
 }

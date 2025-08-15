@@ -16,9 +16,17 @@ namespace ResiBuy.Server.Infrastructure.DbServices.StoreDbServices
         Task<int> CountStoresByIsOpenAsync(bool isOpen);
         Task<int> CountStoresByIsLockedAsync(bool isLocked);
         Task<StatisticalStoreDto> StatisticalStore(Guid storeid);
-        Task<SalesAnalysisDto> SalesAnalysis (Guid storeId, DateTime startDate, DateTime endDate);
-        Task<Dictionary<int,ProductAndSale>> TopSaleProduct(Guid storeId, DateTime startDate, DateTime endDate);
+        Task<SalesAnalysisDto> SalesAnalysis(Guid storeId, DateTime startDate, DateTime endDate);
+        Task<Dictionary<int, ProductAndSale>> TopSaleProduct(Guid storeId, DateTime startDate, DateTime endDate);
         Task<List<ProductDetailAndSale>> TopSaleDetail(int productId);
         Task<List<Dictionary<string, decimal>>> GetChartData(Guid storeId, DateTime startDate, DateTime endDate);
+        Task<PagedResult<Store>> SearchStoresAsync(
+    string keyword,
+    bool? isOpen,
+    bool? isLocked,
+    bool? isPayFee,
+    int pageNumber = 1,
+    int pageSize = 5);
+
     }
 }

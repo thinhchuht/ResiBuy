@@ -5,7 +5,7 @@ namespace ResiBuy.Server.Application.Commands.CategoryCommands
     public record UpdateCategoryCommand(UpdateCategoryDto CategoryDto) : IRequest<ResponseModel>;
 
     public class UpdateCategoryCommandHandler(
-        ICategoryDbService CategoryDbService,
+        ICategoryDbService categoryDbService,
         IImageDbService imageDbService
     ) : IRequestHandler<UpdateCategoryCommand, ResponseModel>
     {
@@ -15,13 +15,14 @@ namespace ResiBuy.Server.Application.Commands.CategoryCommands
             {
                 var dto = command.CategoryDto;
 
-                var category = await CategoryDbService.GetByIdAsync(dto.Id);
+                var category = await categoryDbService.GetByIdAsync(dto.Id);
                 if (category == null)
                     throw new CustomException(ExceptionErrorCode.ValidationFailed, $"Category {dto.Id} không tồn tại");
 
                 if (string.IsNullOrWhiteSpace(dto.Name))
                     throw new CustomException(ExceptionErrorCode.ValidationFailed, $"CategoryName là bắt buộc");
-
+                if (category.Name != dto.Name)
+                    await categoryDbService.CheckIfExistName(dto.Name);
                 category.UpdateCategory(dto.Name, dto.Status);
 
                 if (string.IsNullOrEmpty(dto.Image?.Id))
@@ -60,7 +61,7 @@ namespace ResiBuy.Server.Application.Commands.CategoryCommands
                         );
                     }
                 }
-                var result = await CategoryDbService.UpdateAsync(category);
+                var result = await categoryDbService.UpdateAsync(category);
                 if (result == null)
                     throw new CustomException(ExceptionErrorCode.UpdateFailed, "Không thể cập nhật Category. Vui lòng kiểm tra lại dữ liệu.");
                 return ResponseModel.SuccessResponse(result);

@@ -43,7 +43,10 @@ countByIsOpenAndIsLoc: async () => {
   const response = await axiosClient.get(`${storeUrl}/count/status`);
   return response.data.data;
 },
-
+  search: async(keyWord?: string,isOpen?: boolean,isLocked?:boolean,isPayFee?:boolean,pageNumber: number=1,pageSize: number=10)=>{
+    const response =await axiosClient.get(`${storeUrl}/search`,{params :{keyWord,isOpen,isLocked,isPayFee,pageNumber,pageSize}});
+    return response.data;
+  },
 };
 
 export default storeApi;

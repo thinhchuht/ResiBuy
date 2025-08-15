@@ -286,25 +286,27 @@ export function AddAreaModal({
                 </LoadScript>
               </Box>
 
-              <Box>
-                <FormControlLabel
-                  control={
-                    <Checkbox
-                      checked={formData.isActive}
-                      onChange={(e) => handleInputChange("isActive", e.target.checked)}
-                      color="primary"
-                    />
-                  }
-                  label={
-                    <Typography
-                      variant="body2"
-                      sx={{ color: "grey.700", fontWeight: "medium" }}
-                    >
-                      Hoạt động
-                    </Typography>
-                  }
-                />
-              </Box>
+              {editArea && (
+                <Box>
+                  <FormControlLabel
+                    control={
+                      <Checkbox
+                        checked={formData.isActive}
+                        onChange={(e) => handleInputChange("isActive", e.target.checked)}
+                        color="primary"
+                      />
+                    }
+                    label={
+                      <Typography
+                        variant="body2"
+                        sx={{ color: "grey.700", fontWeight: "medium" }}
+                      >
+                        Hoạt động
+                      </Typography>
+                    }
+                  />
+                </Box>
+              )}
             </Box>
           </Box>
         </form>

@@ -1,5 +1,4 @@
 ﻿using ResiBuy.Server.Application.Queries.ProductQueries.DTOs;
-using ResiBuy.Server.Infrastructure.DbServices.ProductDbServices;
 
 namespace ResiBuy.Server.Application.Queries.ProductQueries
 {
@@ -28,7 +27,8 @@ namespace ResiBuy.Server.Application.Queries.ProductQueries
 
             if (filter.CategoryId.HasValue)
                 query = query.Where(p => p.CategoryId == filter.CategoryId.Value);
-
+            if (filter.IsGettingCategory.HasValue && filter.IsGettingCategory.Value)
+                query = query.Where(p => p.Category.Status == true);
             if (filter.MinPrice.HasValue)
                 query = query.Where(p => p.ProductDetails.Any(d => d.Price >= filter.MinPrice.Value));
 
@@ -45,6 +45,12 @@ namespace ResiBuy.Server.Application.Queries.ProductQueries
                 Discount = p.Discount,
                 StoreId = p.StoreId,
                 CategoryId = p.CategoryId,
+                Category = new
+                {
+                    Id = p.Category.Id,
+                    Name = p.Category.Name,
+                    Status = p.Category.Status
+                },
                 Sold = p.ProductDetails.Sum(d => d.Sold),
                 ProductDetails = p.ProductDetails.Select(d => new ProductDetailQueriesDto
                 {

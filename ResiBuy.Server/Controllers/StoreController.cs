@@ -110,5 +110,26 @@ namespace ResiBuy.Server.Controllers
             ResponseModel response = await _mediator.Send(query);
             return Ok(response);
         }
+        [HttpGet("search")]
+        public async Task<IActionResult> SearchStores(
+           [FromQuery] string? keyword,
+           [FromQuery] bool? isOpen,
+           [FromQuery] bool? isLocked,
+           [FromQuery] bool? isPayFee,
+           [FromQuery] int pageNumber = 1,
+           [FromQuery] int pageSize = 5)
+        {
+            var query = new SearchStoresQuery(
+                keyword,
+                isOpen,
+                isLocked,
+                isPayFee,
+                pageNumber,
+                pageSize
+            );
+
+            var result = await _mediator.Send(query);
+            return Ok(result);
+        }
     }
 }

@@ -69,6 +69,5 @@ namespace ResiBuy.Server.Controllers
             var result = await mediator.Send(new GetTotalOrderAmountQuery(userId, storeId));
             return Ok(result);
         }
-
     }
 }

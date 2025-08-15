@@ -327,6 +327,7 @@ export interface ProductFilter {
   sortDirection?: string; // "asc" or "desc"
   pageNumber?: number;
   pageSize?: number;
+  IsGettingCategory?: boolean;
 }
 
 // Temp checkout DTOs for checkout process

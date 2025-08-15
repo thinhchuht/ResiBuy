@@ -35,6 +35,15 @@ export const formatDate = (date: string): string => {
   });
 };
 
+// Hàm định dạng ngày giờ
+export const formatDateWithoutTime = (date: string): string => {
+  return new Date(date).toLocaleString("vi-VN", {
+    day: "2-digit",
+    month: "2-digit",
+    year: "numeric",
+  });
+};
+
 // Hook useUserForm
 export const useUserForm = (editingUser?: UserDto | null) => {
   const [formData, setFormData] = useState<UserFormData>({
@@ -381,12 +390,14 @@ export const useUsersLogic = () => {
     }
   };
 
-  const handleSubmitRole = async (userId: string, data: {
+  interface RoleData {
     roles: string[];
     shipper?: { lastLocationId: string; startWorkTime: number; endWorkTime: number };
     store?: { name: string; description: string; phoneNumber: string; roomId: string };
     customer?: { roomId: string };
-  }) => {
+  }
+
+  const handleSubmitRole = async (userId: string, data: RoleData) => {
     try {
       const response = await userApi.updateUserRoles(userId, data);
       console.log("Update user roles response:", response);
@@ -435,44 +446,68 @@ export const useUsersLogic = () => {
       if (response.code !== 0) {
         throw new Error(response.message || "Lỗi khi lấy danh sách người dùng");
       }
-      const csvData = response.data.items.map((user: UserDto) => ({
-        id: user.id,
-        fullName: user.fullName || "",
-        email: user.email || "",
-        phoneNumber: user.phoneNumber || "",
-        isLocked: user.isLocked ? "Locked" : "UnLocked",
-        roles: user.roles.join(", "),
-        rooms: user.rooms?.map((room) => room.name).join(", ") || "",
-        dateOfBirth: formatDate(user.dateOfBirth),
-        createdAt: formatDate(user.createdAt),
-      }));
-      const csv = [
-        ["ID", "Full Name", "Email", "Phone Number", "Status", "Role", "Room", "Date of Birth", "Created at"],
-        ...csvData.map((row) => [
-          row.id,
-          `"${row.fullName}"`,
-          row.email,
-          row.phoneNumber,
-          row.isLocked,
-          `"${row.roles}"`,
-          `"${row.rooms}"`,
-          row.dateOfBirth,
-          row.createdAt,
-        ]),
-      ]
-        .map((row) => row.join(","))
-        .join("\n");
-      const blob = new Blob([csv], { type: "text/csv" });
-      const url = window.URL.createObjectURL(blob);
-      const a = document.createElement("a");
-      a.href = url;
-      a.download = `users_${new Date().toISOString().split("T")[0]}.csv`;
-      a.click();
-      window.URL.revokeObjectURL(url);
+      
+      // Define CSV headers
+      const headers = ["ID", "Full Name", "Email", "Phone Number", "Status", "Role", "Room", "Date of Birth", "Created at"];
+      
+      // Process user data for CSV
+      const csvRows = response.data.items.map((user: UserDto) => {
+        const userData = [
+          user.id,
+          `"${user.fullName || ''}"`,
+          user.email || '',
+          user.phoneNumber || '',
+          user.isLocked ? "Locked" : "UnLocked",
+          `"${user.roles.join(", ")}"`,
+          `"${user.rooms?.map((room) => room.name).join(", ") || ''}"`,
+          formatDateWithoutTime(user.dateOfBirth),
+          formatDate(user.createdAt),
+        ];
+        return userData.join(',');
+      });
+      
+      // Combine headers and data
+      const csvContent = [
+        headers.join(','),
+        ...csvRows
+      ].join('\n');
+      
+      // Create and trigger download
+      const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+      const url = URL.createObjectURL(blob);
+      const link = document.createElement('a');
+      link.href = url;
+      link.download = `users_${new Date().toISOString().split('T')[0]}.csv`;
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+      
       toast.success("Xuất danh sách người dùng thành công!");
     } catch (error: any) {
       console.error("Export users error:", error);
       toast.error(error.message || "Lỗi khi xuất danh sách người dùng");
+    }
+  };
+
+  const handleImportExcel = async (file: File) => {
+    try {
+      const formData = new FormData();
+      formData.append('file', file);
+      
+      const response = await userApi.importExcel(formData);
+      
+      if (response.code === 0) {
+        // Refresh the user list after successful import
+        await fetchUsers(pageNumber, pageSize, searchTerm);
+        return response.data;
+      } else {
+        throw new Error(response.message || "Lỗi khi nhập file Excel");
+      }
+    } catch (error: unknown) {
+      console.error("Import Excel error:", error);
+      const errorMessage = error instanceof Error ? error.message : "Có lỗi xảy ra khi nhập file Excel";
+      toast.error(errorMessage);
+      throw error; // Re-throw to be handled by the component
     }
   };
 
@@ -497,6 +532,7 @@ export const useUsersLogic = () => {
     isEditRoleModalOpen,
     editingUser,
     editingRoleUser,
+    searchTerm,
     handleViewUser,
     handleCloseDetailModal,
     handleAddUser,
@@ -508,6 +544,7 @@ export const useUsersLogic = () => {
     handleSubmitRole,
     handleToggleLockUser,
     handleExportUsers,
+    handleImportExcel,
     handlePageChange,
     handleSearch,
     fetchUsers,

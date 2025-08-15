@@ -22,6 +22,7 @@ import {
 import { AddUserModal } from "../../../components/admin/User/add-user-modal";
 import { EditRoleModal } from "../../../components/admin/User/edit-role-modal";
 import { UserDetailModal } from "../../../components/admin/User/user-detail-modal";
+import { ImportExcelModal } from "../../../components/admin/User/import-excel-modal";
 
 function UserStatsCards() {
   const [stats, setStats] = useState({
@@ -156,6 +157,7 @@ export default function UserPage() {
     handleSubmitRole,
     handleToggleLockUser,
     handleExportUsers,
+    handleImportExcel,
     handlePageChange,
     handleSearch,
   } = useUsersLogic();
@@ -163,6 +165,7 @@ export default function UserPage() {
   const [isConfirmDialogOpen, setIsConfirmDialogOpen] = useState(false);
   const [confirmUser, setConfirmUser] = useState<{ id: string; isLocked: boolean } | null>(null);
   const [localSearchTerm, setLocalSearchTerm] = useState(searchTerm);
+  const [isImportModalOpen, setIsImportModalOpen] = useState(false);
 
   const handleOpenConfirmDialog = (userId: string, isLocked: boolean) => {
     setConfirmUser({ id: userId, isLocked });
@@ -193,6 +196,18 @@ export default function UserPage() {
     if (event.key === "Enter") {
       handleSearchSubmit();
     }
+  };
+
+  const handleOpenImportModal = () => {
+    setIsImportModalOpen(true);
+  };
+
+  const handleCloseImportModal = () => {
+    setIsImportModalOpen(false);
+  };
+
+  const handleImportExcelSubmit = async (file: File) => {
+    await handleImportExcel(file);
   };
 
   const columns = [
@@ -485,6 +500,8 @@ export default function UserPage() {
             itemsPerPage={pageSize}
             searchTerm={searchTerm}
             showSearch={false} // Disable built-in search if we use the custom search bar
+            showImport={true}
+            onImport={handleOpenImportModal}
           />
 
           <AddUserModal
@@ -505,6 +522,12 @@ export default function UserPage() {
             isOpen={isDetailModalOpen}
             onClose={handleCloseDetailModal}
             user={selectedUser}
+          />
+
+          <ImportExcelModal
+            isOpen={isImportModalOpen}
+            onClose={handleCloseImportModal}
+            onSubmit={handleImportExcelSubmit}
           />
 
           <Dialog

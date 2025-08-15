@@ -151,8 +151,8 @@ namespace ResiBuy.Server.Migrations
                     b.Property<string>("Name")
                         .HasColumnType("nvarchar(max)");
 
-                    b.Property<string>("Status")
-                        .HasColumnType("nvarchar(max)");
+                    b.Property<bool>("Status")
+                        .HasColumnType("bit");
 
                     b.HasKey("Id");
 
@@ -678,9 +678,6 @@ namespace ResiBuy.Server.Migrations
                     b.Property<string>("Email")
                         .HasColumnType("nvarchar(max)");
 
-                    b.Property<bool>("EmailConfirmed")
-                        .HasColumnType("bit");
-
                     b.Property<string>("FullName")
                         .HasColumnType("nvarchar(max)");
 
@@ -695,9 +692,6 @@ namespace ResiBuy.Server.Migrations
 
                     b.Property<string>("PhoneNumber")
                         .HasColumnType("nvarchar(max)");
-
-                    b.Property<bool>("PhoneNumberConfirmed")
-                        .HasColumnType("bit");
 
                     b.Property<int>("ReportCount")
                         .HasColumnType("int");
@@ -716,19 +710,17 @@ namespace ResiBuy.Server.Migrations
                         new
                         {
                             Id = "adm_df",
-                            CreatedAt = new DateTime(2025, 8, 9, 15, 6, 39, 341, DateTimeKind.Local).AddTicks(9213),
+                            CreatedAt = new DateTime(2025, 8, 11, 14, 24, 42, 81, DateTimeKind.Local).AddTicks(651),
                             DateOfBirth = new DateTime(1990, 1, 1, 0, 0, 0, 0, DateTimeKind.Unspecified),
                             Email = "admin@123",
-                            EmailConfirmed = true,
                             FullName = "Administrator",
                             IdentityNumber = "admin",
                             IsLocked = false,
-                            PasswordHash = "$2a$11$hx7l7gtVKumVZqDQrIxOL.1nnFiC8E0IB0gB3qEGaezexDmYg/jjS",
+                            PasswordHash = "$2a$11$KYoW.o7GsPRHDVNMmwk/ZOVVh9LMYHNsJFulMnsh9JL.a8oX.0w8m",
                             PhoneNumber = "admin",
-                            PhoneNumberConfirmed = true,
                             ReportCount = 0,
                             Roles = "[\"ADMIN\"]",
-                            UpdatedAt = new DateTime(2025, 8, 9, 15, 6, 39, 341, DateTimeKind.Local).AddTicks(9267)
+                            UpdatedAt = new DateTime(2025, 8, 11, 14, 24, 42, 81, DateTimeKind.Local).AddTicks(666)
                         });
                 });
 

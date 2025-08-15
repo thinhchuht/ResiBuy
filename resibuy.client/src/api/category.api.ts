@@ -3,8 +3,12 @@ import type { CreateCategoryDto, UpdateCategoryDto } from "../types/dtoModels";
 const categoryUrl = "/api/category";
 
 const categoryApi = {
-  getAll: async () => {
-    const response = await axiosClient.get(`${categoryUrl}/categories`);
+  getAll: async (status?: boolean) => {
+    const response = await axiosClient.get(`${categoryUrl}/categories`, {
+      params: {
+        status,
+      },
+    });
     return response.data;
   },
 
