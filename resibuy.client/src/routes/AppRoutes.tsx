@@ -41,6 +41,7 @@ import HomePage from "../pages/Shipper/HomePage";
 import OrderNotifier from "./../pages/Store/OrderNotifier";
 import StatisticalPage from "../pages/Shipper/StatisticalPage";
 import AttendancePage from "../pages/Shipper/AttendancePage";
+import OrderPage from "../pages/Admin/Order/page";
 
 const AppRoutes: React.FC = () => {
   const { user } = useAuth();
