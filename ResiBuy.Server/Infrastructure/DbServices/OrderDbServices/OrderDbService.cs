@@ -570,5 +570,38 @@ public class OrderDbService : BaseDbService<Order>, IOrderDbService
             throw new CustomException(ExceptionErrorCode.RepositoryError, ex.ToString());
         }
     }
+    public async Task<object> GetOrderStatisticsAsync()
+    {
+        try
+        {
+            var stats = await _context.Orders
+                .GroupBy(o => 1) 
+                .Select(g => new
+                {
+                    TotalOrders = g.Count(),
+                    TotalDelivered = g.Count(o => o.Status == OrderStatus.Delivered),
+                    TotalCancelled = g.Count(o => o.Status == OrderStatus.Cancelled),
+                    TotalReported = g.Count(o => o.Status == OrderStatus.Reported),
+                    TotalPaymentFailed = g.Count(o => o.PaymentStatus == PaymentStatus.Failed),
+                    TotalRefunded = g.Count(o => o.PaymentStatus == PaymentStatus.Refunded)
+                })
+                .FirstOrDefaultAsync();
+
+            return stats ?? new
+            {
+                TotalOrders = 0,
+                TotalDelivered = 0,
+                TotalCancelled = 0,
+                TotalReported = 0,
+                TotalPaymentFailed = 0,
+                TotalRefunded = 0
+            };
+        }
+        catch (Exception ex)
+        {
+            throw new CustomException(ExceptionErrorCode.RepositoryError, ex.Message);
+        }
+    }
+
 
 }

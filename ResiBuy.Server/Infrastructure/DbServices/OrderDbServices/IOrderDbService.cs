@@ -29,4 +29,5 @@ public interface IOrderDbService : IBaseDbService<Order>
     Task<decimal> GetTotalShippingFeeByshipperAsync(Guid shipperId, DateTime? startDate = null, DateTime? endDate = null);
     Task<decimal> GetTotalOrderAmountByUserAndStoreAsync(string? userId, Guid? storeId);
     Task<StatisticResponse> GetOrderStatisticsAsync(DateTime startTime, DateTime endTime); Task<TopStatisticsResponse> GetTopStatisticsAsync(DateTime startDate, DateTime endDate);
+    Task<object> GetOrderStatisticsAsync();
 }

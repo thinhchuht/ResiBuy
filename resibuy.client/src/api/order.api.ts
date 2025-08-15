@@ -106,6 +106,11 @@ const orderApi = {
       return response.data;
   },
   getTotalOrderAmount:async(params: {userId ?: string,storeId?: string})=>{const response =await axiosClient.get(`${orderUrl}/total-amount`,{params});return response.data;}
+  ,
+  stats: async () => {
+  const response = await axiosClient.get(`${orderUrl}/stats`);
+  return response.data;
+},
 };
 
 

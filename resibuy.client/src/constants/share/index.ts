@@ -14,7 +14,7 @@ import {
 export const menuItems = [
   { title: "Dashboard", url: "/admin/dashboard", icon: Dashboard },
   { title: "Danh mục", url: "/admin/category", icon: Category },
-  { title: "Orders", url: "/orders", icon: ShoppingCart },
+  { title: "Đơn hnagf", url: "/admin/order", icon: ShoppingCart },
    { title: "Shipper", url: "/admin/shipper", icon: DeliveryDiningSharp  },
   { title: "Người dùng", url: "/admin/user", icon: People },
   { title: "Quản lý chung cư", url: "/admin/resi", icon: Apartment },
