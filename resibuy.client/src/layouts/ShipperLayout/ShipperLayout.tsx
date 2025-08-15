@@ -94,7 +94,8 @@ function getPageTitle(path: string) {
   switch (path) {
     case "orders":
       return "📦 Lịch sử đơn hàng";
-    case "":
+    case "attendance":
+      return "🕒 Điểm danh";
     case "shipper":
       return "🚀 Trang chủ";
     case "statistical":

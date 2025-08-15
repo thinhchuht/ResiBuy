@@ -21,6 +21,7 @@ import { useAuth } from "../../../contexts/AuthContext";
 import userApi from "../../../api/user.api";
 import shipperApi from "../../../api/ship.api";
 import MonetizationOnIcon from "@mui/icons-material/MonetizationOn";
+import AccessTimeIcon from "@mui/icons-material/AccessTime";
 
 const drawerWidth = 240;
 
@@ -115,6 +116,15 @@ const ShipperSidebar: React.FC = () => {
               <HomeIcon />
             </ListItemIcon>
             <ListItemText primary="Trang giao hàng" />
+          </ListItemButton>
+        </ListItem>
+
+        <ListItem disablePadding>
+          <ListItemButton component={Link} to="attendance">
+            <ListItemIcon>
+               <AccessTimeIcon />
+            </ListItemIcon>
+            <ListItemText primary="Điểm danh" />
           </ListItemButton>
         </ListItem>
 
