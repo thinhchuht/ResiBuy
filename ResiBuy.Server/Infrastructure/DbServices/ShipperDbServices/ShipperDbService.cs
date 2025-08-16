@@ -1,4 +1,6 @@
+using DocumentFormat.OpenXml.Office2021.Excel.RichDataWebImage;
 using Microsoft.EntityFrameworkCore;
+using ResiBuy.Server.Application.Queries.ShipperQueries.DTOs;
 using ResiBuy.Server.Exceptions;
 using ResiBuy.Server.Infrastructure.DbServices.BaseDbServices;
 using ResiBuy.Server.Infrastructure.Filter;
@@ -132,13 +134,34 @@ namespace ResiBuy.Server.Infrastructure.DbServices.ShipperDbServices
             }
         }
 
-        public async Task<Shipper> UpdateShipperStatusAsync(Guid shipperId, bool isOnline)
+        public async Task<Shipper> UpdateShipperStatusAsync(Guid shipperId, bool isOnline, Guid AreaId)
         {
             try
             {
                 var shipper = await _context.Shippers.FindAsync(shipperId);
                 if (shipper == null)
                     throw new CustomException(ExceptionErrorCode.NotFound, "Shipper không tồn tại");
+
+                if (isOnline)
+                {
+                    var nowHour = (float)DateTime.Now.TimeOfDay.TotalHours;
+
+                    bool isInShift;
+                    if (shipper.StartWorkTime < shipper.EndWorkTime)
+                    {
+                        isInShift = nowHour >= shipper.StartWorkTime && nowHour <= shipper.EndWorkTime;
+                    }
+                    else
+                    {
+                        isInShift = nowHour >= shipper.StartWorkTime || nowHour <= shipper.EndWorkTime;
+                    }
+                    await CheckInShipperAsync(shipperId, isOnline);
+                    await UpdateShipperLocationAsync(shipperId, AreaId);
+
+                    if (!isInShift)
+                        throw new CustomException(ExceptionErrorCode.UpdateFailed, "Ngoài giờ làm việc, không thể bật online");
+                }
+
 
                 shipper.IsOnline = isOnline;
                 if (shipper.FirstTimeLogin == null)
@@ -154,9 +177,42 @@ namespace ResiBuy.Server.Infrastructure.DbServices.ShipperDbServices
             }
             catch (Exception ex)
             {
-                throw new CustomException(ExceptionErrorCode.UpdateFailed, ex.Message);
+                throw new CustomException(ExceptionErrorCode.RepositoryError, ex.Message);
             }
         }
+
+        public async Task CheckInShipperAsync(Guid shipperId, bool isOnline)
+        {
+            try
+            {
+                var shipper = await _context.Shippers.FindAsync(shipperId);
+                if (shipper == null)
+                    throw new CustomException(ExceptionErrorCode.NotFound, "Shipper không tồn tại");
+
+                var isLate = false;
+                if (isOnline)
+                {
+                    var nowTime = (float)DateTime.Now.TimeOfDay.TotalHours;
+                    if (nowTime > shipper.StartWorkTime + 0.25f)
+                        isLate = true;
+                }
+
+                var timeSheet = new TimeSheet(shipperId, DateTime.Now, isLate);
+                await _context.TimeSheets.AddAsync(timeSheet);
+
+                await _context.SaveChangesAsync();
+            }
+            catch (CustomException)
+            {
+                throw;
+            }
+            catch (Exception ex)
+            {
+                throw new CustomException(ExceptionErrorCode.RepositoryError, ex.Message);
+            }
+        }
+
+
         public async Task<int> CountShippersByOnlineStatusAsync(bool isOnline)
         {
             try
@@ -261,6 +317,30 @@ namespace ResiBuy.Server.Infrastructure.DbServices.ShipperDbServices
             {
                 throw new CustomException(ExceptionErrorCode.RepositoryError, ex.Message);
             }
+        }
+
+
+        public async Task<TimeSheetSummaryDto> GetTimeSheetSummaryAsync(Guid shipperId, DateTime? startDate, DateTime? endDate)
+        {
+            var query = _context.TimeSheets
+                .Where(ts => ts.ShipperId == shipperId)
+                .AsQueryable();
+
+            if (startDate.HasValue)
+                query = query.Where(ts => ts.DateMark >= startDate.Value);
+
+            if (endDate.HasValue)
+                query = query.Where(ts => ts.DateMark <= endDate.Value);
+
+            var data = await query.ToListAsync();
+
+            return new TimeSheetSummaryDto
+            {
+                CountAll = data.Count,
+                CountLate = data.Count(ts => ts.IsLate),
+                CountOnTime = data.Count(ts => !ts.IsLate),
+                Data = data
+            };
         }
     }
 }
