@@ -1,4 +1,5 @@
-﻿namespace ResiBuy.Server.Infrastructure.DbServices.UserDbServices
+﻿
+namespace ResiBuy.Server.Infrastructure.DbServices.UserDbServices
 {
     public class UserDbService : BaseDbService<User>, IUserDbService
     {
@@ -191,6 +192,16 @@
             {
                 throw new CustomException(ExceptionErrorCode.RepositoryError, ex.Message);
             }
+        }
+
+        public async Task<List<User>> GetBatchUserById(List<string> ids)
+        {
+            var users = new List<User>();
+            foreach (string id in ids)
+            {
+                users.Add(await GetUserById(id));
+            }
+            return users;
         }
     }
 }

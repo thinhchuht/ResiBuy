@@ -3,6 +3,7 @@
     public interface IUserDbService : IBaseDbService<User>
     {
         Task<User> GetUserById(string id);
+        Task<List<User>> GetBatchUserById(List<string> ids);
         Task<PagedResult<User>> GetAllUsers(int pageNumber = 1, int pageSize = 10);
         Task<PagedResult<User>> SearchUsers(string keyword, int pageNumber = 1, int pageSize = 10);
         Task<User> GetUserAsync(string userId, string identityNumber = null, string phoneNumber = null, string email = null);

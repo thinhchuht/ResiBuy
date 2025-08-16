@@ -1,10 +1,4 @@
-import React, {
-  useEffect,
-  useMemo,
-  useState,
-  useCallback,
-  useRef,
-} from "react";
+import React, { useEffect, useMemo, useState, useCallback, useRef } from "react";
 import {
   AppBar as MuiAppBar,
   Toolbar,
@@ -48,11 +42,7 @@ import { useAuth } from "../../contexts/AuthContext";
 import SearchBase from "../../components/SearchBase";
 import logo from "../../assets/Images/Logo.png";
 import cartApi from "../../api/cart.api";
-import {
-  HubEventType,
-  useEventHub,
-  type HubEventHandler,
-} from "../../hooks/useEventHub";
+import { HubEventType, useEventHub, type HubEventHandler } from "../../hooks/useEventHub";
 import type { OrderStatusChangedData } from "../../types/hubData";
 import notificationApi from "../../api/notification.api";
 import orderApi from "../../api/order.api";
@@ -84,7 +74,7 @@ interface NotificationApiItem {
   eventName: string;
   createdAt: string;
   isRead: boolean;
-  data : string
+  data: string;
   [key: string]: unknown;
 }
 
@@ -113,7 +103,7 @@ function notifiConvert(item: NotificationApiItem, user?: User): Notification {
   }
 
   let storeId: string | undefined;
-  let isShipper : boolean = false;
+  let isShipper: boolean = false;
   let displayLabel = "";
   if (dataObj.storeId) {
     storeId = dataObj.storeId as string;
@@ -136,12 +126,13 @@ function notifiConvert(item: NotificationApiItem, user?: User): Notification {
   if (match) status = match[1];
 
   const getReportTargetLabel = (reportTarget: string) => {
+    console.log("reportTarget", reportTarget);
     switch (reportTarget) {
-      case 'Customer':
+      case "Customer":
         return "Khách hàng";
-      case 'Store':
+      case "Store":
         return "Cửa hàng";
-      case 'Shipper':
+      case "Shipper":
         return "Người giao hàng";
       default:
         return "";
@@ -182,7 +173,9 @@ function notifiConvert(item: NotificationApiItem, user?: User): Notification {
       message = `Đơn hàng #${dataObj.id} đã được tạo`;
       break;
     case item.eventName === "OrderReported": {
-      if (dataObj.reportTarget === "Store" && !displayLabel) {
+      console.log("dataObj", dataObj);
+      console.log("displayLabel", !displayLabel);
+      if (dataObj.reportTarget === "Store" && displayLabel) {
         const userStore = user?.stores?.find((store: Store) => store.id === dataObj.targetId);
         displayLabel = userStore ? `[${userStore.name}] ` : "";
       } else {
@@ -238,7 +231,7 @@ function notifiConvert(item: NotificationApiItem, user?: User): Notification {
       break;
     case item.eventName === "OrderCreatedFailed":
       title = "Tạo đơn hàng thất bại";
-      message = dataObj.errorMessage ? dataObj.errorMessage as string : "Đơn hàng của bạn không được tạo thành công. Vui lòng thử lại sau";
+      message = dataObj.errorMessage ? (dataObj.errorMessage as string) : "Đơn hàng của bạn không được tạo thành công. Vui lòng thử lại sau";
       break;
     case item.eventName === "ReceiveOrderNotification":
       title = "[Tài khoản giao hàng] Đơn hàng đã được đẩy cho bạn";
@@ -273,18 +266,16 @@ const AppBar: React.FC = () => {
   const [homeAnchorEl, setHomeAnchorEl] = useState<null | HTMLElement>(null);
   const navigate = useNavigate();
   const [searchValue, setSearchValue] = useState("");
-  const [notificationAnchorEl, setNotificationAnchorEl] =
-    useState<null | HTMLElement>(null);
+  const [notificationAnchorEl, setNotificationAnchorEl] = useState<null | HTMLElement>(null);
   const [notifications, setNotifications] = useState<Notification[]>([]);
   const [loadingNotifications, setLoadingNotifications] = useState(false);
-  const [storeMenuAnchorEl, setStoreMenuAnchorEl] =
-    useState<null | HTMLElement>(null);
+  const [storeMenuAnchorEl, setStoreMenuAnchorEl] = useState<null | HTMLElement>(null);
   const [unreadCount, setUnreadCount] = useState(0);
   const [pageNumber, setPageNumber] = useState(1);
   const [hasMore, setHasMore] = useState(true);
   const pageSize = 3;
   const notificationListRef = useRef<HTMLDivElement>(null);
-  
+
   const [orderModalOpen, setOrderModalOpen] = useState(false);
   const [selectedOrder, setSelectedOrder] = useState<OrderApiResult | null>(null);
   const [orderLoading, setOrderLoading] = useState(false);
@@ -312,18 +303,11 @@ const AppBar: React.FC = () => {
       if (user) {
         setLoadingNotifications(true);
         try {
-          const data = await notificationApi.getByUserId(
-            user.id,
-            page,
-            pageSize
-          );
+          const data = await notificationApi.getByUserId(user.id, page, pageSize);
           if (page === 1) {
             setNotifications((data.items || []).map((item: NotificationApiItem) => notifiConvert(item, user)));
           } else {
-            setNotifications((prev) => [
-              ...prev,
-              ...(data.items || []).map((item: NotificationApiItem) => notifiConvert(item, user)),
-            ]);
+            setNotifications((prev) => [...prev, ...(data.items || []).map((item: NotificationApiItem) => notifiConvert(item, user))]);
           }
           setHasMore(page < data.totalPages);
         } catch {
@@ -356,13 +340,8 @@ const AppBar: React.FC = () => {
   const handleOrderCreated = useCallback(
     (data: OrderStatusChangedData) => {
       fetchItemCount();
-      const formattedTime = new Date(data.createdAt).toLocaleTimeString(
-        "vi-VN",
-        { hour: "2-digit", minute: "2-digit" }
-      );
-      const formattedDate = new Date(data.createdAt).toLocaleDateString(
-        "vi-VN"
-      );
+      const formattedTime = new Date(data.createdAt).toLocaleTimeString("vi-VN", { hour: "2-digit", minute: "2-digit" });
+      const formattedDate = new Date(data.createdAt).toLocaleDateString("vi-VN");
       let displayLabel = "";
       if (data.storeId) {
         const userStore = user?.stores?.find((store: Store) => store.id === data.storeId);
@@ -387,16 +366,11 @@ const AppBar: React.FC = () => {
 
   const handleOrderStatusChanged = useCallback(
     (data: OrderStatusChangedData) => {
-      const formattedTime = new Date(data.createdAt).toLocaleTimeString(
-        "vi-VN",
-        { hour: "2-digit", minute: "2-digit" }
-      );
-      const formattedDate = new Date(data.createdAt).toLocaleDateString(
-        "vi-VN"
-      );
+      const formattedTime = new Date(data.createdAt).toLocaleTimeString("vi-VN", { hour: "2-digit", minute: "2-digit" });
+      const formattedDate = new Date(data.createdAt).toLocaleDateString("vi-VN");
       // Lấy status từ eventName nếu có dạng OrderStatusChanged-status
       let status = data.orderStatus;
-      if ((data as OrderStatusChangedDataWithEvent).eventName && typeof (data as OrderStatusChangedDataWithEvent).eventName === 'string') {
+      if ((data as OrderStatusChangedDataWithEvent).eventName && typeof (data as OrderStatusChangedDataWithEvent).eventName === "string") {
         const match = ((data as OrderStatusChangedDataWithEvent).eventName as string).match(/^OrderStatusChanged-(.+)$/);
         if (match) status = match[1];
       }
@@ -422,7 +396,8 @@ const AppBar: React.FC = () => {
             : status === "CustomerNotAvailable"
             ? "Đơn hàng chưa được nhận"
             : "Đơn hàng đã bị hủy"),
-        message: `Đơn hàng #${data.id} ` +
+        message:
+          `Đơn hàng #${data.id} ` +
           (status === "Processing"
             ? "đã được xử lý"
             : status === "Assigned"
@@ -439,167 +414,222 @@ const AppBar: React.FC = () => {
       };
       setNotifications((prev) => [newNotifications, ...prev]);
       toast.success(newNotifications.message);
-      fetchUnreadCount(); 
+      fetchUnreadCount();
     },
     // eslint-disable-next-line react-hooks/exhaustive-deps
     [fetchUnreadCount]
   );
 
   const getReportTargetLabel = (reportTarget: string) => {
+    console.log("reportTarget", reportTarget);
     switch (reportTarget) {
-      case 'Customer':
+      case "Customer":
         return "Khách hàng";
-      case 'Store':
+      case "Store":
         return "Cửa hàng";
-      case 'Shipper':
+      case "Shipper":
         return "Người giao hàng";
       default:
         return "";
     }
   };
 
-  const handleOrderReported = useCallback((data: ReportCreatedDto) => {
-    const formattedTime = new Date(data.createdAt).toLocaleTimeString("vi-VN", { hour: "2-digit", minute: "2-digit" });
-    const formattedDate = new Date(data.createdAt).toLocaleDateString("vi-VN");
-    const targetLabel = getReportTargetLabel(data.reportTarget);
-    setNotifications((prev) => [{
-      id: data.id,
-      title: `[${targetLabel}] Đơn hàng #${data.orderId} bị báo cáo`,
-      message: data.title ? `Lý do: ${data.description}` : `Đơn hàng ${data.orderId} đã bị báo cáo.`,
-      time: `${formattedTime} ${formattedDate}`,
-      isRead: false,
-    }, ...prev]);
-    toast.success(`[${targetLabel}] Đơn hàng #${data.orderId} bị báo cáo`);
-    fetchUnreadCount();
-  // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [fetchUnreadCount]);
+  const handleOrderReported = useCallback(
+    (data: ReportCreatedDto) => {
+      const formattedTime = new Date(data.createdAt).toLocaleTimeString("vi-VN", { hour: "2-digit", minute: "2-digit" });
+      const formattedDate = new Date(data.createdAt).toLocaleDateString("vi-VN");
+      const targetLabel = getReportTargetLabel(data.reportTarget);
+      setNotifications((prev) => [
+        {
+          id: data.id,
+          title: `[${targetLabel}] Đơn hàng #${data.orderId} bị báo cáo`,
+          message: data.title ? `Lý do: ${data.description}` : `Đơn hàng ${data.orderId} đã bị báo cáo.`,
+          time: `${formattedTime} ${formattedDate}`,
+          isRead: false,
+        },
+        ...prev,
+      ]);
+      toast.success(`[${targetLabel}] Đơn hàng #${data.orderId} bị báo cáo`);
+      fetchUnreadCount();
+    },
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    [fetchUnreadCount]
+  );
 
-  const handleReportResolved = useCallback((data: { id: string; orderId: string; targetId: string; isAddReportTarget: boolean; reportTarget: string; storeName: string }) => {
-    const formattedTime = new Date().toLocaleTimeString("vi-VN", { hour: "2-digit", minute: "2-digit" });
-    const formattedDate = new Date().toLocaleDateString("vi-VN");
-    let storeLabel = "";
-    if (user && user.stores) {
-      const storesArr = Array.isArray(user.stores) ? user.stores : [user.stores];
-      if (storesArr.some((s) => s.id === data.targetId)) {
-        storeLabel = `[${data.storeName}] `;
+  const handleReportResolved = useCallback(
+    (data: { id: string; orderId: string; targetId: string; isAddReportTarget: boolean; reportTarget: string; storeName: string }) => {
+      const formattedTime = new Date().toLocaleTimeString("vi-VN", { hour: "2-digit", minute: "2-digit" });
+      const formattedDate = new Date().toLocaleDateString("vi-VN");
+      let storeLabel = "";
+      if (user && user.stores) {
+        const storesArr = Array.isArray(user.stores) ? user.stores : [user.stores];
+        if (storesArr.some((s) => s.id === data.targetId)) {
+          storeLabel = `[${data.storeName}] `;
+        }
       }
-    }
-    setNotifications((prev) => [{
-      id: data.id,
-      title: `${storeLabel} Báo cáo đơn hàng #${data.orderId} đã được giải quyết`,
-      message: data.isAddReportTarget ? "Báo cáo đã được xử lý. Đối tượng bị báo cáo sẽ bị tính thêm 1 lần cảnh cáo." : "Báo cáo đã được đóng.",
-      time: `${formattedTime} ${formattedDate}`,
-      isRead: false,
-    }, ...prev]);
-    toast.success(`${storeLabel} Báo cáo đơn hàng #${data.orderId} đã được giải quyết`);
-    fetchUnreadCount();
-  // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [fetchUnreadCount, user]);
+      setNotifications((prev) => [
+        {
+          id: data.id,
+          title: `${storeLabel} Báo cáo đơn hàng #${data.orderId} đã được giải quyết`,
+          message: data.isAddReportTarget ? "Báo cáo đã được xử lý. Đối tượng bị báo cáo sẽ bị tính thêm 1 lần cảnh cáo." : "Báo cáo đã được đóng.",
+          time: `${formattedTime} ${formattedDate}`,
+          isRead: false,
+        },
+        ...prev,
+      ]);
+      toast.success(`${storeLabel} Báo cáo đơn hàng #${data.orderId} đã được giải quyết`);
+      fetchUnreadCount();
+    },
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    [fetchUnreadCount, user]
+  );
 
-  const handleRefunded = useCallback((data: { OrderId: string }) => {
-    setNotifications((prev) => [{
-      id: data.OrderId || Math.random(),
-      title: "Hoàn tiền thành công",
-      message: `Đơn hàng #${data.OrderId} đã được hoàn tiền thành công!`,
-      time: new Date().toLocaleString("vi-VN"),
-      isRead: false,
-    }, ...prev]);
-    toast.success(`Đơn hàng #${data.OrderId} đã được hoàn tiền thành công!`);
-    fetchUnreadCount();
-  // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [fetchUnreadCount]);
+  const handleRefunded = useCallback(
+    (data: { OrderId: string }) => {
+      setNotifications((prev) => [
+        {
+          id: data.OrderId || Math.random(),
+          title: "Hoàn tiền thành công",
+          message: `Đơn hàng #${data.OrderId} đã được hoàn tiền thành công!`,
+          time: new Date().toLocaleString("vi-VN"),
+          isRead: false,
+        },
+        ...prev,
+      ]);
+      toast.success(`Đơn hàng #${data.OrderId} đã được hoàn tiền thành công!`);
+      fetchUnreadCount();
+    },
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    [fetchUnreadCount]
+  );
 
-  const handleRefundFailed = useCallback((data: { OrderId: string }) => {
-    setNotifications((prev) => [{
-      id: data.OrderId || Math.random(),
-      title: "Hoàn tiền thất bại",
-      message: `Đơn hàng #${data.OrderId} hoàn tiền thất bại, vui lòng liên hệ ban quản lý về đơn hàng.`,
-      time: new Date().toLocaleString("vi-VN"),
-      isRead: false,
-    }, ...prev]);
-    toast.error(`Đơn hàng #${data.OrderId} hoàn tiền thất bại, vui lòng liên hệ ban quản lý về đơn hàng.`);
-    fetchUnreadCount();
-  // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [fetchUnreadCount]);
+  const handleRefundFailed = useCallback(
+    (data: { OrderId: string }) => {
+      setNotifications((prev) => [
+        {
+          id: data.OrderId || Math.random(),
+          title: "Hoàn tiền thất bại",
+          message: `Đơn hàng #${data.OrderId} hoàn tiền thất bại, vui lòng liên hệ ban quản lý về đơn hàng.`,
+          time: new Date().toLocaleString("vi-VN"),
+          isRead: false,
+        },
+        ...prev,
+      ]);
+      toast.error(`Đơn hàng #${data.OrderId} hoàn tiền thất bại, vui lòng liên hệ ban quản lý về đơn hàng.`);
+      fetchUnreadCount();
+    },
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    [fetchUnreadCount]
+  );
 
-  const handleMonthlyPaymentSettled = useCallback((data: MonthlyPaymentSettledDto) => {
-    let storeLabel = "";
-    if (user && user.stores) {
-      const storesArr = Array.isArray(user.stores) ? user.stores : [user.stores];
-      if (storesArr.some((s) => s.id === data.storeId)) {
-        storeLabel = `[${data.storeName}] `;
+  const handleMonthlyPaymentSettled = useCallback(
+    (data: MonthlyPaymentSettledDto) => {
+      let storeLabel = "";
+      if (user && user.stores) {
+        const storesArr = Array.isArray(user.stores) ? user.stores : [user.stores];
+        if (storesArr.some((s) => s.id === data.storeId)) {
+          storeLabel = `[${data.storeName}] `;
+        }
       }
-    }
-    setNotifications((prev) => [{
-      id: Math.random(),
-      title: `${storeLabel}Đã chốt doanh thu tháng`,
-      message: `Doanh thu tháng ${data.paymentMonth} của bạn đã được chuyển về tài khoản. Tổng doanh thu: ${data.revenue}đ`,
-      time: new Date().toLocaleString("vi-VN"),
-      isRead: false,
-    }, ...prev]);
-    toast.success(`Doanh thu tháng ${data.paymentMonth} của bạn đã được chuyển về tài khoản. Tổng doanh thu: ${data.revenue}đ`);
-    fetchUnreadCount();
-  // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [fetchUnreadCount, user]);
+      setNotifications((prev) => [
+        {
+          id: Math.random(),
+          title: `${storeLabel}Đã chốt doanh thu tháng`,
+          message: `Doanh thu tháng ${data.paymentMonth} của bạn đã được chuyển về tài khoản. Tổng doanh thu: ${data.revenue}đ`,
+          time: new Date().toLocaleString("vi-VN"),
+          isRead: false,
+        },
+        ...prev,
+      ]);
+      toast.success(`Doanh thu tháng ${data.paymentMonth} của bạn đã được chuyển về tài khoản. Tổng doanh thu: ${data.revenue}đ`);
+      fetchUnreadCount();
+    },
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    [fetchUnreadCount, user]
+  );
 
-  const handleMonthlyPaymentSettlFailed = useCallback((data: MonthlyPaymentSettlFailedDto) => {
-    let storeLabel = "";
-    if (user && user.stores) {
-      const storesArr = Array.isArray(user.stores) ? user.stores : [user.stores];
-      if (storesArr.some((s) => s.id === data.storeId)) {
-        storeLabel = `[${data.storeName}] `;
+  const handleMonthlyPaymentSettlFailed = useCallback(
+    (data: MonthlyPaymentSettlFailedDto) => {
+      let storeLabel = "";
+      if (user && user.stores) {
+        const storesArr = Array.isArray(user.stores) ? user.stores : [user.stores];
+        if (storesArr.some((s) => s.id === data.storeId)) {
+          storeLabel = `[${data.storeName}] `;
+        }
       }
-    }
-    setNotifications((prev) => [{
-      id: Math.random(),
-      title: `${storeLabel}Chốt doanh thu tháng thất bại.`,
-      message: "Có lỗi khi chốt doanh thu tháng, vui lòng liên hệ ban quản lý.",
-      time: new Date().toLocaleString("vi-VN"),
-      isRead: false,
-    }, ...prev]);
-    toast.error(`Có lỗi khi chốt doanh thu tháng, vui lòng liên hệ ban quản lý.`);
-    fetchUnreadCount();
-  // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [fetchUnreadCount, user]);
+      setNotifications((prev) => [
+        {
+          id: Math.random(),
+          title: `${storeLabel}Chốt doanh thu tháng thất bại.`,
+          message: "Có lỗi khi chốt doanh thu tháng, vui lòng liên hệ ban quản lý.",
+          time: new Date().toLocaleString("vi-VN"),
+          isRead: false,
+        },
+        ...prev,
+      ]);
+      toast.error(`Có lỗi khi chốt doanh thu tháng, vui lòng liên hệ ban quản lý.`);
+      fetchUnreadCount();
+    },
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    [fetchUnreadCount, user]
+  );
 
-  const handleProductOutOfStock = useCallback((data: ProductOutOfStockDto) => {
-    setNotifications((prev) => [{
-      id: data.productDetailId,
-      title: `[${data.storeName}] Sản phẩm hết hàng`,
-      message: data.productName ? `Sản phẩm ${data.productName} đã hết hàng.` : "Một sản phẩm đã hết hàng.",
-      time: new Date().toLocaleString("vi-VN"),
-      isRead: false,
-    }, ...prev]);
-    toast.error(`[${data.storeName}] Sản phẩm hết hàng`);
-    fetchUnreadCount();
-  // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [fetchUnreadCount]);
+  const handleProductOutOfStock = useCallback(
+    (data: ProductOutOfStockDto) => {
+      setNotifications((prev) => [
+        {
+          id: data.productDetailId,
+          title: `[${data.storeName}] Sản phẩm hết hàng`,
+          message: data.productName ? `Sản phẩm ${data.productName} đã hết hàng.` : "Một sản phẩm đã hết hàng.",
+          time: new Date().toLocaleString("vi-VN"),
+          isRead: false,
+        },
+        ...prev,
+      ]);
+      toast.error(`[${data.storeName}] Sản phẩm hết hàng`);
+      fetchUnreadCount();
+    },
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    [fetchUnreadCount]
+  );
 
-  const handleOrderCreatedFailed = useCallback((data: OrderCreateFailedDto) => {
-    setNotifications((prev) => [{
-      id: data.orderIds[0],
-      title: `Tạo đơn hàng thất bại`,
-      message: data.errorMessage || "Đơn hàng của bạn không được tạo thành công. Vui lòng thử lại sau",
-      time: new Date().toLocaleString("vi-VN"),
-      isRead: false,
-    }, ...prev]);
-    toast.error(`Đơn hàng của bạn không được tạo thành công. Vui lòng thử lại sau`);
-    fetchUnreadCount();
-  // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [fetchUnreadCount]);
+  const handleOrderCreatedFailed = useCallback(
+    (data: OrderCreateFailedDto) => {
+      setNotifications((prev) => [
+        {
+          id: data.orderIds[0],
+          title: `Tạo đơn hàng thất bại`,
+          message: data.errorMessage || "Đơn hàng của bạn không được tạo thành công. Vui lòng thử lại sau",
+          time: new Date().toLocaleString("vi-VN"),
+          isRead: false,
+        },
+        ...prev,
+      ]);
+      toast.error(`Đơn hàng của bạn không được tạo thành công. Vui lòng thử lại sau`);
+      fetchUnreadCount();
+    },
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    [fetchUnreadCount]
+  );
 
-  const handleReceiveOrderNotification = useCallback((data: ReceiveOrderNotificationDto) => {
-    setNotifications((prev) => [{
-      id: data.orderId,
-      title: `[Tài khoản giao hàng] Đơn hàng đã được đẩy cho bạn`,
-      message: `Đơn hàng #${data.orderId} đã được đẩy cho bạn`,
-      time: new Date().toLocaleString("vi-VN"),
-      isRead: false,
-    }, ...prev]);
-    toast.success(`Đơn hàng #${data.orderId} đã được đẩy cho bạn`);
-    fetchUnreadCount();
-  // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [fetchUnreadCount]);
+  const handleReceiveOrderNotification = useCallback(
+    (data: ReceiveOrderNotificationDto) => {
+      setNotifications((prev) => [
+        {
+          id: data.orderId,
+          title: `[Tài khoản giao hàng] Đơn hàng đã được đẩy cho bạn`,
+          message: `Đơn hàng #${data.orderId} đã được đẩy cho bạn`,
+          time: new Date().toLocaleString("vi-VN"),
+          isRead: false,
+        },
+        ...prev,
+      ]);
+      toast.success(`Đơn hàng #${data.orderId} đã được đẩy cho bạn`);
+      fetchUnreadCount();
+    },
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    [fetchUnreadCount]
+  );
 
   const eventHandlers = useMemo(
     () => ({
@@ -628,7 +658,7 @@ const AppBar: React.FC = () => {
       handleMonthlyPaymentSettlFailed,
       handleProductOutOfStock,
       handleOrderCreatedFailed,
-      handleReceiveOrderNotification
+      handleReceiveOrderNotification,
     ]
   );
 
@@ -684,11 +714,10 @@ const AppBar: React.FC = () => {
   };
 
   const handleStoreMenuClick = (event: React.MouseEvent<HTMLElement>) => {
-
     if (user?.stores && Array.isArray(user.stores) && user.stores.length > 1) {
       setStoreMenuAnchorEl(event.currentTarget);
     } else {
-      const storeId =  user?.stores[0]?.id
+      const storeId = user?.stores[0]?.id;
 
       if (storeId) {
         navigate(`/store/${storeId}`);
@@ -712,17 +741,10 @@ const AppBar: React.FC = () => {
     handleNotificationClose();
     if (notification.isRead === false && user) {
       try {
-        await notificationApi.readNotification(
-          notification.id as string,
-          user.id
-        );
+        await notificationApi.readNotification(notification.id as string, user.id);
         setUnreadCount((prev) => Math.max(0, prev - 1));
-        setNotifications((prev) =>
-          prev.map((n) =>
-            n.id === notification.id ? { ...n, isRead: true } : n
-          )
-        );
-      } catch(error) {
+        setNotifications((prev) => prev.map((n) => (n.id === notification.id ? { ...n, isRead: true } : n)));
+      } catch (error) {
         console.error("Error reading notification:", error);
       }
     }
@@ -795,16 +817,11 @@ const AppBar: React.FC = () => {
         borderBottom: "1px solid rgba(0,0,0,0.1)",
         borderBottomLeftRadius: 50,
         borderBottomRightRadius: 50,
-      }}
-    >
+      }}>
       <Toolbar sx={{ justifyContent: "space-between" }}>
         <Box sx={{ display: "flex", alignItems: "center" }}>
           <Link to={"/"}>
-            <img
-              src={logo}
-              alt="ResiBuy"
-              style={{ width: "65px", height: "60px" }}
-            />
+            <img src={logo} alt="ResiBuy" style={{ width: "65px", height: "60px" }} />
           </Link>
         </Box>
 
@@ -815,13 +832,8 @@ const AppBar: React.FC = () => {
             position: "absolute",
             left: "50%",
             transform: "translateX(-50%)",
-          }}
-        >
-          <Box
-            onMouseEnter={handleHomeMenuOpen}
-            onMouseLeave={handleHomeMenuClose}
-            sx={{ position: "relative" }}
-          >
+          }}>
+          <Box onMouseEnter={handleHomeMenuOpen} onMouseLeave={handleHomeMenuClose} sx={{ position: "relative" }}>
             <Button
               color="inherit"
               endIcon={<KeyboardArrowDown />}
@@ -835,8 +847,7 @@ const AppBar: React.FC = () => {
                 },
                 borderRadius: 2,
                 transition: "all 0.2s ease-in-out",
-              }}
-            >
+              }}>
               <Link
                 to="/"
                 style={{
@@ -844,8 +855,7 @@ const AppBar: React.FC = () => {
                   color: "inherit",
                   display: "flex",
                   alignItems: "center",
-                }}
-              >
+                }}>
                 <Home sx={{ mr: 1 }} />
                 <span>Trang chủ</span>
               </Link>
@@ -875,8 +885,7 @@ const AppBar: React.FC = () => {
                     left: 0,
                     right: 0,
                     height: "4px",
-                    background:
-                      "linear-gradient(90deg, #EB5C60 0%, #FF8E8E 100%)",
+                    background: "linear-gradient(90deg, #EB5C60 0%, #FF8E8E 100%)",
                   },
                 },
               }}
@@ -889,13 +898,9 @@ const AppBar: React.FC = () => {
                 "& .MuiPopover-paper": {
                   pointerEvents: "auto",
                 },
-              }}
-            >
+              }}>
               <Box sx={{ p: 1.5, borderBottom: "1px solid rgba(0,0,0,0.08)" }}>
-                <Typography
-                  variant="subtitle2"
-                  sx={{ color: "text.secondary", fontWeight: 500 }}
-                >
+                <Typography variant="subtitle2" sx={{ color: "text.secondary", fontWeight: 500 }}>
                   Điều hướng nhanh
                 </Typography>
               </Box>
@@ -916,13 +921,9 @@ const AppBar: React.FC = () => {
                     },
                   },
                   transition: "all 0.2s ease-in-out",
-                }}
-              >
+                }}>
                 <ListItemIcon sx={{ minWidth: 40 }}>
-                  <Home
-                    fontSize="small"
-                    sx={{ transition: "all 0.2s ease-in-out" }}
-                  />
+                  <Home fontSize="small" sx={{ transition: "all 0.2s ease-in-out" }} />
                 </ListItemIcon>
                 <ListItemText
                   primary="Trang chủ"
@@ -933,9 +934,7 @@ const AppBar: React.FC = () => {
                 />
               </MenuItem>
               <MenuItem
-                onClick={() =>
-                  handleNavigation("/products", handleHomeMenuClose)
-                }
+                onClick={() => handleNavigation("/products", handleHomeMenuClose)}
                 sx={{
                   py: 1.5,
                   px: 2,
@@ -951,13 +950,9 @@ const AppBar: React.FC = () => {
                     },
                   },
                   transition: "all 0.2s ease-in-out",
-                }}
-              >
+                }}>
                 <ListItemIcon sx={{ minWidth: 40 }}>
-                  <Category
-                    fontSize="small"
-                    sx={{ transition: "all 0.2s ease-in-out" }}
-                  />
+                  <Category fontSize="small" sx={{ transition: "all 0.2s ease-in-out" }} />
                 </ListItemIcon>
                 <ListItemText
                   primary="Sản phẩm"
@@ -989,15 +984,13 @@ const AppBar: React.FC = () => {
                   display: "flex",
                   alignItems: "center",
                   gap: 1,
-                }}
-              >
+                }}>
                 <Box
                   sx={{
                     position: "relative",
                     display: "flex",
                     alignItems: "center",
-                  }}
-                >
+                  }}>
                   <Badge
                     badgeContent={cartItems}
                     color="error"
@@ -1013,8 +1006,7 @@ const AppBar: React.FC = () => {
                         top: 2,
                         right: 2,
                       },
-                    }}
-                  >
+                    }}>
                     <ShoppingCart sx={{ mr: 0 }} />
                   </Badge>
                 </Box>
@@ -1034,8 +1026,7 @@ const AppBar: React.FC = () => {
                   },
                   borderRadius: 2,
                   transition: "all 0.2s ease-in-out",
-                }}
-              >
+                }}>
                 <Receipt sx={{ mr: 1 }} />
                 Đơn hàng
               </Button>
@@ -1044,13 +1035,7 @@ const AppBar: React.FC = () => {
         </Box>
 
         <Box sx={{ display: "flex", alignItems: "center", gap: 2 }}>
-          <SearchBase
-            value={searchValue}
-            onChange={handleSearchChange}
-            onSearch={handleSearch}
-            sx={{ width: "300px" }}
-            inputSx={{ width: "100%" }}
-          />
+          <SearchBase value={searchValue} onChange={handleSearchChange} onSearch={handleSearch} sx={{ width: "300px" }} inputSx={{ width: "100%" }} />
           {user && (
             <Tooltip title="Thông báo">
               <IconButton
@@ -1065,8 +1050,7 @@ const AppBar: React.FC = () => {
                       color: "#EB5C60",
                     },
                   },
-                }}
-              >
+                }}>
                 <Badge badgeContent={unreadCount} color="error">
                   <Notifications />
                 </Badge>
@@ -1091,8 +1075,7 @@ const AppBar: React.FC = () => {
                     boxShadow: "0 2px 8px rgba(235, 92, 96, 0.3)",
                   },
                 }}
-                onClick={handleProfileMenuOpen}
-              >
+                onClick={handleProfileMenuOpen}>
                 {!user?.avatar?.thumbUrl && <Person />}
               </Avatar>
             </Tooltip>
@@ -1107,8 +1090,7 @@ const AppBar: React.FC = () => {
                     backgroundColor: "rgba(235, 92, 96, 0.08)",
                     transform: "scale(1.05)",
                   },
-                }}
-              >
+                }}>
                 <Login sx={{ color: "red" }} />
               </IconButton>
             </Tooltip>
@@ -1129,13 +1111,9 @@ const AppBar: React.FC = () => {
               minWidth: 200,
               overflow: "hidden",
             },
-          }}
-        >
+          }}>
           <Box sx={{ p: 1.5, borderBottom: "1px solid rgba(0,0,0,0.08)" }}>
-            <Typography
-              variant="subtitle2"
-              sx={{ color: "text.secondary", fontWeight: 500 }}
-            >
+            <Typography variant="subtitle2" sx={{ color: "text.secondary", fontWeight: 500 }}>
               {user?.fullName}
             </Typography>
           </Box>
@@ -1157,12 +1135,8 @@ const AppBar: React.FC = () => {
                   },
                 },
                 transition: "all 0.2s ease-in-out",
-              }}
-            >
-              <Dashboard
-                fontSize="small"
-                sx={{ transition: "all 0.2s ease-in-out" }}
-              />
+              }}>
+              <Dashboard fontSize="small" sx={{ transition: "all 0.2s ease-in-out" }} />
               <Typography variant="body2" sx={{ fontWeight: 500 }}>
                 Trang quản trị
               </Typography>
@@ -1186,24 +1160,16 @@ const AppBar: React.FC = () => {
                   },
                 },
                 transition: "all 0.2s ease-in-out",
-              }}
-            >
-              <StoreIcon
-                fontSize="small"
-                sx={{ transition: "all 0.2s ease-in-out" }}
-              />
+              }}>
+              <StoreIcon fontSize="small" sx={{ transition: "all 0.2s ease-in-out" }} />
               <Typography variant="body2" sx={{ fontWeight: 500 }}>
-                {Array.isArray(user?.stores) && user.stores.length === 1
-                  ? user.stores[0]?.name
-                  : "Cửa hàng của bạn"}
+                {Array.isArray(user?.stores) && user.stores.length === 1 ? user.stores[0]?.name : "Cửa hàng của bạn"}
               </Typography>
             </MenuItem>
           )}
           {user?.roles?.includes("SHIPPER") && (
             <MenuItem
-              onClick={() =>
-                handleNavigation("/shipper", handleProfileMenuClose)
-              }
+              onClick={() => handleNavigation("/shipper", handleProfileMenuClose)}
               sx={{
                 py: 1.5,
                 px: 2,
@@ -1219,12 +1185,8 @@ const AppBar: React.FC = () => {
                   },
                 },
                 transition: "all 0.2s ease-in-out",
-              }}
-            >
-              <LocalShipping
-                fontSize="small"
-                sx={{ transition: "all 0.2s ease-in-out" }}
-              />
+              }}>
+              <LocalShipping fontSize="small" sx={{ transition: "all 0.2s ease-in-out" }} />
               <Typography variant="body2" sx={{ fontWeight: 500 }}>
                 Trang giao hàng
               </Typography>
@@ -1248,21 +1210,16 @@ const AppBar: React.FC = () => {
                   },
                 },
                 transition: "all 0.2s ease-in-out",
-              }}
-            >
-              <Storefront
-                fontSize="small"
-                sx={{ transition: "all 0.2s ease-in-out" }}
-              />
+              }}>
+              <Storefront fontSize="small" sx={{ transition: "all 0.2s ease-in-out" }} />
               <Typography variant="body2" sx={{ fontWeight: 500 }}>
                 Trang chủ
               </Typography>
             </MenuItem>
           )}
-          {(user?.roles?.includes("ADMIN") ||
-            user?.roles?.includes("SELLER") ||
-            user?.roles?.includes("SHIPPER") ||
-            user?.roles?.includes("CUSTOMER")) && <Divider sx={{ my: 0.5 }} />}
+          {(user?.roles?.includes("ADMIN") || user?.roles?.includes("SELLER") || user?.roles?.includes("SHIPPER") || user?.roles?.includes("CUSTOMER")) && (
+            <Divider sx={{ my: 0.5 }} />
+          )}
           <MenuItem
             onClick={() => handleNavigation("/profile", handleProfileMenuClose)}
             sx={{
@@ -1280,20 +1237,14 @@ const AppBar: React.FC = () => {
                 },
               },
               transition: "all 0.2s ease-in-out",
-            }}
-          >
-            <Person
-              fontSize="small"
-              sx={{ transition: "all 0.2s ease-in-out" }}
-            />
+            }}>
+            <Person fontSize="small" sx={{ transition: "all 0.2s ease-in-out" }} />
             <Typography variant="body2" sx={{ fontWeight: 500 }}>
               Hồ sơ
             </Typography>
           </MenuItem>
           <MenuItem
-            onClick={() =>
-              handleNavigation("/settings", handleProfileMenuClose)
-            }
+            onClick={() => handleNavigation("/settings", handleProfileMenuClose)}
             sx={{
               py: 1.5,
               px: 2,
@@ -1309,12 +1260,8 @@ const AppBar: React.FC = () => {
                 },
               },
               transition: "all 0.2s ease-in-out",
-            }}
-          >
-            <Settings
-              fontSize="small"
-              sx={{ transition: "all 0.2s ease-in-out" }}
-            />
+            }}>
+            <Settings fontSize="small" sx={{ transition: "all 0.2s ease-in-out" }} />
             <Typography variant="body2" sx={{ fontWeight: 500 }}>
               Cài đặt
             </Typography>
@@ -1337,12 +1284,8 @@ const AppBar: React.FC = () => {
                 },
               },
               transition: "all 0.2s ease-in-out",
-            }}
-          >
-            <Logout
-              fontSize="small"
-              sx={{ transition: "all 0.2s ease-in-out" }}
-            />
+            }}>
+            <Logout fontSize="small" sx={{ transition: "all 0.2s ease-in-out" }} />
             <Typography variant="body2" sx={{ fontWeight: 500 }}>
               Đăng xuất
             </Typography>
@@ -1370,8 +1313,7 @@ const AppBar: React.FC = () => {
               maxHeight: 3250,
               overflowY: "auto",
             },
-          }}
-        >
+          }}>
           <Box
             sx={{
               p: 2,
@@ -1379,8 +1321,7 @@ const AppBar: React.FC = () => {
               display: "flex",
               alignItems: "center",
               justifyContent: "space-between",
-            }}
-          >
+            }}>
             <Typography variant="h6" sx={{ fontWeight: 600 }}>
               Thông báo
             </Typography>
@@ -1400,16 +1341,13 @@ const AppBar: React.FC = () => {
                   if (user) {
                     try {
                       await notificationApi.readAllNotification(user.id);
-                      setNotifications((prev) =>
-                        prev.map((n) => ({ ...n, isRead: true }))
-                      );
+                      setNotifications((prev) => prev.map((n) => ({ ...n, isRead: true })));
                       setUnreadCount(0);
                     } catch {
                       // Xử lý lỗi nếu cần
                     }
                   }
-                }}
-              >
+                }}>
                 Đánh dấu đã đọc
               </Button>
             )}
@@ -1419,14 +1357,10 @@ const AppBar: React.FC = () => {
             sx={{ maxHeight: 210, overflowY: "auto" }}
             onScroll={() => {
               const el = notificationListRef.current;
-              if (
-                el &&
-                el.scrollTop + el.clientHeight >= el.scrollHeight - 10
-              ) {
+              if (el && el.scrollTop + el.clientHeight >= el.scrollHeight - 10) {
                 loadMore();
               }
-            }}
-          >
+            }}>
             {loadingNotifications && pageNumber === 1 ? (
               <Box sx={{ p: 2, textAlign: "center" }}>
                 <Typography variant="body2" color="text.secondary">
@@ -1442,20 +1376,13 @@ const AppBar: React.FC = () => {
                     sx={{
                       py: 1.5,
                       px: 2,
-                      backgroundColor:
-                        notification.isRead === false
-                          ? "rgba(33,150,243,0.10)"
-                          : undefined,
+                      backgroundColor: notification.isRead === false ? "rgba(33,150,243,0.10)" : undefined,
                       borderBottom: "1px solid #e3e8ef",
                       "&:hover": {
-                        backgroundColor:
-                          notification.isRead === false
-                            ? "rgba(33,150,243,0.18)"
-                            : "rgba(235, 92, 96, 0.08)",
+                        backgroundColor: notification.isRead === false ? "rgba(33,150,243,0.18)" : "rgba(235, 92, 96, 0.08)",
                       },
                       transition: "all 0.2s ease-in-out",
-                    }}
-                  >
+                    }}>
                     <Box sx={{ width: "100%" }}>
                       <Box
                         sx={{
@@ -1463,8 +1390,7 @@ const AppBar: React.FC = () => {
                           mb: 0.5,
                           pr: notification.time ? "90px" : 0, // Reserve more space for timestamp
                           minHeight: "20px", // Ensure minimum height
-                        }}
-                      >
+                        }}>
                         {notification.time && (
                           <Typography
                             variant="caption"
@@ -1477,34 +1403,29 @@ const AppBar: React.FC = () => {
                               whiteSpace: "nowrap",
                               fontWeight: 600,
                               zIndex: 1,
-                            }}
-                          >
+                            }}>
                             {notification.time}
                           </Typography>
                         )}
                         <Box
-                          sx={{ 
-                            display: "flex", 
-                            alignItems: "flex-start", 
+                          sx={{
+                            display: "flex",
+                            alignItems: "flex-start",
                             gap: 1,
-                            position: "relative"
-                          }}
-                        >
+                            position: "relative",
+                          }}>
                           <Typography
                             variant="subtitle2"
                             sx={{
-                              fontWeight:
-                                notification.isRead === false ? 700 : 400,
+                              fontWeight: notification.isRead === false ? 700 : 400,
                               wordBreak: "break-word",
                               whiteSpace: "normal",
                               lineHeight: 1.3,
                               display: "block",
                               flex: 1,
-                            }}
-                          >
+                            }}>
                             {notification.title}
                           </Typography>
-
                         </Box>
                       </Box>
                       <Typography
@@ -1513,8 +1434,7 @@ const AppBar: React.FC = () => {
                         sx={{
                           wordBreak: "break-word",
                           whiteSpace: "break-spaces",
-                        }}
-                      >
+                        }}>
                         {notification.message}
                       </Typography>
                     </Box>
@@ -1529,11 +1449,7 @@ const AppBar: React.FC = () => {
                 )}
                 {!hasMore && notifications.length > 0 && (
                   <Box sx={{ p: 1, textAlign: "center" }}>
-                    <Typography
-                      variant="body2"
-                      color="#676767"
-                      sx={{ fontWeight: 600, fontSize: "14px" }}
-                    >
+                    <Typography variant="body2" color="#676767" sx={{ fontWeight: 600, fontSize: "14px" }}>
                       Đã hiển thị tất cả thông báo
                     </Typography>
                   </Box>
@@ -1562,8 +1478,7 @@ const AppBar: React.FC = () => {
               minWidth: 220,
               overflow: "hidden",
             },
-          }}
-        >
+          }}>
           {Array.isArray(user?.stores) &&
             user.stores.map((store) => (
               <MenuItem
@@ -1580,8 +1495,7 @@ const AppBar: React.FC = () => {
                     },
                   },
                   transition: "all 0.2s ease-in-out",
-                }}
-              >
+                }}>
                 <Storefront fontSize="small" sx={{ color: "#e91e63", mr: 1 }} />
                 <Typography variant="body2" sx={{ fontWeight: 500 }}>
                   {store.name}
@@ -1605,8 +1519,7 @@ const AppBar: React.FC = () => {
               boxShadow: "0 20px 60px rgba(239,68,68,0.15)",
               border: "1px solid rgba(239,68,68,0.1)",
             },
-          }}
-        >
+          }}>
           <DialogTitle
             sx={{
               display: "flex",
@@ -1626,8 +1539,7 @@ const AppBar: React.FC = () => {
                 height: "3px",
                 background: "linear-gradient(90deg, #ec4899 0%, #f472b6 100%)",
               },
-            }}
-          >
+            }}>
             <Box sx={{ display: "flex", alignItems: "center", gap: 2 }}>
               <Receipt sx={{ fontSize: 28, color: "rgba(255,255,255,0.9)" }} />
               <Box>
@@ -1647,7 +1559,7 @@ const AppBar: React.FC = () => {
                 size="small"
                 onClick={() => {
                   handleCloseOrderModal();
-                  if (selectedOrder?.store?.id && user?.roles?.includes("SELLER") && user?.stores?.some(store => store.id === selectedOrder?.store?.id)) {
+                  if (selectedOrder?.store?.id && user?.roles?.includes("SELLER") && user?.stores?.some((store) => store.id === selectedOrder?.store?.id)) {
                     navigate(`/store/${selectedOrder.store.id}/orders`);
                   } else {
                     navigate("/orders");
@@ -1669,13 +1581,9 @@ const AppBar: React.FC = () => {
                     transform: "translateY(-1px)",
                     boxShadow: "0 4px 12px rgba(0,0,0,0.15)",
                   },
-                }}
-              >
+                }}>
                 <Receipt sx={{ fontSize: 16, mr: 1 }} />
-                {user?.stores?.some(store => store.id === selectedOrder?.store?.id) && user?.roles?.includes("SELLER") 
-                  ? "Xem đơn hàng cửa hàng" 
-                  : "Xem tất cả đơn hàng"
-                }
+                {user?.stores?.some((store) => store.id === selectedOrder?.store?.id) && user?.roles?.includes("SELLER") ? "Xem đơn hàng cửa hàng" : "Xem tất cả đơn hàng"}
               </Button>
               <MuiIconButton
                 onClick={handleCloseOrderModal}
@@ -1690,31 +1598,28 @@ const AppBar: React.FC = () => {
                     transform: "scale(1.1)",
                     color: "white",
                   },
-                }}
-              >
+                }}>
                 <Close />
               </MuiIconButton>
             </Box>
           </DialogTitle>
-          <DialogContent 
-            sx={{ 
-              p: 0, 
+          <DialogContent
+            sx={{
+              p: 0,
               overflow: "auto",
               background: "rgba(255,255,255,0.9)",
               backdropFilter: "blur(10px)",
-            }}
-          >
+            }}>
             {orderLoading ? (
-              <Box 
-                sx={{ 
-                  p: 6, 
+              <Box
+                sx={{
+                  p: 6,
                   textAlign: "center",
                   background: "rgba(255,255,255,0.7)",
                   borderRadius: 3,
                   m: 3,
                   border: "1px solid rgba(239,68,68,0.1)",
-                }}
-              >
+                }}>
                 <Box
                   sx={{
                     width: 60,
@@ -1742,21 +1647,20 @@ const AppBar: React.FC = () => {
               <Box sx={{ p: 3 }}>
                 <OrderCard
                   order={selectedOrder}
-                  isStore={user?.roles?.includes("SELLER") && user?.stores?.some(store => store.id === selectedOrder?.store?.id)}
+                  isStore={user?.roles?.includes("SELLER") && user?.stores?.some((store) => store.id === selectedOrder?.store?.id)}
                   onCloseModal={handleCloseOrderModal}
                 />
               </Box>
             ) : (
-              <Box 
-                sx={{ 
-                  p: 6, 
+              <Box
+                sx={{
+                  p: 6,
                   textAlign: "center",
                   background: "rgba(255,255,255,0.7)",
                   borderRadius: 3,
                   m: 3,
                   border: "1px solid rgba(239,68,68,0.1)",
-                }}
-              >
+                }}>
                 <Box
                   sx={{
                     width: 80,
@@ -1769,8 +1673,7 @@ const AppBar: React.FC = () => {
                     mx: "auto",
                     mb: 3,
                     boxShadow: "0 8px 32px rgba(239,68,68,0.3)",
-                  }}
-                >
+                  }}>
                   <Receipt sx={{ fontSize: 40, color: "white" }} />
                 </Box>
                 <Typography variant="h6" sx={{ fontWeight: 600, color: "#ef4444", mb: 1 }}>
@@ -1800,8 +1703,7 @@ const AppBar: React.FC = () => {
                       boxShadow: "0 6px 20px rgba(239,68,68,0.4)",
                       transform: "translateY(-2px)",
                     },
-                  }}
-                >
+                  }}>
                   <Receipt sx={{ fontSize: 18, mr: 1 }} />
                   Xem tất cả đơn hàng
                 </Button>

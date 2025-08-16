@@ -1,11 +1,9 @@
-﻿using ResiBuy.Server.Services.SMSServices;
-
-namespace ResiBuy.Server.Application.Commands.UserCommands
+﻿namespace ResiBuy.Server.Application.Commands.UserCommands
 {
     public record SendPasswordConfirmCodeCommand(string Id, ChangePasswordDto ChangePasswordDto) : IRequest<ResponseModel>;
     public class SendPasswordConfirmCodeCommandHandler(
         IUserDbService userDbService,
-        ISMSService smsService,
+        IMailBaseService mailBaseService,
         ICodeGeneratorSerivce codeGeneratorSerivce) : IRequestHandler<SendPasswordConfirmCodeCommand, ResponseModel>
     {
         public async Task<ResponseModel> Handle(SendPasswordConfirmCodeCommand command, CancellationToken cancellationToken)
@@ -23,7 +21,9 @@ namespace ResiBuy.Server.Application.Commands.UserCommands
             if (!result)
                 throw new CustomException(ExceptionErrorCode.ValidationFailed, "Mật khẩu hiện tại không đúng");
             var code = codeGeneratorSerivce.GenerateCodeAndCache(command.ChangePasswordDto);
-            //smsService.SendSms("0832021999", $"Mã xác nhận đổi mật khẩu của bạn là : {code}");
+            string htmlBody = $@"<p syle='font-size: 20px; padding:15px'>Mã xác nhận của bạn là:</p>
+                                 <h2 style='color:#2c3e50; font-weight:bold;'>{code}</h2>";
+            mailBaseService.SendEmailInAnotherThread(existingUser.Email, "Đổi mật khẩu", htmlBody);
             return ResponseModel.SuccessResponse(code);
         }
     }

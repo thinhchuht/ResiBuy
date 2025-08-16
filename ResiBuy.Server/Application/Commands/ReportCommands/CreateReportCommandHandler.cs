@@ -15,9 +15,9 @@ namespace ResiBuy.Server.Application.Commands.ReportCommands
             if (command.Dto.ReportTarget == 0) throw new CustomException(ExceptionErrorCode.ValidationFailed, "Thiếu đối tượng báo cáo");
 
             var user = await userDbService.GetUserById(command.Dto.UserId) ?? throw new CustomException(ExceptionErrorCode.ValidationFailed, "Không tồn tại người dùng");
-            if(user.Reports.Select(r => r.IsResolved).Count() == 2) throw new CustomException(ExceptionErrorCode.ValidationFailed, "Bạn không thể báo cáo hơn 2 đơn hàng mà chưa được giải quyết");
+            if (user.Reports.Where(r => !r.IsResolved).Count() >= 2) throw new CustomException(ExceptionErrorCode.ValidationFailed, "Bạn không thể báo cáo  khi có đơn hàng 2 chưa được giải quyết");
             var order = await orderDbService.GetById(command.Dto.OrderId) ?? throw new CustomException(ExceptionErrorCode.ValidationFailed, "Không tồn tại đơn hàng");
-            if(order.Report != null) throw new CustomException(ExceptionErrorCode.ValidationFailed, "Đơn hàng đã bị báo cáo");
+            if (order.Report != null) throw new CustomException(ExceptionErrorCode.ValidationFailed, "Đơn hàng đã bị báo cáo");
             if (command.Dto.UserId == command.Dto.TargetId) throw new CustomException(ExceptionErrorCode.ValidationFailed, "Không thể tự báo cáo chính mình");
             var report = new Report(command.Dto.Title, command.Dto.Description, command.Dto.UserId, command.Dto.ReportTarget, command.Dto.TargetId.ToString(), command.Dto.OrderId);
             var createdReport = await reportDbService.CreateAsync(report);
@@ -38,7 +38,10 @@ namespace ResiBuy.Server.Application.Commands.ReportCommands
             await notificationService.SendNotificationAsync(Constants.OrderReported,
                 new ReportCreatedDto(createdReport.Id, createdReport.Title, createdReport.Description, createdReport.CreatedAt, createdReport.CreatedById, command.Dto.ReportTarget, createdReport.TargetId, createdReport.OrderId, storeName),
                 Constants.AdminHubGroup, notiUser);
-            //await mailService.SendEmailAsync();
+            string htmlBody = $@"<p syle='font-size: 20px; padding:15px'>Đơn hàng {order.Id} đã bị tố cáo. Vui lòng liên hệ ban quan lý để được giải quyết</p>";
+            var usersToMail = await userDbService.GetBatchUserById(notiUser);
+            foreach (var userToMail in usersToMail)
+                mailService.SendEmailInAnotherThread(userToMail.Email, "Đơn hàng bị tố cáo", htmlBody);
             return ResponseModel.SuccessResponse();
         }
     }

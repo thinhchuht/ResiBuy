@@ -13,9 +13,11 @@ const orderApi = {
     pageNumber = 1,
     pageSize = 10,
     startDate?: string,
-    endDate?: string
+    endDate?: string,
+    keyword?: string
   ) => {
     const params: Record<string, unknown> = {
+      keyword,
       orderStatus,
       paymentMethod,
       paymentStatus,
@@ -31,7 +33,6 @@ const orderApi = {
     return response.data.data;
   },
 
-
   getById: async (id: string) => {
     const response = await axiosClient.get(`${orderUrl}/${id}`);
     if (response.data.code !== 0) {
@@ -40,12 +41,7 @@ const orderApi = {
     return response.data.data;
   },
 
-  updateOrder: async (
-    userId: string,
-    orderId: string,
-    shippingAddressId: string,
-    note: string
-  ) => {
+  updateOrder: async (userId: string, orderId: string, shippingAddressId: string, note: string) => {
     const body = {
       userId,
       orderId,
@@ -55,12 +51,7 @@ const orderApi = {
     const response = await axiosClient.put(`/api/order`, body);
     return response.data.data;
   },
-  updateOrderSatus: async (
-    userId: string,
-    orderId: string,
-    orderStatus: string,
-    reason: string
-  ) => {
+  updateOrderSatus: async (userId: string, orderId: string, orderStatus: string, reason: string) => {
     const body = {
       userId,
       orderId,
@@ -71,11 +62,7 @@ const orderApi = {
     return response.data;
   },
 
-  updateOrderStatusShip: async (
-    orderId: string,
-    orderStatus: string,
-    shipperId: string
-  ) => {
+  updateOrderStatusShip: async (orderId: string, orderStatus: string, shipperId: string) => {
     const body = {
       orderId,
       orderStatus,
@@ -85,32 +72,23 @@ const orderApi = {
     return response.data;
   },
 
-  countOrder: async (params: {
-    shipperId?: string;
-    storeId?: string;
-    userId?: string;
-    status?: OrderStatus | string;
-  }) => {
+  countOrder: async (params: { shipperId?: string; storeId?: string; userId?: string; status?: OrderStatus | string }) => {
     const response = await axiosClient.get(`${orderUrl}/count`, { params });
-      return response.data;  
+    return response.data;
   },
 
-  getTotalShippingFeeshipper: async (params: {
-    shipperId: string;
-    startDate?: string;
-    endDate?: string;
-  }) => {
+  getTotalShippingFeeshipper: async (params: { shipperId: string; startDate?: string; endDate?: string }) => {
     const response = await axiosClient.get(`${orderUrl}/total-shipping-fee`, {
       params,
     });
-      return response.data;
+    return response.data;
   },
-  getTotalOrderAmount:async(params: {userId ?: string,storeId?: string})=>{const response =await axiosClient.get(`${orderUrl}/total-amount`,{params});return response.data;},
+  getTotalOrderAmount: async (params: { userId?: string; storeId?: string }) => {
+    const response = await axiosClient.get(`${orderUrl}/total-amount`, { params });
+    return response.data;
+  },
 
-  getOverviewStats: async (params?: {
-    startDate?: string;
-    endDate?: string;
-  }) => {
+  getOverviewStats: async (params?: { startDate?: string; endDate?: string }) => {
     const response = await axiosClient.get(`${orderUrl}/overview-stats`, { params });
     if (response.data.code !== 0) {
       throw new Error(response.data.message || "Lỗi khi lấy thống kê đơn hàng");
@@ -118,6 +96,5 @@ const orderApi = {
     return response.data.data;
   },
 };
-
 
 export default orderApi;
