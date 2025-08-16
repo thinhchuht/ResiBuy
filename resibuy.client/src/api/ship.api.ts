@@ -45,17 +45,41 @@ const shipperApi = {
   },
 
   // Cập nhật trạng thái shipper
-  updateStatus: async (id: string, data: Partial<Shipper>) => {
-    const response = await axiosClient.put(`${shipperUrl}/${id}/status`, data);
+  updateStatus: async (
+    shipperId: string,
+    isOnline: boolean,
+    areaId: string
+  ) => {
+    const response = await axiosClient.put(
+      `${shipperUrl}/status`,
+      { shipperId, isOnline, areaId },
+      { headers: { "Content-Type": "application/json" } }
+    );
     return response.data;
   },
+
   stats: async () => {
     const response = await axiosClient.get(`${shipperUrl}/stats`);
     return response.data;
   },
-  search: async(keyWord?: string,isOnline?: boolean,isLocked?:boolean,pageNumber: number=1,pageSize: number=10)=>{
-    const response =await axiosClient.get(`${shipperUrl}/search`,{params :{keyWord,isOnline,isLocked,pageNumber,pageSize}});
+  search: async (
+    keyWord?: string,
+    isOnline?: boolean,
+    isLocked?: boolean,
+    pageNumber: number = 1,
+    pageSize: number = 10
+  ) => {
+    const response = await axiosClient.get(`${shipperUrl}/search`, {
+      params: { keyWord, isOnline, isLocked, pageNumber, pageSize },
+    });
     return response.data;
+  },
+
+  timesheets: async (shipperId: string, fromDate: string, toDate: string) => {
+    const response = await axiosClient.get(`${shipperUrl}/timesheets`, {
+      params: { shipperId, fromDate, toDate },
+    });
+    return response.data.data;
   },
 };
 

@@ -4,7 +4,7 @@ using ResiBuy.Server.Infrastructure.Model.DTOs.OrderDtos;
 namespace ResiBuy.Server.Application.Commands.OrderCommands
 {
     public record UpdateOrderCommand(UpdateOrderDto Dto) : IRequest<ResponseModel>;
-    public class  UpdateOrderCommandHandler(IOrderDbService orderDbService) : IRequestHandler< UpdateOrderCommand, ResponseModel>
+    public class  UpdateOrderCommandHandler(IOrderDbService orderDbService, IRoomDbService roomDbService) : IRequestHandler< UpdateOrderCommand, ResponseModel>
     {
         public async Task<ResponseModel> Handle( UpdateOrderCommand request, CancellationToken cancellationToken)
         {
@@ -31,6 +31,10 @@ namespace ResiBuy.Server.Application.Commands.OrderCommands
             {
                 if (order.Status != OrderStatus.Pending)
                     throw new CustomException(ExceptionErrorCode.ValidationFailed, "Chỉ được đổi địa chỉ giao khi đơn hàng chưa được xử lý.");
+                    var room = await roomDbService.GetByIdAsync(dto.ShippingAddressId) ?? throw new CustomException(ExceptionErrorCode.NotFound, $"Địa chỉ phòng không tồn tại");
+                    if (!room.IsActive) throw new CustomException(ExceptionErrorCode.ValidationFailed, $"Phòng {room.Name} hiện đang không hoạt động, hãy chọn địa chỉ khác");
+                    if (!room.Building.IsActive) throw new CustomException(ExceptionErrorCode.ValidationFailed, $"Tòa nhà {room.Building.Name} hiện đang không hoạt động, hãy chọn địa chỉ khác");
+                    if (!room.Building.IsActive) throw new CustomException(ExceptionErrorCode.ValidationFailed, $"Tòa nhà {room.Building.Area.Name} hiện đang không hoạt động, hãy chọn địa chỉ khác");
                 order.ShippingAddressId = dto.ShippingAddressId;
                 var oldShippingFee = order.ShippingFee;
                 var newShippingFee = await orderDbService.ShippingFeeCharged(dto.ShippingAddressId, order.Store.RoomId, order.Items.Select(item => item.ProductDetail.Weight).Sum());

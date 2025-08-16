@@ -84,7 +84,8 @@ const Products = () => {
           sortBy: sortBy === "price_asc" ? "price" : sortBy === "price_desc" ? "price" : sortBy === "popular" ? "sold" : "createdAt",
           sortDirection: sortBy === "price_asc" ? "asc" : sortBy === "price_desc" ? "desc" : sortBy === "popular" ? "desc" : "desc",
           search: searchKeyword || undefined,
-          IsGettingCategory: true
+          IsGettingCategory: true,
+          isNotGetOutOfStock : true
         });
         setProducts(res.items || []);
         setTotal(res.totalCount || 0);

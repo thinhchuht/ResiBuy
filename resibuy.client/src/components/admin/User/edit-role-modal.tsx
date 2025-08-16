@@ -458,7 +458,7 @@ export function EditRoleModal({ isOpen, onClose, onSubmit, userId }: EditRoleMod
                 </Typography>
                 <TextField
                   label="Báo Cáo"
-                  value={user?.reports?.length > 0 ? `${user.reports.length} báo cáo` : "Không có báo cáo"}
+                  value={user?.reportCount > 0 ? `${user.reportCount} báo cáo` : "Không có báo cáo"}
                   fullWidth
                   disabled
                   size="small"

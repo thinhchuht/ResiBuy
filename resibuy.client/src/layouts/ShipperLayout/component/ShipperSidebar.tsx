@@ -17,32 +17,24 @@ import { Link } from "react-router-dom";
 import HomeIcon from "@mui/icons-material/Home";
 import HistoryIcon from "@mui/icons-material/History";
 import ArrowBackIcon from "@mui/icons-material/ArrowBack";
+import MonetizationOnIcon from "@mui/icons-material/MonetizationOn";
+import AccessTimeIcon from "@mui/icons-material/AccessTime";
+
 import { useAuth } from "../../../contexts/AuthContext";
 import userApi from "../../../api/user.api";
 import shipperApi from "../../../api/ship.api";
-import MonetizationOnIcon from "@mui/icons-material/MonetizationOn";
-
+import { useShipper } from "../../../contexts/ShipperContext";
 const drawerWidth = 240;
-
-interface ShipperUser {
-  fullName: string;
-  avatar?: {
-    url?: string;
-  };
-}
-
-interface ShipperInfo {
-  isOnline: boolean;
-  user: ShipperUser;
-}
 
 const ShipperSidebar: React.FC = () => {
   const { user } = useAuth();
-  const [shipperInfo, setShipperInfo] = useState<ShipperInfo | null>(null);
+  const { shipperInfo, setShipperInfo } = useShipper();
+  const [loading, setLoading] = useState(false);
 
   useEffect(() => {
     const fetchData = async () => {
       if (!user?.id) return;
+      setLoading(true);
 
       const [shipperRes, userRes] = await Promise.all([
         shipperApi.getByUserId(user.id),
@@ -58,16 +50,18 @@ const ShipperSidebar: React.FC = () => {
           },
         });
       }
+
+      setLoading(false);
     };
 
     fetchData();
-  }, [user]);
+  }, [user, setShipperInfo]);
 
-  if (!shipperInfo) return null;
+  if (!shipperInfo || loading) return null;
 
-  const isOnline = shipperInfo.isOnline;
-  const avatarUrl = shipperInfo.user.avatar?.url;
-  const fullName = shipperInfo.user.fullName;
+  const { isOnline, user: shipperUser } = shipperInfo;
+  const avatarUrl = shipperUser.avatar?.url;
+  const fullName = shipperUser.fullName;
 
   return (
     <Drawer
@@ -83,17 +77,14 @@ const ShipperSidebar: React.FC = () => {
         },
       }}
     >
+      
       <Box sx={{ p: 3, textAlign: "center" }}>
         <Typography variant="h6" fontWeight="bold">
           ResiBuy Shipper
         </Typography>
 
         <Stack alignItems="center" spacing={1} mt={3}>
-          <Avatar
-            src={avatarUrl}
-            alt={fullName}
-            sx={{ width: 72, height: 72 }}
-          />
+          <Avatar src={avatarUrl} alt={fullName} sx={{ width: 72, height: 72 }} />
           <Typography variant="subtitle1" fontWeight={600}>
             {fullName}
           </Typography>
@@ -115,6 +106,15 @@ const ShipperSidebar: React.FC = () => {
               <HomeIcon />
             </ListItemIcon>
             <ListItemText primary="Trang giao hàng" />
+          </ListItemButton>
+        </ListItem>
+
+        <ListItem disablePadding>
+          <ListItemButton component={Link} to="/shipper/attendance">
+            <ListItemIcon>
+              <AccessTimeIcon />
+            </ListItemIcon>
+            <ListItemText primary="Điểm danh" />
           </ListItemButton>
         </ListItem>
 

@@ -9,7 +9,8 @@ namespace ResiBuy.Server.Application.Commands.ShipperCommands
 {
     public record UpdateShipperStatusCommand(
         Guid ShipperId,
-        bool IsOnline
+        bool IsOnline,
+        Guid AreaId
     ) : IRequest<ResponseModel>;
 
     public class UpdateShipperStatusCommandHandler : IRequestHandler<UpdateShipperStatusCommand, ResponseModel>
@@ -33,7 +34,7 @@ namespace ResiBuy.Server.Application.Commands.ShipperCommands
             // 2. Cập nhật trạng thái của shipper
             try
             {
-                await _shipperDbService.UpdateShipperStatusAsync(command.ShipperId, command.IsOnline);
+                await _shipperDbService.UpdateShipperStatusAsync(command.ShipperId, command.IsOnline, command.AreaId);
                 return ResponseModel.SuccessResponse();
             }
             catch (Exception ex)

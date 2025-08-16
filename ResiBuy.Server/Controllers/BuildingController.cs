@@ -1,5 +1,4 @@
-﻿using ResiBuy.Server.Application.Commands.AreaCommands.DTOs;
-using ResiBuy.Server.Application.Commands.BuildingCommands.DTOs;
+﻿using ResiBuy.Server.Application.Commands.BuildingCommands.DTOs;
 
 namespace ResiBuy.Server.Controllers
 {
@@ -22,11 +21,11 @@ namespace ResiBuy.Server.Controllers
         }
 
         [HttpGet("area/{id}")]
-        public async Task<IActionResult> GetByAreaIdAsync(Guid id)
+        public async Task<IActionResult> GetByAreaIdAsync(Guid id, bool getActive)
         {
             try
             {
-                var result = await mediator.Send(new GetByAreaIdQuery(id));
+                var result = await mediator.Send(new GetByAreaIdQuery(id, getActive));
                 return Ok(result);
             }
             catch (Exception ex)

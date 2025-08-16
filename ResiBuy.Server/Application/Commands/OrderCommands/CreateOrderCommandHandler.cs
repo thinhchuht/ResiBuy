@@ -10,7 +10,7 @@ namespace ResiBuy.Server.Application.Commands.OrderCommands
 {
     public record CreateOrderCommand(CheckoutDto CheckoutDto) : IRequest<ResponseModel>;
     public class CreateOrderCommandHandler(IUserDbService userDbService, IOrderDbService orderDbService, IRoomDbService roomDbService,
-        IVoucherDbService voucherDbService, ICartDbService cartDbService, ICartItemDbService cartItemDbService, 
+        IVoucherDbService voucherDbService, ICartDbService cartDbService, ICartItemDbService cartItemDbService,
         IProductDetailDbService productDetailDbService, IStoreDbService storeDbService, IProductDbService productDbService,
         IMailBaseService mailBaseService, INotificationService notificationService
         ) : IRequestHandler<CreateOrderCommand, ResponseModel>
@@ -25,7 +25,10 @@ namespace ResiBuy.Server.Application.Commands.OrderCommands
                 throw new CustomException(ExceptionErrorCode.ValidationFailed, "Tổng tiền của đơn hàng không được nhỏ hơn 0");
             if (dto.Orders.Any(o => !o.Items.Any()) || dto.Orders.Any(o => o.Items.Any(i => i.Quantity <= 0 || i.Price < -10000)))
                 throw new CustomException(ExceptionErrorCode.ValidationFailed, "Đơn hàng phải có sản phẩm và số lượng phải lớn hơn 0");
-            var room = await roomDbService.GetByIdBaseAsync(dto.AddressId) ?? throw new CustomException(ExceptionErrorCode.ValidationFailed, "Phòng không tồn tại");
+            var room = await roomDbService.GetByIdAsync(dto.AddressId) ?? throw new CustomException(ExceptionErrorCode.ValidationFailed, "Phòng không tồn tại");
+            if (!room.IsActive) throw new CustomException(ExceptionErrorCode.ValidationFailed, $"Phòng {room.Name} hiện đang không hoạt động, hãy chọn địa chỉ khác");
+            if (!room.Building.IsActive) throw new CustomException(ExceptionErrorCode.ValidationFailed, $"Tòa nhà {room.Building.Name} hiện đang không hoạt động, hãy chọn địa chỉ khác");
+            if (!room.Building.IsActive) throw new CustomException(ExceptionErrorCode.ValidationFailed, $"Tòa nhà {room.Building.Area.Name} hiện đang không hoạt động, hãy chọn địa chỉ khác");
             var user = await userDbService.GetUserById(dto.UserId);
             if (user == null) throw new CustomException(ExceptionErrorCode.ValidationFailed, "Người dùng không tồn tại");
             if (!user.Roles.Contains(Constants.CustomerRole)) throw new CustomException(ExceptionErrorCode.ValidationFailed, "Chỉ có người mua mới tạo được đơn hàng.");

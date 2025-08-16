@@ -1,5 +1,4 @@
 ﻿using ResiBuy.Server.Application.Commands.AreaCommands.DTOs;
-using ResiBuy.Server.Application.Commands.CategoryCommands;
 
 namespace ResiBuy.Server.Controllers
 {
@@ -8,11 +7,11 @@ namespace ResiBuy.Server.Controllers
     public class AreaController(IMediator mediator) : ControllerBase
     {
         [HttpGet]
-        public async Task<IActionResult> GetAllAsync()
+        public async Task<IActionResult> GetAllAsync(bool getActive = true)
         {
             try
             {
-                var result = await mediator.Send(new GetAllAreasQuery());
+                var result = await mediator.Send(new GetAllAreasQuery(getActive));
                 return Ok(result);
             }
             catch (Exception ex)

@@ -1,6 +1,4 @@
-﻿using ResiBuy.Server.Infrastructure.DbServices.BuildingDbServices;
-
-namespace ResiBuy.Server.Application.Queries.BuildingQueries
+﻿namespace ResiBuy.Server.Application.Queries.BuildingQueries
 {
     public record GetAllBuildingsQuery() : IRequest<ResponseModel>;
     public class GetAllBuildingsQueryHandler(IBuildingDbService BuildingDbService) : IRequestHandler<GetAllBuildingsQuery, ResponseModel>

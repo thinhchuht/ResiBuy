@@ -1,11 +1,23 @@
 import { useState, useEffect } from "react";
-import { Box, Typography, IconButton } from "@mui/material";
+import {
+  Box,
+  Typography,
+  IconButton,
+  TextField,
+  InputAdornment,
+  Button,
+  FormControl,
+  InputLabel,
+  Select,
+  MenuItem,
+} from "@mui/material";
 import {
   Edit,
   Visibility,
   LocalShipping as ShipperIcon,
   Lock,
   LockOpen,
+  Search as SearchIcon,
 } from "@mui/icons-material";
 import { LocalizationProvider } from "@mui/x-date-pickers/LocalizationProvider";
 import { AdapterDateFns } from "@mui/x-date-pickers/AdapterDateFns";
@@ -113,6 +125,8 @@ export default function ShippersPage() {
     isDetailModalOpen,
     isAddModalOpen,
     editingShipper,
+    searchParams,
+    setSearchParams,
     handleViewShipper,
     handleCloseDetailModal,
     handleAddShipper,
@@ -121,10 +135,52 @@ export default function ShippersPage() {
     handleSubmitShipper,
     handleToggleLockShipper,
     handleExportShippers,
-    handlePageChange,
     formatWorkTime,
     isShipperAvailable,
+    fetchShippers,
+    fetchShippersWithFilters,
   } = useShippersLogic();
+
+  const [searchInput, setSearchInput] = useState("");
+  const [localFilters, setLocalFilters] = useState<{
+    isOnline?: boolean;
+    isLocked?: boolean;
+  }>({});
+
+  const handlePageChange = (newPage: number) => {
+    console.log("Page changed to:", newPage);
+    fetchShippers(newPage, pageSize);
+  };
+
+  useEffect(() => {
+    if (Object.keys(searchParams).length === 0) {
+      fetchShippers(pageNumber, pageSize);
+    } else {
+      fetchShippersWithFilters(
+        searchParams.keyWord,
+        searchParams.isOnline,
+        searchParams.isLocked,
+        pageNumber,
+        pageSize
+      );
+    }
+  }, [pageNumber]);
+
+  const handleSearch = () => {
+    setSearchParams({
+      keyWord: searchInput || undefined,
+      isOnline: localFilters.isOnline,
+      isLocked: localFilters.isLocked,
+    });
+    handlePageChange(1);
+  };
+
+  const handleFilterChange = (key: string, value: string | boolean | undefined) => {
+    setLocalFilters((prev) => ({
+      ...prev,
+      [key]: value === "" ? undefined : value === "true",
+    }));
+  };
 
   const columns = [
     {
@@ -295,6 +351,17 @@ export default function ShippersPage() {
     },
   ];
 
+  const filters = {
+    isOnline: [
+      { label: "Online", value: "true" },
+      { label: "Offline", value: "false" },
+    ],
+    isLocked: [
+      { label: "Hoạt động", value: "false" },
+      { label: "Khóa", value: "true" },
+    ],
+  };
+
   return (
     <LocalizationProvider dateAdapter={AdapterDateFns}>
       <Box
@@ -352,6 +419,76 @@ export default function ShippersPage() {
 
           <ShipperStatsCards />
 
+          <Box
+            sx={{
+              display: "flex",
+              flexDirection: { xs: "column", md: "row" },
+              gap: 2,
+              mb: 2,
+            }}
+          >
+            <TextField
+              placeholder="Tìm kiếm shipper..."
+              value={searchInput}
+              onChange={(e) => setSearchInput(e.target.value)}
+              size="small"
+              sx={{ maxWidth: 300, flex: 1 }}
+              InputProps={{
+                startAdornment: (
+                  <InputAdornment position="start">
+                    <SearchIcon sx={{ color: "grey.400" }} />
+                  </InputAdornment>
+                ),
+              }}
+            />
+            <Box sx={{ display: "flex", gap: 2, flexWrap: "wrap" }}>
+              <FormControl size="small" sx={{ minWidth: 120 }}>
+                <InputLabel>Trạng thái hoạt động</InputLabel>
+                <Select
+                  value={localFilters.isOnline ?? ""}
+                  onChange={(e) => handleFilterChange("isOnline", e.target.value)}
+                  label="Trạng thái hoạt động"
+                >
+                  <MenuItem value="">Tất cả</MenuItem>
+                  {filters.isOnline.map((option) => (
+                    <MenuItem key={option.value} value={option.value}>
+                      {option.label}
+                    </MenuItem>
+                  ))}
+                </Select>
+              </FormControl>
+              <FormControl size="small" sx={{ minWidth: 120 }}>
+                <InputLabel>Khóa</InputLabel>
+                <Select
+                  value={localFilters.isLocked ?? ""}
+                  onChange={(e) => handleFilterChange("isLocked", e.target.value)}
+                  label="Khóa"
+                >
+                  <MenuItem value="">Tất cả</MenuItem>
+                  {filters.isLocked.map((option) => (
+                    <MenuItem key={option.value} value={option.value}>
+                      {option.label}
+                    </MenuItem>
+                  ))}
+                </Select>
+              </FormControl>
+              <Button
+                variant="contained"
+                onClick={handleSearch}
+                sx={{
+                  bgcolor: "primary.main",
+                  color: "white",
+                  px: 2,
+                  py: 1,
+                  borderRadius: 1,
+                  "&:hover": { bgcolor: "primary.dark" },
+                }}
+              >
+                Tìm kiếm
+              </Button>
+            </Box>
+          </Box>
+
           <CustomTable
             data={shippers}
             totalCount={totalCount}
@@ -364,6 +501,18 @@ export default function ShippersPage() {
             showExport={true}
             showBulkActions={false}
             itemsPerPage={pageSize}
+            filters={filters}
+            onFilterChange={(newFilters) => {
+              setLocalFilters((prev) => ({
+                ...prev,
+                ...Object.fromEntries(
+                  Object.entries(newFilters).map(([key, value]) => [
+                    key,
+                    value === "" ? undefined : value === "true",
+                  ])
+                ),
+              }));
+            }}
           />
         </Box>
 

@@ -40,6 +40,8 @@ import OrderDetailPage from "../pages/Shipper/OrderDetailPage";
 import HomePage from "../pages/Shipper/HomePage";
 import OrderNotifier from "./../pages/Store/OrderNotifier";
 import StatisticalPage from "../pages/Shipper/StatisticalPage";
+import AttendancePage from "../pages/Shipper/AttendancePage";
+import OrderPage from "../pages/Admin/Order/page";
 
 const AppRoutes: React.FC = () => {
   const { user } = useAuth();
@@ -175,6 +177,7 @@ const AppRoutes: React.FC = () => {
             <Route path="rooms/:buildingId" element={<RoomsPage />} />
             <Route path="user" element={<UserPage />} />
             <Route path="reports" element={<ReportsPage />} />
+            <Route path="orders" element={<OrderPage />} />
           </Route>
         <Route
           path="/seller/*"
@@ -196,6 +199,7 @@ const AppRoutes: React.FC = () => {
         >
           <Route index element={<Navigate to="home" replace />} />
           <Route path="home" element={<HomePage />} />
+          <Route path="attendance" element={<AttendancePage />} />
           <Route path="orders" element={<OrdersPage />} />
           <Route path="statistical" element={<StatisticalPage />} />
           <Route path="order/:id" element={<OrderDetailPage />} />

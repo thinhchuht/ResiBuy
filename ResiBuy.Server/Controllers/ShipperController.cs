@@ -94,5 +94,13 @@ namespace ResiBuy.Server.Controllers
             var result = await _mediator.Send(new SearchShippersQuery(keyWord,isOnline, isLocked, pageNumber, pageSize));
             return Ok(result);
         }
-    }
+
+        [HttpGet("timesheets")]
+        public async Task<IActionResult> GetTimeSheets([FromQuery]Guid shipperId, [FromQuery] DateTime? startDate, [FromQuery] DateTime? endDate)
+        {
+            var result = await _mediator.Send(new GetTimeSheetsQuery(shipperId, startDate, endDate));
+            return Ok(result);
+        }
+
+        }
 }
