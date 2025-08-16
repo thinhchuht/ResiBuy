@@ -145,7 +145,6 @@ const ProductPage: React.FC = () => {
       fetchProducts();
       fetchCategories();
     }
-  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [storeId]);
 
   const handleFilterSubmit = (e: React.FormEvent<HTMLFormElement>) => {
@@ -162,6 +161,10 @@ const ProductPage: React.FC = () => {
 
   const handleEdit = (id: number) => {
     navigate(`/store/${storeId}/product-update/${id}`);
+  };
+
+  const handleDetail = (id: number) => {
+    navigate(`/store/${storeId}/product-detail/${id}`);
   };
 
   const handleToggleStatus = async (product: Product) => {
@@ -502,7 +505,7 @@ const ProductPage: React.FC = () => {
                   min={0}
                   max={10000000}
                   step={100000}
-                  onChange={(e, newValue) =>
+                  onChange={(_e, newValue) =>
                     setPriceRange(newValue as number[])
                   }
                   valueLabelDisplay="auto"
@@ -617,6 +620,7 @@ const ProductPage: React.FC = () => {
                                 textOverflow: "ellipsis",
                                 whiteSpace: "nowrap",
                               }}
+                              onClick={() => handleDetail(product.id)}
                             >
                               {product.name}
                             </Typography>
@@ -644,7 +648,7 @@ const ProductPage: React.FC = () => {
                               sx={{ width: 24, height: 24 }}
                             />
                             <Typography variant="body2">
-                              {category.name} {category.status ? "" : "(Tạm ngưng hoạt động)"}
+                              {category.name}
                             </Typography>
                           </Box>
                         ) : (
