@@ -1,8 +1,6 @@
-import { Avatar, Box, Button, TextField, Typography, CircularProgress } from "@mui/material";
+import { Avatar, Box, Button, Typography, CircularProgress } from "@mui/material";
 import { Person } from "@mui/icons-material";
 import { useState } from "react";
-import { Formik, Form, Field } from "formik";
-import * as Yup from "yup";
 import userApi from "../../api/user.api";
 import { useAuth } from "../../contexts/AuthContext";
 import { useToastify } from "../../hooks/useToastify";
@@ -16,10 +14,6 @@ interface PersonalInfoSectionProps {
   maskMiddle: (str: string | undefined) => string;
 }
 
-const validationSchema = Yup.object().shape({
-  email: Yup.string().email("Email không hợp lệ").required("Email là bắt buộc"),
-  dateOfBirth: Yup.date().max(new Date(), "Ngày sinh không thể lớn hơn ngày hiện tại").required("Ngày sinh là bắt buộc"),
-});
 
 const PersonalInfoSection = ({ isAdmin, formatDate, maskMiddle }: PersonalInfoSectionProps) => {
   const { user, setUser } = useAuth();
@@ -62,17 +56,10 @@ const PersonalInfoSection = ({ isAdmin, formatDate, maskMiddle }: PersonalInfoSe
     }
   };
 
-  const initialValues = {
-    email: user?.email || "",
-    dateOfBirth: user?.dateOfBirth ? user.dateOfBirth.substring(0, 10) : "1990-01-01",
-  };
-
-  const handleSubmit = async (values: typeof initialValues) => {
-    if (!user) return;
+  const handleSubmit = async () => {
+    if (!user || !avatar) return;
 
     const updatePayload = {
-      email: values.email,
-      dateOfBirth: values.dateOfBirth,
       avatar: avatar,
     };
 
@@ -111,16 +98,13 @@ const PersonalInfoSection = ({ isAdmin, formatDate, maskMiddle }: PersonalInfoSe
 
   return (
     <Box>
-      <Box sx={{ borderBottom: '1px solid #f8bbd0', mb: 3, pb: 1 }}>
-        <Typography variant="h6" fontWeight={700} color="#e91e63" sx={{ textAlign: 'left' }}>
+      <Box sx={{ borderBottom: "1px solid #f8bbd0", mb: 3, pb: 1 }}>
+        <Typography variant="h6" fontWeight={700} color="#e91e63" sx={{ textAlign: "left" }}>
           Thông tin cá nhân
         </Typography>
       </Box>
       <Box sx={{ display: { xs: "block", md: "flex" }, gap: 4 }}>
         <Box sx={{ flex: 1, minWidth: 0 }}>
-          <Formik initialValues={initialValues} validationSchema={validationSchema} onSubmit={handleSubmit} enableReinitialize>
-            {({ errors, touched, values, handleChange, handleBlur }) => (
-              <Form>
                 <Box mb={3}>
                   <Typography variant="subtitle2" color="text.secondary" mb={0.5}>
                     ID
@@ -137,28 +121,14 @@ const PersonalInfoSection = ({ isAdmin, formatDate, maskMiddle }: PersonalInfoSe
                     {user?.fullName || "-"}
                   </Typography>
                 </Box>
-                <Field
-                  as={TextField}
-                  name="email"
-                  label="Email"
-                  variant="outlined"
-                  fullWidth
-                  value={values.email}
-                  onChange={handleChange}
-                  onBlur={handleBlur}
-                  error={touched.email && Boolean(errors.email)}
-                  helperText={touched.email && errors.email}
-                  disabled={isAdmin}
-                  sx={{
-                    mb: 3,
-                    "& .MuiOutlinedInput-root": {
-                      borderRadius: 2,
-                      "&:hover fieldset": {
-                        borderColor: "#e91e63",
-                      },
-                    },
-                  }}
-                />
+                <Box mb={3}>
+                  <Typography variant="subtitle2" color="text.secondary" mb={0.5}>
+                    Email
+                  </Typography>
+                  <Typography variant="body1" fontWeight={500}>
+                    {user?.email || "-"}
+                  </Typography>
+                </Box>
                 <Box mb={3}>
                   <Typography variant="subtitle2" color="text.secondary" mb={0.5}>
                     Số điện thoại
@@ -175,30 +145,14 @@ const PersonalInfoSection = ({ isAdmin, formatDate, maskMiddle }: PersonalInfoSe
                     {maskMiddle(user?.identityNumber) || "-"}
                   </Typography>
                 </Box>
-                <Field
-                  as={TextField}
-                  name="dateOfBirth"
-                  label="Ngày sinh"
-                  type="date"
-                  variant="outlined"
-                  fullWidth
-                  value={values.dateOfBirth}
-                  onChange={handleChange}
-                  onBlur={handleBlur}
-                  error={touched.dateOfBirth && Boolean(errors.dateOfBirth)}
-                  helperText={touched.dateOfBirth && errors.dateOfBirth}
-                  disabled={isAdmin}
-                  sx={{
-                    mb: 3,
-                    "& .MuiOutlinedInput-root": {
-                      borderRadius: 2,
-                      "&:hover fieldset": {
-                        borderColor: "#e91e63",
-                      },
-                    },
-                  }}
-                  InputLabelProps={{ shrink: true }}
-                />
+                <Box mb={3}>
+                  <Typography variant="subtitle2" color="text.secondary" mb={0.5}>
+                    Ngày sinh
+                  </Typography>
+                  <Typography variant="body1" fontWeight={500}>
+                    {formatDate(user?.dateOfBirth) || "-"}
+                  </Typography>
+                </Box>
                 {user?.rooms && user.rooms.length > 0 && (
                   <Box mb={3}>
                     <Typography variant="subtitle2" color="text.secondary" mb={0.5}>
@@ -228,9 +182,9 @@ const PersonalInfoSection = ({ isAdmin, formatDate, maskMiddle }: PersonalInfoSe
                   </Typography>
                 </Box>
                 <Button
-                  type="submit"
+                  onClick={handleSubmit}
                   variant="contained"
-                  disabled={isAdmin}
+                  disabled={isAdmin || !avatar}
                   sx={{
                     mt: 2,
                     px: 5,
@@ -244,11 +198,8 @@ const PersonalInfoSection = ({ isAdmin, formatDate, maskMiddle }: PersonalInfoSe
                       boxShadow: "0 6px 20px rgba(233, 30, 99, 0.4)",
                     },
                   }}>
-                  Lưu
+                  Cập nhật ảnh đại diện
                 </Button>
-              </Form>
-            )}
-          </Formik>
         </Box>
         <Box
           sx={{

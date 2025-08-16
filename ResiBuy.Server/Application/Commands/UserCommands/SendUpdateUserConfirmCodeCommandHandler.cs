@@ -16,9 +16,9 @@
             await userDbService.CheckUniqueField(null, command.UpdateUserDto.Email);
             if (!Regex.IsMatch(command.UpdateUserDto.Email, Constants.EmailPattern)) throw new CustomException(ExceptionErrorCode.ValidationFailed, "Email không hợp lệ");
             var code = codeGeneratorSerivce.GenerateCodeAndCache(command.UpdateUserDto);
-            //string htmlBody = $@"<p>Mã xác nhận của bạn là:</p>
+            //string htmlBody = $@"<p syle='font-size: 20px; padding:15px'>Mã xác nhận của bạn là:</p>
             //                     <h2 style='color:#2c3e50; font-weight:bold;'>{code}</h2>";
-            //await mailBaseService.SendEmailAsync(existingUser.Email, "Secret Key", htmlBody);
+            //mailBaseService.SendEmailInAnotherThread(existingUser.Email, "Cập nhật thông tin", htmlBody);
             return ResponseModel.SuccessResponse(code);
         }
     }

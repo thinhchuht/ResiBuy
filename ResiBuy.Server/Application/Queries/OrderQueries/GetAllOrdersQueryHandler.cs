@@ -3,6 +3,7 @@
 namespace ResiBuy.Server.Application.Queries.OrderQueries
 {
     public record GetAllOrdersQuery(
+       string keyword,
        OrderStatus OrderStatus,
        PaymentMethod PaymentMethod,
        PaymentStatus PaymentStatus,
@@ -21,6 +22,7 @@ namespace ResiBuy.Server.Application.Queries.OrderQueries
         public async Task<ResponseModel> Handle(GetAllOrdersQuery request, CancellationToken cancellationToken)
         {
             var result = await orderDbService.GetAllAsync(
+                request.keyword,
                 request.OrderStatus,
                 request.PaymentMethod,
                 request.PaymentStatus,
