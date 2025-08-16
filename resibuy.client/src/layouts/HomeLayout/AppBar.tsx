@@ -687,7 +687,6 @@ const AppBar: React.FC = () => {
   const handleLogout = () => {
     handleProfileMenuClose();
     logout();
-    navigate("/login");
   };
 
   const handleHomeMenuOpen = (event: React.MouseEvent<HTMLElement>) => {
