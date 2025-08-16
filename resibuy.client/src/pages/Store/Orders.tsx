@@ -28,6 +28,10 @@ import HomeIcon from "@mui/icons-material/Home";
 import NavigateNextIcon from "@mui/icons-material/NavigateNext";
 import type { OrderStatusChangedData } from "../../types/hubData";
 import CalendarTodayIcon from "@mui/icons-material/CalendarToday";
+import type {
+  ReportCreatedDto,
+  ReportResolvedDto,
+} from "../../types/hubEventDto";
 
 const StyledTabs = styled(Tabs)({
   borderBottom: "1px solid #e8e8e8",
@@ -51,11 +55,13 @@ const StyledTab = styled(Tab)({
 const orderStatusTabs = [
   OrderStatus.None,
   OrderStatus.Pending,
-  OrderStatus.Assigned,
   OrderStatus.Processing,
+  OrderStatus.Assigned,
   OrderStatus.Shipped,
+  OrderStatus.CustomerNotAvailable,
   OrderStatus.Delivered,
   OrderStatus.Cancelled,
+  OrderStatus.Reported, // Thêm trạng thái bị tố cáo
 ];
 
 const Orders = () => {
@@ -65,26 +71,25 @@ const Orders = () => {
   const [totalPages, setTotalPages] = useState(1);
   const ordersPerPage = 5;
   const { user } = useAuth();
-
+  const { storeId } = useParams<{ storeId: string }>();
   const [startDate, setStartDate] = useState<string>("");
   const [endDate, setEndDate] = useState<string>("");
 
   const currentTabRef = useRef(currentTab);
-  const { storeId } = useParams<{ storeId: string }>();
   useEffect(() => {
     currentTabRef.current = currentTab;
   }, [currentTab]);
 
   const fetchOrders = useCallback(async () => {
-    if (!storeId) return;
+    if (!user?.id) return;
     try {
       const data = await orderApi.getAll(
         orderStatusTabs[currentTab],
         PaymentMethod.None,
         PaymentStatus.None,
-        storeId,
+        storeId, // storeId
+        undefined,
         undefined, // shipperId
-        undefined, // userId
         page,
         ordersPerPage,
         startDate || undefined,
@@ -96,8 +101,7 @@ const Orders = () => {
       setOrders([]);
       setTotalPages(1);
     }
-  // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [user?.id, page, currentTab, startDate, endDate]);
+  }, [user?.id, page, currentTab, startDate, endDate, storeId]);
 
   useEffect(() => {
     fetchOrders();
@@ -140,8 +144,134 @@ const Orders = () => {
     );
   };
 
+  // Thêm callback để xử lý thay đổi trạng thái từ OrderCard
+  const handleOrderStatusChange = useCallback(
+    (
+      orderId: string,
+      newStatus: OrderStatus,
+      newPaymentStatus: PaymentStatus
+    ) => {
+      const currentTabStatus = orderStatusTabs[currentTab];
+
+      // Nếu đang ở tab "Tất cả", cập nhật trạng thái order
+      if (currentTabStatus === OrderStatus.None) {
+        setOrders((prevOrders) =>
+          prevOrders.map((order) =>
+            order.id === orderId
+              ? {
+                  ...order,
+                  status: newStatus,
+                  paymentStatus: newPaymentStatus,
+                  updateAt: new Date().toISOString(),
+                }
+              : order
+          )
+        );
+      } else {
+        // Nếu đang ở tab cụ thể và trạng thái mới khác tab hiện tại, xóa order khỏi danh sách
+        if (currentTabStatus !== newStatus) {
+          setOrders((prevOrders) =>
+            prevOrders.filter((order) => order.id !== orderId)
+          );
+        } else {
+          // Nếu trạng thái mới giống tab hiện tại, cập nhật order
+          setOrders((prevOrders) =>
+            prevOrders.map((order) =>
+              order.id === orderId
+                ? {
+                    ...order,
+                    status: newStatus,
+                    paymentStatus: newPaymentStatus,
+                    updateAt: new Date().toISOString(),
+                  }
+                : order
+            )
+          );
+        }
+      }
+    },
+    [currentTab]
+  );
+
+  const handleOrderReported = useCallback(
+    (data: ReportCreatedDto) => {
+      console.log("data", data);
+      if (currentTabRef.current === 0) {
+        setOrders((prevOrders) => {
+          const updatedOrders = prevOrders.map((order) =>
+            order.id === data.orderId
+              ? {
+                  ...order,
+                  status: OrderStatus.Reported,
+                  paymentStatus: PaymentStatus.Failed,
+                  report: {
+                    id: data.id,
+                    title: data.title,
+                    description: data.description,
+                    isResolved: false,
+                    createdAt: data.createdAt,
+                    orderId: data.orderId,
+                    createdById: data.createdById,
+                    targetId: data.targetId,
+                    reportTarget: data.reportTarget,
+                  },
+                }
+              : order
+          );
+
+          const reportedIndex = updatedOrders.findIndex(
+            (order) => order.id === data.orderId
+          );
+          if (reportedIndex > 0) {
+            const [reportedOrder] = updatedOrders.splice(reportedIndex, 1);
+            return [reportedOrder, ...updatedOrders];
+          }
+          return updatedOrders;
+        });
+      } else if (
+        orderStatusTabs[currentTabRef.current] !== OrderStatus.Reported
+      ) {
+        setOrders((prevOrders) =>
+          prevOrders.filter((order) => order.id !== data.orderId)
+        );
+      } else if (
+        orderStatusTabs[currentTabRef.current] === OrderStatus.Reported
+      ) {
+        fetchOrders();
+      }
+    },
+    [fetchOrders]
+  );
+
+  const handleReportResolved = useCallback((data: ReportResolvedDto) => {
+    console.log("Report resolved data:", data);
+
+    setOrders((prevOrders) => {
+      // Find if the reported order exists in current state
+      const orderIndex = prevOrders.findIndex(
+        (order) => order.id === data.orderId && order.report?.id === data.id
+      );
+
+      if (orderIndex >= 0) {
+        // If order with report is found, update its isResolved status
+        const updatedOrders = [...prevOrders];
+        updatedOrders[orderIndex] = {
+          ...updatedOrders[orderIndex],
+          report: {
+            ...updatedOrders[orderIndex].report!,
+            isResolved: true,
+          },
+        };
+        return updatedOrders;
+      }
+
+      return prevOrders;
+    });
+  }, []);
+
   const handleOrderStatusChanged = useCallback(
     (data: OrderStatusChangedData) => {
+      console.log("data", data);
       if (currentTabRef.current === 0) {
         setOrders((prevOrders) =>
           prevOrders.map((order) =>
@@ -150,6 +280,7 @@ const Orders = () => {
                   ...order,
                   status: data.orderStatus as OrderStatus,
                   paymentStatus: data.paymentStatus as PaymentStatus,
+                  updateAt: data.updatedAt,
                 }
               : order
           )
@@ -167,11 +298,59 @@ const Orders = () => {
     [fetchOrders]
   );
 
+  const handleReceiveOrderNotification = useCallback(
+    (data: unknown) => {
+      const currentTabStatus = orderStatusTabs[currentTabRef.current];
+
+      if (currentTabStatus === OrderStatus.Assigned) {
+        // In Assigned tab, just refresh the list
+        fetchOrders();
+      } else if (currentTabStatus === OrderStatus.None) {
+        const notificationData = data as Record<string, unknown>;
+        const orderId = notificationData.orderId as string | undefined;
+
+        if (orderId) {
+          setOrders((prevOrders) => {
+            const existingOrderIndex = prevOrders.findIndex(
+              (o) => o.id === orderId
+            );
+
+            if (existingOrderIndex >= 0) {
+              const updatedOrder = {
+                ...prevOrders[existingOrderIndex],
+                status: OrderStatus.Assigned,
+              };
+              return [
+                updatedOrder,
+                ...prevOrders.slice(0, existingOrderIndex),
+                ...prevOrders.slice(existingOrderIndex + 1),
+              ];
+            } else {
+              fetchOrders();
+              return prevOrders;
+            }
+          });
+        } else {
+          fetchOrders();
+        }
+      }
+    },
+    [fetchOrders]
+  );
+
   const eventHandlers = useMemo(
     () => ({
       [HubEventType.OrderStatusChanged]: handleOrderStatusChanged,
+      [HubEventType.OrderReported]: handleOrderReported,
+      [HubEventType.ReportResolved]: handleReportResolved,
+      [HubEventType.ReceiveOrderNotification]: handleReceiveOrderNotification,
     }),
-    [handleOrderStatusChanged]
+    [
+      handleOrderStatusChanged,
+      handleOrderReported,
+      handleReportResolved,
+      handleReceiveOrderNotification,
+    ]
   );
   useEventHub(eventHandlers as Partial<Record<HubEventType, HubEventHandler>>);
 
@@ -239,10 +418,13 @@ const Orders = () => {
             >
               <StyledTab label="Tất cả" />
               <StyledTab label="Chờ xác nhận" />
-              <StyledTab label="Đang xử lý" />
+              <StyledTab label="Đã xác nhận" />
+              <StyledTab label="Đang lấy hàng" />
               <StyledTab label="Đang giao" />
+              <StyledTab label="Chờ nhận" />
               <StyledTab label="Đã giao" />
               <StyledTab label="Đã hủy" />
+              <StyledTab label="Bị tố cáo" /> {/* Thêm label cho tab mới */}
             </StyledTabs>
           </Box>
         </Box>
@@ -364,6 +546,7 @@ const Orders = () => {
                   order={order}
                   onUpdate={() => setPage(1)}
                   onAddressChange={handleOrderAddressChange}
+                  onStatusChange={handleOrderStatusChange} // Truyền callback mới
                   isStore={true}
                 />
               ))}

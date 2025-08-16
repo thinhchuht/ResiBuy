@@ -178,7 +178,16 @@ const TopSaleProducts: React.FC<TopSaleProductsProps> = ({
       >
         🏆 Top 10 sản phẩm bán chạy
       </Typography>
-      <Box display="flex" flexWrap="wrap" gap={2} justifyContent="flex-start">
+
+      {/* Sử dụng flexbox để hiển thị 4 sản phẩm mỗi dòng */}
+      <Box
+        sx={{
+          display: "flex",
+          flexWrap: "wrap",
+          gap: 2,
+          justifyContent: "flex-start",
+        }}
+      >
         {products.map((item, idx) => {
           const { product } = item;
 
@@ -186,8 +195,20 @@ const TopSaleProducts: React.FC<TopSaleProductsProps> = ({
             <Card
               key={product.id}
               sx={{
-                width: 280,
+                width: "calc(25% - 12px)", // 4 sản phẩm mỗi dòng với gap
+                minWidth: 250, // Đảm bảo có độ rộng tối thiểu
                 position: "relative",
+                display: "flex",
+                flexDirection: "column",
+                "@media (max-width: 1200px)": {
+                  width: "calc(33.333% - 11px)", // 3 sản phẩm/dòng trên tablet
+                },
+                "@media (max-width: 900px)": {
+                  width: "calc(50% - 8px)", // 2 sản phẩm/dòng trên mobile
+                },
+                "@media (max-width: 600px)": {
+                  width: "100%", // 1 sản phẩm/dòng trên mobile nhỏ
+                },
                 "&:hover": {
                   transform: "translateY(-2px)",
                   transition: "transform 0.2s ease-in-out",
@@ -227,7 +248,7 @@ const TopSaleProducts: React.FC<TopSaleProductsProps> = ({
                 sx={{ objectFit: "cover" }}
               />
 
-              <CardContent>
+              <CardContent sx={{ flexGrow: 1 }}>
                 <Typography
                   variant="h6"
                   sx={{

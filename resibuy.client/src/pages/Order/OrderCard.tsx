@@ -119,7 +119,12 @@ interface OrderCardProps {
   ) => void;
   onCancel?: (orderId: string) => void;
   isStore?: boolean; // Prop mới để xác định có phải store không
-  onCloseModal?: () => void; 
+  onCloseModal?: () => void;
+  onStatusChange?: (
+    orderId: string,
+    newStatus: OrderStatus,
+    newPaymentStatus: PaymentStatus
+  ) => void; // Thêm callback mới
 }
 
 const OrderCard = ({
@@ -129,6 +134,7 @@ const OrderCard = ({
   onCancel,
   isStore = false, // Mặc định là false
   onCloseModal,
+  onStatusChange, // Thêm prop mới
 }: OrderCardProps) => {
   const navigate = useNavigate();
   const { user } = useAuth();
@@ -150,13 +156,25 @@ const OrderCard = ({
   const [reportOtherReason, setReportOtherReason] = useState("");
   const [reportLoading, setReportLoading] = useState(false);
   const [confirmOrderLoading, setConfirmOrderLoading] = useState(false);
-  const reportReasons = [
-    "Hàng không đúng mô tả",
-    "Đơn hàng bị trễ",
-    "Thái độ shipper không tốt",
-    "Sản phẩm bị hỏng",
-    "Khác",
-  ];
+
+  // Lý do báo cáo khác nhau cho store và customer
+  const reportReasons = isStore
+    ? [
+        "Khách hàng cung cấp thông tin sai lệch",
+        "Khách hàng có thái độ không tốt",
+        "Khách hàng yêu cầu không hợp lý",
+        "Khách hàng không thanh toán",
+        "Khách hàng hủy đơn liên tục",
+        "Khác",
+      ]
+    : [
+        "Hàng không đúng mô tả",
+        "Đơn hàng bị trễ",
+        "Thái độ shipper không tốt",
+        "Sản phẩm bị hỏng",
+        "Khác",
+      ];
+
   const [roomPage, setRoomPage] = useState(1);
   const [roomHasMore, setRoomHasMore] = useState(true);
   const [roomLoadingMore, setRoomLoadingMore] = useState(false);
@@ -165,7 +183,12 @@ const OrderCard = ({
   const [cancelOtherReason, setCancelOtherReason] = useState("");
   const [cancelLoading, setCancelLoading] = useState(false);
   const cancelReasons = isStore
-    ? ["Không đủ hàng", "Cửa hàng quá nhiều đơn", "Lý do khác"]
+    ? [
+        "Không đủ hàng",
+        "Cửa hàng quá nhiều đơn",
+        "Sản phẩm hết hạn",
+        "Lý do khác",
+      ]
     : [
         "Đổi ý",
         "Tìm được giá tốt hơn",
@@ -174,7 +197,7 @@ const OrderCard = ({
       ];
   const [reportTargetType, setReportTargetType] = useState<
     "store" | "user" | "shipper"
-  >("store");
+  >(isStore ? "user" : "store"); // Mặc định store báo cáo user, user báo cáo store
   const [reviewModalOpen, setReviewModalOpen] = useState(false);
   const [selectedProductForReview, setSelectedProductForReview] =
     useState<OrderItemQueryResult | null>(null);
@@ -287,14 +310,27 @@ const OrderCard = ({
 
   const handleCancelOrder = async (reason: string) => {
     if (user) {
-      await orderApi.updateOrderSatus(
-        user?.id,
-        order.id,
-        OrderStatus.Cancelled,
-        reason
-      );
-      if (onCancel) onCancel(order.id);
-      if (onUpdate) onUpdate();
+      try {
+        await orderApi.updateOrderSatus(
+          user?.id,
+          order.id,
+          OrderStatus.Cancelled,
+          reason
+        );
+
+        // Gọi callback để cập nhật trạng thái trong component cha
+        if (onStatusChange) {
+          onStatusChange(order.id, OrderStatus.Cancelled, PaymentStatus.Failed);
+        }
+
+        if (onCancel) onCancel(order.id);
+        if (onUpdate) onUpdate();
+
+        toast.success("Đã hủy đơn hàng thành công!");
+      } catch (error) {
+        console.error(error);
+        toast.error("Không thể hủy đơn hàng!");
+      }
     }
   };
 
@@ -310,6 +346,12 @@ const OrderCard = ({
         OrderStatus.Processing,
         ""
       );
+
+      // Gọi callback để cập nhật trạng thái trong component cha
+      if (onStatusChange) {
+        onStatusChange(order.id, OrderStatus.Processing, order.paymentStatus);
+      }
+
       toast.success("Đã xác nhận đơn hàng thành công!");
       if (onUpdate) onUpdate();
     } catch (error) {
@@ -356,7 +398,7 @@ const OrderCard = ({
       try {
         const rooms = await roomApi.searchInBuilding({
           buildingId,
-          isActive : true,
+          isActive: true,
           pageNumber: 1,
           pageSize: 6,
           keyword: "",
@@ -383,7 +425,7 @@ const OrderCard = ({
       try {
         const rooms = await roomApi.searchInBuilding({
           buildingId: selectedBuilding,
-          isActive : true,
+          isActive: true,
           pageNumber: 1,
           pageSize: 6,
           keyword: text,
@@ -415,7 +457,7 @@ const OrderCard = ({
         const nextPage = roomPage + 1;
         const rooms = await roomApi.searchInBuilding({
           buildingId: selectedBuilding,
-          isActive : true,
+          isActive: true,
           pageNumber: nextPage,
           pageSize: 6,
           keyword: "",
@@ -437,7 +479,7 @@ const OrderCard = ({
       return;
     }
     if (!user?.id) return;
-    
+
     try {
       const result = await orderApi.updateOrder(
         user?.id,
@@ -445,16 +487,18 @@ const OrderCard = ({
         selectedRoom.id ?? "",
         noteValue
       );
-      
+
       if (result) {
         order.shippingFee = result.shippingFee;
         order.totalPrice = result.totalPrice;
       }
-      
+
       setOpenAddressModal(false);
       if (onAddressChange) {
         const areaObj = areasData.find((a) => a.id === selectedArea);
-        const buildingObj = buildingsData.find((b) => b.id === selectedBuilding);
+        const buildingObj = buildingsData.find(
+          (b) => b.id === selectedBuilding
+        );
         onAddressChange(
           order.id,
           areaObj?.name ?? "",
@@ -464,8 +508,12 @@ const OrderCard = ({
         );
       }
       if (onUpdate) onUpdate();
-      
-      toast.success(`Cập nhật địa chỉ thành công! Phí vận chuyển được đã đổi thành ${formatPrice(result.shippingFee)}`);
+
+      toast.success(
+        `Cập nhật địa chỉ thành công! Phí vận chuyển được đã đổi thành ${formatPrice(
+          result.shippingFee
+        )}`
+      );
     } catch (error) {
       console.error(error);
     }
@@ -501,8 +549,12 @@ const OrderCard = ({
     setReportTitle("");
     setReportReason("");
     setReportOtherReason("");
+    // Set mặc định đối tượng báo cáo dựa trên loại người dùng
+    setReportTargetType(isStore ? "user" : "store");
   };
+
   const handleCloseReport = () => setReportOpen(false);
+
   const handleSubmitReport = async () => {
     setReportLoading(true);
     let targetId = "";
@@ -591,14 +643,13 @@ const OrderCard = ({
             })} - ${new Date(order.updateAt).toLocaleDateString("vi-VN")}`}
           </Typography>
           {order.shipper && order.shipper.phoneNumber && (
-
             <Typography
               variant="subtitle2"
               sx={{ color: "#1976d2", fontWeight: 600, mt: 0.5 }}
             >
-              Người giao hàng: {order.shipper.fullName} - SĐT: {order.shipper.phoneNumber}
+              Người giao hàng: {order.shipper.fullName} - SĐT:{" "}
+              {order.shipper.phoneNumber}
             </Typography>
-            
           )}
           {order.status === OrderStatus.Cancelled && order.cancelReason && (
             <Typography
@@ -770,21 +821,29 @@ const OrderCard = ({
                   </Typography>
                   <Box sx={{ mb: 0.5 }}>
                     {item.addtionalData && item.addtionalData.length > 0 && (
-                      <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 0.5, mt: 0.5, mb: 1 }}>
+                      <Box
+                        sx={{
+                          display: "flex",
+                          flexWrap: "wrap",
+                          gap: 0.5,
+                          mt: 0.5,
+                          mb: 1,
+                        }}
+                      >
                         {item.addtionalData.map((data) => (
                           <Chip
                             key={data.id}
                             label={`${data.key}: ${data.value}`}
                             size="small"
                             sx={{
-                              fontSize: '0.7rem',
+                              fontSize: "0.7rem",
                               height: 22,
-                              '& .MuiChip-label': {
+                              "& .MuiChip-label": {
                                 px: 1,
                               },
-                              backgroundColor: 'rgba(25, 118, 210, 0.08)',
-                              color: 'primary.main',
-                              border: '1px solid rgba(25, 118, 210, 0.2)',
+                              backgroundColor: "rgba(25, 118, 210, 0.08)",
+                              color: "primary.main",
+                              border: "1px solid rgba(25, 118, 210, 0.2)",
                               borderRadius: 1,
                             }}
                           />
@@ -1351,28 +1410,52 @@ const OrderCard = ({
             Nếu bạn gặp vấn đề với đơn hàng, hãy gửi báo cáo để chúng tôi hỗ trợ
             nhanh nhất.
           </Typography>
-          <TextField
-            select
-            label="Đối tượng báo cáo"
-            value={reportTargetType}
-            onChange={(e) =>
-              setReportTargetType(
-                e.target.value as "store" | "user" | "shipper"
-              )
-            }
-            fullWidth
-            variant="outlined"
-            size="small"
-            sx={{ borderRadius: 2, background: "#fafafa" }}
-          >
-            <MenuItem value="store">Cửa hàng</MenuItem>
-            <MenuItem value="user" disabled={user?.id === order?.userId}>
-              Người dùng
-            </MenuItem>
-            <MenuItem value="shipper" disabled={!order.shipper?.id}>
-              Người giao
-            </MenuItem>
-          </TextField>
+
+          {/* Chỉ hiển thị dropdown đối tượng báo cáo cho customer, store chỉ báo cáo user */}
+          {!isStore && (
+            <TextField
+              select
+              label="Đối tượng báo cáo"
+              value={reportTargetType}
+              onChange={(e) =>
+                setReportTargetType(
+                  e.target.value as "store" | "user" | "shipper"
+                )
+              }
+              fullWidth
+              variant="outlined"
+              size="small"
+              sx={{ borderRadius: 2, background: "#fafafa" }}
+            >
+              <MenuItem value="store">Cửa hàng</MenuItem>
+              <MenuItem value="user" disabled={user?.id === order?.userId}>
+                Người dùng
+              </MenuItem>
+              <MenuItem value="shipper" disabled={!order.shipper?.id}>
+                Người giao
+              </MenuItem>
+            </TextField>
+          )}
+
+          {/* Hiển thị thông tin đối tượng báo cáo cho store */}
+          {isStore && (
+            <Box
+              sx={{
+                p: 2,
+                background: "#f0f7ff",
+                borderRadius: 2,
+                border: "1px solid #e3f2fd",
+              }}
+            >
+              <Typography
+                variant="body2"
+                sx={{ color: "#1976d2", fontWeight: 600 }}
+              >
+                Đối tượng báo cáo: Khách hàng ({order.user.fullName})
+              </Typography>
+            </Box>
+          )}
+
           <TextField
             label="Tiêu đề báo cáo"
             value={reportTitle}
