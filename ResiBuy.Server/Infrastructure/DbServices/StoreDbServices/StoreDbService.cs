@@ -223,7 +223,7 @@ namespace ResiBuy.Server.Infrastructure.DbServices.StoreDbServices
                 {
                     productQuantity += item.Quantity;
                 }
-                sales += order.TotalPrice;
+                sales += order.TotalPrice - (order.ShippingFee ?? 0m); ;
             }
             salesAnalysis.NumberOfProductsSold = productQuantity;
             salesAnalysis.SuccessedOrderQuantity = orderSuccess.Count();
@@ -307,7 +307,7 @@ namespace ResiBuy.Server.Infrastructure.DbServices.StoreDbServices
                 for (var date = startDate; date <= endDate; date = date.AddDays(1))
                 {
                     var orderInDay = orders.Where(o => o.UpdateAt.Date == date).ToList();
-                    decimal totalRevenue = orderInDay.Sum(o => o.TotalPrice - (decimal)o.ShippingFee);
+                    decimal totalRevenue = orderInDay.Sum(o => o.TotalPrice - o.ShippingFee ?? 0m);
                     result.Add(new Dictionary<string, decimal>
             {
                 { date.ToString("dd-MM"), totalRevenue }
@@ -336,7 +336,7 @@ namespace ResiBuy.Server.Infrastructure.DbServices.StoreDbServices
                             && o.UpdateAt < nextMonth)
                         .ToListAsync();
 
-                    decimal totalRevenue = ordersInMonth.Sum(o => o.TotalPrice - (decimal)o.ShippingFee);
+                    decimal totalRevenue = ordersInMonth.Sum(o => o.TotalPrice - o.ShippingFee ?? 0m);
 
                     result.Add(new Dictionary<string, decimal> { { currentMonth.ToString("MM-yyyy"), totalRevenue } });
 
@@ -348,12 +348,12 @@ namespace ResiBuy.Server.Infrastructure.DbServices.StoreDbServices
             return result;
         }
         public async Task<PagedResult<Store>> SearchStoresAsync(
-    string keyword,
-    bool? isOpen,
-    bool? isLocked,
-    bool? isPayFee,
-    int pageNumber = 1,
-    int pageSize = 5)
+            string keyword,
+            bool? isOpen,
+            bool? isLocked,
+            bool? isPayFee,
+            int pageNumber = 1,
+            int pageSize = 5)
         {
             try
             {
@@ -408,6 +408,5 @@ namespace ResiBuy.Server.Infrastructure.DbServices.StoreDbServices
                 throw new CustomException(ExceptionErrorCode.RepositoryError, ex.Message);
             }
         }
-
     }
 }

@@ -36,6 +36,7 @@ import VoucherPage from "./Voucher/VoucherPage";
 import CreateVoucher from "./Voucher/CreateVoucher";
 import UpdateVoucher from "./Voucher/UpdateVoucher";
 import ChartView from "./Analysis/ChartView";
+import ProductDetailPage from "./ProductPageDetail";
 
 // Interface cho route config
 interface RouteConfig {
@@ -317,7 +318,10 @@ const StorePage: React.FC = () => {
               <Route path="productPage" element={<ProductPage />} />
               <Route path="orders" element={<Orders />} />
               <Route path="product-create" element={<CreateProduct />} />
-              <Route path="product-update/:id" element={<UpdateProduct />} />
+              <Route
+                path="product-update/:productId"
+                element={<UpdateProduct />}
+              />
               <Route path="vouchers" element={<VoucherPage />} />
               <Route path="voucher-create" element={<CreateVoucher />} />
               <Route
@@ -325,6 +329,10 @@ const StorePage: React.FC = () => {
                 element={<UpdateVoucher />}
               />
               <Route path="chart-view" element={<ChartView />} />
+              <Route
+                path="product-detail/:productId"
+                element={<ProductDetailPage />}
+              />
 
               {/* 404 Route */}
               <Route
