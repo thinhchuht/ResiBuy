@@ -25,7 +25,7 @@ namespace ResiBuy.Server.Services.MyBackgroundService
                 try
                 {
                     _logger.LogInformation($"Running task at: {DateTime.Now}");
-                    await RunYourTask();
+                    await CheckOutShipper();
                 }
                 catch (Exception ex)
                 {
@@ -35,7 +35,7 @@ namespace ResiBuy.Server.Services.MyBackgroundService
             }
         }
 
-        private async Task RunYourTask()
+        private async Task CheckOutShipper()
         {
             using (var scope = _serviceProvider.CreateScope())
             {
@@ -50,10 +50,10 @@ namespace ResiBuy.Server.Services.MyBackgroundService
                     else
                     {
                         var loginTime = ConvertTimeToFloat(shipper.FirstTimeLogin.Value);
-                        if (loginTime < shipper.StartWorkTime)
+                        if (loginTime < shipper.StartWorkTime+0.25)
                         {
                             shipper.FirstTimeLogin = null;
-                            _context.TimeSheets.Add(new TimeSheet(shipper.Id, DateTime.Now, true));
+                            _context.TimeSheets.Add(new TimeSheet(shipper.Id, (DateTime)shipper.FirstTimeLogin, true));
                         }
                     }
                 }
