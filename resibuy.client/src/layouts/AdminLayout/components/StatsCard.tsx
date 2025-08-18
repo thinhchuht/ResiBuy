@@ -10,7 +10,8 @@ interface StatsCardProps {
   valueColor?: string;
   description?: React.ReactNode;
   onClick?: () => void;
-  isSelected?: boolean; // Thêm prop isSelected
+  isSelected?: boolean;
+  sx?: any; // 
 }
 
 export function StatsCard({
@@ -22,7 +23,8 @@ export function StatsCard({
   valueColor = "text.primary",
   description,
   onClick,
-  isSelected = false, // Mặc định false
+  isSelected = false,
+  sx, // Nhận sx prop
 }: StatsCardProps) {
   return (
     <Paper
@@ -33,12 +35,13 @@ export function StatsCard({
         borderRadius: 2,
         border: "1px solid",
         borderColor: "grey.100",
-        borderBottom: isSelected ? "3px solid #1976d2" : "1px solid grey.100", // Đổi màu viền dưới khi được chọn
+        borderBottom: isSelected ? "3px solid #1976d2" : "1px solid grey.100",
         transition: "box-shadow 0.3s, border-bottom 0.3s",
         cursor: onClick ? "pointer" : "default",
         "&:hover": {
           boxShadow: 3,
         },
+        ...sx, // Áp dụng sx prop
       }}
     >
       <Box sx={{ display: "flex", alignItems: "center" }}>

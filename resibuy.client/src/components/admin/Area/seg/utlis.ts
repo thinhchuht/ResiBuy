@@ -134,7 +134,9 @@ export function useAreasLogic() {
               prev ? { ...prev, isActive: response.data } : null
             );
           }
+       
           toast.success("Cập nhật trạng thái khu vực thành công!");
+          
         } else {
           throw new Error(
             response.message || "Lỗi khi cập nhật trạng thái khu vực"
