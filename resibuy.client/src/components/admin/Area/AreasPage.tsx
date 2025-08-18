@@ -1,10 +1,11 @@
 import { useState, useEffect } from "react";
 import { Box, Typography, IconButton, Link, Breadcrumbs } from "@mui/material";
-import { Edit, Visibility, Delete,ToggleOn, ToggleOff, LocationOn as AreaIcon, NavigateNext } from "@mui/icons-material";
+import {  Edit, Visibility, Delete, Lock, LockOpen, NavigateNext, LocationOn as AreaIcon } from "@mui/icons-material";
 import CustomTable from "../../CustomTable";
 import { AddAreaModal } from "./add-area-modal";
 import { useAreasLogic, calculateAreaStats } from "./seg/utlis";
 import { StatsCard } from "../../../layouts/AdminLayout/components/StatsCard";
+import { ConfirmModal } from "../../../components/ConfirmModal"; // Thêm import ConfirmModal
 import type { AreaDto } from "../../../types/dtoModels";
 import { Link as RouterLink } from "react-router-dom";
 
@@ -74,6 +75,32 @@ export default function AreasPage() {
     handleUpdateStatus,
   } = useAreasLogic();
 
+
+  const [confirmModal, setConfirmModal] = useState<{
+    open: boolean;
+    title: string;
+    message: string;
+    onConfirm: () => void;
+  }>({
+    open: false,
+    title: "",
+    message: "",
+    onConfirm: () => {},
+  });
+
+
+  const handleOpenConfirmModal = (areaId: string, isActive: boolean) => {
+    setConfirmModal({
+      open: true,
+      title: isActive ? "Khóa Khu vực" : "Mở Khóa Khu vực",
+      message: `Bạn có muốn ${isActive ? "khóa" : "mở khóa"} khu vực này?`,
+      onConfirm: () => {
+        handleUpdateStatus(areaId);
+        setConfirmModal((prev) => ({ ...prev, open: false }));
+      },
+    });
+  };
+
   const columns = [
     {
       key: "id" as keyof AreaDto,
@@ -113,21 +140,42 @@ export default function AreasPage() {
       label: "Hành Động",
       render: (area: AreaDto) => (
         <Box sx={{ display: "flex", alignItems: "center", gap: 0.5 }}>
-         
-            <IconButton
-  onClick={() => handleUpdateStatus(area.id!)}
-  title={area.isActive ? "Tắt Hoạt động" : "Bật Hoạt động"}
->
-  {area.isActive ? (
-    <ToggleOff sx={{ fontSize: 16, color: "warning.main" }} />
-  ) : (
-    <ToggleOn sx={{ fontSize: 16, color: "success.main" }} />
-  )}
-</IconButton>
-          <IconButton onClick={() => handleEditArea(area)} title="Sửa Khu vực">
+          <IconButton
+            onClick={() => handleOpenConfirmModal(area.id!, area.isActive)} // Gọi modal xác nhận
+            sx={{
+              color: area.isActive ? "error.main" : "success.main",
+              p: 0.5,
+              bgcolor: "background.paper",
+              borderRadius: 1,
+              "&:hover": {
+                color: area.isActive ? "error.dark" : "success.dark",
+                bgcolor: area.isActive ? "red[50]" : "green[50]",
+              },
+            }}
+            title={area.isActive ? "Khóa Khu vực" : "Mở Khóa Khu vực"}
+          >
+            {area.isActive ? (
+              <Lock sx={{ fontSize: 16, color: "error.main" }} />
+            ) : (
+              <LockOpen sx={{ fontSize: 16, color: "success.main" }} />
+            )}
+          </IconButton>
+          <IconButton
+            onClick={() => handleEditArea(area)}
+            sx={{
+              color: "success.main",
+              p: 0.5,
+              bgcolor: "background.paper",
+              borderRadius: 1,
+              "&:hover": {
+                color: "success.dark",
+                bgcolor: "green[50]",
+              },
+            }}
+            title="Sửa Khu vực"
+          >
             <Edit sx={{ fontSize: 16 }} />
           </IconButton>
-          
         </Box>
       ),
     },
@@ -142,6 +190,13 @@ export default function AreasPage() {
         bgcolor: (theme) => theme.palette.grey[50],
       }}
     >
+      <ConfirmModal
+        open={confirmModal.open}
+        title={confirmModal.title}
+        message={confirmModal.message}
+        onConfirm={confirmModal.onConfirm}
+        onClose={() => setConfirmModal({ open: false, title: "", message: "", onConfirm: () => {} })}
+      />
       <Box
         component="header"
         sx={{

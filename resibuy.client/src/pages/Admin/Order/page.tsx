@@ -20,7 +20,7 @@ import {
   CardContent,
   CircularProgress,
 } from "@mui/material";
-import { Visibility, Store, Person, LocalShipping, Clear, Close, ShoppingCart, Payment, LocalOffer } from "@mui/icons-material";
+import { Warning,Visibility, Store, Person, LocalShipping, Clear, Close, ShoppingCart, Payment, LocalOffer } from "@mui/icons-material";
 import { LocalizationProvider } from "@mui/x-date-pickers/LocalizationProvider";
 import { AdapterDateFns } from "@mui/x-date-pickers/AdapterDateFns";
 import { DatePicker } from "@mui/x-date-pickers/DatePicker";
@@ -29,7 +29,7 @@ import { vi } from "date-fns/locale";
 import CustomTable from "../../../components/CustomTable";
 import orderApi from "../../../api/order.api";
 import { OrderStatus, PaymentStatus } from "../../../types/models";
-
+import { StatsCard } from "../../../layouts/AdminLayout/components/StatsCard"; 
 export interface Order {
   id: string;
   totalPrice: number;
@@ -554,73 +554,117 @@ export default function OrderPage() {
             </Typography>
           </Box>
 
-          <Box sx={{ display: "flex", flexWrap: "wrap", gap: 3 }}>
-            {isLoadingStats
-              ? Array.from({ length: 4 }).map((_, index) => (
-                  <Card key={index} sx={{ flex: { xs: "1 1 100%", sm: "1 1 45%", md: "1 1 22%" }, minWidth: 200 }}>
-                    <CardContent sx={{ display: "flex", flexDirection: "column", alignItems: "center", py: 3 }}>
-                      <CircularProgress size={24} sx={{ mb: 1 }} />
-                      <Typography variant="body2" color="text.secondary">
-                        Đang tải...
-                      </Typography>
-                    </CardContent>
-                  </Card>
-                ))
-              : [
-                  { label: "Tổng đơn hàng", value: stats.total, color: "text.primary", icon: ShoppingCart },
-                  { label: "Chờ xác nhận", value: stats.pending, color: "warning.main", icon: Payment },
-                  { label: "Đang xử lý", value: stats.processing, color: "info.main", icon: LocalOffer },
-                  { label: "Đã giao", value: stats.delivered, color: "success.main", icon: Store },
-                ].map((stat, index) => {
-                  const IconComponent = stat.icon;
-                  return (
-                    <Card key={index} sx={{ flex: { xs: "1 1 100%", sm: "1 1 45%", md: "1 1 22%" }, minWidth: 200 }}>
-                      <CardContent>
-                        <Box sx={{ display: "flex", alignItems: "center", gap: 2, mb: 1 }}>
-                          <IconComponent sx={{ color: stat.color, fontSize: 24 }} />
-                          <Typography color="text.secondary" variant="body2">
-                            {stat.label}
-                          </Typography>
-                        </Box>
-                        <Typography variant="h4" fontWeight={600} color={stat.color}>
-                          {stat.value}
-                        </Typography>
-                      </CardContent>
-                    </Card>
-                  );
-                })}
-          </Box>
-
-          <Box sx={{ display: "flex", flexWrap: "wrap", gap: 2 }}>
-            {isLoadingStats
-              ? Array.from({ length: 3 }).map((_, index) => (
-                  <Card key={index} sx={{ flex: { xs: "1 1 100%", sm: "1 1 30%" }, minWidth: 200 }}>
-                    <CardContent sx={{ textAlign: "center", py: 3 }}>
-                      <CircularProgress size={32} sx={{ mb: 2 }} />
-                      <Typography variant="body2" color="text.secondary">
-                        Đang tải...
-                      </Typography>
-                    </CardContent>
-                  </Card>
-                ))
-              : [
-                  { label: "Đang giao", value: stats.shipped, color: "primary.main" },
-                  { label: "Đã hủy", value: stats.cancelled, color: "error.main" },
-                  { label: "Bị báo cáo", value: stats.reported, color: "warning.main" },
-                ].map((item, index) => (
-                  <Card key={index} sx={{ flex: { xs: "1 1 100%", sm: "1 1 30%" }, minWidth: 200 }}>
-                    <CardContent sx={{ textAlign: "center" }}>
-                      <Typography variant="h6" fontWeight={600} color={item.color}>
-                        {item.value}
-                      </Typography>
-                      <Typography variant="body2" color="text.secondary">
-                        {item.label}
-                      </Typography>
-                    </CardContent>
-                  </Card>
-                ))}
-          </Box>
-
+                 <Box sx={{ display: "grid", gridTemplateColumns: { xs: "1fr", sm: "1fr 1fr", md: "1fr 1fr 1fr 1fr" }, gap: 3 }}>
+          {isLoadingStats
+            ? Array.from({ length: 4 }).map((_, index) => (
+                <StatsCard
+                  key={index}
+                  title="Đang tải..."
+                  value=""
+                  icon={() => <CircularProgress size={24} />}
+                  iconColor="text.secondary"
+                  iconBgColor="grey.100"
+                  sx={{ flex: { xs: "1 1 100%", sm: "1 1 45%", md: "1 1 22%" }, minWidth: 200 }}
+                />
+              ))
+            : [
+                {
+                  title: "Tổng đơn hàng",
+                  value: stats.total,
+                  icon: ShoppingCart,
+                 iconColor: "#1976d2",     
+    iconBgColor: "#e3f2fd",   
+    valueColor: "#1976d2",
+                },
+                {
+                  title: "Chờ xác nhận",
+                  value: stats.pending,
+                  icon: Payment,
+                 iconColor: "#f57c00",   
+    iconBgColor: "#fff3e0",    
+    valueColor: "#f57c00",
+                },
+                {
+                  title: "Đang xử lý",
+                  value: stats.processing,
+                  icon: LocalOffer,
+                    iconColor: "#0288d1",      
+    iconBgColor: "#e1f5fe",   
+    valueColor: "#0288d1",
+                },
+                {
+                  title: "Đã giao",
+                  value: stats.delivered,
+                  icon: Store,
+                   iconColor: "#2e7d32",      // xanh lá
+    iconBgColor: "#e8f5e9",    // xanh lá nhạt
+    valueColor: "#2e7d32",
+  },
+              ].map((stat, index) => (
+                <StatsCard
+                  key={index}
+                  title={stat.title}
+                  value={stat.value}
+                  icon={stat.icon}
+                  iconColor={stat.iconColor}
+                  iconBgColor={stat.iconBgColor}
+                  valueColor={stat.valueColor}
+                  sx={{ flex: { xs: "1 1 100%", sm: "1 1 45%", md: "1 1 22%" }, minWidth: 200 }}
+                />
+              ))}
+        </Box>
+        <Box sx={{ display: "grid", gridTemplateColumns: { xs: "1fr", sm: "1fr 1fr 1fr" }, gap: 2 }}>
+          {isLoadingStats
+            ? Array.from({ length: 3 }).map((_, index) => (
+                <StatsCard
+                  key={index}
+                  title="Đang tải..."
+                  value=""
+                  icon={() => <CircularProgress size={24} />}
+                  iconColor="text.secondary"
+                  iconBgColor="grey.100"
+                  sx={{ flex: { xs: "1 1 100%", sm: "1 1 30%" }, minWidth: 200 }}
+                />
+              ))
+            :[
+  {
+    title: "Đang giao",
+    value: stats.shipped,
+    icon: LocalShipping,
+    iconColor: "#1976d2",    
+    iconBgColor: "#e3f2fd",    
+    valueColor: "#1976d2",
+  },
+  {
+    title: "Đã hủy",
+    value: stats.cancelled,
+    icon: Clear,
+    iconColor: "#d32f2f",     
+    iconBgColor: "#ffebee",    
+    valueColor: "#d32f2f",
+  },
+  {
+    title: "Bị báo cáo",
+    value: stats.reported,
+    icon: Warning,
+    iconColor: "#fbc02d",      
+    iconBgColor: "#fffde7",    
+    valueColor: "#fbc02d",
+  },
+]
+.map((stat, index) => (
+                <StatsCard
+                  key={index}
+                  title={stat.title}
+                  value={stat.value}
+                  icon={stat.icon}
+                  iconColor={stat.iconColor}
+                  iconBgColor={stat.iconBgColor}
+                  valueColor={stat.valueColor}
+                  sx={{ flex: { xs: "1 1 100%", sm: "1 1 30%" }, minWidth: 200 }}
+                />
+              ))}
+        </Box>
           <Paper sx={{ p: 2 }}>
             <Box sx={{ display: "flex", justifyContent: "space-between", alignItems: "center", mb: 2 }}>
               <Typography variant="h6">Bộ lọc</Typography>
