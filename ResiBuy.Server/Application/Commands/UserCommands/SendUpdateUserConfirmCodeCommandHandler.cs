@@ -4,22 +4,75 @@
     public record SendUpdateUserConfirmCodeCommand(UpdateUserDto UpdateUserDto, string Id) : IRequest<ResponseModel>;
     public class SendUpdateUserConfirmCodeCommandHandler(
         IUserDbService userDbService,
+        IImageDbService imageDbService,
         IMailBaseService mailBaseService,
         ICodeGeneratorSerivce codeGeneratorSerivce) : IRequestHandler<SendUpdateUserConfirmCodeCommand, ResponseModel>
     {
         public async Task<ResponseModel> Handle(SendUpdateUserConfirmCodeCommand command, CancellationToken cancellationToken)
         {
+            var updateUserDto = command.UpdateUserDto;
             var existingUser = await userDbService.GetUserById(command.Id) ?? throw new CustomException(ExceptionErrorCode.NotFound, "Không tìm thấy người dùng");
-            if (command.UpdateUserDto.Avatar == null && string.IsNullOrEmpty(command.UpdateUserDto.Email))
+
+            if (updateUserDto.Avatar == null && string.IsNullOrEmpty(updateUserDto.Email))
                 throw new CustomException(ExceptionErrorCode.ValidationFailed, "Không có thông tin nào mới để cập nhật");
-            if (string.IsNullOrEmpty(command.UpdateUserDto.Email)) throw new CustomException(ExceptionErrorCode.ValidationFailed, "Bạn cần cập nhật mail trước");
-            await userDbService.CheckUniqueField(null, command.UpdateUserDto.Email);
-            if (!Regex.IsMatch(command.UpdateUserDto.Email, Constants.EmailPattern)) throw new CustomException(ExceptionErrorCode.ValidationFailed, "Email không hợp lệ");
-            var code = codeGeneratorSerivce.GenerateCodeAndCache(command.UpdateUserDto);
-            //string htmlBody = $@"<p syle='font-size: 20px; padding:15px'>Mã xác nhận của bạn là:</p>
-            //                     <h2 style='color:#2c3e50; font-weight:bold;'>{code}</h2>";
-            //mailBaseService.SendEmailInAnotherThread(existingUser.Email, "Cập nhật thông tin", htmlBody);
-            return ResponseModel.SuccessResponse(code);
+            if (updateUserDto.Email != null)
+            {
+                await userDbService.CheckUniqueField(existingUser.Id, null, updateUserDto.Email);
+                if (!Regex.IsMatch(updateUserDto.Email, Constants.EmailPattern)) throw new CustomException(ExceptionErrorCode.ValidationFailed, "Email không hợp lệ");
+                existingUser.Email = updateUserDto.Email;
+                //await mailService.SendEmailAsync(updateUserDto.Email, "Thêm Mail vào tài khoản", "<a>Click vào link để hoàn tất thêm mail vào tài khoản Resibuy </a>", true);
+            }
+            var imgResult = new Image();
+            if (updateUserDto.Avatar != null)
+            {
+                var uploadResult = updateUserDto.Avatar;
+                imgResult = new Image
+                {
+                    Id = uploadResult.Id,
+                    Url = uploadResult.Url,
+                    ThumbUrl = uploadResult.ThumbUrl,
+                    Name = uploadResult.Name,
+                    UserId = existingUser.Id
+                };
+                var existingImg = await imageDbService.GetImageByIdAsync(imgResult.Id);
+                if (existingImg == null)
+                    await imageDbService.CreateAsync(imgResult);
+                else
+                {
+                    existingImg.UpdateImage(imgResult);
+                    await imageDbService.UpdateAsync(existingImg);
+                }
+            }
+
+            var updatedUser = await userDbService.UpdateAsync(existingUser);
+            if (updatedUser == null)
+                throw new CustomException(ExceptionErrorCode.UpdateFailed, "Cập nhật thông tin người dùng thất bại");
+
+            var userResult = new UserQueryResult(
+                updatedUser.Id,
+                updatedUser.IdentityNumber,
+                updatedUser.Email,
+                updatedUser.PhoneNumber,
+                updatedUser.DateOfBirth,
+                updatedUser.IsLocked,
+                updatedUser.Roles,
+                updatedUser.FullName,
+                updatedUser.CreatedAt,
+                updatedUser.UpdatedAt,
+                updatedUser.Cart.Id,
+                new AvatarQueryResult(updatedUser.Avatar.Id, updatedUser.Avatar.Name, updatedUser.Avatar.Url, updatedUser.Avatar.ThumbUrl),
+                updatedUser.UserRooms.Select(ur => new RoomQueryResult(
+                    ur.Room.Id,
+                    ur.Room.Name,
+                    ur.Room.Building.Name,
+                    ur.Room.Building.Area.Name, ur.Room.Building.Area.Id)),
+                    [],
+                    [],
+                    [],
+                updatedUser.ReportCount
+            );
+
+            return ResponseModel.SuccessResponse(userResult);
         }
     }
 }

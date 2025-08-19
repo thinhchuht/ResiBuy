@@ -22,11 +22,11 @@ public class CloudinaryService : ICloudinaryService
 
         if (file.Length > _maxFileSizeInBytes)
             throw new CustomException(ExceptionErrorCode.ValidationFailed,
-                $"File size exceeds the maximum limit of {_maxFileSizeInBytes / (1024 * 1024)}MB");
+                $"Ảnh chỉ được tối đa {_maxFileSizeInBytes / (1024 * 1024)}MB");
 
         if (!_allowedImageTypes.Contains(file.ContentType.ToLower()))
             throw new CustomException(ExceptionErrorCode.ValidationFailed,
-                $"Only image files ({string.Join(", ", _allowedImageTypes.Select(t => t.Split('/')[1].ToUpper()))}) are allowed");
+                $"Chỉ những ảnh ({string.Join(", ", _allowedImageTypes.Select(t => t.Split('/')[1].ToUpper()))}) được cho phép");
 
         using var stream = file.OpenReadStream();
 

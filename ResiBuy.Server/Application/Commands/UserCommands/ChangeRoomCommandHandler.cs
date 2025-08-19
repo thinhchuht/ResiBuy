@@ -57,7 +57,8 @@
                     user.UserRooms.Select(ur => new RoomQueryResult(ur.Room.Id, ur.Room.Name, ur.Room.Building.Name, ur.Room.Building.Area.Name, ur.Room.Building.Area.Id)),
                     [],
                     [],
-                    []);
+                    [],
+                    user.ReportCount);
                 return ResponseModel.SuccessResponse(userResult);
             }
             catch (Exception ex)

@@ -25,7 +25,7 @@ export function useAreasLogic() {
     setLoading(true);
     setError(null);
     try {
-      const areaList = await areaApi.getAll();
+      const areaList = await areaApi.getAll(false);
       setAreas(areaList || []);
     } catch (err: any) {
       const errorMessage = err.message || "Lỗi khi lấy danh sách khu vực";

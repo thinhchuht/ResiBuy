@@ -79,7 +79,7 @@ export function AddUserModal({ isOpen, onClose, onSubmit, editingUser }: AddUser
     if (roomModalOpen) {
       const fetchAreas = async () => {
         try {
-          const response = await areaApi.getAll();
+          const response = await areaApi.getAll(false);
           setAreas(response);
         } catch (error: any) {
           console.error("Error fetching areas:", error);

@@ -6,7 +6,6 @@ import { useAuth } from "../../contexts/AuthContext";
 import { useToastify } from "../../hooks/useToastify";
 import cloudinaryApi from "../../api/cloudinary.api";
 import type { Image } from "../../types/models";
-import ConfirmCodeModal from "../../components/ConfirmCodeModal";
 
 interface PersonalInfoSectionProps {
   isAdmin: boolean;
@@ -21,9 +20,7 @@ const PersonalInfoSection = ({ isAdmin, formatDate, maskMiddle }: PersonalInfoSe
   const [avatar, setAvatar] = useState<Image | null>(null);
   const [isUploading, setIsUploading] = useState(false);
   const toast = useToastify();
-  const [openConfirmModal, setOpenConfirmModal] = useState(false);
-  const [confirmCode, setConfirmCode] = useState("");
-  const [isSubmittingCode, setIsSubmittingCode] = useState(false);
+  const [isUpdating, setIsUpdating] = useState(false);
 
   const handleAvatarChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
     if (e.target.files && e.target.files[0]) {
@@ -64,35 +61,16 @@ const PersonalInfoSection = ({ isAdmin, formatDate, maskMiddle }: PersonalInfoSe
     };
 
     try {
+      setIsUpdating(true);
       const response = await userApi.sendUpdateConfirmCode(user.id, updatePayload);
       if (response.data) {
-        setOpenConfirmModal(true);
-        toast.success("Mã xác nhận sẽ được gửi về mail của bạn!");
-      }
-    } catch {
-      toast.error("Cập nhật thông tin thất bại!");
-    }
-  };
-
-  const handleConfirmCodeSubmit = async () => {
-    if (!user) return;
-    if (confirmCode.length !== 6) {
-      toast.error("Mã xác nhận phải gồm 6 ký tự!");
-      return;
-    }
-    setIsSubmittingCode(true);
-    try {
-      const response = await userApi.updateUser(user.id, confirmCode.toUpperCase());
-      if (response.data) {
         setUser(response.data);
-        toast.success("Cập nhật thông tin thành công!");
-        setOpenConfirmModal(false);
-        setConfirmCode("");
+        toast.success("Cập nhật ảnh đại diện thành công!");
       }
     } catch {
-      toast.error("Mã xác nhận không đúng hoặc đã hết hạn!");
+      toast.error("Cập nhật ảnh đại diện thất bại!");
     } finally {
-      setIsSubmittingCode(false);
+      setIsUpdating(false);
     }
   };
 
@@ -184,7 +162,8 @@ const PersonalInfoSection = ({ isAdmin, formatDate, maskMiddle }: PersonalInfoSe
                 <Button
                   onClick={handleSubmit}
                   variant="contained"
-                  disabled={isAdmin || !avatar}
+                  disabled={isAdmin || !avatar || isUpdating}
+                  startIcon={isUpdating ? <CircularProgress size={20} color="inherit" /> : null}
                   sx={{
                     mt: 2,
                     px: 5,
@@ -251,14 +230,6 @@ const PersonalInfoSection = ({ isAdmin, formatDate, maskMiddle }: PersonalInfoSe
             Định dạng: JPEG, PNG
           </Typography>
         </Box>
-        <ConfirmCodeModal
-          open={openConfirmModal}
-          onClose={() => setOpenConfirmModal(false)}
-          onSubmit={handleConfirmCodeSubmit}
-          isSubmitting={isSubmittingCode}
-          code={confirmCode}
-          setCode={setConfirmCode}
-        />
       </Box>
     </Box>
   );

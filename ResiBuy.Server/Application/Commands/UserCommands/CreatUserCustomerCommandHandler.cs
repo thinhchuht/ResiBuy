@@ -58,7 +58,8 @@
                         rooms.Select(r => new RoomQueryResult(r.Id, r.Name, r.Building.Name, r.Building.Area.Name, r.Building.Area.Id)),
                         [],
                         [],
-                        []
+                        [],
+                        user.ReportCount
                     );
                     //notificationService.SendNotification("UserCreated", userResult, Constants.AdminHubGroup);
                     return ResponseModel.SuccessResponse(userResult);
