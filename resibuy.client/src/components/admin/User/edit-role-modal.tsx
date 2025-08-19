@@ -119,7 +119,7 @@ export function EditRoleModal({ isOpen, onClose, onSubmit, userId }: EditRoleMod
       Promise.all([
         userApi.getById(userId),
         roomApi.getAll(1, 100, true, false),
-        areaApi.getAll(),
+        areaApi.getAll(false),
       ])
         .then(([userResponse, roomsResponse, areasResponse]) => {
           if (userResponse.code === 0) {

@@ -155,7 +155,6 @@ namespace ResiBuy.Server.Infrastructure.DbServices.ShipperDbServices
                     {
                         isInShift = nowHour >= shipper.StartWorkTime || nowHour <= shipper.EndWorkTime;
                     }
-                    await CheckInShipperAsync(shipperId, isOnline);
                     await UpdateShipperLocationAsync(shipperId, AreaId);
 
                     if (!isInShift)

@@ -48,7 +48,7 @@ export function AddShipperModal({
   useEffect(() => {
     const fetchAreas = async () => {
       try {
-        const response = await areaApi.getAll();
+        const response = await areaApi.getAll(false);
         console.log("Fetch areas response:", response);
         setAreas(response);
       } catch (error: any) {

@@ -20,17 +20,7 @@ import {
   CardContent,
   CircularProgress,
 } from "@mui/material";
-import {
-  Visibility,
-  Store,
-  Person,
-  LocalShipping,
-  Clear,
-  Close,
-  ShoppingCart,
-  Payment,
-  LocalOffer,
-} from "@mui/icons-material";
+import { Warning,Visibility, Store, Person, LocalShipping, Clear, Close, ShoppingCart, Payment, LocalOffer } from "@mui/icons-material";
 import { LocalizationProvider } from "@mui/x-date-pickers/LocalizationProvider";
 import { AdapterDateFns } from "@mui/x-date-pickers/AdapterDateFns";
 import { DatePicker } from "@mui/x-date-pickers/DatePicker";
@@ -39,7 +29,7 @@ import { vi } from "date-fns/locale";
 import CustomTable from "../../../components/CustomTable";
 import orderApi from "../../../api/order.api";
 import { OrderStatus, PaymentStatus } from "../../../types/models";
-
+import { StatsCard } from "../../../layouts/AdminLayout/components/StatsCard"; 
 export interface Order {
   id: string;
   totalPrice: number;
@@ -204,10 +194,7 @@ export default function OrderPage() {
     }
   };
 
-  const getPaymentStatusText = (
-    status: PaymentStatus,
-    paymentMethod: number
-  ) => {
+  const getPaymentStatusText = (status: PaymentStatus, paymentMethod: number) => {
     switch (status) {
       case PaymentStatus.Paid:
         return "Đã thanh toán";
@@ -268,6 +255,7 @@ export default function OrderPage() {
   const loadOrders = async () => {
     try {
       const params = {
+        keyword: filters.keyword || undefined,
         orderStatus: filters.orderStatus !== OrderStatusFilter.None ? filters.orderStatus.toString() : "None",
         paymentMethod: filters.paymentMethod !== PaymentMethodFilter.None ? filters.paymentMethod.toString() : "None",
         paymentStatus: filters.paymentStatus !== PaymentStatusFilter.None ? filters.paymentStatus.toString() : "None",
@@ -283,10 +271,11 @@ export default function OrderPage() {
         undefined,
         undefined,
         undefined,
-        params.pageNumber,
+        pageNumber,
         params.pageSize,
         params.startDate,
-        params.endDate
+        params.endDate,
+        params.keyword
       );
       setOrders(response.items || []);
       setTotalCount(response.totalCount || 0);
@@ -302,7 +291,7 @@ export default function OrderPage() {
         startDate: filters.startDate ? format(filters.startDate, "yyyy-MM-dd") : undefined,
         endDate: filters.endDate ? format(filters.endDate, "yyyy-MM-dd") : undefined,
       });
-      
+
       setStats(statsData);
     } catch (error) {
       console.error("Error loading stats:", error);
@@ -322,7 +311,7 @@ export default function OrderPage() {
   useEffect(() => {
     const timeoutId = setTimeout(() => {
       if (searchKeyword !== filters.keyword) {
-        setFilters(prev => ({ ...prev, keyword: searchKeyword }));
+        setFilters((prev) => ({ ...prev, keyword: searchKeyword }));
         setPageNumber(1);
       }
     }, 500);
@@ -358,7 +347,7 @@ export default function OrderPage() {
       const orderData = await orderApi.getById(order.id);
       setSelectedOrder(orderData);
     } catch (error) {
-      console.error('Error fetching order details:', error);
+      console.error("Error fetching order details:", error);
       setSelectedOrder(null);
     } finally {
       setIsLoadingOrder(false);
@@ -388,7 +377,7 @@ export default function OrderPage() {
       key: "id" as keyof Order,
       label: "Mã đơn hàng",
       render: (order: Order) => (
-        <Typography variant="body2" fontFamily="monospace" sx={{ fontSize: '0.875rem', fontWeight: 500 }}>
+        <Typography variant="body2" fontFamily="monospace" sx={{ fontSize: "0.875rem", fontWeight: 500 }}>
           {order.id}
         </Typography>
       ),
@@ -449,42 +438,26 @@ export default function OrderPage() {
       label: "Tổng tiền",
       render: (order: Order) => (
         <Typography variant="body2" fontWeight={600} color="primary.main">
-          {order.totalPrice?.toLocaleString('vi-VN')} VNĐ
+          {order.totalPrice?.toLocaleString("vi-VN")} VNĐ
         </Typography>
       ),
     },
     {
       key: "status" as keyof Order,
       label: "Trạng thái",
-      render: (order: Order) => (
-        <Chip
-          label={getStatusText(order.status)}
-          size="small"
-          color={getStatusColor(order.status)}
-          variant="outlined"
-        />
-      ),
+      render: (order: Order) => <Chip label={getStatusText(order.status)} size="small" color={getStatusColor(order.status)} variant="outlined" />,
     },
     {
       key: "paymentStatus" as keyof Order,
       label: "Thanh toán",
       render: (order: Order) => (
-        <Chip
-          label={getPaymentStatusText(order.paymentStatus, order.paymentMethod)}
-          size="small"
-          color={getPaymentStatusColor(order.paymentStatus)}
-          variant="outlined"
-        />
+        <Chip label={getPaymentStatusText(order.paymentStatus, order.paymentMethod)} size="small" color={getPaymentStatusColor(order.paymentStatus)} variant="outlined" />
       ),
     },
     {
       key: "createAt" as keyof Order,
       label: "Ngày tạo",
-      render: (order: Order) => (
-        <Typography variant="body2">
-          {order.createAt ? format(new Date(order.createAt), "dd/MM/yyyy HH:mm", { locale: vi }) : "Không rõ"}
-        </Typography>
-      ),
+      render: (order: Order) => <Typography variant="body2">{order.createAt ? format(new Date(order.createAt), "dd/MM/yyyy HH:mm", { locale: vi }) : "Không rõ"}</Typography>,
     },
     {
       key: "actions" as keyof Order,
@@ -492,11 +465,7 @@ export default function OrderPage() {
       render: (order: Order) => (
         <Box sx={{ display: "flex", gap: 0.5 }}>
           <Tooltip title="Xem chi tiết">
-            <IconButton
-              size="small"
-              onClick={() => handleViewOrder(order)}
-              color="primary"
-            >
+            <IconButton size="small" onClick={() => handleViewOrder(order)} color="primary">
               <Visibility />
             </IconButton>
           </Tooltip>
@@ -507,12 +476,12 @@ export default function OrderPage() {
 
   useEffect(() => {
     loadOrders();
-  // eslint-disable-next-line react-hooks/exhaustive-deps
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [pageNumber, filters]);
 
   useEffect(() => {
     loadStats();
-  // eslint-disable-next-line react-hooks/exhaustive-deps
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [filters.startDate, filters.endDate]);
 
   return (
@@ -524,8 +493,7 @@ export default function OrderPage() {
           height: "100%",
           bgcolor: (theme) => theme.palette.grey[50],
           overflow: "hidden",
-        }}
-      >
+        }}>
         <Box
           component="header"
           sx={{
@@ -537,15 +505,13 @@ export default function OrderPage() {
             borderColor: "divider",
             bgcolor: "background.paper",
             px: 2,
-          }}
-        >
+          }}>
           <Typography
             variant="h6"
             sx={(theme) => ({
               color: theme.palette.grey[700],
               fontWeight: theme.typography.fontWeightMedium,
-            })}
-          >
+            })}>
             Quản Lý Đơn Hàng
           </Typography>
         </Box>
@@ -558,8 +524,7 @@ export default function OrderPage() {
             display: "flex",
             flexDirection: "column",
             gap: 3,
-          }}
-        >
+          }}>
           <Box>
             <Typography variant="h4" color="text.secondary">
               Quản lý đơn hàng
@@ -569,113 +534,154 @@ export default function OrderPage() {
             </Typography>
           </Box>
 
-          {/* Statistics Cards */}
-          <Box sx={{ display: "flex", flexWrap: "wrap", gap: 3 }}>
-            {isLoadingStats ? (
-              // Loading skeleton for statistics cards
-              Array.from({ length: 4 }).map((_, index) => (
-                <Card key={index} sx={{ flex: { xs: "1 1 100%", sm: "1 1 45%", md: "1 1 22%" }, minWidth: 200 }}>
-                  <CardContent sx={{ display: "flex", flexDirection: "column", alignItems: "center", py: 3 }}>
-                    <CircularProgress size={24} sx={{ mb: 1 }} />
-                    <Typography variant="body2" color="text.secondary">
-                      Đang tải...
-                    </Typography>
-                  </CardContent>
-                </Card>
-              ))
-            ) : (
-              [
-                { label: "Tổng đơn hàng", value: stats.total, color: "text.primary", icon: ShoppingCart },
-                { label: "Chờ xác nhận", value: stats.pending, color: "warning.main", icon: Payment },
-                { label: "Đang xử lý", value: stats.processing, color: "info.main", icon: LocalOffer },
-                { label: "Đã giao", value: stats.delivered, color: "success.main", icon: Store },
-              ].map((stat, index) => {
-                const IconComponent = stat.icon;
-                return (
-                  <Card key={index} sx={{ flex: { xs: "1 1 100%", sm: "1 1 45%", md: "1 1 22%" }, minWidth: 200 }}>
-                    <CardContent>
-                      <Box sx={{ display: "flex", alignItems: "center", gap: 2, mb: 1 }}>
-                        <IconComponent sx={{ color: stat.color, fontSize: 24 }} />
-                        <Typography color="text.secondary" variant="body2">
-                          {stat.label}
-                        </Typography>
-                      </Box>
-                      <Typography variant="h4" fontWeight={600} color={stat.color}>
-                        {stat.value}
-                      </Typography>
-                    </CardContent>
-                  </Card>
-                );
-              })
-            )}
+          <Box sx={{ display: "flex", justifyContent: "space-between", alignItems: "center", mb: 2 }}>
+            <Typography variant="h6" color="text.primary" fontWeight={600}>
+              Thống kê đơn hàng
+            </Typography>
+            <Typography variant="body2" color="text.secondary" sx={{ display: "flex", alignItems: "center", gap: 1 }}>
+              <strong>Thời gian:</strong>
+              {filters.startDate && filters.endDate ? (
+                <>
+                  {format(filters.startDate, "dd/MM/yyyy", { locale: vi })} - {format(filters.endDate, "dd/MM/yyyy", { locale: vi })}
+                </>
+              ) : filters.startDate ? (
+                <>Từ {format(filters.startDate, "dd/MM/yyyy", { locale: vi })}</>
+              ) : filters.endDate ? (
+                <>Đến {format(filters.endDate, "dd/MM/yyyy", { locale: vi })}</>
+              ) : (
+                "Tất cả thời gian"
+              )}
+            </Typography>
           </Box>
 
-          {/* Additional Statistics */}
-          <Box sx={{ display: "flex", flexWrap: "wrap", gap: 2 }}>
-            {isLoadingStats ? (
-              Array.from({ length: 3 }).map((_, index) => (
-                <Card key={index} sx={{ flex: { xs: "1 1 100%", sm: "1 1 30%" }, minWidth: 200 }}>
-                  <CardContent sx={{ textAlign: "center", py: 3 }}>
-                    <CircularProgress size={32} sx={{ mb: 2 }} />
-                    <Typography variant="body2" color="text.secondary">
-                      Đang tải...
-                    </Typography>
-                  </CardContent>
-                </Card>
+                 <Box sx={{ display: "grid", gridTemplateColumns: { xs: "1fr", sm: "1fr 1fr", md: "1fr 1fr 1fr 1fr" }, gap: 3 }}>
+          {isLoadingStats
+            ? Array.from({ length: 4 }).map((_, index) => (
+                <StatsCard
+                  key={index}
+                  title="Đang tải..."
+                  value=""
+                  icon={() => <CircularProgress size={24} />}
+                  iconColor="text.secondary"
+                  iconBgColor="grey.100"
+                  sx={{ flex: { xs: "1 1 100%", sm: "1 1 45%", md: "1 1 22%" }, minWidth: 200 }}
+                />
               ))
-            ) : (
-              [
-                { label: "Đang giao", value: stats.shipped, color: "primary.main" },
-                { label: "Đã hủy", value: stats.cancelled, color: "error.main" },
-                { label: "Bị báo cáo", value: stats.reported, color: "warning.main" }
-              ].map((item, index) => (
-                <Card key={index} sx={{ flex: { xs: "1 1 100%", sm: "1 1 30%" }, minWidth: 200 }}>
-                  <CardContent sx={{ textAlign: "center" }}>
-                    <Typography variant="h6" fontWeight={600} color={item.color}>
-                      {item.value}
-                    </Typography>
-                    <Typography variant="body2" color="text.secondary">
-                      {item.label}
-                    </Typography>
-                  </CardContent>
-                </Card>
+            : [
+                {
+                  title: "Tổng đơn hàng",
+                  value: stats.total,
+                  icon: ShoppingCart,
+                 iconColor: "#1976d2",     
+    iconBgColor: "#e3f2fd",   
+    valueColor: "#1976d2",
+                },
+                {
+                  title: "Chờ xác nhận",
+                  value: stats.pending,
+                  icon: Payment,
+                 iconColor: "#f57c00",   
+    iconBgColor: "#fff3e0",    
+    valueColor: "#f57c00",
+                },
+                {
+                  title: "Đang xử lý",
+                  value: stats.processing,
+                  icon: LocalOffer,
+                    iconColor: "#0288d1",      
+    iconBgColor: "#e1f5fe",   
+    valueColor: "#0288d1",
+                },
+                {
+                  title: "Đã giao",
+                  value: stats.delivered,
+                  icon: Store,
+                   iconColor: "#2e7d32",      // xanh lá
+    iconBgColor: "#e8f5e9",    // xanh lá nhạt
+    valueColor: "#2e7d32",
+  },
+              ].map((stat, index) => (
+                <StatsCard
+                  key={index}
+                  title={stat.title}
+                  value={stat.value}
+                  icon={stat.icon}
+                  iconColor={stat.iconColor}
+                  iconBgColor={stat.iconBgColor}
+                  valueColor={stat.valueColor}
+                  sx={{ flex: { xs: "1 1 100%", sm: "1 1 45%", md: "1 1 22%" }, minWidth: 200 }}
+                />
+              ))}
+        </Box>
+        <Box sx={{ display: "grid", gridTemplateColumns: { xs: "1fr", sm: "1fr 1fr 1fr" }, gap: 2 }}>
+          {isLoadingStats
+            ? Array.from({ length: 3 }).map((_, index) => (
+                <StatsCard
+                  key={index}
+                  title="Đang tải..."
+                  value=""
+                  icon={() => <CircularProgress size={24} />}
+                  iconColor="text.secondary"
+                  iconBgColor="grey.100"
+                  sx={{ flex: { xs: "1 1 100%", sm: "1 1 30%" }, minWidth: 200 }}
+                />
               ))
-            )}
-          </Box>
-
-          {/* Filters */}
+            :[
+  {
+    title: "Đang giao",
+    value: stats.shipped,
+    icon: LocalShipping,
+    iconColor: "#1976d2",    
+    iconBgColor: "#e3f2fd",    
+    valueColor: "#1976d2",
+  },
+  {
+    title: "Đã hủy",
+    value: stats.cancelled,
+    icon: Clear,
+    iconColor: "#d32f2f",     
+    iconBgColor: "#ffebee",    
+    valueColor: "#d32f2f",
+  },
+  {
+    title: "Bị báo cáo",
+    value: stats.reported,
+    icon: Warning,
+    iconColor: "#fbc02d",      
+    iconBgColor: "#fffde7",    
+    valueColor: "#fbc02d",
+  },
+]
+.map((stat, index) => (
+                <StatsCard
+                  key={index}
+                  title={stat.title}
+                  value={stat.value}
+                  icon={stat.icon}
+                  iconColor={stat.iconColor}
+                  iconBgColor={stat.iconBgColor}
+                  valueColor={stat.valueColor}
+                  sx={{ flex: { xs: "1 1 100%", sm: "1 1 30%" }, minWidth: 200 }}
+                />
+              ))}
+        </Box>
           <Paper sx={{ p: 2 }}>
             <Box sx={{ display: "flex", justifyContent: "space-between", alignItems: "center", mb: 2 }}>
-              <Typography variant="h6">
-                Bộ lọc
-              </Typography>
-              <Button
-                variant="outlined"
-                size="small"
-                startIcon={<Clear />}
-                onClick={handleClearFilters}
-                sx={{ minWidth: "auto" }}
-              >
+              <Typography variant="h6">Bộ lọc</Typography>
+              <Button variant="outlined" size="small" startIcon={<Clear />} onClick={handleClearFilters} sx={{ minWidth: "auto" }}>
                 Xóa tất cả
               </Button>
             </Box>
             <Box sx={{ display: "flex", flexWrap: "wrap", gap: 2, alignItems: "center" }}>
               <Box sx={{ flex: { xs: "1 1 100%", sm: "1 1 45%", md: "1 1 30%" }, minWidth: 200 }}>
-                <TextField
-                  fullWidth
-                  label="Từ khóa tìm kiếm"
-                  value={searchKeyword}
-                  onChange={(e) => handleSearchChange(e.target.value)}
-                  size="small"
-                  placeholder="Nhập từ khóa tìm kiếm..."
-                />
+                <TextField fullWidth label="Tìm kiếm" value={searchKeyword} onChange={(e) => handleSearchChange(e.target.value)} size="small" placeholder="Mã đơn, tên hoặc SĐT" />
               </Box>
               <Box sx={{ flex: { xs: "1 1 100%", sm: "1 1 45%", md: "1 1 30%" }, minWidth: 200 }}>
                 <DatePicker
                   label="Từ ngày"
                   value={filters.startDate}
                   onChange={(date) => {
-                    setFilters(prev => ({ ...prev, startDate: date }));
+                    setFilters((prev) => ({ ...prev, startDate: date }));
                   }}
                   slotProps={{ textField: { size: "small", fullWidth: true } }}
                 />
@@ -685,7 +691,7 @@ export default function OrderPage() {
                   label="Đến ngày"
                   value={filters.endDate}
                   onChange={(date) => {
-                    setFilters(prev => ({ ...prev, endDate: date }));
+                    setFilters((prev) => ({ ...prev, endDate: date }));
                   }}
                   slotProps={{ textField: { size: "small", fullWidth: true } }}
                 />
@@ -696,10 +702,9 @@ export default function OrderPage() {
                   <Select
                     value={filters.orderStatus}
                     onChange={(e) => {
-                      setFilters(prev => ({ ...prev, orderStatus: e.target.value as OrderStatusFilter }));
+                      setFilters((prev) => ({ ...prev, orderStatus: e.target.value as OrderStatusFilter }));
                     }}
-                    label="Trạng thái đơn hàng"
-                  >
+                    label="Trạng thái đơn hàng">
                     {Object.entries(OrderStatusLabels).map(([key, label]) => (
                       <MenuItem key={key} value={key}>
                         {label}
@@ -714,10 +719,9 @@ export default function OrderPage() {
                   <Select
                     value={filters.paymentStatus}
                     onChange={(e) => {
-                      setFilters(prev => ({ ...prev, paymentStatus: e.target.value as PaymentStatusFilter }));
+                      setFilters((prev) => ({ ...prev, paymentStatus: e.target.value as PaymentStatusFilter }));
                     }}
-                    label="Trạng thái thanh toán"
-                  >
+                    label="Trạng thái thanh toán">
                     {Object.entries(PaymentStatusLabels).map(([key, label]) => (
                       <MenuItem key={key} value={key}>
                         {label}
@@ -732,10 +736,9 @@ export default function OrderPage() {
                   <Select
                     value={filters.paymentMethod}
                     onChange={(e) => {
-                      setFilters(prev => ({ ...prev, paymentMethod: e.target.value as PaymentMethodFilter }));
+                      setFilters((prev) => ({ ...prev, paymentMethod: e.target.value as PaymentMethodFilter }));
                     }}
-                    label="Phương thức thanh toán"
-                  >
+                    label="Phương thức thanh toán">
                     {Object.entries(PaymentMethodLabels).map(([key, label]) => (
                       <MenuItem key={key} value={key}>
                         {label}
@@ -761,7 +764,6 @@ export default function OrderPage() {
             itemsPerPage={pageSize}
           />
 
-          {/* Order Detail Modal */}
           <Dialog
             open={isDetailModalOpen}
             onClose={handleCloseDetailModal}
@@ -770,11 +772,10 @@ export default function OrderPage() {
             PaperProps={{
               sx: {
                 borderRadius: 2,
-                maxHeight: '90vh',
+                maxHeight: "90vh",
                 bgcolor: "background.paper",
-              }
-            }}
-          >
+              },
+            }}>
             <DialogTitle
               sx={{
                 display: "flex",
@@ -784,28 +785,22 @@ export default function OrderPage() {
                 bgcolor: "background.paper",
                 borderBottom: 1,
                 borderColor: "divider",
-              }}
-            >
-              <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+              }}>
+              <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
                 <ShoppingCart sx={{ fontSize: 24 }} />
                 <Typography variant="h6" fontWeight={600}>
                   Chi tiết đơn hàng
                 </Typography>
               </Box>
-              <IconButton
-                onClick={handleCloseDetailModal}
-                size="small"
-                sx={{ color: "text.secondary" }}
-              >
+              <IconButton onClick={handleCloseDetailModal} size="small" sx={{ color: "text.secondary" }}>
                 <Close />
               </IconButton>
             </DialogTitle>
             <DialogContent sx={{ p: 0 }}>
               {selectedOrder && (
                 <Box>
-                  {/* Order Details Section */}
                   <Box sx={{ p: 3, bgcolor: "background.paper" }}>
-                    <Typography variant="h6" gutterBottom sx={{ color: 'grey.900', fontWeight: 600, mb: 2 }}>
+                    <Typography variant="h6" gutterBottom sx={{ color: "grey.900", fontWeight: 600, mb: 2 }}>
                       Thông tin đơn hàng
                     </Typography>
                     {isLoadingOrder ? (
@@ -813,20 +808,23 @@ export default function OrderPage() {
                         <CircularProgress size={32} />
                       </Box>
                     ) : selectedOrder ? (
-                      <Card sx={{ boxShadow: '0 2px 8px rgba(0,0,0,0.1)' }}>
+                      <Card sx={{ boxShadow: "0 2px 8px rgba(0,0,0,0.1)" }}>
                         <CardContent>
-                          <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 3, mb: 3 }}>
+                          <Box sx={{ display: "flex", flexWrap: "wrap", gap: 3, mb: 3 }}>
                             <Box sx={{ flex: 1, minWidth: 200 }}>
                               <Typography variant="subtitle2" color="text.secondary" gutterBottom>
                                 Mã đơn hàng
                               </Typography>
-                              <Typography variant="body1" fontFamily="monospace" sx={{
-                                bgcolor: 'grey.100',
-                                p: 1,
-                                borderRadius: 1,
-                                border: '1px solid',
-                                borderColor: 'grey.200'
-                              }}>
+                              <Typography
+                                variant="body1"
+                                fontFamily="monospace"
+                                sx={{
+                                  bgcolor: "grey.100",
+                                  p: 1,
+                                  borderRadius: 1,
+                                  border: "1px solid",
+                                  borderColor: "grey.200",
+                                }}>
                                 {selectedOrder.id}
                               </Typography>
                             </Box>
@@ -835,7 +833,7 @@ export default function OrderPage() {
                                 Tổng tiền
                               </Typography>
                               <Typography variant="h6" color="primary.main" fontWeight={600}>
-                                {selectedOrder.totalPrice?.toLocaleString('vi-VN')} VNĐ
+                                {selectedOrder.totalPrice?.toLocaleString("vi-VN")} VNĐ
                               </Typography>
                             </Box>
                             <Box sx={{ flex: 1, minWidth: 200 }}>
@@ -843,11 +841,11 @@ export default function OrderPage() {
                                 Phí giao hàng
                               </Typography>
                               <Typography variant="body1" color="text.secondary">
-                                {selectedOrder.shippingFee?.toLocaleString('vi-VN')} VNĐ
+                                {selectedOrder.shippingFee?.toLocaleString("vi-VN")} VNĐ
                               </Typography>
                             </Box>
                           </Box>
-                          <Box sx={{ display: 'flex', gap: 2, mb: 3, flexWrap: 'wrap' }}>
+                          <Box sx={{ display: "flex", gap: 2, mb: 3, flexWrap: "wrap" }}>
                             <Chip
                               label={`Trạng thái: ${getStatusText(selectedOrder.status)}`}
                               color={getStatusColor(selectedOrder.status)}
@@ -861,51 +859,51 @@ export default function OrderPage() {
                               sx={{ fontWeight: 500 }}
                             />
                             <Chip
-                              label={`Ngày tạo: ${selectedOrder.createAt ? format(new Date(selectedOrder.createAt), "dd/MM/yyyy", { locale: vi }) : 'Không rõ'}`}
+                              label={`Ngày tạo: ${selectedOrder.createAt ? format(new Date(selectedOrder.createAt), "dd/MM/yyyy", { locale: vi }) : "Không rõ"}`}
                               color="default"
                               variant="outlined"
                               sx={{ fontWeight: 500 }}
                             />
                           </Box>
-                          <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 3 }}>
-                            <Box sx={{ flex: 1, minWidth: 250, p: 2, bgcolor: 'grey.100', borderRadius: 2 }}>
-                              <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 1 }}>
-                                <Person sx={{ color: 'primary.main', fontSize: 20 }} />
+                          <Box sx={{ display: "flex", flexWrap: "wrap", gap: 3 }}>
+                            <Box sx={{ flex: 1, minWidth: 250, p: 2, bgcolor: "grey.100", borderRadius: 2 }}>
+                              <Box sx={{ display: "flex", alignItems: "center", gap: 1, mb: 1 }}>
+                                <Person sx={{ color: "primary.main", fontSize: 20 }} />
                                 <Typography variant="subtitle1" fontWeight={600} color="primary.main">
                                   Khách hàng
                                 </Typography>
                               </Box>
                               <Typography variant="body1" fontWeight={500}>
-                                {selectedOrder.user?.fullName || 'Không có thông tin'}
+                                {selectedOrder.user?.fullName || "Không có thông tin"}
                               </Typography>
                               <Typography variant="body2" color="text.secondary">
-                                {selectedOrder.user?.phoneNumber || 'Không có số điện thoại'}
+                                {selectedOrder.user?.phoneNumber || "Không có số điện thoại"}
                               </Typography>
                               <Typography variant="body2" color="text.secondary">
-                                {selectedOrder.user?.email || 'Không có email'}
+                                {selectedOrder.user?.email || "Không có email"}
                               </Typography>
                             </Box>
-                            <Box sx={{ flex: 1, minWidth: 250, p: 2, bgcolor: 'grey.100', borderRadius: 2 }}>
-                              <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 1 }}>
-                                <Store sx={{ color: 'secondary.main', fontSize: 20 }} />
+                            <Box sx={{ flex: 1, minWidth: 250, p: 2, bgcolor: "grey.100", borderRadius: 2 }}>
+                              <Box sx={{ display: "flex", alignItems: "center", gap: 1, mb: 1 }}>
+                                <Store sx={{ color: "secondary.main", fontSize: 20 }} />
                                 <Typography variant="subtitle1" fontWeight={600} color="secondary.main">
                                   Cửa hàng
                                 </Typography>
                               </Box>
                               <Typography variant="body1" fontWeight={500}>
-                                {selectedOrder.store?.name || 'Không có thông tin'}
+                                {selectedOrder.store?.name || "Không có thông tin"}
                               </Typography>
                               <Typography variant="body2" color="text.secondary">
-                                {selectedOrder.store?.phoneNumber || 'Không có số điện thoại'}
+                                {selectedOrder.store?.phoneNumber || "Không có số điện thoại"}
                               </Typography>
                               <Typography variant="body2" color="text.secondary">
-                                {selectedOrder.store?.description || 'Không có mô tả'}
+                                {selectedOrder.store?.description || "Không có mô tả"}
                               </Typography>
                             </Box>
                             {selectedOrder.shipper?.id && (
-                              <Box sx={{ flex: 1, minWidth: 250, p: 2, bgcolor: 'grey.100', borderRadius: 2 }}>
-                                <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 1 }}>
-                                  <LocalShipping sx={{ color: 'warning.main', fontSize: 20 }} />
+                              <Box sx={{ flex: 1, minWidth: 250, p: 2, bgcolor: "grey.100", borderRadius: 2 }}>
+                                <Box sx={{ display: "flex", alignItems: "center", gap: 1, mb: 1 }}>
+                                  <LocalShipping sx={{ color: "warning.main", fontSize: 20 }} />
                                   <Typography variant="subtitle1" fontWeight={600} color="warning.main">
                                     Người giao hàng
                                   </Typography>
@@ -914,64 +912,71 @@ export default function OrderPage() {
                                   {selectedOrder.shipper.fullName}
                                 </Typography>
                                 <Typography variant="body2" color="text.secondary">
-                                  {selectedOrder.shipper.phoneNumber || 'Không có số điện thoại'}
+                                  {selectedOrder.shipper.phoneNumber || "Không có số điện thoại"}
                                 </Typography>
                               </Box>
                             )}
                           </Box>
                           {selectedOrder.orderItems && selectedOrder.orderItems.length > 0 && (
                             <Box sx={{ mt: 3 }}>
-                              <Typography variant="subtitle1" fontWeight={600} gutterBottom sx={{ color: 'grey.900', mb: 2 }}>
+                              <Typography variant="subtitle1" fontWeight={600} gutterBottom sx={{ color: "grey.900", mb: 2 }}>
                                 Sản phẩm trong đơn hàng ({selectedOrder.orderItems.length})
                               </Typography>
-                              <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
+                              <Box sx={{ display: "flex", flexDirection: "column", gap: 2 }}>
                                 {selectedOrder.orderItems.map((item, index) => (
-                                  <Card key={index} sx={{
-                                    border: '1px solid',
-                                    borderColor: 'grey.200',
-                                    boxShadow: '0 1px 3px rgba(0,0,0,0.1)',
-                                    '&:hover': {
-                                      boxShadow: '0 2px 8px rgba(0,0,0,0.15)'
-                                    }
-                                  }}>
+                                  <Card
+                                    key={index}
+                                    sx={{
+                                      border: "1px solid",
+                                      borderColor: "grey.200",
+                                      boxShadow: "0 1px 3px rgba(0,0,0,0.1)",
+                                      "&:hover": {
+                                        boxShadow: "0 2px 8px rgba(0,0,0,0.15)",
+                                      },
+                                    }}>
                                     <CardContent sx={{ p: 2 }}>
-                                      <Box sx={{ display: 'flex', gap: 2, alignItems: 'flex-start' }}>
+                                      <Box sx={{ display: "flex", gap: 2, alignItems: "flex-start" }}>
                                         {item.image && (
-                                          <Box sx={{
-                                            width: 80,
-                                            height: 80,
-                                            borderRadius: 1,
-                                            overflow: 'hidden',
-                                            border: '1px solid',
-                                            borderColor: 'grey.200',
-                                            flexShrink: 0
-                                          }}>
+                                          <Box
+                                            sx={{
+                                              width: 80,
+                                              height: 80,
+                                              borderRadius: 1,
+                                              overflow: "hidden",
+                                              border: "1px solid",
+                                              borderColor: "grey.200",
+                                              flexShrink: 0,
+                                            }}>
                                             <img
                                               src={item.image.thumbUrl || item.image.url}
                                               alt={item.productName}
                                               style={{
-                                                width: '100%',
-                                                height: '100%',
-                                                objectFit: 'cover'
+                                                width: "100%",
+                                                height: "100%",
+                                                objectFit: "cover",
                                               }}
                                               onError={(e) => {
-                                                e.currentTarget.src = '/placeholder-image.png';
+                                                e.currentTarget.src = "/placeholder-image.png";
                                               }}
                                             />
                                           </Box>
                                         )}
                                         <Box sx={{ flex: 1, minWidth: 0 }}>
-                                          <Typography variant="subtitle2" fontWeight={600} gutterBottom sx={{
-                                            color: 'grey.900',
-                                            overflow: 'hidden',
-                                            textOverflow: 'ellipsis',
-                                            display: '-webkit-box',
-                                            WebkitLineClamp: 2,
-                                            WebkitBoxOrient: 'vertical'
-                                          }}>
+                                          <Typography
+                                            variant="subtitle2"
+                                            fontWeight={600}
+                                            gutterBottom
+                                            sx={{
+                                              color: "grey.900",
+                                              overflow: "hidden",
+                                              textOverflow: "ellipsis",
+                                              display: "-webkit-box",
+                                              WebkitLineClamp: 2,
+                                              WebkitBoxOrient: "vertical",
+                                            }}>
                                             {item.productName}
                                           </Typography>
-                                          <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 2, mt: 1 }}>
+                                          <Box sx={{ display: "flex", flexWrap: "wrap", gap: 2, mt: 1 }}>
                                             <Box>
                                               <Typography variant="caption" color="text.secondary" display="block">
                                                 Số lượng
@@ -985,7 +990,7 @@ export default function OrderPage() {
                                                 Đơn giá
                                               </Typography>
                                               <Typography variant="body2" fontWeight={500} color="primary.main">
-                                                {item.price?.toLocaleString('vi-VN')} VNĐ
+                                                {item.price?.toLocaleString("vi-VN")} VNĐ
                                               </Typography>
                                             </Box>
                                             <Box>
@@ -993,7 +998,7 @@ export default function OrderPage() {
                                                 Thành tiền
                                               </Typography>
                                               <Typography variant="body2" fontWeight={600} color="error.main">
-                                                {(item.price * item.quantity)?.toLocaleString('vi-VN')} VNĐ
+                                                {(item.price * item.quantity)?.toLocaleString("vi-VN")} VNĐ
                                               </Typography>
                                             </Box>
                                           </Box>
@@ -1002,14 +1007,14 @@ export default function OrderPage() {
                                               <Typography variant="caption" color="text.secondary" display="block" gutterBottom>
                                                 Thông tin thêm:
                                               </Typography>
-                                              <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 0.5 }}>
+                                              <Box sx={{ display: "flex", flexWrap: "wrap", gap: 0.5 }}>
                                                 {item.addtionalData.map((data, dataIndex) => (
                                                   <Chip
                                                     key={dataIndex}
                                                     label={`${data.key}: ${data.value}`}
                                                     size="small"
                                                     variant="outlined"
-                                                    sx={{ fontSize: '0.75rem', height: 24 }}
+                                                    sx={{ fontSize: "0.75rem", height: 24 }}
                                                   />
                                                 ))}
                                               </Box>
@@ -1026,8 +1031,8 @@ export default function OrderPage() {
                         </CardContent>
                       </Card>
                     ) : (
-                      <Card sx={{ boxShadow: '0 2px 8px rgba(0,0,0,0.1)' }}>
-                        <CardContent sx={{ textAlign: 'center', py: 4 }}>
+                      <Card sx={{ boxShadow: "0 2px 8px rgba(0,0,0,0.1)" }}>
+                        <CardContent sx={{ textAlign: "center", py: 4 }}>
                           <Typography variant="body1" color="text.secondary">
                             Không thể tải thông tin đơn hàng
                           </Typography>
@@ -1039,11 +1044,7 @@ export default function OrderPage() {
               )}
             </DialogContent>
             <DialogActions>
-              <Button
-                onClick={handleCloseDetailModal}
-                color="inherit"
-                variant="outlined"
-              >
+              <Button onClick={handleCloseDetailModal} color="inherit" variant="outlined">
                 Đóng
               </Button>
             </DialogActions>

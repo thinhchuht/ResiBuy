@@ -185,14 +185,14 @@ const AttendancePage: React.FC = () => {
             <Chip
               icon={<ReportProblemIcon />}
               label={`Đi muộn: ${timesheetData.countLate}`}
-              color="error"
+              color="warning"
               variant="outlined"
               sx={{ fontWeight: 600 }}
             />
             <Chip
               icon={<CheckCircleIcon />}
-              label={`Đúng giờ: ${timesheetData.countOnTime}`}
-              color="success"
+              label={`Nghỉ: ${timesheetData.countOnTime}`}
+              color="error"
               variant="outlined"
               sx={{ fontWeight: 600 }}
             />
@@ -235,14 +235,14 @@ const AttendancePage: React.FC = () => {
                     {record.isLate ? (
                       <Chip
                         label="Đi muộn"
-                        color="error"
+                        color="warning"
                         size="small"
                         icon={<AccessTimeIcon />}
                       />
                     ) : (
                       <Chip
-                        label="Đúng giờ"
-                        color="success"
+                        label="Nghỉ"
+                        color="error"
                         size="small"
                         icon={<CheckCircleIcon />}
                       />

@@ -1,6 +1,4 @@
-﻿using ResiBuy.Server.Services.CloudinaryServices;
-
-namespace ResiBuy.Server.Controllers;
+﻿namespace ResiBuy.Server.Controllers;
 
 [ApiController]
 [Route("api/[controller]")]
@@ -16,15 +14,9 @@ public class CloudinaryController : ControllerBase
     [HttpPost("upload")]
     public async Task<IActionResult> UploadFile([FromForm] UploadRequest uploadRequest)
     {
-        try
-        {
-            var result = await _cloudinaryService.UploadFileAsync(uploadRequest.File, uploadRequest.Id);
-            return Ok(result);
-        }
-        catch (Exception ex)
-        {
-            return BadRequest(new { error = ex.Message });
-        }
+        var result = await _cloudinaryService.UploadFileAsync(uploadRequest.File, uploadRequest.Id);
+        return Ok(result);
+
     }
 
     [HttpPost("upload-batch")]

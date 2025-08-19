@@ -56,7 +56,6 @@ const Profile: React.FC = () => {
               <PasswordChangeSection
                 user={user}
                 isAdmin={isAdmin}
-                maskMiddle={maskMiddle}
               />
             )}
             {selected === 2 && <SecuritySection />}

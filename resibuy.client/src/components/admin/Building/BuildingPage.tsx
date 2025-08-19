@@ -1,10 +1,11 @@
 import { useState, useEffect, useCallback } from "react";
 import { Box, Typography, IconButton, Link, Breadcrumbs } from "@mui/material";
-import { Edit, Visibility, Apartment as BuildingIcon, NavigateNext,ToggleOff,ToggleOn } from "@mui/icons-material";
+import { Edit, Visibility, Apartment as BuildingIcon, NavigateNext, Lock, LockOpen } from "@mui/icons-material";
 import CustomTable from "../../CustomTable";
 import { AddBuildingModal } from "./add-building-modal";
 import { useBuildingsLogic, calculateBuildingStats } from "./seg/utlis";
 import { StatsCard } from "../../../layouts/AdminLayout/components/StatsCard";
+import { ConfirmModal } from "../../../components/ConfirmModal"; // Thêm import ConfirmModal
 import type { BuildingDto, AreaDto } from "../../../types/dtoModels";
 import { useParams, Link as RouterLink } from "react-router-dom";
 import areaApi from "../../../api/area.api";
@@ -80,8 +81,20 @@ export default function BuildingsPage() {
   const [area, setArea] = useState<AreaDto | null>(null);
   const [areaError, setAreaError] = useState<string | null>(null);
   const toast = useToastify();
+  
+  const [confirmModal, setConfirmModal] = useState<{
+    open: boolean;
+    title: string;
+    message: string;
+    onConfirm: () => void;
+  }>({
+    open: false,
+    title: "",
+    message: "",
+    onConfirm: () => {},
+  });
 
-  // Memoize fetchArea để tránh tạo hàm mới mỗi render
+ 
   const fetchArea = useCallback(async () => {
     if (!areaId) return;
     try {
@@ -101,6 +114,19 @@ export default function BuildingsPage() {
       fetchArea();
     }
   }, [areaId]);
+
+  
+  const handleOpenConfirmModal = (buildingId: string, isActive: boolean) => {
+    setConfirmModal({
+      open: true,
+      title: isActive ? "Khóa Tòa Nhà" : "Mở Khóa Tòa Nhà",
+      message: `Bạn có muốn ${isActive ? "khóa" : "mở khóa"} tòa nhà này?`,
+      onConfirm: () => {
+        handleUpdateStatus(buildingId);
+        setConfirmModal((prev) => ({ ...prev, open: false }));
+      },
+    });
+  };
 
   const columns = [
     {
@@ -151,19 +177,40 @@ export default function BuildingsPage() {
       label: "Hành Động",
       render: (building: BuildingDto) => (
         <Box sx={{ display: "flex", alignItems: "center", gap: 0.5 }}>
-         
-          <IconButton onClick={() => handleEditBuilding(building)} title="Sửa Tòa Nhà">
+          <IconButton
+            onClick={() => handleEditBuilding(building)}
+            sx={{
+              color: "success.main",
+              p: 0.5,
+              bgcolor: "background.paper",
+              borderRadius: 1,
+              "&:hover": {
+                color: "success.dark",
+                bgcolor: "green[50]",
+              },
+            }}
+            title="Sửa Tòa Nhà"
+          >
             <Edit sx={{ fontSize: 16 }} />
           </IconButton>
-          
-                      <IconButton
-            onClick={() => handleUpdateStatus(building.id!)}
-            title={building.isActive ? "Tắt Hoạt động" : "Bật Hoạt động"}
+          <IconButton
+            onClick={() => handleOpenConfirmModal(building.id!, building.isActive)}
+            sx={{
+              color: building.isActive ? "error.main" : "success.main",
+              p: 0.5,
+              bgcolor: "background.paper",
+              borderRadius: 1,
+              "&:hover": {
+                color: building.isActive ? "error.dark" : "success.dark",
+                bgcolor: building.isActive ? "red[50]" : "green[50]",
+              },
+            }}
+            title={building.isActive ? "Khóa Tòa Nhà" : "Mở Khóa Tòa Nhà"}
           >
             {building.isActive ? (
-              <ToggleOff sx={{ fontSize: 16, color: "warning.main" }} />
+              <Lock sx={{ fontSize: 16, color: "error.main" }} />
             ) : (
-              <ToggleOn sx={{ fontSize: 16, color: "success.main" }} />
+              <LockOpen sx={{ fontSize: 16, color: "success.main" }} />
             )}
           </IconButton>
         </Box>
@@ -180,6 +227,13 @@ export default function BuildingsPage() {
         bgcolor: (theme) => theme.palette.grey[50],
       }}
     >
+      <ConfirmModal
+        open={confirmModal.open}
+        title={confirmModal.title}
+        message={confirmModal.message}
+        onConfirm={confirmModal.onConfirm}
+        onClose={() => setConfirmModal({ open: false, title: "", message: "", onConfirm: () => {} })}
+      />
       <Box
         component="header"
         sx={{

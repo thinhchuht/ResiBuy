@@ -55,6 +55,8 @@ namespace ResiBuy.Server.Application.Commands.CheckoutComands
                             throw new CustomException(ExceptionErrorCode.ValidationFailed, "Voucher không hợp lệ hoặc không thuộc cửa hàng này");
                         if(voucher.Quantity <= 0) throw new CustomException(ExceptionErrorCode.ValidationFailed, "Voucher đã hết hàng");
                         await voucherDbService.CheckIsActiveVouchers([voucher.Id]);
+                        if (voucher.MinOrderPrice > order.TotalBeforeDiscount)
+                            throw new CustomException(ExceptionErrorCode.ValidationFailed, $"Đơn hàng của bạn chưa đủ điều kiện sử dụng voucher này, cần tối thiểu {voucher.MinOrderPrice}đ");
                         order.VoucherId = voucher.Id;
                         order.TotalPrice = CalculatePrice.GetFinalTotal(order.TotalBeforeDiscount, voucher) + order.ShippingFee;
                         order.DiscountAmount = CalculatePrice.GetDiscountAmount(order.TotalBeforeDiscount, voucher);

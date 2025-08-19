@@ -15,7 +15,7 @@ export function useStoresLogic() {
   const [editingStore, setEditingStore] = useState(null);
   const [selectedOrder, setSelectedOrder] = useState(null);
   const [pageNumber, setPageNumber] = useState(1);
-  const [pageSize] = useState(1);
+  const [pageSize] = useState(15);
   const [totalCount, setTotalCount] = useState(0);
   const [searchParams, setSearchParams] = useState<{
     keyWord?: string;
@@ -49,7 +49,7 @@ export function useStoresLogic() {
     }
   };
 
-  const getOrdersByStoreId = useCallback(async (storeId: string, pageNumber: number = 1, pageSize: number = 1) => {
+  const getOrdersByStoreId = useCallback(async (storeId: string, pageNumber: number = 1, pageSize: number = 15) => {
     try {
       const response = await orderApi.getAll(undefined, undefined, undefined, storeId, undefined, undefined, pageNumber, pageSize);
       console.log("getOrdersByStoreId response:", response);
@@ -60,7 +60,7 @@ export function useStoresLogic() {
     }
   }, [toast]);
 
-  const fetchStores = useCallback(async (page: number = 1, size: number = 1) => {
+  const fetchStores = useCallback(async (page: number = 1, size: number = 15) => {
     try {
       const response = await storeApi.getAll(page, size);
       if (response.code === 0) {
@@ -82,7 +82,7 @@ export function useStoresLogic() {
     isLocked?: boolean,
     isPayFee?: boolean,
     page: number = 1,
-    size: number = 1
+    size: number = 15
   ) => {
     try {
       const response = await storeApi.search(keyWord, isOnline, isLocked, isPayFee, page, size);
@@ -125,7 +125,7 @@ export function useStoresLogic() {
 
   const countProductsByStoreId = useCallback(async (storeId) => {
     try {
-      const response = await productApi.getAll({ storeId, pageNumber: 1, pageSize: 1 });
+      const response = await productApi.getAll({ storeId, pageNumber: 1, pageSize: 15 });
       console.log("countProductsByStoreId response:", response);
       return response.totalCount || 0;
     } catch (err) {
@@ -254,32 +254,40 @@ export function useStoresLogic() {
     }
   };
 
-  const handleToggleStoreStatus = async (storeId) => {
-    try {
-      const store = stores.find((s) => s.id === storeId);
-      if (!store) throw new Error("Cửa hàng không tồn tại");
-
-      const response = await storeApi.updateStatus(storeId, !store.isLocked);
-
-      if (response.code === 0) {
-        await fetchStores(pageNumber, pageSize);
-
-        if (selectedStore && selectedStore.id === storeId) {
-          const updatedStore = await storeApi.getById(storeId);
-          if (updatedStore.code === 0) {
-            setSelectedStore(updatedStore.data);
+  const handleToggleStoreStatus = (storeId, callback) => {
+  const store = stores.find((s) => s.id === storeId);
+  if (!store) {
+    toast.error("Cửa hàng không tồn tại");
+    return;
+  }
+  const newStatus = !store.isLocked;
+  callback({
+    open: true,
+    title: newStatus ? "Khóa cửa hàng" : "Mở khóa cửa hàng",
+    message: `Bạn có chắc chắn muốn ${newStatus ? "khóa" : "mở khóa"} cửa hàng ${store.name}?`,
+    onConfirm: async () => {
+      try {
+        const response = await storeApi.updateStatus(storeId, newStatus);
+        if (response.code === 0) {
+          await fetchStores(pageNumber, pageSize);
+          if (selectedStore && selectedStore.id === storeId) {
+            const updatedStore = await storeApi.getById(storeId);
+            if (updatedStore.code === 0) {
+              setSelectedStore(updatedStore.data);
+            }
           }
+          // Fetch lại thống kê
+          const updatedStats = await calculateStoreStats();
+          toast.info(`Cửa hàng đã được ${newStatus ? "khóa" : "mở khóa"}.`);
+        } else {
+          throw new Error(response.message || "Lỗi khi cập nhật trạng thái");
         }
-
-        const newStatus = !store.isLocked ? "khóa" : "mở khóa";
-        toast.info(`Cửa hàng đã được ${newStatus}.`);
-      } else {
-        throw new Error(response.message || "Lỗi khi cập nhật trạng thái");
+      } catch (err) {
+        toast.error(err.message || "Lỗi khi cập nhật trạng thái cửa hàng");
       }
-    } catch (err) {
-      toast.error(err.message || "Lỗi khi cập nhật trạng thái cửa hàng");
-    }
-  };
+    },
+  });
+};
 
   const handleExportStores = async () => {
     try {

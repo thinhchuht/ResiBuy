@@ -1,5 +1,5 @@
-﻿using ResiBuy.Server.Infrastructure.Model.DTOs.StatisticAdminDtos;
-using ResiBuy.Server.Infrastructure.Model.DTOs.OrderDtos;
+﻿using ResiBuy.Server.Infrastructure.Model.DTOs.OrderDtos;
+using ResiBuy.Server.Infrastructure.Model.DTOs.StatisticAdminDtos;
 using ResiBuy.Server.Services.MapBoxService;
 using ResiBuy.Server.Services.OpenRouteService;
 
@@ -16,84 +16,104 @@ public class OrderDbService : BaseDbService<Order>, IOrderDbService
         this._mapBoxService = mapBoxService;
         this._openRouteService = openRouteService;
     }
-    public async Task<PagedResult<Order>> GetAllAsync(OrderStatus orderStatus, PaymentMethod paymentMethod, PaymentStatus paymentStatus, Guid storeId, Guid shipperId, string userId = null, int pageNumber = 1, int pageSize = 10, DateTime? startDate = null, DateTime? endDate = null)
+    public async Task<PagedResult<Order>> GetAllAsync(
+        string keyword,
+        OrderStatus orderStatus,
+        PaymentMethod paymentMethod,
+        PaymentStatus paymentStatus,
+        Guid storeId,
+        Guid shipperId,
+        string userId = null,
+        int pageNumber = 1,
+        int pageSize = 10,
+        DateTime? startDate = null,
+        DateTime? endDate = null)
     {
+        if (pageNumber < 1 || pageSize < 1)
+            throw new ArgumentException("Số trang và số lượng phải lớn hơn 0");
+
         try
         {
-            if (pageNumber < 1 || pageSize < 1)
-                throw new ArgumentException("Số trang và số lượng phải lớn hơn 0");
-
             var query = _context.Orders.AsQueryable();
-
             if (!string.IsNullOrEmpty(userId))
-            {
                 query = query.Where(o => o.UserId == userId);
-            }
 
             if (storeId != Guid.Empty)
-            {
                 query = query.Where(o => o.StoreId == storeId);
-            }
 
             if (shipperId != Guid.Empty)
-            {
                 query = query.Where(o => o.ShipperId == shipperId);
-            }
-
-
-
 
             if (orderStatus != OrderStatus.None)
-            {
                 query = query.Where(o => o.Status == orderStatus);
-            }
 
             if (paymentMethod != PaymentMethod.None)
-            {
                 query = query.Where(o => o.PaymentMethod == paymentMethod);
-            }
 
             if (paymentStatus != PaymentStatus.None)
-            {
                 query = query.Where(o => o.PaymentStatus == paymentStatus);
-            }
 
             if (startDate.HasValue)
-            {
                 query = query.Where(o => o.UpdateAt >= startDate.Value);
-            }
+
             if (endDate.HasValue)
             {
                 var end = endDate.Value.Date.AddDays(1);
                 query = query.Where(o => o.UpdateAt < end);
             }
 
+            query = query
+                .Include(o => o.ShippingAddress)
+                    .ThenInclude(sa => sa.Building)
+                        .ThenInclude(b => b.Area)
+                .Include(o => o.Store)
+                .Include(o => o.Items)
+                    .ThenInclude(oi => oi.ProductDetail)
+                        .ThenInclude(pd => pd.Image)
+                .Include(o => o.Items)
+                    .ThenInclude(oi => oi.ProductDetail)
+                        .ThenInclude(pd => pd.Reviews)
+                .Include(o => o.Items)
+                    .ThenInclude(oi => oi.ProductDetail)
+                        .ThenInclude(pd => pd.Product)
+                .Include(o => o.Items)
+                    .ThenInclude(oi => oi.ProductDetail)
+                        .ThenInclude(pd => pd.AdditionalData)
+                .Include(o => o.Voucher)
+                .Include(o => o.Shipper)
+                    .ThenInclude(s => s.User)
+                .Include(o => o.User)
+                .Include(o => o.Report);
+
+            if (!string.IsNullOrEmpty(keyword))
+            {
+                var kw = keyword.Trim();
+                query = query.Where(o =>
+                    o.Id.ToString().Contains(kw) ||
+                    (o.Shipper != null && o.Shipper.User.FullName.Contains(kw)) ||
+                    (o.Shipper != null && o.Shipper.User.PhoneNumber.Contains(kw)) ||
+                    (o.User != null && o.User.FullName.Contains(kw)) ||
+                    (o.User != null && o.User.PhoneNumber.Contains(kw)) ||
+                    (o.Store != null && o.Store.Name.Contains(kw)) ||
+                    (o.Store != null && o.Store.PhoneNumber.Contains(kw))
+                );
+            }
+            query = query
+                .OrderBy(o => o.Status == OrderStatus.Reported && o.Report != null && !o.Report.IsResolved ? 0 : 1)
+                .ThenByDescending(o => o.UpdateAt);
             var totalCount = await query.CountAsync();
             var orders = await query
-                .OrderBy(o => !(o.Status == OrderStatus.Reported && o.Report != null && !o.Report.IsResolved))
-                .ThenByDescending(o => o.UpdateAt)
-                .Include(o => o.ShippingAddress).ThenInclude(sa => sa.Building).ThenInclude(b => b.Area)
-                .Include(o => o.Store)
-                .Include(o => o.Items).ThenInclude(oi => oi.ProductDetail).ThenInclude(pd => pd.Image)
-                .Include(o => o.Items).ThenInclude(oi => oi.ProductDetail).ThenInclude(pd => pd.Reviews)
-                .Include(o => o.Items).ThenInclude(oi => oi.ProductDetail).ThenInclude(pd => pd.Product)
-                .Include(o => o.Items).ThenInclude(oi => oi.ProductDetail).ThenInclude(pd => pd.AdditionalData)
-                .Include(o => o.Voucher)
-                .Include(o => o.Shipper).ThenInclude(s => s.User)
-                .Include(o => o.User)
-                .Include(o => o.Report)
                 .Skip((pageNumber - 1) * pageSize)
                 .Take(pageSize)
                 .ToListAsync();
-
             return new PagedResult<Order>(orders, totalCount, pageNumber, pageSize);
         }
         catch (Exception ex)
         {
             throw new CustomException(ExceptionErrorCode.RepositoryError, ex.ToString());
         }
-
     }
+
 
     public async Task<Order> GetById(Guid id)
     {
@@ -105,7 +125,7 @@ public class OrderDbService : BaseDbService<Order>, IOrderDbService
                 .Include(o => o.Items).ThenInclude(oi => oi.ProductDetail).ThenInclude(pd => pd.AdditionalData)
                 .Include(o => o.Voucher)
                 .Include(o => o.Shipper).ThenInclude(s => s.User)
-          
+
                 .Include(o => o.Report).FirstOrDefaultAsync(o => o.Id == id);
     }
 
@@ -247,7 +267,7 @@ public class OrderDbService : BaseDbService<Order>, IOrderDbService
             throw new CustomException(ExceptionErrorCode.RepositoryError, ex.Message);
         }
     }
-    public async Task< decimal> GetShippingFeeByShipperAsync(Guid shipperId, DateTime? startDate = null, DateTime? endDate = null)
+    public async Task<decimal> GetShippingFeeByShipperAsync(Guid shipperId, DateTime? startDate = null, DateTime? endDate = null)
     {
         try
         {
@@ -325,7 +345,7 @@ public class OrderDbService : BaseDbService<Order>, IOrderDbService
             throw new CustomException(ExceptionErrorCode.RepositoryError, ex.ToString());
         }
     }
-    public async Task<decimal> GetTotalOrderAmountByUserAndStoreAsync(string? userId, Guid ?storeId)
+    public async Task<decimal> GetTotalOrderAmountByUserAndStoreAsync(string? userId, Guid? storeId)
     {
         try
         {
@@ -382,7 +402,7 @@ public class OrderDbService : BaseDbService<Order>, IOrderDbService
 
         var prevOrders = await _context.Orders
             .Include(o => o.Items)
-            .Where(o => (o.Status == OrderStatus.Delivered || o.Status == OrderStatus.Reported) && o.CreateAt.Date >= prevStart.Date &&o.CreateAt.Date <= prevEnd.Date)
+            .Where(o => (o.Status == OrderStatus.Delivered || o.Status == OrderStatus.Reported) && o.CreateAt.Date >= prevStart.Date && o.CreateAt.Date <= prevEnd.Date)
             .ToListAsync();
         var currentTotals = new
         {
@@ -405,7 +425,7 @@ public class OrderDbService : BaseDbService<Order>, IOrderDbService
 
             var percentChange = ((current - previous) / previous) * 100;
             return percentChange == 0
-                ? "0%": (percentChange > 0 ? $"+{percentChange:F2}%" : $"{percentChange:F2}%");
+                ? "0%" : (percentChange > 0 ? $"+{percentChange:F2}%" : $"{percentChange:F2}%");
         }
 
         return new StatisticResponse
@@ -415,7 +435,10 @@ public class OrderDbService : BaseDbService<Order>, IOrderDbService
             Data = dailyStats,
             Comparison = new ComparisonDto
             {
-                ChangeOrderAmount = Diff(currentTotals.Amount, prevTotals.Amount),ChangeOrderCount = Diff(currentTotals.Count, prevTotals.Count), ChangeProductQuantity = Diff(currentTotals.Quantity, prevTotals.Quantity), ChangeUniqueBuyers = Diff(currentTotals.Buyers, prevTotals.Buyers)
+                ChangeOrderAmount = Diff(currentTotals.Amount, prevTotals.Amount),
+                ChangeOrderCount = Diff(currentTotals.Count, prevTotals.Count),
+                ChangeProductQuantity = Diff(currentTotals.Quantity, prevTotals.Quantity),
+                ChangeUniqueBuyers = Diff(currentTotals.Buyers, prevTotals.Buyers)
             }
         };
     }

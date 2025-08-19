@@ -5,8 +5,12 @@ const areaUrl = "/api/area";
 
 const areaApi = {
   // Lấy tất cả khu vực
-  getAll: async () => {
-    const response = await axiosClient.get(areaUrl);
+  getAll: async (getActive: boolean = true) => {
+    const response = await axiosClient.get(areaUrl, {
+      params: {
+        getActive,
+      },
+    });
     return response.data.data;
   },
 

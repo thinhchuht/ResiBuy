@@ -5,6 +5,7 @@ const voucherUrl = "/api/voucher";
 export interface GetAllVouchersParams {
   storeId?: string;
   isActive?: boolean | null;
+  isGettingNow?: boolean; 
   startDate?: Date;
   endDate?: Date;
   pageNumber?: number;

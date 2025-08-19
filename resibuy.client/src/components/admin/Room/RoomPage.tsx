@@ -12,30 +12,20 @@ import {
   Select,
   MenuItem,
 } from "@mui/material";
-import { Edit, Visibility, ToggleOn,ToggleOff, MeetingRoom as RoomIcon, NavigateNext } from "@mui/icons-material";
+import { Edit, Visibility, MeetingRoom as RoomIcon, NavigateNext, Lock, LockOpen } from "@mui/icons-material";
 import CustomTable from "../../CustomTable";
 import AddRoomModal from "./add-room-modal";
 import RoomDetailModal from "./room-detail-modal";
 import { useRoomsLogic, calculateRoomStats } from "./seg/utlis";
 import { StatsCard } from "../../../layouts/AdminLayout/components/StatsCard";
+import { ConfirmModal } from "../../../components/ConfirmModal";
 import type { RoomDto, BuildingDto, AreaDto, RoomFilter } from "../../../types/dtoModels";
 import { useParams, Link as RouterLink } from "react-router-dom";
 import buildingApi from "../../../api/building.api";
 import areaApi from "../../../api/area.api";
 import { useToastify } from "../../../hooks/useToastify";
 
-function RoomStatsCards({ buildingId }: { buildingId?: string }) {
-  const [stats, setStats] = useState({ totalRooms: 0, activeRooms: 0, inactiveRooms: 0 });
-  const toast = useToastify();
-
-  useEffect(() => {
-    calculateRoomStats(buildingId)
-      .then(setStats)
-      .catch((err) => {
-        toast.error(err.message || "Lỗi khi lấy thống kê phòng");
-      });
-  }, [buildingId]);
-
+function RoomStatsCards({ stats }: { stats: { totalRooms: number; activeRooms: number; inactiveRooms: number } }) {
   const cards = [
     {
       title: "Tổng Phòng",
@@ -118,7 +108,19 @@ export default function RoomsPage() {
   const [area, setArea] = useState<AreaDto | null>(null);
   const [searchKeyword, setSearchKeyword] = useState("");
   const [isActiveFilter, setIsActiveFilter] = useState<boolean | null>(null);
+  const [stats, setStats] = useState({ totalRooms: 0, activeRooms: 0, inactiveRooms: 0 }); // Di chuyển stats vào RoomsPage
   const toast = useToastify();
+  const [confirmModal, setConfirmModal] = useState<{
+    open: boolean;
+    title: string;
+    message: string;
+    onConfirm: () => void;
+  }>({
+    open: false,
+    title: "",
+    message: "",
+    onConfirm: () => {},
+  });
 
   // Lấy thông tin tòa nhà và khu vực
   const fetchBuildingAndArea = useCallback(async () => {
@@ -135,11 +137,12 @@ export default function RoomsPage() {
     }
   }, [buildingId, toast]);
 
-  // Làm mới danh sách phòng dựa trên bộ lọc và tìm kiếm
-  const fetchRooms = useCallback(
+  // Làm mới danh sách phòng và thống kê
+  const fetchRoomsAndStats = useCallback(
     async (newPageNumber = pageNumber) => {
       if (!buildingId) return;
       try {
+        // Fetch danh sách phòng
         if (searchKeyword) {
           const filter: RoomFilter = { buildingId, keyword: searchKeyword };
           await searchRoomsInBuilding(filter);
@@ -148,8 +151,11 @@ export default function RoomsPage() {
         } else {
           await fetchRoomsByBuildingId(buildingId, newPageNumber);
         }
+        // Fetch thống kê
+        const statsData = await calculateRoomStats(buildingId);
+        setStats(statsData);
       } catch (err: any) {
-        toast.error(err.message || "Lỗi khi tải danh sách phòng");
+        toast.error(err.message || "Lỗi khi tải danh sách phòng hoặc thống kê");
       }
     },
     [
@@ -167,7 +173,7 @@ export default function RoomsPage() {
   // Gọi API khi buildingId hoặc pageNumber thay đổi
   useEffect(() => {
     if (buildingId) {
-      fetchRooms();
+      fetchRoomsAndStats();
       fetchBuildingAndArea();
     }
   }, [buildingId, pageNumber]);
@@ -175,8 +181,8 @@ export default function RoomsPage() {
   // Xử lý tìm kiếm
   const handleSearch = useCallback(() => {
     setPageNumber(1); // Reset về trang 1 khi tìm kiếm
-    fetchRooms(1);
-  }, [fetchRooms]);
+    fetchRoomsAndStats(1);
+  }, [fetchRoomsAndStats]);
 
   // Xử lý thay đổi trạng thái lọc
   const handleFilterChange = useCallback(
@@ -187,6 +193,25 @@ export default function RoomsPage() {
     },
     []
   );
+
+  // Hàm mở modal xác nhận khi khóa/mở khóa phòng
+  const handleOpenConfirmModal = (roomId: string, isActive: boolean) => {
+    setConfirmModal({
+      open: true,
+      title: isActive ? "Khóa Phòng" : "Mở Khóa Phòng",
+      message: `Bạn có muốn ${isActive ? "khóa" : "mở khóa"} phòng này?`,
+      onConfirm: async () => {
+        try {
+          await handleUpdateStatus(roomId); // Gọi API khóa/mở khóa
+          await fetchRoomsAndStats(pageNumber); // Làm mới danh sách phòng và thống kê
+          setConfirmModal((prev) => ({ ...prev, open: false }));
+          
+        } catch (err: any) {
+          toast.error(err.message || `Lỗi khi ${isActive ? "khóa" : "mở khóa"} phòng`);
+        }
+      },
+    });
+  };
 
   const columns = [
     {
@@ -207,7 +232,7 @@ export default function RoomsPage() {
       label: "Tên Phòng",
       sortable: true,
       render: (room: RoomDto) => (
-         <Typography sx={{ color: "" }}>{room ? room.name : "N/A"}</Typography>
+        <Typography sx={{ color: "grey.900" }}>{room ? room.name : "N/A"}</Typography>
       ),
     },
     {
@@ -233,23 +258,58 @@ export default function RoomsPage() {
       label: "Hành Động",
       render: (room: RoomDto) => (
         <Box sx={{ display: "flex", alignItems: "center", gap: 0.5 }}>
-          <IconButton onClick={() => handleViewRoom(room)} title="Xem Chi Tiết">
+          <IconButton
+            onClick={() => handleViewRoom(room)}
+            sx={{
+              color: "primary.main",
+              p: 0.5,
+              bgcolor: "background.paper",
+              borderRadius: 1,
+              "&:hover": {
+                color: "primary.dark",
+                bgcolor: "blue[50]",
+              },
+            }}
+            title="Xem Chi Tiết"
+          >
             <Visibility sx={{ fontSize: 16 }} />
           </IconButton>
-          <IconButton onClick={() => handleEditRoom(room)} title="Sửa Phòng">
+          <IconButton
+            onClick={() => handleEditRoom(room)}
+            sx={{
+              color: "success.main",
+              p: 0.5,
+              bgcolor: "background.paper",
+              borderRadius: 1,
+              "&:hover": {
+                color: "success.dark",
+                bgcolor: "green[50]",
+              },
+            }}
+            title="Sửa Phòng"
+          >
             <Edit sx={{ fontSize: 16 }} />
           </IconButton>
-         
-            <IconButton
-  onClick={() => handleUpdateStatus(room.id!)}
-  title={room.isActive ? "Tắt Hoạt động" : "Bật Hoạt động"}
->
-  {room.isActive ? (
-    <ToggleOff sx={{ fontSize: 16, color: "warning.main" }} />
-  ) : (
-    <ToggleOn sx={{ fontSize: 16, color: "success.main" }} />
-  )}
-</IconButton>
+          <IconButton
+            onClick={() => handleOpenConfirmModal(room.id!, room.isActive)}
+            sx={{
+              color: room.isActive ? "error.main" : "success.main",
+              p: 0.5,
+              bgcolor: "background.paper",
+              borderRadius: 1,
+              "&:hover": {
+                color: room.isActive ? "error.dark" : "success.dark",
+                bgcolor: room.isActive ? "red[50]" : "green[50]",
+              },
+            }}
+            title={room.isActive ? "Khóa Phòng" : "Mở Khóa Phòng"}
+          >
+            {room.isActive ? (
+              <Lock sx={{ fontSize: 16, color: "error.main" }} />
+            ) : (
+              <LockOpen sx={{ fontSize: 16, color: "success.main" }} />
+            )}
+          </IconButton>
         </Box>
       ),
     },
@@ -264,6 +324,13 @@ export default function RoomsPage() {
         bgcolor: (theme) => theme.palette.grey[50],
       }}
     >
+      <ConfirmModal
+        open={confirmModal.open}
+        title={confirmModal.title}
+        message={confirmModal.message}
+        onConfirm={confirmModal.onConfirm}
+        onClose={() => setConfirmModal({ open: false, title: "", message: "", onConfirm: () => {} })}
+      />
       <Box
         component="header"
         sx={{
@@ -313,7 +380,7 @@ export default function RoomsPage() {
           </Typography>
         </Box>
 
-        <RoomStatsCards buildingId={buildingId} />
+        <RoomStatsCards stats={stats} />
 
         <Box sx={{ display: "flex", gap: 2, mb: 2 }}>
           <TextField
@@ -323,7 +390,7 @@ export default function RoomsPage() {
             size="small"
             sx={{ flex: 1 }}
           />
-             <FormControl sx={{ minWidth: 120 }} size="small">
+          <FormControl sx={{ minWidth: 120 }} size="small">
             <InputLabel>Trạng thái</InputLabel>
             <Select
               value={isActiveFilter === null ? "" : isActiveFilter.toString()}
@@ -338,7 +405,6 @@ export default function RoomsPage() {
           <Button variant="contained" onClick={handleSearch}>
             Tìm kiếm
           </Button>
-       
         </Box>
 
         <CustomTable

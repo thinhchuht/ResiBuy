@@ -1,3 +1,4 @@
+
 import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import {
@@ -20,8 +21,8 @@ import {
   ShoppingCart,
   Edit,
   Delete,
-  ToggleOff,
-  CheckCircle,
+  Lock,
+  LockOpen,
   Visibility,
 } from "@mui/icons-material";
 import {
@@ -35,6 +36,7 @@ import orderApi from "../../../api/order.api";
 import type { Store, Order } from "../../../types/models";
 import { useToastify } from "../../../hooks/useToastify";
 import CustomTable from "../../../components/CustomTable";
+import { ConfirmModal } from "../../../components/ConfirmModal";
 
 interface StoreDetailModalProps {
   isOpen: boolean;
@@ -42,7 +44,7 @@ interface StoreDetailModalProps {
   store: Store | null;
   onEdit?: (store: Store) => void;
   onDelete?: (storeId: string) => void;
-  onToggleStatus?: (storeId: string) => void;
+  onToggleStatus?: (storeId: string, setConfirmModal: (modal: any) => void) => void;
 }
 
 interface OrderDetailDialogProps {
@@ -66,15 +68,22 @@ const OrderDetailDialog: React.FC<OrderDetailDialogProps> = ({ open, onClose, or
     <Dialog
       open={open}
       onClose={onClose}
-      maxWidth="sm"
+      maxWidth="lg"
       fullWidth
       sx={{
         "& .MuiDialog-paper": {
-          borderRadius: 2,
+          maxWidth: "80rem",
+          height: "90vh",
+          margin: 0,
+          borderRadius: 0,
           boxShadow: 24,
-          p: 2,
+          transform: open ? "translateX(0)" : "translateX(100%)",
+          transition: "transform 0.3s ease-in-out",
+          display: "flex",
+          flexDirection: "column",
         },
       }}
+      PaperProps={{ sx: { bgcolor: "background.paper" } }}
     >
       <DialogTitle sx={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
         <Typography variant="h6" sx={{ color: "grey.900" }}>
@@ -253,6 +262,17 @@ export function StoreDetailModal({
   const [error, setError] = useState<string | null>(null);
   const [selectedOrder, setSelectedOrder] = useState<Order | null>(null);
   const [isOrderDetailOpen, setIsOrderDetailOpen] = useState(false);
+  const [confirmModal, setConfirmModal] = useState<{
+    open: boolean;
+    title: string;
+    message: string;
+    onConfirm: () => void;
+  }>({
+    open: false,
+    title: "",
+    message: "",
+    onConfirm: () => {},
+  });
   const navigate = useNavigate();
   const toast = useToastify();
   const {
@@ -262,6 +282,10 @@ export function StoreDetailModal({
     formatOrderStatus,
     getOrderStatusColor,
   } = useStoresLogic();
+
+  useEffect(() => {
+    console.log("confirmModal state:", confirmModal);
+  }, [confirmModal]);
 
   useEffect(() => {
     if (!isOpen || !store?.id) return;
@@ -389,7 +413,7 @@ export function StoreDetailModal({
     return () => {
       isMounted = false;
     };
-  }, [isOpen, store?.id, activeTab, productPagination.pageNumber, productPagination.pageSize, orderPagination.pageNumber, orderPagination.pageSize ]);
+  }, [isOpen, store?.id, activeTab, productPagination.pageNumber, productPagination.pageSize, orderPagination.pageNumber, orderPagination.pageSize]);
 
   const handleProductPageChange = (pageNumber: number) => {
     setProductPagination((prev) => ({ ...prev, pageNumber }));
@@ -411,17 +435,10 @@ export function StoreDetailModal({
 
   const getStatusIcon = (isLocked: boolean) => {
     return isLocked ? (
-      <ToggleOff sx={{ fontSize: 20, color: "error.main" }} />
+      <Lock sx={{ fontSize: 20, color: "error.main" }} />
     ) : (
-      <CheckCircle sx={{ fontSize: 20, color: "success.main" }} />
+      <LockOpen sx={{ fontSize: 20, color: "success.main" }} />
     );
-  };
-
-  const formatShippingAddress = (order: Order): string => {
-    const { roomQueryResult } = order;
-    if (!roomQueryResult) return "Không có thông tin địa chỉ";
-    const { name, buildingName, areaName } = roomQueryResult;
-    return `${name}, ${buildingName}, ${areaName}`;
   };
 
   const productColumns = [
@@ -466,12 +483,12 @@ export function StoreDetailModal({
         </Typography>
       ),
     },
-     {
+    {
       key: "sold",
       label: "Đã bán",
       render: (row) => (
         <Typography sx={{ fontSize: "0.875rem", color: "grey.900" }}>
-          {row.productDetails?.[0] ? (row.sold) : "N/A"}
+          {row.productDetails?.[0] ? row.sold : "N/A"}
         </Typography>
       ),
     },
@@ -488,7 +505,6 @@ export function StoreDetailModal({
         </Typography>
       ),
     },
-    
   ];
 
   const orderColumns = [
@@ -516,7 +532,6 @@ export function StoreDetailModal({
         />
       ),
     },
-    
     {
       key: "totalPrice",
       label: "Tổng Tiền",
@@ -635,7 +650,7 @@ export function StoreDetailModal({
             )}
             {onToggleStatus && (
               <Button
-                onClick={() => onToggleStatus(store.id)}
+                onClick={() => onToggleStatus(store.id, setConfirmModal)}
                 startIcon={getStatusIcon(store.isLocked)}
                 sx={{
                   px: 1.5,
@@ -916,7 +931,6 @@ export function StoreDetailModal({
                   <Typography sx={{ color: "grey.900" }}>
                     {store.isLocked ? "Khóa" : "Hoạt Động"}
                   </Typography>
-
                 </Box>
                 <Box>
                   <Typography variant="body2" sx={{ color: "grey.500", fontWeight: "medium" }}>
@@ -989,6 +1003,13 @@ export function StoreDetailModal({
         open={isOrderDetailOpen}
         onClose={handleCloseOrderDetail}
         order={selectedOrder}
+      />
+      <ConfirmModal
+        open={confirmModal.open ?? false}
+        title={confirmModal.title}
+        message={confirmModal.message}
+        onConfirm={confirmModal.onConfirm}
+        onClose={() => setConfirmModal({ open: false, title: "", message: "", onConfirm: () => {} })}
       />
     </>
   );
