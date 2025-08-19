@@ -1,7 +1,7 @@
 import { Box, Typography, Button } from "@mui/material";
 import logo from "../assets/Images/Logo.png";
 import { formatDate } from "../utils/dateUtils";
-import type { Voucher } from "../types/models";
+import { VoucherType, type Voucher } from "../types/models";
 
 interface VoucherCardProps {
   voucher: Voucher;
@@ -74,7 +74,7 @@ const VoucherCard = ({ voucher, onGetVoucher }: VoucherCardProps) => {
           <Box>
             <Typography variant="h6" sx={{ color: "black", fontWeight: "bold", mb: 0.5 }}>
               Giảm {voucher.discountAmount}
-              {voucher.type === "Discount" ? "đ" : "%"} tối đa {voucher.maxDiscountPrice}đ
+              {voucher.type === VoucherType.Percentage ? `% tối đa ${voucher.maxDiscountPrice}đ` : "đ"} 
             </Typography>
             <Typography variant="body1" sx={{ color: "text.secondary" }}>
               Đơn tối thiểu {voucher.minOrderPrice}đ

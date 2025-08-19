@@ -1213,7 +1213,7 @@ const OrderCard = ({
                 border: "1px solid #e3f2fd",
               }}>
               <Typography variant="body2" sx={{ color: "#1976d2", fontWeight: 600 }}>
-                Đối tượng báo cáo: Khách hàng ({order.user.fullName})
+                Đối tượng báo cáo: Khách hàng 
               </Typography>
             </Box>
           )}

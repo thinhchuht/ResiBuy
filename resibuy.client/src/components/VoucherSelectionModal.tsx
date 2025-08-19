@@ -117,13 +117,13 @@ const VoucherSelectionModal = ({ open, onClose, userVouchers, shopVouchers, onSe
                 fontSize: "1rem",
               },
             }}>
-            <Tab label="Voucher của bạn" />
-            <Tab label="Voucher của Shop" />
+            {/* <Tab label="Voucher của bạn" /> */}
+            <Tab label="Voucher của Cửa hàng" />
           </Tabs>
         </Box>
 
         <Box sx={{ display: "flex", flexDirection: "column", gap: 2 }}>
-          {activeTab === 0 ? renderVoucherList(userVouchers, "Bạn chưa có voucher nào", loading) : renderVoucherList(shopVouchers, "Shop chưa có voucher nào", loading)}
+          {activeTab === 0 ?  renderVoucherList(shopVouchers, "Cửa hàng chưa có mã giảm giá nào", loading) : renderVoucherList(userVouchers, "Bạn chưa có mã giảm giá nào", loading)}
         </Box>
       </DialogContent>
     </Dialog>

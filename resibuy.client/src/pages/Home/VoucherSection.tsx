@@ -21,7 +21,7 @@ const VoucherSection = () => {
 
   useEffect(() => {
     setLoading(true);
-    voucherApi.getAll({ pageNumber: currentPage + 1, pageSize: ITEMS_PER_PAGE, isActive: true })
+    voucherApi.getAll({ pageNumber: currentPage + 1, pageSize: ITEMS_PER_PAGE, isActive: true, isGettingNow: true })
       .then(res => {
         setVouchers(res.data.items || []);
         setTotalPages(Math.ceil((res.data.totalCount || 1) / ITEMS_PER_PAGE));

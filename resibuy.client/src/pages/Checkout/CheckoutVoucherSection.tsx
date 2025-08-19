@@ -14,7 +14,7 @@ const CheckoutVoucherSection = ({ selectedVoucher, onOpenVoucherModal, onRemoveV
       <Box sx={{ display: "flex", alignItems: "center" }}>
         <LocalOfferIcon color="primary" sx={{ mr: 1 }} />
         <Typography variant="h6" sx={{ fontWeight: "bold", color: "#555" }}>
-          Voucher của Shop
+          Voucher của Cửa hàng
         </Typography>
       </Box>
       <Box>

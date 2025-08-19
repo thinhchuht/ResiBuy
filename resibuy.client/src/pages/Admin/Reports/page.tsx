@@ -455,6 +455,7 @@ export default function ReportsPage() {
 
   useEffect(() => {
     loadStats();
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [filters.startDate, filters.endDate]);
 
   return (
