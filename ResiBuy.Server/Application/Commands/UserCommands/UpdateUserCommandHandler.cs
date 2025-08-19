@@ -69,7 +69,8 @@
                     ur.Room.Building.Area.Name, ur.Room.Building.Area.Id)),
                 [],
                 [],
-                []
+                [],
+                updatedUser.ReportCount
             );
 
             await notificationService.SendNotificationAsync("UserUpdated", updatedUser, Constants.AdminHubGroup, [updatedUser.Id]);

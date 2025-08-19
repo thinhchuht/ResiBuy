@@ -20,9 +20,11 @@ const CheckoutSuccess: React.FC = () => {
   const [isValid, setIsValid] = useState(false);
 
   useEffect(() => {
+    console.log("render - token:", token, "isOrderSuccess:", isOrderSuccess);
     const verifyToken = async () => {
       // If no token and no isOrderSuccess, show NotFound
       if (!token && !isOrderSuccess) {
+        console.log("No token and no order success - showing NotFound");
         setIsValid(false);
         setIsVerifying(false);
         return;
@@ -30,7 +32,11 @@ const CheckoutSuccess: React.FC = () => {
 
       if (!token) {
         if (isOrderSuccess) {
+          console.log("No token but order success - setting valid");
           setIsValid(true);
+        } else {
+          console.log("No token and no order success - setting invalid");
+          setIsValid(false);
         }
         setIsVerifying(false);
         return;
@@ -62,6 +68,7 @@ const CheckoutSuccess: React.FC = () => {
   };
 
   if (isVerifying) {
+    console.log("Showing loading spinner - isVerifying:", isVerifying);
     return (
       <Container maxWidth="md" sx={{ py: 8, display: "flex", justifyContent: "center", alignItems: "center" }}>
         <CircularProgress />
@@ -69,9 +76,13 @@ const CheckoutSuccess: React.FC = () => {
     );
   }
 
+  console.log("Final render - isValid:", isValid, "isVerifying:", isVerifying);
   if (!isValid) {
+    console.log("Showing NotFound because isValid is false");
     return <NotFound />;
   }
+
+  console.log("Showing success UI");
 
   const handleViewOrders = async () => {
     await invalidateToken();
@@ -86,8 +97,8 @@ const CheckoutSuccess: React.FC = () => {
   };
 
   return (
-    <Container maxWidth="md" sx={{ py: 8 }}>
-      <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.5 }}>
+    <Container maxWidth="md" sx={{ py: 8, opacity: 1, visibility: "visible" }}>
+      <div style={{ opacity: 1, visibility: "visible" }}>
         <Paper
           elevation={3}
           sx={{
@@ -95,6 +106,8 @@ const CheckoutSuccess: React.FC = () => {
             borderRadius: 4,
             background: "linear-gradient(145deg, #ffffff 0%, #f8f9fa 100%)",
             boxShadow: "0 8px 32px rgba(0,0,0,0.1)",
+            opacity: 1,
+            visibility: "visible",
           }}>
           <Stack spacing={4} alignItems="center">
             <motion.div
@@ -192,7 +205,7 @@ const CheckoutSuccess: React.FC = () => {
             </Box>
           </Stack>
         </Paper>
-      </motion.div>
+      </div>
     </Container>
   );
 };

@@ -42,7 +42,8 @@
                      s.Id,
                      s.Name,
                      s.PhoneNumber,
-                })
+                }),
+                user.ReportCount
             )).ToList();
             return ResponseModel.SuccessResponse(new PagedResult<UserQueryResult>(items, pagedResult.TotalCount, pagedResult.PageNumber, pagedResult.PageSize));
         }

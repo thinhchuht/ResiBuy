@@ -11,7 +11,6 @@ import ConfirmCodeModal from "../../components/ConfirmCodeModal";
 interface PasswordChangeSectionProps {
   user: User | null;
   isAdmin: boolean;
-  maskMiddle: (str: string | undefined) => string;
 }
 
 const validationSchema = Yup.object().shape({
@@ -22,7 +21,7 @@ const validationSchema = Yup.object().shape({
     .required("Vui lòng xác nhận mật khẩu mới"),
 });
 
-const PasswordChangeSection = ({ user, isAdmin, maskMiddle }: PasswordChangeSectionProps) => {
+const PasswordChangeSection = ({ user, isAdmin }: PasswordChangeSectionProps) => {
   const toast = useToastify();
   const [showOldPassword, setShowOldPassword] = useState(false);
   const [showNewPassword, setShowNewPassword] = useState(false);
@@ -83,10 +82,10 @@ const PasswordChangeSection = ({ user, isAdmin, maskMiddle }: PasswordChangeSect
       </Box>
       <Box mb={3}>
         <Typography variant="subtitle2" color="text.secondary" mb={0.5}>
-          Số điện thoại
+          Email
         </Typography>
         <Typography variant="body1" fontWeight={500}>
-          {maskMiddle(user?.phoneNumber) || "-"}
+          {user?.email || "-"}
         </Typography>
       </Box>
       <Formik initialValues={initialValues} validationSchema={validationSchema} onSubmit={handleSubmit}>

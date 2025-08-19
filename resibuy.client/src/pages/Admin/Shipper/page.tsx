@@ -1,3 +1,4 @@
+
 import { useState, useEffect } from "react";
 import {
   Box,
@@ -29,6 +30,7 @@ import {
   useShippersLogic,
 } from "../../../components/admin/Shipper/seg/utlis";
 import { StatsCard } from "../../../layouts/AdminLayout/components/StatsCard";
+import { ConfirmModal } from "../../../components/ConfirmModal"; // Thêm import ConfirmModal
 import type { Shipper } from "../../../types/models";
 
 function ShipperStatsCards() {
@@ -146,6 +148,18 @@ export default function ShippersPage() {
     isOnline?: boolean;
     isLocked?: boolean;
   }>({});
+  // Thêm state cho ConfirmModal
+  const [confirmModal, setConfirmModal] = useState<{
+    open: boolean;
+    title: string;
+    message: string;
+    onConfirm: () => void;
+  }>({
+    open: false,
+    title: "",
+    message: "",
+    onConfirm: () => {},
+  });
 
   const handlePageChange = (newPage: number) => {
     console.log("Page changed to:", newPage);
@@ -180,6 +194,19 @@ export default function ShippersPage() {
       ...prev,
       [key]: value === "" ? undefined : value === "true",
     }));
+  };
+
+  // Hàm mở modal xác nhận khi khóa/mở khóa shipper
+  const handleOpenConfirmModal = (shipperId: string, isLocked: boolean) => {
+    setConfirmModal({
+      open: true,
+      title: isLocked ? "Mở Khóa Shipper" : "Khóa Shipper",
+      message: `Bạn có muốn ${isLocked ? "mở khóa" : "khóa"} shipper này?`,
+      onConfirm: () => {
+        handleToggleLockShipper(shipperId, isLocked);
+        setConfirmModal((prev) => ({ ...prev, open: false }));
+      },
+    });
   };
 
   const columns = [
@@ -331,7 +358,7 @@ export default function ShippersPage() {
             <Edit sx={{ fontSize: 16 }} />
           </IconButton>
           <IconButton
-            onClick={() => handleToggleLockShipper(shipper.id, shipper.isLocked)}
+            onClick={() => handleOpenConfirmModal(shipper.id, shipper.isLocked)} // Gọi modal xác nhận
             sx={{
               color: shipper.isLocked ? "warning.main" : "info.main",
               p: 0.5,
@@ -372,6 +399,14 @@ export default function ShippersPage() {
           bgcolor: (theme) => theme.palette.grey[50],
         }}
       >
+        {/* Thêm ConfirmModal */}
+        <ConfirmModal
+          open={confirmModal.open}
+          title={confirmModal.title}
+          message={confirmModal.message}
+          onConfirm={confirmModal.onConfirm}
+          onClose={() => setConfirmModal({ open: false, title: "", message: "", onConfirm: () => {} })}
+        />
         <Box
           component="header"
           sx={{

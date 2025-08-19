@@ -16,7 +16,7 @@
                 throw new CustomException(ExceptionErrorCode.ValidationFailed, "Mật khẩu hiện tại không đúng");
             existingUser.PasswordHash = CustomPasswordHasher.HashPassword(changePasswordDto.NewPassword);
             var updatedUser = await userDbService.UpdateAsync(existingUser);
-            return ResponseModel.SuccessResponse(updatedUser);
+            return ResponseModel.SuccessResponse();
         }
     }
 }

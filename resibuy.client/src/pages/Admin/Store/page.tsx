@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import {
   Box,
   Typography,
@@ -13,9 +13,11 @@ import {
   MenuItem,
 } from "@mui/material";
 import {
-  CheckCircle,
+  Lock,
+  LockOpen,
   Edit,
   Visibility,
+  CheckCircle,
   ToggleOff,
   Store as StoreIcon,
   Search as SearchIcon,
@@ -25,7 +27,8 @@ import { AddStoreModal } from "../../../components/admin/Store/add-store-modal";
 import { StoreDetailModal } from "../../../components/admin/Store/store-detail-modal";
 import { StatsCard } from "../../../layouts/AdminLayout/components/StatsCard";
 import { getStatusColor, useStoresLogic } from "../../../components/admin/Store/seg/utlis";
-import { useEffect } from "react";
+import { ConfirmModal } from "../../../components/ConfirmModal";
+
 function StoreStatsCards({ calculateStoreStats }) {
   const [stats, setStats] = useState({
     totalStores: 0,
@@ -54,6 +57,7 @@ function StoreStatsCards({ calculateStoreStats }) {
     fetchStats();
   }, [calculateStoreStats]);
 
+  // Định nghĩa cards trước để tránh lỗi "Cannot access 'cards' before initialization"
   const cards = [
     {
       title: "Tổng Cửa Hàng",
@@ -62,22 +66,25 @@ function StoreStatsCards({ calculateStoreStats }) {
       iconColor: "#1976d2",
       iconBgColor: "#e3f2fd",
       valueColor: "#1976d2",
+          sx: { gridColumn: { lg: "span 2" } },
     },
     {
       title: "Cửa Hàng Hoạt Động",
       value: stats.activeStores.toString(),
-      icon: CheckCircle,
+      icon: LockOpen,
       iconColor: "#2e7d32",
       iconBgColor: "#e8f5e9",
       valueColor: "#2e7d32",
+          sx: { gridColumn: { lg: "span 2" } },
     },
     {
       title: "Cửa Hàng Đang khóa",
       value: stats.inactiveStores.toString(),
-      icon: ToggleOff,
+      icon: Lock,
       iconColor: "#dc2626",
       iconBgColor: "#fee2e2",
       valueColor: "#dc2626",
+       sx: { gridColumn: { lg: "span 2" } },
     },
     {
       title: "Cửa Hàng Đang mở",
@@ -86,6 +93,7 @@ function StoreStatsCards({ calculateStoreStats }) {
       iconColor: "#2e7d32",
       iconBgColor: "#e8f5e9",
       valueColor: "#2e7d32",
+      sx: { gridColumn: { lg: "span 3" } }, // Mở rộng để chiếm 2 cột
     },
     {
       title: "Cửa Hàng Đang Đóng",
@@ -94,6 +102,7 @@ function StoreStatsCards({ calculateStoreStats }) {
       iconColor: "#dc2626",
       iconBgColor: "#fee2e2",
       valueColor: "#dc2626",
+      sx: { gridColumn: { lg: "span 3" } }, // Mở rộng để chiếm 2 cột
     },
   ];
 
@@ -112,7 +121,7 @@ function StoreStatsCards({ calculateStoreStats }) {
         gridTemplateColumns: {
           xs: "1fr",
           md: "1fr 1fr",
-          lg: "1fr 1fr 1fr",
+          lg: "1fr 1fr 1fr 1fr 1fr 1fr", // Luôn dùng 4 cột cho 5 thẻ ở lg
         },
         gap: 3,
         mb: 3,
@@ -132,13 +141,13 @@ function StoreStatsCards({ calculateStoreStats }) {
             iconColor={card.iconColor}
             iconBgColor={card.iconBgColor}
             valueColor={card.valueColor}
+            sx={card.sx} // Truyền sx prop
           />
         ))
       )}
     </Box>
   );
 }
-
 export default function StoresPage() {
   const {
     stores,
@@ -165,12 +174,29 @@ export default function StoresPage() {
     fetchStoresWithFilters,
   } = useStoresLogic();
 
+  const [confirmModal, setConfirmModal] = useState<{
+    open: boolean;
+    title: string;
+    message: string;
+    onConfirm: () => void;
+  }>({
+    open: false,
+    title: "",
+    message: "",
+    onConfirm: () => {},
+  });
+
   const [searchInput, setSearchInput] = useState("");
   const [localFilters, setLocalFilters] = useState<{
     isOnline?: boolean;
     isLocked?: boolean;
     isPayFee?: boolean;
   }>({});
+
+  // Debug trạng thái confirmModal
+  useEffect(() => {
+    console.log("confirmModal state:", confirmModal);
+  }, [confirmModal]);
 
   useEffect(() => {
     if (Object.keys(searchParams).length === 0) {
@@ -283,9 +309,9 @@ export default function StoresPage() {
           }}
         >
           {store.isLocked ? (
-            <ToggleOff sx={{ fontSize: 12 }} />
+            <Lock sx={{ fontSize: 12, color: "error.main" }} />
           ) : (
-            <CheckCircle sx={{ fontSize: 12 }} />
+            <LockOpen sx={{ fontSize: 12, color: "success.main" }} />
           )}
           {store.isLocked ? "Khóa" : "Hoạt động"}
         </Box>
@@ -393,7 +419,7 @@ export default function StoresPage() {
             <Edit sx={{ fontSize: 16 }} />
           </IconButton>
           <IconButton
-            onClick={() => handleToggleStoreStatus(store.id)}
+            onClick={() => handleToggleStoreStatus(store.id, setConfirmModal)}
             sx={{
               color: store.isLocked ? "success.main" : "error.main",
               p: 0.5,
@@ -407,9 +433,9 @@ export default function StoresPage() {
             title={store.isLocked ? "Mở Khóa" : "Khóa"}
           >
             {store.isLocked ? (
-              <CheckCircle sx={{ fontSize: 16 }} />
+              <LockOpen sx={{ fontSize: 16, color: "success.main" }} />
             ) : (
-              <ToggleOff sx={{ fontSize: 16 }} />
+              <Lock sx={{ fontSize: 16, color: "error.main" }} />
             )}
           </IconButton>
         </Box>
@@ -441,6 +467,13 @@ export default function StoresPage() {
         bgcolor: (theme) => theme.palette.grey[50],
       }}
     >
+      <ConfirmModal
+        open={confirmModal.open ?? false}
+        title={confirmModal.title}
+        message={confirmModal.message}
+        onConfirm={confirmModal.onConfirm}
+        onClose={() => setConfirmModal({ open: false, title: "", message: "", onConfirm: () => {} })}
+      />
       <Box
         component="header"
         sx={{
@@ -506,7 +539,7 @@ export default function StoresPage() {
             }}
           />
           <Box sx={{ display: "flex", gap: 2, flexWrap: "wrap" }}>
-            <FormControl size="small" sx={{ minWidth: 120 }}>
+            <FormControl size="small" sx={{ minWidth: 170 }}>
               <InputLabel>Trạng thái cửa hàng</InputLabel>
               <Select
                 value={localFilters.isOnline ?? ""}
@@ -521,12 +554,12 @@ export default function StoresPage() {
                 ))}
               </Select>
             </FormControl>
-            <FormControl size="small" sx={{ minWidth: 120 }}>
-              <InputLabel>Khóa</InputLabel>
+            <FormControl size="small" sx={{ minWidth: 170 }}>
+              <InputLabel>Trạng thái Khóa</InputLabel>
               <Select
                 value={localFilters.isLocked ?? ""}
                 onChange={(e) => handleFilterChange("isLocked", e.target.value)}
-                label="Khóa"
+                label="Trạng thái Khóa"
               >
                 <MenuItem value="">Tất cả</MenuItem>
                 {filters.isLocked.map((option) => (
@@ -536,7 +569,7 @@ export default function StoresPage() {
                 ))}
               </Select>
             </FormControl>
-            <FormControl size="small" sx={{ minWidth: 120 }}>
+            <FormControl size="small" sx={{ minWidth: 170 }}>
               <InputLabel>Phí</InputLabel>
               <Select
                 value={localFilters.isPayFee ?? ""}
@@ -580,7 +613,7 @@ export default function StoresPage() {
           showExport={true}
           showBulkActions={false}
           itemsPerPage={15}
-          filters={filters}
+         
           onFilterChange={(newFilters) => {
             setLocalFilters((prev) => ({
               ...prev,

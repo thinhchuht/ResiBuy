@@ -24,7 +24,7 @@ import { EditRoleModal } from "../../../components/admin/User/edit-role-modal";
 import { UserDetailModal } from "../../../components/admin/User/user-detail-modal";
 import { ImportExcelModal } from "../../../components/admin/User/import-excel-modal";
 
-function UserStatsCards() {
+function UserStatsCards({ refreshTrigger }: { refreshTrigger: number }) {
   const [stats, setStats] = useState({
     totalUsers: 0,
     lockedUsers: 0,
@@ -51,7 +51,7 @@ function UserStatsCards() {
       .finally(() => {
         setIsLoading(false);
       });
-  }, []);
+  }, [refreshTrigger]);
 
   if (isLoading) {
     return (
@@ -166,7 +166,7 @@ export default function UserPage() {
   const [confirmUser, setConfirmUser] = useState<{ id: string; isLocked: boolean } | null>(null);
   const [localSearchTerm, setLocalSearchTerm] = useState(searchTerm);
   const [isImportModalOpen, setIsImportModalOpen] = useState(false);
-
+  const [refreshCount, setRefreshCount] = useState(0);
   const handleOpenConfirmDialog = (userId: string, isLocked: boolean) => {
     setConfirmUser({ id: userId, isLocked });
     setIsConfirmDialogOpen(true);
@@ -177,13 +177,14 @@ export default function UserPage() {
     setConfirmUser(null);
   };
 
-  const handleConfirmToggleLock = () => {
+ const handleConfirmToggleLock = () => {
     if (confirmUser) {
-      handleToggleLockUser(confirmUser.id, confirmUser.isLocked);
+      handleToggleLockUser(confirmUser.id, confirmUser.isLocked).then(() => {
+        setRefreshCount((prev) => prev + 1); 
+      });
     }
     handleCloseConfirmDialog();
   };
-
   const handleSearchInputChange = (event: React.ChangeEvent<HTMLInputElement>) => {
     setLocalSearchTerm(event.target.value);
   };
@@ -461,7 +462,7 @@ export default function UserPage() {
             </Typography>
           </Box>
 
-          <UserStatsCards />
+         <UserStatsCards refreshTrigger={refreshCount} />
 
           <Box sx={{ display: "flex", alignItems: "center", gap: 2, mb: 2 }}>
             <TextField

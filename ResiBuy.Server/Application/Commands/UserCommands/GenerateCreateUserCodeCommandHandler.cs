@@ -3,6 +3,7 @@
     public record GenerateCreateUserCodeCommand(RegisterDto RegisterDto) : IRequest<ResponseModel>;
     public class  GenerateCreateUserCodeCommandHandler(
         IUserDbService userDbService,
+        IMailBaseService mailBaseService,
         ICodeGeneratorSerivce codeGeneratorSerivce) : IRequestHandler< GenerateCreateUserCodeCommand, ResponseModel>
     {
         public async Task<ResponseModel> Handle( GenerateCreateUserCodeCommand command, CancellationToken cancellationToken)
@@ -23,6 +24,10 @@
             var rs = UserChecker.CheckUserInExcel(command.RegisterDto.IdentityNumber, command.RegisterDto.FullName, command.RegisterDto.DateOfBirth);
             await userDbService.CheckUniqueField(null, command.RegisterDto.PhoneNumber, command.RegisterDto.Email, command.RegisterDto.IdentityNumber);
             var code = codeGeneratorSerivce.GenerateCodeAndCache(command.RegisterDto, TimeSpan.FromMinutes(3));
+            string htmlBody = $@"<p syle='font-size: 20px; padding:15px'>Mã xác nhận của bạn là:</p>
+                                 <h2 style='color:#2c3e50; font-weight:bold;'>{code}</h2>
+                                <p syle='font-size: 20px; padding:15px'> Vui lòng không chia sẻ với bất cứ ai để đảm bảo bảo mật cho tài khoản</p>";
+            mailBaseService.SendEmailInAnotherThread(command.RegisterDto.Email, "Đăng kí tài khoản", htmlBody);
             return ResponseModel.SuccessResponse(code);
         }
     }

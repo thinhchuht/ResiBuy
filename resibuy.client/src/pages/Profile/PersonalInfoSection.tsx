@@ -1,14 +1,11 @@
-import { Avatar, Box, Button, TextField, Typography, CircularProgress } from "@mui/material";
+import { Avatar, Box, Button, Typography, CircularProgress } from "@mui/material";
 import { Person } from "@mui/icons-material";
 import { useState } from "react";
-import { Formik, Form, Field } from "formik";
-import * as Yup from "yup";
 import userApi from "../../api/user.api";
 import { useAuth } from "../../contexts/AuthContext";
 import { useToastify } from "../../hooks/useToastify";
 import cloudinaryApi from "../../api/cloudinary.api";
 import type { Image } from "../../types/models";
-import ConfirmCodeModal from "../../components/ConfirmCodeModal";
 
 interface PersonalInfoSectionProps {
   isAdmin: boolean;
@@ -16,10 +13,6 @@ interface PersonalInfoSectionProps {
   maskMiddle: (str: string | undefined) => string;
 }
 
-const validationSchema = Yup.object().shape({
-  email: Yup.string().email("Email không hợp lệ").required("Email là bắt buộc"),
-  dateOfBirth: Yup.date().max(new Date(), "Ngày sinh không thể lớn hơn ngày hiện tại").required("Ngày sinh là bắt buộc"),
-});
 
 const PersonalInfoSection = ({ isAdmin, formatDate, maskMiddle }: PersonalInfoSectionProps) => {
   const { user, setUser } = useAuth();
@@ -27,9 +20,7 @@ const PersonalInfoSection = ({ isAdmin, formatDate, maskMiddle }: PersonalInfoSe
   const [avatar, setAvatar] = useState<Image | null>(null);
   const [isUploading, setIsUploading] = useState(false);
   const toast = useToastify();
-  const [openConfirmModal, setOpenConfirmModal] = useState(false);
-  const [confirmCode, setConfirmCode] = useState("");
-  const [isSubmittingCode, setIsSubmittingCode] = useState(false);
+  const [isUpdating, setIsUpdating] = useState(false);
 
   const handleAvatarChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
     if (e.target.files && e.target.files[0]) {
@@ -62,65 +53,36 @@ const PersonalInfoSection = ({ isAdmin, formatDate, maskMiddle }: PersonalInfoSe
     }
   };
 
-  const initialValues = {
-    email: user?.email || "",
-    dateOfBirth: user?.dateOfBirth ? user.dateOfBirth.substring(0, 10) : "1990-01-01",
-  };
-
-  const handleSubmit = async (values: typeof initialValues) => {
-    if (!user) return;
+  const handleSubmit = async () => {
+    if (!user || !avatar) return;
 
     const updatePayload = {
-      email: values.email,
-      dateOfBirth: values.dateOfBirth,
       avatar: avatar,
     };
 
     try {
+      setIsUpdating(true);
       const response = await userApi.sendUpdateConfirmCode(user.id, updatePayload);
       if (response.data) {
-        setOpenConfirmModal(true);
-        toast.success("Mã xác nhận sẽ được gửi về mail của bạn!");
-      }
-    } catch {
-      toast.error("Cập nhật thông tin thất bại!");
-    }
-  };
-
-  const handleConfirmCodeSubmit = async () => {
-    if (!user) return;
-    if (confirmCode.length !== 6) {
-      toast.error("Mã xác nhận phải gồm 6 ký tự!");
-      return;
-    }
-    setIsSubmittingCode(true);
-    try {
-      const response = await userApi.updateUser(user.id, confirmCode.toUpperCase());
-      if (response.data) {
         setUser(response.data);
-        toast.success("Cập nhật thông tin thành công!");
-        setOpenConfirmModal(false);
-        setConfirmCode("");
+        toast.success("Cập nhật ảnh đại diện thành công!");
       }
     } catch {
-      toast.error("Mã xác nhận không đúng hoặc đã hết hạn!");
+      toast.error("Cập nhật ảnh đại diện thất bại!");
     } finally {
-      setIsSubmittingCode(false);
+      setIsUpdating(false);
     }
   };
 
   return (
     <Box>
-      <Box sx={{ borderBottom: '1px solid #f8bbd0', mb: 3, pb: 1 }}>
-        <Typography variant="h6" fontWeight={700} color="#e91e63" sx={{ textAlign: 'left' }}>
+      <Box sx={{ borderBottom: "1px solid #f8bbd0", mb: 3, pb: 1 }}>
+        <Typography variant="h6" fontWeight={700} color="#e91e63" sx={{ textAlign: "left" }}>
           Thông tin cá nhân
         </Typography>
       </Box>
       <Box sx={{ display: { xs: "block", md: "flex" }, gap: 4 }}>
         <Box sx={{ flex: 1, minWidth: 0 }}>
-          <Formik initialValues={initialValues} validationSchema={validationSchema} onSubmit={handleSubmit} enableReinitialize>
-            {({ errors, touched, values, handleChange, handleBlur }) => (
-              <Form>
                 <Box mb={3}>
                   <Typography variant="subtitle2" color="text.secondary" mb={0.5}>
                     ID
@@ -137,28 +99,14 @@ const PersonalInfoSection = ({ isAdmin, formatDate, maskMiddle }: PersonalInfoSe
                     {user?.fullName || "-"}
                   </Typography>
                 </Box>
-                <Field
-                  as={TextField}
-                  name="email"
-                  label="Email"
-                  variant="outlined"
-                  fullWidth
-                  value={values.email}
-                  onChange={handleChange}
-                  onBlur={handleBlur}
-                  error={touched.email && Boolean(errors.email)}
-                  helperText={touched.email && errors.email}
-                  disabled={isAdmin}
-                  sx={{
-                    mb: 3,
-                    "& .MuiOutlinedInput-root": {
-                      borderRadius: 2,
-                      "&:hover fieldset": {
-                        borderColor: "#e91e63",
-                      },
-                    },
-                  }}
-                />
+                <Box mb={3}>
+                  <Typography variant="subtitle2" color="text.secondary" mb={0.5}>
+                    Email
+                  </Typography>
+                  <Typography variant="body1" fontWeight={500}>
+                    {user?.email || "-"}
+                  </Typography>
+                </Box>
                 <Box mb={3}>
                   <Typography variant="subtitle2" color="text.secondary" mb={0.5}>
                     Số điện thoại
@@ -175,30 +123,14 @@ const PersonalInfoSection = ({ isAdmin, formatDate, maskMiddle }: PersonalInfoSe
                     {maskMiddle(user?.identityNumber) || "-"}
                   </Typography>
                 </Box>
-                <Field
-                  as={TextField}
-                  name="dateOfBirth"
-                  label="Ngày sinh"
-                  type="date"
-                  variant="outlined"
-                  fullWidth
-                  value={values.dateOfBirth}
-                  onChange={handleChange}
-                  onBlur={handleBlur}
-                  error={touched.dateOfBirth && Boolean(errors.dateOfBirth)}
-                  helperText={touched.dateOfBirth && errors.dateOfBirth}
-                  disabled={isAdmin}
-                  sx={{
-                    mb: 3,
-                    "& .MuiOutlinedInput-root": {
-                      borderRadius: 2,
-                      "&:hover fieldset": {
-                        borderColor: "#e91e63",
-                      },
-                    },
-                  }}
-                  InputLabelProps={{ shrink: true }}
-                />
+                <Box mb={3}>
+                  <Typography variant="subtitle2" color="text.secondary" mb={0.5}>
+                    Ngày sinh
+                  </Typography>
+                  <Typography variant="body1" fontWeight={500}>
+                    {formatDate(user?.dateOfBirth) || "-"}
+                  </Typography>
+                </Box>
                 {user?.rooms && user.rooms.length > 0 && (
                   <Box mb={3}>
                     <Typography variant="subtitle2" color="text.secondary" mb={0.5}>
@@ -228,9 +160,10 @@ const PersonalInfoSection = ({ isAdmin, formatDate, maskMiddle }: PersonalInfoSe
                   </Typography>
                 </Box>
                 <Button
-                  type="submit"
+                  onClick={handleSubmit}
                   variant="contained"
-                  disabled={isAdmin}
+                  disabled={isAdmin || !avatar || isUpdating}
+                  startIcon={isUpdating ? <CircularProgress size={20} color="inherit" /> : null}
                   sx={{
                     mt: 2,
                     px: 5,
@@ -244,11 +177,8 @@ const PersonalInfoSection = ({ isAdmin, formatDate, maskMiddle }: PersonalInfoSe
                       boxShadow: "0 6px 20px rgba(233, 30, 99, 0.4)",
                     },
                   }}>
-                  Lưu
+                  Cập nhật ảnh đại diện
                 </Button>
-              </Form>
-            )}
-          </Formik>
         </Box>
         <Box
           sx={{
@@ -300,14 +230,6 @@ const PersonalInfoSection = ({ isAdmin, formatDate, maskMiddle }: PersonalInfoSe
             Định dạng: JPEG, PNG
           </Typography>
         </Box>
-        <ConfirmCodeModal
-          open={openConfirmModal}
-          onClose={() => setOpenConfirmModal(false)}
-          onSubmit={handleConfirmCodeSubmit}
-          isSubmitting={isSubmittingCode}
-          code={confirmCode}
-          setCode={setConfirmCode}
-        />
       </Box>
     </Box>
   );

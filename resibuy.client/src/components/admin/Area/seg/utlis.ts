@@ -25,7 +25,7 @@ export function useAreasLogic() {
     setLoading(true);
     setError(null);
     try {
-      const areaList = await areaApi.getAll();
+      const areaList = await areaApi.getAll(false);
       setAreas(areaList || []);
     } catch (err: any) {
       const errorMessage = err.message || "Lỗi khi lấy danh sách khu vực";
@@ -134,7 +134,9 @@ export function useAreasLogic() {
               prev ? { ...prev, isActive: response.data } : null
             );
           }
+       
           toast.success("Cập nhật trạng thái khu vực thành công!");
+          
         } else {
           throw new Error(
             response.message || "Lỗi khi cập nhật trạng thái khu vực"

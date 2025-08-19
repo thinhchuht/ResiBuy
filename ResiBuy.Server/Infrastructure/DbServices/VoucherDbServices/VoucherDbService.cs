@@ -33,7 +33,7 @@
             return await context.Vouchers.Where(v => v.IsActive && v.EndDate < now).ToListAsync();
         }
 
-        public async Task<PagedResult<Voucher>> GetAllVouchersAsync(Guid? storeId = null, bool? isActive = null, DateTime? startDate = null, DateTime? endDate = null, int pageNumber = 1, int pageSize = 10, string userId = null, decimal? minOrderPrice = null)
+        public async Task<PagedResult<Voucher>> GetAllVouchersAsync(Guid? storeId = null, bool? isActive = null, bool isGettingNow = false, DateTime? startDate = null, DateTime? endDate = null, int pageNumber = 1, int pageSize = 10, string userId = null, decimal? minOrderPrice = null)
         {
             var query = context.Vouchers.AsQueryable();
 
@@ -48,6 +48,8 @@
 
             if (endDate.HasValue)
                 query = query.Where(v => v.EndDate <= endDate.Value);
+            if(isGettingNow)
+                query = query.Where(v => v.StartDate <= DateTime.Now && v.EndDate >= DateTime.Now);
 
             if (!string.IsNullOrEmpty(userId))
                 query = query.Where(v => v.UserVouchers.Any(uv => uv.UserId == userId));

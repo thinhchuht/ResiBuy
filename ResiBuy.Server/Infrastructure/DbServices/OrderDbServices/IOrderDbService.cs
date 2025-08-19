@@ -6,6 +6,7 @@ namespace ResiBuy.Server.Infrastructure.DbServices.OrderDbServices;
 public interface IOrderDbService : IBaseDbService<Order>
 {
     Task<PagedResult<Order>> GetAllAsync(
+        string keyword,
         OrderStatus orderStatus,
         PaymentMethod paymentMethod,
         PaymentStatus paymentStatus,

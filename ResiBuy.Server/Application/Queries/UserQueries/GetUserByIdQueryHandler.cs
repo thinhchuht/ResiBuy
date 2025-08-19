@@ -19,7 +19,7 @@
                     s.Name,
                     s.PhoneNumber,
                     s.IsLocked
-                })));
+                }), user.ReportCount));
         }
     }
 }
