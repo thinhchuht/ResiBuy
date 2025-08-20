@@ -12,14 +12,14 @@ namespace ResiBuy.Server.Infrastructure.DbServices.ProductDetailDbServices
         public async Task<ResponseModel> CheckIsOutOfStock(List<int> ids)
         {
             var outOfStockProduct = await _context.ProductDetails.Include(pd => pd.Product)
-                .Where(p => ids.Contains(p.Id) && (p.IsOutOfStock || p.Quantity <= 0))
+                .Where(p => ids.Contains(p.Id) && (p.IsOutOfStock || p.Quantity <= 0 || p.Product.IsOutOfStock))
                 .FirstOrDefaultAsync();
 
             if (outOfStockProduct != null)
             {
                 throw new CustomException(
                     ExceptionErrorCode.NotFound,
-                    $"Sản phẩm '{outOfStockProduct.Product.Name}' đã hết hàng"
+                    $"Sản phẩm {outOfStockProduct.Product.Name} đã hết hàng"
                 );
             }
 
