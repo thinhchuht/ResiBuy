@@ -1,4 +1,4 @@
-import { Box, Typography, Button, Slider, Stack, Paper } from "@mui/material";
+import { Box, Typography, Button, Slider, Stack, Paper, TextField } from "@mui/material";
 import type { Category } from "../../types/models";
 import { useEffect, useState, useMemo } from "react";
 import { debounce } from "lodash";
@@ -34,6 +34,18 @@ const ProductFilterSection = ({
   const handleSliderChange = (_event: Event, newValue: number | number[]) => {
     setSliderValue(newValue as number[]);
     debouncedSetPriceRange(newValue as number[]);
+  };
+
+  const handleMaxPriceInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const raw = e.target.value;
+    let next = parseInt(raw || "", 10);
+    if (Number.isNaN(next)) return; // ignore invalid
+    // enforce next >= current min, no upper bound
+    const min = sliderValue[0];
+    next = Math.max(min, next);
+    const newRange: number[] = [min, next];
+    setSliderValue(newRange);
+    debouncedSetPriceRange(newRange);
   };
 
   useEffect(() => {
@@ -105,7 +117,7 @@ const ProductFilterSection = ({
           onChange={handleSliderChange}
           valueLabelDisplay="auto"
           min={0}
-          max={50000000}
+          max={Math.max(50000000, sliderValue[1])}
           valueLabelFormat={(value) => `${value.toLocaleString()}đ`}
           sx={{
             color: "#FF6B6B",
@@ -116,13 +128,16 @@ const ProductFilterSection = ({
             },
           }}
         />
-        <Box sx={{ display: "flex", justifyContent: "space-between", mt: 1 }}>
-          <Typography variant="body2" color="text.secondary">
-            {priceRange[0].toLocaleString()}đ
-          </Typography>
-          <Typography variant="body2" color="text.secondary">
-            {priceRange[1].toLocaleString()}đ
-          </Typography>
+        <Box sx={{ display: "flex", justifyContent: "center", alignItems: "center", mt: 1 }}>
+          <TextField
+            size="small"
+            label="Max"
+            type="number"
+            value={sliderValue[1]}
+            onChange={handleMaxPriceInputChange}
+            inputProps={{ min: sliderValue[0], step: 1000 }}
+            sx={{ width: 160 }}
+          />
         </Box>
       </Box>
     </Paper>
