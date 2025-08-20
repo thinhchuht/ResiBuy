@@ -20,17 +20,7 @@ import {
   CardContent,
   CircularProgress,
 } from "@mui/material";
-import {
-  Visibility,
-  CheckCircle,
-  Warning,
-  Store,
-  Person,
-  LocalShipping,
-  CheckCircleOutline,
-  Clear,
-  Close,
-} from "@mui/icons-material";
+import { Visibility, CheckCircle, Warning, Store, Person, LocalShipping, CheckCircleOutline, Clear, Close } from "@mui/icons-material";
 import { LocalizationProvider } from "@mui/x-date-pickers/LocalizationProvider";
 import { AdapterDateFns } from "@mui/x-date-pickers/AdapterDateFns";
 import { DatePicker } from "@mui/x-date-pickers/DatePicker";
@@ -41,13 +31,9 @@ import reportApi from "../../../api/report.api";
 import orderApi from "../../../api/order.api";
 import type { OrderApiResult } from "../../Order/OrderCard";
 import { OrderStatus, PaymentStatus } from "../../../types/models";
-import {
-  HubEventType,
-  useEventHub,
-  type HubEventHandler,
-} from "../../../hooks/useEventHub";
+import { HubEventType, useEventHub, type HubEventHandler } from "../../../hooks/useEventHub";
 import type { ReportCreatedDto } from "../../../types/hubEventDto";
-import { StatsCard } from "../../../layouts/AdminLayout/components/StatsCard"; 
+import { StatsCard } from "../../../layouts/AdminLayout/components/StatsCard";
 export interface Report {
   id: string;
   title: string;
@@ -139,15 +125,13 @@ export default function ReportsPage() {
         targetId: data.targetId,
       };
 
-      const matchesFilters = (
+      const matchesFilters =
         (!filters.keyword ||
-         newReport.title.toLowerCase().includes(filters.keyword.toLowerCase()) ||
-         newReport.description.toLowerCase().includes(filters.keyword.toLowerCase())) &&
-        (filters.reportTarget === ReportTarget.None ||
-         newReport.reportTarget === filters.reportTarget) &&
+          newReport.title.toLowerCase().includes(filters.keyword.toLowerCase()) ||
+          newReport.description.toLowerCase().includes(filters.keyword.toLowerCase())) &&
+        (filters.reportTarget === ReportTarget.None || newReport.reportTarget === filters.reportTarget) &&
         (!filters.startDate || new Date(newReport.createdAt) >= filters.startDate) &&
-        (!filters.endDate || new Date(newReport.createdAt) <= filters.endDate)
-      );
+        (!filters.endDate || new Date(newReport.createdAt) <= filters.endDate);
 
       if (matchesFilters) {
         setReports((prevReports) => [newReport, ...prevReports]);
@@ -158,13 +142,13 @@ export default function ReportsPage() {
         ...prevStats,
         total: prevStats.total + 1,
         unResolved: prevStats.unResolved + 1,
-        ...(data.reportTarget === 'Customer' && {
+        ...(data.reportTarget === "Customer" && {
           customerTarget: prevStats.customerTarget + 1,
         }),
-        ...(data.reportTarget === 'Store' && {
+        ...(data.reportTarget === "Store" && {
           storeTarget: prevStats.storeTarget + 1,
         }),
-        ...(data.reportTarget === 'Shipper' && {
+        ...(data.reportTarget === "Shipper" && {
           shipperTarget: prevStats.shipperTarget + 1,
         }),
       }));
@@ -203,10 +187,7 @@ export default function ReportsPage() {
     }
   };
 
-  const getPaymentStatusText = (
-    status: PaymentStatus,
-    paymentMethod: number
-  ) => {
+  const getPaymentStatusText = (status: PaymentStatus, paymentMethod: number) => {
     switch (status) {
       case PaymentStatus.Paid:
         return "Đã thanh toán";
@@ -278,7 +259,7 @@ export default function ReportsPage() {
   useEffect(() => {
     const timeoutId = setTimeout(() => {
       if (searchKeyword !== filters.keyword) {
-        setFilters(prev => ({ ...prev, keyword: searchKeyword }));
+        setFilters((prev) => ({ ...prev, keyword: searchKeyword }));
         setPageNumber(1);
       }
     }, 500);
@@ -313,7 +294,7 @@ export default function ReportsPage() {
         const orderData = await orderApi.getById(report.orderId);
         setOrderDetails(orderData);
       } catch (error) {
-        console.error('Error fetching order details:', error);
+        console.error("Error fetching order details:", error);
         setOrderDetails(null);
       } finally {
         setIsLoadingOrder(false);
@@ -389,7 +370,7 @@ export default function ReportsPage() {
       key: "orderId" as keyof Report,
       label: "Đơn hàng",
       render: (report: Report) => (
-        <Typography variant="body2" fontFamily="monospace" sx={{ fontSize: '0.875rem' }}>
+        <Typography variant="body2" fontFamily="monospace" sx={{ fontSize: "0.875rem" }}>
           {report.orderId}
         </Typography>
       ),
@@ -397,11 +378,7 @@ export default function ReportsPage() {
     {
       key: "createdAt" as keyof Report,
       label: "Ngày tạo",
-      render: (report: Report) => (
-        <Typography variant="body2">
-          {format(new Date(report.createdAt), "dd/MM/yyyy HH:mm", { locale: vi })}
-        </Typography>
-      ),
+      render: (report: Report) => <Typography variant="body2">{format(new Date(report.createdAt), "dd/MM/yyyy HH:mm", { locale: vi })}</Typography>,
     },
     {
       key: "isResolved" as keyof Report,
@@ -421,11 +398,7 @@ export default function ReportsPage() {
       render: (report: Report) => (
         <Box sx={{ display: "flex", gap: 0.5 }}>
           <Tooltip title="Xem chi tiết">
-            <IconButton
-              size="small"
-              onClick={() => handleViewReport(report)}
-              color="primary"
-            >
+            <IconButton size="small" onClick={() => handleViewReport(report)} color="primary">
               <Visibility />
             </IconButton>
           </Tooltip>
@@ -437,8 +410,7 @@ export default function ReportsPage() {
                   setSelectedReport(report);
                   handleOpenConfirmModal();
                 }}
-                color="success"
-              >
+                color="success">
                 <CheckCircleOutline />
               </IconButton>
             </Tooltip>
@@ -450,12 +422,12 @@ export default function ReportsPage() {
 
   useEffect(() => {
     loadReports();
-  // eslint-disable-next-line react-hooks/exhaustive-deps
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [pageNumber, filters]);
 
   useEffect(() => {
     loadStats();
-  // eslint-disable-next-line react-hooks/exhaustive-deps
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [filters.startDate, filters.endDate]);
 
   return (
@@ -467,8 +439,7 @@ export default function ReportsPage() {
           height: "100%",
           bgcolor: (theme) => theme.palette.grey[50],
           overflow: "hidden",
-        }}
-      >
+        }}>
         <Box
           component="header"
           sx={{
@@ -480,19 +451,16 @@ export default function ReportsPage() {
             borderColor: "divider",
             bgcolor: "background.paper",
             px: 2,
-          }}
-        >
+          }}>
           <Typography
             variant="h6"
             sx={(theme) => ({
               color: theme.palette.grey[700],
               fontWeight: theme.typography.fontWeightMedium,
-            })}
-          >
+            })}>
             Quản Lý Báo Cáo
           </Typography>
         </Box>
-
         <Box
           sx={{
             flex: 1,
@@ -501,8 +469,7 @@ export default function ReportsPage() {
             display: "flex",
             flexDirection: "column",
             gap: 3,
-          }}
-        >
+          }}>
           <Box>
             <Typography variant="body2" color="text.secondary">
               Thống kê và quản lý các đơn hàng bị tố cáo
@@ -510,136 +477,123 @@ export default function ReportsPage() {
           </Box>
 
           {/* Statistics Cards */}
-           <Box sx={{ display: "grid", gridTemplateColumns: { xs: "1fr", sm: "1fr 1fr", md: "1fr 1fr 1fr 1fr" }, gap: 3 }}>
-          {isLoadingStats ? (
-            Array.from({ length: 4 }).map((_, index) => (
-              <StatsCard
-                key={index}
-                title="Đang tải..."
-                value=""
-                icon={() => <CircularProgress size={24} />}
-                iconColor="text.secondary"
-                iconBgColor="grey.100"
-                sx={{ flex: { xs: "1 1 100%", sm: "1 1 45%", md: "1 1 22%" }, minWidth: 200 }}
-              />
-            ))
-          ) : (
-            [
-              {
-                title: "Tổng số báo cáo",
-                value: stats.total,
-                icon: Warning,
-                iconColor: "error.main",
-                iconBgColor: "#fee2e2",
-                valueColor: "text.primary",
-              },
-              {
-                title: "Đã xử lý",
-                value: stats.resolved,
-                icon: CheckCircle,
-                iconColor: "success.main",
-                iconBgColor: "#e8f5e9",
-                valueColor: "success.main",
-              },
-              {
-                title: "Chờ xử lý",
-                value: stats.unResolved,
-                icon: Warning,
-                iconColor: "warning.main",
-                iconBgColor: "#eeefdeff",
-                valueColor: "warning.main",
-              },
-              {
-                title: "Tỷ lệ xử lý",
-                value: `${stats.total > 0 ? Math.round((stats.resolved / stats.total) * 100) : 0}%`,
-                icon: CheckCircleOutline,
-                iconColor: "info.main",
-                iconBgColor: "#f2e5f5ff",
-                valueColor: "info.main",
-              },
-            ].map((stat, index) => (
-              <StatsCard
-                key={index}
-                title={stat.title}
-                value={stat.value}
-                icon={stat.icon}
-                iconColor={stat.iconColor}
-                iconBgColor={stat.iconBgColor}
-                valueColor={stat.valueColor}
-                sx={{ flex: { xs: "1 1 100%", sm: "1 1 45%", md: "1 1 22%" }, minWidth: 200 }}
-              />
-            ))
-          )}
-        </Box>
+          <Box sx={{ display: "grid", gridTemplateColumns: { xs: "1fr", sm: "1fr 1fr", md: "1fr 1fr 1fr 1fr" }, gap: 3 }}>
+            {isLoadingStats
+              ? Array.from({ length: 4 }).map((_, index) => (
+                  <StatsCard
+                    key={index}
+                    title="Đang tải..."
+                    value=""
+                    icon={() => <CircularProgress size={24} />}
+                    iconColor="text.secondary"
+                    iconBgColor="grey.100"
+                    sx={{ flex: { xs: "1 1 100%", sm: "1 1 45%", md: "1 1 22%" }, minWidth: 200 }}
+                  />
+                ))
+              : [
+                  {
+                    title: "Tổng số báo cáo",
+                    value: stats.total,
+                    icon: Warning,
+                    iconColor: "error.main",
+                    iconBgColor: "#fee2e2",
+                    valueColor: "text.primary",
+                  },
+                  {
+                    title: "Đã xử lý",
+                    value: stats.resolved,
+                    icon: CheckCircle,
+                    iconColor: "success.main",
+                    iconBgColor: "#e8f5e9",
+                    valueColor: "success.main",
+                  },
+                  {
+                    title: "Chờ xử lý",
+                    value: stats.unResolved,
+                    icon: Warning,
+                    iconColor: "warning.main",
+                    iconBgColor: "#eeefdeff",
+                    valueColor: "warning.main",
+                  },
+                  {
+                    title: "Tỷ lệ xử lý",
+                    value: `${stats.total > 0 ? Math.round((stats.resolved / stats.total) * 100) : 0}%`,
+                    icon: CheckCircleOutline,
+                    iconColor: "info.main",
+                    iconBgColor: "#f2e5f5ff",
+                    valueColor: "info.main",
+                  },
+                ].map((stat, index) => (
+                  <StatsCard
+                    key={index}
+                    title={stat.title}
+                    value={stat.value}
+                    icon={stat.icon}
+                    iconColor={stat.iconColor}
+                    iconBgColor={stat.iconBgColor}
+                    valueColor={stat.valueColor}
+                    sx={{ flex: { xs: "1 1 100%", sm: "1 1 45%", md: "1 1 22%" }, minWidth: 200 }}
+                  />
+                ))}
+          </Box>
 
-       
-        <Box sx={{ display: "grid", gridTemplateColumns: { xs: "1fr", sm: "1fr 1fr 1fr" }, gap: 2 }}>
-          {isLoadingStats ? (
-            Array.from({ length: 3 }).map((_, index) => (
-              <StatsCard
-                key={index}
-                title="Đang tải..."
-                value=""
-                icon={() => <CircularProgress size={24} />}
-                iconColor="text.secondary"
-                iconBgColor="grey.100"
-                sx={{ flex: { xs: "1 1 100%", sm: "1 1 30%" }, minWidth: 200 }}
-              />
-            ))
-          ) : (
-            [
-              {
-                title: "Báo cáo khách hàng",
-                value: stats.customerTarget,
-                icon: Person,
-                iconColor: "primary.main",
-                iconBgColor: "#e8f5e9",
-                valueColor: "primary.main",
-              },
-              {
-                title: "Báo cáo cửa hàng",
-                value: stats.storeTarget,
-                icon: Store,
-                iconColor: "secondary.main",
-                iconBgColor: "#f4e6efff",
-                valueColor: "secondary.main",
-              },
-              {
-                title: "Báo cáo người giao hàng",
-                value: stats.shipperTarget,
-                icon: LocalShipping,
-                iconColor: "warning.main",
-                iconBgColor: "#fdecdcff",
-                valueColor: "warning.main",
-              },
-            ].map((stat, index) => (
-              <StatsCard
-                key={index}
-                title={stat.title}
-                value={stat.value}
-                icon={stat.icon}
-                iconColor={stat.iconColor}
-                iconBgColor={stat.iconBgColor}
-                valueColor={stat.valueColor}
-                sx={{ flex: { xs: "1 1 100%", sm: "1 1 30%" }, minWidth: 200 }}
-              />
-            ))
-          )}
-        </Box>
+          <Box sx={{ display: "grid", gridTemplateColumns: { xs: "1fr", sm: "1fr 1fr 1fr" }, gap: 2 }}>
+            {isLoadingStats
+              ? Array.from({ length: 3 }).map((_, index) => (
+                  <StatsCard
+                    key={index}
+                    title="Đang tải..."
+                    value=""
+                    icon={() => <CircularProgress size={24} />}
+                    iconColor="text.secondary"
+                    iconBgColor="grey.100"
+                    sx={{ flex: { xs: "1 1 100%", sm: "1 1 30%" }, minWidth: 200 }}
+                  />
+                ))
+              : [
+                  {
+                    title: "Báo cáo khách hàng",
+                    value: stats.customerTarget,
+                    icon: Person,
+                    iconColor: "primary.main",
+                    iconBgColor: "#e8f5e9",
+                    valueColor: "primary.main",
+                  },
+                  {
+                    title: "Báo cáo cửa hàng",
+                    value: stats.storeTarget,
+                    icon: Store,
+                    iconColor: "secondary.main",
+                    iconBgColor: "#f4e6efff",
+                    valueColor: "secondary.main",
+                  },
+                  {
+                    title: "Báo cáo người giao hàng",
+                    value: stats.shipperTarget,
+                    icon: LocalShipping,
+                    iconColor: "warning.main",
+                    iconBgColor: "#fdecdcff",
+                    valueColor: "warning.main",
+                  },
+                ].map((stat, index) => (
+                  <StatsCard
+                    key={index}
+                    title={stat.title}
+                    value={stat.value}
+                    icon={stat.icon}
+                    iconColor={stat.iconColor}
+                    iconBgColor={stat.iconBgColor}
+                    valueColor={stat.valueColor}
+                    sx={{ flex: { xs: "1 1 100%", sm: "1 1 30%" }, minWidth: 200 }}
+                  />
+                ))}
+          </Box>
 
           {/* Filters */}
           <Paper sx={{ p: 2 }}>
             <Box sx={{ display: "flex", justifyContent: "space-between", alignItems: "center", mb: 2 }}>
-              <Typography variant="h6">
-                Bộ lọc
-              </Typography>
-              <Button
-                variant="outlined"
-                size="small"
-                startIcon={<Clear />}
-                onClick={handleClearFilters}
-                sx={{ minWidth: "auto" }}
-              >
+              <Typography variant="h6">Bộ lọc</Typography>
+              <Button variant="outlined" size="small" startIcon={<Clear />} onClick={handleClearFilters} sx={{ minWidth: "auto" }}>
                 Xóa tất cả
               </Button>
             </Box>
@@ -659,7 +613,7 @@ export default function ReportsPage() {
                   label="Từ ngày"
                   value={filters.startDate}
                   onChange={(date) => {
-                    setFilters(prev => ({ ...prev, startDate: date }));
+                    setFilters((prev) => ({ ...prev, startDate: date }));
                   }}
                   slotProps={{ textField: { size: "small", fullWidth: true } }}
                 />
@@ -669,7 +623,7 @@ export default function ReportsPage() {
                   label="Đến ngày"
                   value={filters.endDate}
                   onChange={(date) => {
-                    setFilters(prev => ({ ...prev, endDate: date }));
+                    setFilters((prev) => ({ ...prev, endDate: date }));
                   }}
                   slotProps={{ textField: { size: "small", fullWidth: true } }}
                 />
@@ -680,10 +634,9 @@ export default function ReportsPage() {
                   <Select
                     value={filters.reportTarget}
                     onChange={(e) => {
-                      setFilters(prev => ({ ...prev, reportTarget: e.target.value as ReportTarget }));
+                      setFilters((prev) => ({ ...prev, reportTarget: e.target.value as ReportTarget }));
                     }}
-                    label="Đối tượng"
-                  >
+                    label="Đối tượng">
                     <MenuItem value={ReportTarget.None}>Tất cả</MenuItem>
                     <MenuItem value={ReportTarget.Customer}>Khách hàng</MenuItem>
                     <MenuItem value={ReportTarget.Store}>Cửa hàng</MenuItem>
@@ -717,11 +670,10 @@ export default function ReportsPage() {
             PaperProps={{
               sx: {
                 borderRadius: 2,
-                maxHeight: '90vh',
+                maxHeight: "90vh",
                 bgcolor: "background.paper",
-              }
-            }}
-          >
+              },
+            }}>
             <DialogTitle
               sx={{
                 display: "flex",
@@ -731,19 +683,14 @@ export default function ReportsPage() {
                 bgcolor: "background.paper",
                 borderBottom: 1,
                 borderColor: "divider",
-              }}
-            >
-              <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+              }}>
+              <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
                 <Warning sx={{ fontSize: 24 }} />
                 <Typography variant="h6" fontWeight={600}>
                   Chi tiết báo cáo
                 </Typography>
               </Box>
-              <IconButton
-                onClick={handleCloseDetailModal}
-                size="small"
-                sx={{ color: "text.secondary" }}
-              >
+              <IconButton onClick={handleCloseDetailModal} size="small" sx={{ color: "text.secondary" }}>
                 <Close />
               </IconButton>
             </DialogTitle>
@@ -753,19 +700,19 @@ export default function ReportsPage() {
                   {/* Report Section */}
                   {orderDetails.report && (
                     <Box sx={{ p: 3, bgcolor: "background.paper" }}>
-                      <Typography variant="h6" gutterBottom sx={{ color: 'grey.900', fontWeight: 600 }}>
+                      <Typography variant="h6" gutterBottom sx={{ color: "grey.900", fontWeight: 600 }}>
                         Thông tin báo cáo
                       </Typography>
-                      <Card sx={{ mb: 2, boxShadow: '0 2px 8px rgba(0,0,0,0.1)' }}>
+                      <Card sx={{ mb: 2, boxShadow: "0 2px 8px rgba(0,0,0,0.1)" }}>
                         <CardContent>
-                          <Typography variant="h6" gutterBottom sx={{ color: 'error.main', fontWeight: 600 }}>
+                          <Typography variant="h6" gutterBottom sx={{ color: "error.main", fontWeight: 600 }}>
                             {orderDetails.report.title}
                           </Typography>
-                          <Typography variant="body1" paragraph sx={{ color: 'grey.800', lineHeight: 1.6 }}>
+                          <Typography variant="body1" paragraph sx={{ color: "grey.800", lineHeight: 1.6 }}>
                             {orderDetails.report.description}
                           </Typography>
                           <Box sx={{ display: "flex", flexWrap: "wrap", gap: 2, mt: 2 }}>
-                            <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                            <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
                               <Typography variant="body2" color="text.secondary">
                                 Đối tượng:
                               </Typography>
@@ -777,7 +724,7 @@ export default function ReportsPage() {
                                 variant="filled"
                               />
                             </Box>
-                            <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                            <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
                               <Typography variant="body2" color="text.secondary">
                                 Trạng thái:
                               </Typography>
@@ -789,7 +736,7 @@ export default function ReportsPage() {
                                 variant="filled"
                               />
                             </Box>
-                            <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                            <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
                               <Typography variant="body2" color="text.secondary">
                                 Ngày tạo:
                               </Typography>
@@ -805,7 +752,7 @@ export default function ReportsPage() {
 
                   {/* Order Details Section */}
                   <Box sx={{ p: 3, bgcolor: "background.paper" }}>
-                    <Typography variant="h6" gutterBottom sx={{ color: 'grey.900', fontWeight: 600, mb: 2 }}>
+                    <Typography variant="h6" gutterBottom sx={{ color: "grey.900", fontWeight: 600, mb: 2 }}>
                       Thông tin đơn hàng
                     </Typography>
                     {isLoadingOrder ? (
@@ -813,20 +760,23 @@ export default function ReportsPage() {
                         <CircularProgress size={32} />
                       </Box>
                     ) : orderDetails ? (
-                      <Card sx={{ boxShadow: '0 2px 8px rgba(0,0,0,0.1)' }}>
+                      <Card sx={{ boxShadow: "0 2px 8px rgba(0,0,0,0.1)" }}>
                         <CardContent>
-                          <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 3, mb: 3 }}>
+                          <Box sx={{ display: "flex", flexWrap: "wrap", gap: 3, mb: 3 }}>
                             <Box sx={{ flex: 1, minWidth: 200 }}>
                               <Typography variant="subtitle2" color="text.secondary" gutterBottom>
                                 Mã đơn hàng
                               </Typography>
-                              <Typography variant="body1" fontFamily="monospace" sx={{
-                                bgcolor: 'grey.100',
-                                p: 1,
-                                borderRadius: 1,
-                                border: '1px solid',
-                                borderColor: 'grey.200'
-                              }}>
+                              <Typography
+                                variant="body1"
+                                fontFamily="monospace"
+                                sx={{
+                                  bgcolor: "grey.100",
+                                  p: 1,
+                                  borderRadius: 1,
+                                  border: "1px solid",
+                                  borderColor: "grey.200",
+                                }}>
                                 {orderDetails.id}
                               </Typography>
                             </Box>
@@ -835,7 +785,7 @@ export default function ReportsPage() {
                                 Tổng tiền
                               </Typography>
                               <Typography variant="h6" color="primary.main" fontWeight={600}>
-                                {orderDetails.totalPrice?.toLocaleString('vi-VN')} VNĐ
+                                {orderDetails.totalPrice?.toLocaleString("vi-VN")} VNĐ
                               </Typography>
                             </Box>
                             <Box sx={{ flex: 1, minWidth: 200 }}>
@@ -843,17 +793,12 @@ export default function ReportsPage() {
                                 Phí giao hàng
                               </Typography>
                               <Typography variant="body1" color="text.secondary">
-                                {orderDetails.shippingFee?.toLocaleString('vi-VN')} VNĐ
+                                {orderDetails.shippingFee?.toLocaleString("vi-VN")} VNĐ
                               </Typography>
                             </Box>
                           </Box>
-                          <Box sx={{ display: 'flex', gap: 2, mb: 3, flexWrap: 'wrap' }}>
-                            <Chip
-                              label={`Trạng thái: ${getStatusText(orderDetails.status)}`}
-                              color="info"
-                              variant="outlined"
-                              sx={{ fontWeight: 500 }}
-                            />
+                          <Box sx={{ display: "flex", gap: 2, mb: 3, flexWrap: "wrap" }}>
+                            <Chip label={`Trạng thái: ${getStatusText(orderDetails.status)}`} color="info" variant="outlined" sx={{ fontWeight: 500 }} />
                             <Chip
                               label={`Thanh toán: ${getPaymentStatusText(orderDetails.paymentStatus, orderDetails.paymentMethod)}`}
                               color="secondary"
@@ -861,45 +806,45 @@ export default function ReportsPage() {
                               sx={{ fontWeight: 500 }}
                             />
                             <Chip
-                              label={`Ngày tạo: ${orderDetails.createAt ? format(new Date(orderDetails.createAt), "dd/MM/yyyy", { locale: vi }) : 'Không rõ'}`}
+                              label={`Ngày tạo: ${orderDetails.createAt ? format(new Date(orderDetails.createAt), "dd/MM/yyyy", { locale: vi }) : "Không rõ"}`}
                               color="default"
                               variant="outlined"
                               sx={{ fontWeight: 500 }}
                             />
                           </Box>
-                          <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 3 }}>
-                            <Box sx={{ flex: 1, minWidth: 250, p: 2, bgcolor: 'grey.100', borderRadius: 2 }}>
-                              <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 1 }}>
-                                <Person sx={{ color: 'primary.main', fontSize: 20 }} />
+                          <Box sx={{ display: "flex", flexWrap: "wrap", gap: 3 }}>
+                            <Box sx={{ flex: 1, minWidth: 250, p: 2, bgcolor: "grey.100", borderRadius: 2 }}>
+                              <Box sx={{ display: "flex", alignItems: "center", gap: 1, mb: 1 }}>
+                                <Person sx={{ color: "primary.main", fontSize: 20 }} />
                                 <Typography variant="subtitle1" fontWeight={600} color="primary.main">
                                   Khách hàng
                                 </Typography>
                               </Box>
                               <Typography variant="body1" fontWeight={500}>
-                                {orderDetails.user?.fullName || 'Không có thông tin'}
+                                {orderDetails.user?.fullName || "Không có thông tin"}
                               </Typography>
                               <Typography variant="body2" color="text.secondary">
-                                {orderDetails.user?.phoneNumber || 'Không có số điện thoại'}
+                                {orderDetails.user?.phoneNumber || "Không có số điện thoại"}
                               </Typography>
                             </Box>
-                            <Box sx={{ flex: 1, minWidth: 250, p: 2, bgcolor: 'grey.100', borderRadius: 2 }}>
-                              <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 1 }}>
-                                <Store sx={{ color: 'secondary.main', fontSize: 20 }} />
+                            <Box sx={{ flex: 1, minWidth: 250, p: 2, bgcolor: "grey.100", borderRadius: 2 }}>
+                              <Box sx={{ display: "flex", alignItems: "center", gap: 1, mb: 1 }}>
+                                <Store sx={{ color: "secondary.main", fontSize: 20 }} />
                                 <Typography variant="subtitle1" fontWeight={600} color="secondary.main">
                                   Cửa hàng
                                 </Typography>
                               </Box>
                               <Typography variant="body1" fontWeight={500}>
-                                {orderDetails.store?.name || 'Không có thông tin'}
+                                {orderDetails.store?.name || "Không có thông tin"}
                               </Typography>
                               <Typography variant="body2" color="text.secondary">
-                                {orderDetails.store?.phoneNumber || 'Không có số điện thoại'}
+                                {orderDetails.store?.phoneNumber || "Không có số điện thoại"}
                               </Typography>
                             </Box>
                             {orderDetails.shipper?.id && (
-                              <Box sx={{ flex: 1, minWidth: 250, p: 2, bgcolor: 'grey.100', borderRadius: 2 }}>
-                                <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 1 }}>
-                                  <LocalShipping sx={{ color: 'warning.main', fontSize: 20 }} />
+                              <Box sx={{ flex: 1, minWidth: 250, p: 2, bgcolor: "grey.100", borderRadius: 2 }}>
+                                <Box sx={{ display: "flex", alignItems: "center", gap: 1, mb: 1 }}>
+                                  <LocalShipping sx={{ color: "warning.main", fontSize: 20 }} />
                                   <Typography variant="subtitle1" fontWeight={600} color="warning.main">
                                     Người giao hàng
                                   </Typography>
@@ -908,64 +853,71 @@ export default function ReportsPage() {
                                   {orderDetails.shipper.fullName}
                                 </Typography>
                                 <Typography variant="body2" color="text.secondary">
-                                  {orderDetails.shipper.phoneNumber || 'Không có số điện thoại'}
+                                  {orderDetails.shipper.phoneNumber || "Không có số điện thoại"}
                                 </Typography>
                               </Box>
                             )}
                           </Box>
                           {orderDetails.orderItems && orderDetails.orderItems.length > 0 && (
                             <Box sx={{ mt: 3 }}>
-                              <Typography variant="subtitle1" fontWeight={600} gutterBottom sx={{ color: 'grey.900', mb: 2 }}>
+                              <Typography variant="subtitle1" fontWeight={600} gutterBottom sx={{ color: "grey.900", mb: 2 }}>
                                 Sản phẩm trong đơn hàng ({orderDetails.orderItems.length})
                               </Typography>
-                              <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
+                              <Box sx={{ display: "flex", flexDirection: "column", gap: 2 }}>
                                 {orderDetails.orderItems.map((item, index) => (
-                                  <Card key={index} sx={{
-                                    border: '1px solid',
-                                    borderColor: 'grey.200',
-                                    boxShadow: '0 1px 3px rgba(0,0,0,0.1)',
-                                    '&:hover': {
-                                      boxShadow: '0 2px 8px rgba(0,0,0,0.15)'
-                                    }
-                                  }}>
+                                  <Card
+                                    key={index}
+                                    sx={{
+                                      border: "1px solid",
+                                      borderColor: "grey.200",
+                                      boxShadow: "0 1px 3px rgba(0,0,0,0.1)",
+                                      "&:hover": {
+                                        boxShadow: "0 2px 8px rgba(0,0,0,0.15)",
+                                      },
+                                    }}>
                                     <CardContent sx={{ p: 2 }}>
-                                      <Box sx={{ display: 'flex', gap: 2, alignItems: 'flex-start' }}>
+                                      <Box sx={{ display: "flex", gap: 2, alignItems: "flex-start" }}>
                                         {item.image && (
-                                          <Box sx={{
-                                            width: 80,
-                                            height: 80,
-                                            borderRadius: 1,
-                                            overflow: 'hidden',
-                                            border: '1px solid',
-                                            borderColor: 'grey.200',
-                                            flexShrink: 0
-                                          }}>
+                                          <Box
+                                            sx={{
+                                              width: 80,
+                                              height: 80,
+                                              borderRadius: 1,
+                                              overflow: "hidden",
+                                              border: "1px solid",
+                                              borderColor: "grey.200",
+                                              flexShrink: 0,
+                                            }}>
                                             <img
                                               src={item.image.thumbUrl || item.image.url}
                                               alt={item.productName}
                                               style={{
-                                                width: '100%',
-                                                height: '100%',
-                                                objectFit: 'cover'
+                                                width: "100%",
+                                                height: "100%",
+                                                objectFit: "cover",
                                               }}
                                               onError={(e) => {
-                                                e.currentTarget.src = '/placeholder-image.png';
+                                                e.currentTarget.src = "/placeholder-image.png";
                                               }}
                                             />
                                           </Box>
                                         )}
                                         <Box sx={{ flex: 1, minWidth: 0 }}>
-                                          <Typography variant="subtitle2" fontWeight={600} gutterBottom sx={{
-                                            color: 'grey.900',
-                                            overflow: 'hidden',
-                                            textOverflow: 'ellipsis',
-                                            display: '-webkit-box',
-                                            WebkitLineClamp: 2,
-                                            WebkitBoxOrient: 'vertical'
-                                          }}>
+                                          <Typography
+                                            variant="subtitle2"
+                                            fontWeight={600}
+                                            gutterBottom
+                                            sx={{
+                                              color: "grey.900",
+                                              overflow: "hidden",
+                                              textOverflow: "ellipsis",
+                                              display: "-webkit-box",
+                                              WebkitLineClamp: 2,
+                                              WebkitBoxOrient: "vertical",
+                                            }}>
                                             {item.productName}
                                           </Typography>
-                                          <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 2, mt: 1 }}>
+                                          <Box sx={{ display: "flex", flexWrap: "wrap", gap: 2, mt: 1 }}>
                                             <Box>
                                               <Typography variant="caption" color="text.secondary" display="block">
                                                 Số lượng
@@ -979,7 +931,7 @@ export default function ReportsPage() {
                                                 Đơn giá
                                               </Typography>
                                               <Typography variant="body2" fontWeight={500} color="primary.main">
-                                                {item.price?.toLocaleString('vi-VN')} VNĐ
+                                                {item.price?.toLocaleString("vi-VN")} VNĐ
                                               </Typography>
                                             </Box>
                                             <Box>
@@ -987,7 +939,7 @@ export default function ReportsPage() {
                                                 Thành tiền
                                               </Typography>
                                               <Typography variant="body2" fontWeight={600} color="error.main">
-                                                {(item.price * item.quantity)?.toLocaleString('vi-VN')} VNĐ
+                                                {(item.price * item.quantity)?.toLocaleString("vi-VN")} VNĐ
                                               </Typography>
                                             </Box>
                                           </Box>
@@ -996,14 +948,14 @@ export default function ReportsPage() {
                                               <Typography variant="caption" color="text.secondary" display="block" gutterBottom>
                                                 Thông tin thêm:
                                               </Typography>
-                                              <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 0.5 }}>
+                                              <Box sx={{ display: "flex", flexWrap: "wrap", gap: 0.5 }}>
                                                 {item.addtionalData.map((data, dataIndex) => (
                                                   <Chip
                                                     key={dataIndex}
                                                     label={`${data.key}: ${data.value}`}
                                                     size="small"
                                                     variant="outlined"
-                                                    sx={{ fontSize: '0.75rem', height: 24 }}
+                                                    sx={{ fontSize: "0.75rem", height: 24 }}
                                                   />
                                                 ))}
                                               </Box>
@@ -1020,8 +972,8 @@ export default function ReportsPage() {
                         </CardContent>
                       </Card>
                     ) : (
-                      <Card sx={{ boxShadow: '0 2px 8px rgba(0,0,0,0.1)' }}>
-                        <CardContent sx={{ textAlign: 'center', py: 4 }}>
+                      <Card sx={{ boxShadow: "0 2px 8px rgba(0,0,0,0.1)" }}>
+                        <CardContent sx={{ textAlign: "center", py: 4 }}>
                           <Typography variant="body1" color="text.secondary">
                             Không thể tải thông tin đơn hàng
                           </Typography>
@@ -1034,32 +986,17 @@ export default function ReportsPage() {
             </DialogContent>
             {orderDetails && orderDetails.report && !orderDetails.report.isResolved && (
               <DialogActions>
-                <Button
-                  onClick={handleOpenConfirmModal}
-                  color="primary"
-                  variant="contained"
-                  startIcon={<CheckCircleOutline />}
-                >
+                <Button onClick={handleOpenConfirmModal} color="primary" variant="contained" startIcon={<CheckCircleOutline />}>
                   Xử lý
                 </Button>
               </DialogActions>
             )}
           </Dialog>
 
-          <Dialog
-            open={isConfirmModalOpen}
-            onClose={handleCloseConfirmModal}
-            maxWidth="sm"
-            fullWidth
-            PaperProps={{ sx: { bgcolor: "background.paper" } }}
-          >
+          <Dialog open={isConfirmModalOpen} onClose={handleCloseConfirmModal} maxWidth="sm" fullWidth PaperProps={{ sx: { bgcolor: "background.paper" } }}>
             <DialogTitle sx={{ display: "flex", justifyContent: "space-between", alignItems: "center", pr: 1, bgcolor: "background.paper" }}>
               Xác nhận xử lý
-              <IconButton
-                onClick={handleCloseConfirmModal}
-                size="small"
-                sx={{ color: "text.secondary" }}
-              >
+              <IconButton onClick={handleCloseConfirmModal} size="small" sx={{ color: "text.secondary" }}>
                 <Close />
               </IconButton>
             </DialogTitle>
@@ -1069,30 +1006,19 @@ export default function ReportsPage() {
               </Typography>
             </DialogContent>
             <DialogActions sx={{ gap: 1, p: 2, bgcolor: "background.paper" }}>
-              <Button
-                onClick={handleCloseConfirmModal}
-                color="inherit"
-                variant="outlined"
-              >
+              <Button onClick={handleCloseConfirmModal} color="inherit" variant="outlined">
                 Hủy
               </Button>
-              <Button
-                onClick={() => selectedReport && handleResolveReport(selectedReport.id, false)}
-                color="success"
-                variant="contained"
-              >
+              <Button onClick={() => selectedReport && handleResolveReport(selectedReport.id, false)} color="success" variant="contained">
                 Xử lý (Không thêm cảnh cáo)
               </Button>
-              <Button
-                onClick={() => selectedReport && handleResolveReport(selectedReport.id, true)}
-                color="warning"
-                variant="contained"
-              >
+              <Button onClick={() => selectedReport && handleResolveReport(selectedReport.id, true)} color="warning" variant="contained">
                 Xử lý & Thêm cảnh cáo
               </Button>
             </DialogActions>
           </Dialog>
-        </Box>a
+        </Box>
+        a
       </Box>
     </LocalizationProvider>
   );
