@@ -860,7 +860,7 @@ export function ShipperDetailModal({
                     Trạng Thái
                   </Typography>
                   <Typography sx={{ color: "grey.900" }}>
-                    {isShipperAvailable(shipper) ? "Sẵn Sàng" : "Không Sẵn Sàng"}
+                    {isShipperAvailable(shipper) ? "Đã khóa" : "Chưa khóa"}
                   </Typography>
                 </Box>
                 <Box>
