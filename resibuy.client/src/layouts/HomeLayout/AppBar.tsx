@@ -702,11 +702,13 @@ const AppBar: React.FC = () => {
     };
 
     const handleSearch = () => {
-        if (searchValue.trim()) {
-            navigate(`/products?search=${encodeURIComponent(searchValue.trim())}`);
-        } else {
-            navigate(`/products`);
-        }
+        const trimmed = searchValue.trim();
+        const params = new URLSearchParams();
+        if (trimmed) params.set("search", trimmed);
+        // Add a cache-busting param so navigation triggers even if value unchanged
+        params.set("_r", Date.now().toString());
+        const query = params.toString();
+        navigate(query ? `/products?${query}` : `/products?_r=${Date.now()}`);
     };
 
     const handleProfileMenuOpen = (event: React.MouseEvent<HTMLElement>) => {
