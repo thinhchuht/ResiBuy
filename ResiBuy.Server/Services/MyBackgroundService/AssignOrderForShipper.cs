@@ -38,7 +38,7 @@ namespace ResiBuy.Server.Services.MyBackgroundService
                             {
                                 var areaId = orderGroup.Key;
                                 var ordersInArea = orderGroup.ToList();
-                                var shippers = (await shipperDbService.GetShippersInAreaAsync(areaId)).Where(s => s.IsOnline == true)
+                                var shippers = (await shipperDbService.GetShippersInAreaAsync(areaId)).Where(s => s.IsOnline == true && s.IsShipping == false)
                                                .OrderBy(s => s.LastDelivered ?? DateTimeOffset.MinValue)
                                                .ToList();
 
@@ -76,7 +76,8 @@ namespace ResiBuy.Server.Services.MyBackgroundService
                                     order.UpdateAt = DateTime.Now;
                                     await orderDbService.UpdateAsync(order);
                                     _logger.LogInformation($"Gửi đơn hàng {order.Id} đến shipper {shipper.Id}");
-
+                                    shipper.IsShipping = true;
+                                    await shipperDbService.UpdateAsync(shipper);
                                     shipperIndex = (shipperIndex + 1) % shippers.Count;
                                 }
                             }

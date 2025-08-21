@@ -27,7 +27,6 @@ import {
   LocalOffer as VoucherIcon,
   ShoppingCart as OrdersIcon,
   BarChart as AnalyticsIcon,
-  Settings as SettingsIcon,
   Refresh as RefreshIcon,
   CheckCircle as OpenIcon,
   Cancel as ClosedIcon,
@@ -78,7 +77,7 @@ const menuItems = [
   },
   {
     id: "analytics",
-    label: "Báo cáo",
+    label: "Thống kê",
     icon: <AnalyticsIcon />,
     path: "chart-view",
   },
