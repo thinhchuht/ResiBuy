@@ -347,5 +347,31 @@ namespace ResiBuy.Server.Infrastructure.DbServices.ShipperDbServices
                 Data = data
             };
         }
+
+        public async Task UpdateTimeDelevery(Guid shipperId)
+        {
+            try
+            {
+                var shipper = _context.Shippers.Find(shipperId);
+                if (shipper == null)
+                    throw new CustomException(ExceptionErrorCode.NotFound, "Shipper không tồn tại");
+                var orders = _context.Orders
+                    .Where(o => o.ShipperId == shipperId && o.Status == OrderStatus.Shipped || o.ShipperId == shipperId && o.Status == OrderStatus.Assigned)
+                    .ToList();
+                if (orders == null || !orders.Any())
+                {
+                    shipper.IsShipping = false;
+                }
+                if (!shipper.IsShipping)
+                {
+                    shipper.LastDelivered = DateTime.Now;
+                    await _context.SaveChangesAsync();
+                }
+            }
+            catch (Exception ex)
+            {
+                throw new CustomException(ExceptionErrorCode.RepositoryError, ex.Message);
+            }
+        }
     }
 }

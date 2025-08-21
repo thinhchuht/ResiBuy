@@ -21,7 +21,7 @@ namespace ResiBuy.Server.Infrastructure.DbServices.ShipperDbServices
         Task<int> SumShipperLockedAsync();
         Task<PagedResult<Shipper>> SearchShippersAsync(string keyword, bool? isOnline, bool? isLocked, int pageNumber = 1, int pageSize = 5);
         Task<TimeSheetSummaryDto> GetTimeSheetSummaryAsync(Guid shipperId, DateTime? startDate, DateTime? endDate);
-
+        Task UpdateTimeDelevery(Guid shipperId);
 
     }
 }
