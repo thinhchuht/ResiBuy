@@ -38,12 +38,12 @@ namespace ResiBuy.Server.Controllers
             return Ok(result);
 
         }
-        [HttpPost]
-        public async Task<IActionResult> CreateReport([FromBody] CreateReportDto dto)
-        {
-            var result = await mediator.Send(new CreateReportCommand(dto));
-            return Ok(result);
-        }
+        //[HttpPost]
+        //public async Task<IActionResult> CreateReport([FromBody] CreateReportDto dto)
+        //{
+        //    var result = await mediator.Send(new CreateReportCommand(dto));
+        //    return Ok(result);
+        //}
 
         [HttpPut("{id}/resolve")]
         public async Task<IActionResult> UpdateReport(Guid id, [FromBody] bool isAddReportTarget)
