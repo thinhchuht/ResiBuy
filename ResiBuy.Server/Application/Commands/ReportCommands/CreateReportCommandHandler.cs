@@ -1,7 +1,8 @@
-﻿using ResiBuy.Server.Infrastructure.DbServices.OrderDbServices;
+using ResiBuy.Server.Infrastructure.DbServices.OrderDbServices;
 using ResiBuy.Server.Infrastructure.DbServices.ReportServices;
 using ResiBuy.Server.Infrastructure.Model.DTOs.ReportDtos;
 using ResiBuy.Server.Infrastructure.Model.EventDataDto;
+using System.Globalization;
 
 namespace ResiBuy.Server.Application.Commands.ReportCommands
 {
@@ -38,11 +39,35 @@ namespace ResiBuy.Server.Application.Commands.ReportCommands
             await notificationService.SendNotificationAsync(Constants.OrderReported,
                 new ReportCreatedDto(createdReport.Id, createdReport.Title, createdReport.Description, createdReport.CreatedAt, createdReport.CreatedById, command.Dto.ReportTarget, createdReport.TargetId, createdReport.OrderId, storeName),
                 Constants.AdminHubGroup, notiUser);
-            string htmlBody = $@"<p syle='font-size: 20px; padding:15px'>Đơn hàng {order.Id} đã bị tố cáo. Vui lòng liên hệ ban quan lý để được giải quyết</p>";
+            string htmlBody = BuildOrderReportedEmailBody(order.Id, createdReport.Title, createdReport.Description);
             var usersToMail = await userDbService.GetBatchUserById(notiUser);
             foreach (var userToMail in usersToMail)
                 mailService.SendEmailInAnotherThread(userToMail.Email, "Đơn hàng bị tố cáo", htmlBody);
             return ResponseModel.SuccessResponse();
+        }
+        
+        private static string BuildOrderReportedEmailBody(Guid orderId, string? title, string? description)
+        {
+            var vi = new CultureInfo("vi-VN");
+            var nowLocal = DateTime.Now;
+            var nowIso = DateTime.UtcNow.ToString("o");
+            string nowLocalText = nowLocal.ToString("HH:mm 'ngày' dd/MM/yyyy", vi);
+
+            return $@"<div style='font-family: Arial, sans-serif; color:#222;'>
+  <h2 style='color:#d32f2f; margin:0 0 8px;'>Đơn hàng bị báo cáo</h2>
+  <p style='font-size:16px; line-height:1.6; margin:8px 0;'>
+    Đơn hàng <strong>#{orderId}</strong> đã bị báo cáo lúc <time datetime='{nowIso}'>{nowLocalText}</time>.
+  </p>
+  {(string.IsNullOrWhiteSpace(title) && string.IsNullOrWhiteSpace(description) ? string.Empty : $"<div style='background:#fafafa; border:1px solid #eee; padding:12px; border-radius:6px; margin:8px 0;'>
+    <div style='font-weight:600; margin-bottom:6px;'>Lý do báo cáo</div>
+    {(string.IsNullOrWhiteSpace(title) ? string.Empty : $"<div style='margin:2px 0;'><span style='font-weight:600;'>Tiêu đề:</span> {System.Net.WebUtility.HtmlEncode(title)}</div>")}
+    {(string.IsNullOrWhiteSpace(description) ? string.Empty : $"<div style='margin:2px 0; white-space:pre-wrap;'><span style='font-weight:600;'>Mô tả:</span> {System.Net.WebUtility.HtmlEncode(description)}</div>")}
+  </div>")}
+
+  <p style='font-size:16px; line-height:1.6; margin:8px 0;'>
+    Vui lòng liên hệ ban quản lý để được hỗ trợ giải quyết.
+  </p>
+</div>";
         }
     }
 }

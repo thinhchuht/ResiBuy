@@ -93,10 +93,7 @@ const Checkout: React.FC = () => {
       id: tempOrderData.id,
       orders: tempOrderData.orders.map((order) => ({
         id: order.id,
-        voucherId:
-          fields.voucherId !== undefined && fields.orderId === order.id
-            ? fields.voucherId || null 
-            : order.voucherId,
+        voucherId: fields.voucherId !== undefined && fields.orderId === order.id ? fields.voucherId || null : order.voucherId,
         note: fields.note && fields.orderId === order.id ? fields.note : order.note || "",
       })),
       paymentMethod,
@@ -139,7 +136,15 @@ const Checkout: React.FC = () => {
     await handleUpdateTempOrder({ orderId, note });
   };
 
-  const handleSummaryUpdate = async (info: { paymentMethod: string; selectedRoom?: string; selectedOtherRoom?: string }) => {
+  const handleSummaryUpdate = async (info: {
+    deliveryType: "my-room" | "other";
+    selectedRoom: string;
+    selectedArea: string;
+    selectedBuilding: string;
+    selectedOtherRoom: string;
+    paymentMethod: string;
+  }) => {
+    console.log("change roommmmmmmmmmmmmm");
     const addressId = info.selectedRoom || info.selectedOtherRoom;
     const updateResult = await handleUpdateTempOrder({ paymentMethod: info.paymentMethod, addressId });
     if (updateResult) {
@@ -248,7 +253,18 @@ const Checkout: React.FC = () => {
           })}
         </Box>
         <Box sx={{ width: 400, flexShrink: 0 }}>
-          <CheckoutSummarySection orders={orders} grandTotal={Math.round(grandTotal)} onCheckout={handleSummaryUpdate} userRooms={userRooms} isLoading={false} />
+          <CheckoutSummarySection
+            orders={orders}
+            grandTotal={Math.round(grandTotal)}
+            onCheckout={handleSummaryUpdate}
+            onAddressChange={async (info) => {
+              const addressId = info.selectedRoom || info.selectedOtherRoom;
+              // Auto-update temp order when user changes room/address
+              await handleUpdateTempOrder({ paymentMethod: info.paymentMethod, addressId });
+            }}
+            userRooms={userRooms}
+            isLoading={false}
+          />
         </Box>
       </Box>
       <VoucherSelectionModal

@@ -55,7 +55,7 @@ import type {
   MonthlyPaymentSettledDto,
   ReceiveOrderNotificationDto,
 } from "../../types/hubEventDto";
-import type { User, Store } from "../../types/models";
+import { type User, type Store, OrderStatus, PaymentStatus } from "../../types/models";
 import { useToastify } from "../../hooks/useToastify";
 
 interface Notification {
@@ -75,6 +75,7 @@ interface NotificationApiItem {
   createdAt: string;
   isRead: boolean;
   data: string;
+
   [key: string]: unknown;
 }
 
@@ -129,10 +130,13 @@ function notifiConvert(item: NotificationApiItem, user?: User): Notification {
     console.log("reportTarget", reportTarget);
     switch (reportTarget) {
       case "Customer":
+        console.log("Customer", reportTarget);
         return "Khách hàng";
       case "Store":
+        console.log("Store", reportTarget);
         return "Cửa hàng";
       case "Shipper":
+        console.log("Shipper", reportTarget);
         return "Người giao hàng";
       default:
         return "";
@@ -187,14 +191,13 @@ function notifiConvert(item: NotificationApiItem, user?: User): Notification {
     }
     case item.eventName === "ReportResolved": {
       let storeLabel = "";
+      displayLabel = getReportTargetLabel(dataObj.reportTarget as string);
       if (dataObj.reportTarget === "Store") {
         const userStore = user?.stores?.find((store: Store) => store.id === dataObj.targetId);
         if (userStore) {
           displayLabel = `[${userStore.name}] `;
           storeLabel = displayLabel;
         }
-      } else {
-        displayLabel = getReportTargetLabel(dataObj.reportTarget as string);
       }
       title = `${storeLabel} Báo cáo đơn hàng #${dataObj.orderId} đã được giải quyết`;
       message = dataObj.isAddReportTarget ? `Báo cáo đã được xử lý. ${displayLabel} sẽ bị tính thêm 1 lần cảnh cáo.` : "Báo cáo đã được đóng.";
@@ -327,7 +330,19 @@ const AppBar: React.FC = () => {
       fetchNotifications(nextPage);
     }
   };
-
+  const handleOrderStatusChange = useCallback(
+    (orderId: string, newStatus: OrderStatus, newPaymentStatus: PaymentStatus) => {
+      setSelectedOrder((prev) => {
+        if (!prev || prev.id !== orderId) return prev; // nếu chưa chọn order hoặc khác id thì giữ nguyên
+        return {
+          ...prev,
+          status: newStatus,
+          paymentStatus: newPaymentStatus,
+        };
+      });
+    },
+    [] // nếu cần phụ thuộc thì thêm, ví dụ [selectedOrder]
+  );
   useEffect(() => {
     fetchItemCount();
     fetchUnreadCount();
@@ -340,7 +355,10 @@ const AppBar: React.FC = () => {
   const handleOrderCreated = useCallback(
     (data: OrderStatusChangedData) => {
       fetchItemCount();
-      const formattedTime = new Date(data.createdAt).toLocaleTimeString("vi-VN", { hour: "2-digit", minute: "2-digit" });
+      const formattedTime = new Date(data.createdAt).toLocaleTimeString("vi-VN", {
+        hour: "2-digit",
+        minute: "2-digit",
+      });
       const formattedDate = new Date(data.createdAt).toLocaleDateString("vi-VN");
       let displayLabel = "";
       if (data.storeId) {
@@ -366,7 +384,10 @@ const AppBar: React.FC = () => {
 
   const handleOrderStatusChanged = useCallback(
     (data: OrderStatusChangedData) => {
-      const formattedTime = new Date(data.createdAt).toLocaleTimeString("vi-VN", { hour: "2-digit", minute: "2-digit" });
+      const formattedTime = new Date(data.createdAt).toLocaleTimeString("vi-VN", {
+        hour: "2-digit",
+        minute: "2-digit",
+      });
       const formattedDate = new Date(data.createdAt).toLocaleDateString("vi-VN");
       // Lấy status từ eventName nếu có dạng OrderStatusChanged-status
       let status = data.orderStatus;
@@ -436,7 +457,10 @@ const AppBar: React.FC = () => {
 
   const handleOrderReported = useCallback(
     (data: ReportCreatedDto) => {
-      const formattedTime = new Date(data.createdAt).toLocaleTimeString("vi-VN", { hour: "2-digit", minute: "2-digit" });
+      const formattedTime = new Date(data.createdAt).toLocaleTimeString("vi-VN", {
+        hour: "2-digit",
+        minute: "2-digit",
+      });
       const formattedDate = new Date(data.createdAt).toLocaleDateString("vi-VN");
       const targetLabel = getReportTargetLabel(data.reportTarget);
       setNotifications((prev) => [
@@ -669,11 +693,12 @@ const AppBar: React.FC = () => {
   };
 
   const handleSearch = () => {
-    if (searchValue.trim()) {
-      navigate(`/products?search=${encodeURIComponent(searchValue.trim())}`);
-    } else {
-      navigate(`/products`);
-    }
+    const trimmed = searchValue.trim();
+    const params = new URLSearchParams();
+    if (trimmed) params.set("search", trimmed);
+    params.set("_r", Date.now().toString());
+    const query = params.toString();
+    navigate(query ? `/products?${query}` : `/products?_r=${Date.now()}`);
   };
 
   const handleProfileMenuOpen = (event: React.MouseEvent<HTMLElement>) => {
@@ -1648,6 +1673,7 @@ const AppBar: React.FC = () => {
                   order={selectedOrder}
                   isStore={user?.roles?.includes("SELLER") && user?.stores?.some((store) => store.id === selectedOrder?.store?.id)}
                   onCloseModal={handleCloseOrderModal}
+                  onStatusChange={handleOrderStatusChange}
                 />
               </Box>
             ) : (
