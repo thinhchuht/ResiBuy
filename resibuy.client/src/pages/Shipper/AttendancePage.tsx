@@ -19,6 +19,7 @@ import {
   Chip,
   Stack,
   Divider,
+  DialogContentText,
 } from "@mui/material";
 import PunchClockIcon from "@mui/icons-material/PunchClock";
 import EventAvailableIcon from "@mui/icons-material/EventAvailable";
@@ -102,6 +103,31 @@ const AttendancePage: React.FC = () => {
     setOpenDialog(true);
   };
 
+  const [open, setOpen] = useState(false);
+
+  const handleOpenDialogCheckOut = () => {
+    setOpen(true);
+  };
+
+  const handleCloseDialog = () => {
+    setOpen(false);
+  };
+
+  const handleConfirmCheckout = async () => {
+    try {
+      await shipperApi.ShipperCheckOut(shipperId, false);
+      toast.success("Check-out thành công!");
+      setOpen(false);
+      // ✅ cập nhật luôn trạng thái shipper trong context
+      setShipperInfo((prev) => (prev ? { ...prev, isOnline: false } : prev));
+
+      // vẫn load lại bảng điểm danh nếu cần
+      await loadAttendance();
+    } catch (error) {
+      console.error("Check-out failed", error);
+    }
+  };
+
   const handleSubmitCheckIn = async () => {
     if (!selectedAreaId || !shipperId) {
       toast.warning("Vui lòng chọn khu vực trước khi check-in");
@@ -121,7 +147,6 @@ const AttendancePage: React.FC = () => {
       await loadAttendance();
     } catch (error) {
       console.error("Check-in failed", error);
-      toast.error("Check-in thất bại");
     }
   };
 
@@ -155,15 +180,25 @@ const AttendancePage: React.FC = () => {
         <Typography variant="h6" fontWeight={600}>
           Hãy điểm danh để bắt đầu ca làm hôm nay
         </Typography>
-        <Button
-          variant="contained"
-          color="primary"
-          onClick={handleOpenDialog}
-          startIcon={<PunchClockIcon />}
-          disabled={isActiveShipper} // disable nếu đã check-in
-        >
-          Check-in hôm nay
-        </Button>
+        {isActiveShipper ? (
+          <Button
+            variant="contained"
+            color="secondary"
+            onClick={handleOpenDialogCheckOut} // hàm xử lý check-out
+            startIcon={<PunchClockIcon />}
+          >
+            Check-out hôm nay
+          </Button>
+        ) : (
+          <Button
+            variant="contained"
+            color="primary"
+            onClick={handleOpenDialog} // hàm xử lý check-in
+            startIcon={<PunchClockIcon />}
+          >
+            Check-in hôm nay
+          </Button>
+        )}
       </Paper>
 
       {/* Thống kê */}
@@ -284,6 +319,43 @@ const AttendancePage: React.FC = () => {
         <DialogActions>
           <Button onClick={() => setOpenDialog(false)}>Hủy</Button>
           <Button variant="contained" onClick={handleSubmitCheckIn}>
+            Xác nhận
+          </Button>
+        </DialogActions>
+      </Dialog>
+
+      <Dialog open={open} onClose={handleCloseDialog}>
+        <DialogTitle>Xác nhận Check-out</DialogTitle>
+        <DialogContent>
+          <DialogContentText component="div">
+            <Typography variant="body1" sx={{ fontWeight: 600 }}>
+              Bạn có chắc chắn muốn check-out không?
+            </Typography>
+            <Typography
+              variant="body2"
+              color="error"
+              sx={{
+                mt: 1,
+                display: "flex",
+                alignItems: "center",
+                fontWeight: 500,
+              }}
+            >
+              <ReportProblemIcon color="error" sx={{ mr: 1 }} />
+              Nếu chưa hết giờ làm đã đăng ký, bạn sẽ bị coi là đi muộn.
+            </Typography>
+          </DialogContentText>
+        </DialogContent>
+
+        <DialogActions>
+          <Button onClick={handleCloseDialog} color="inherit">
+            Hủy
+          </Button>
+          <Button
+            onClick={handleConfirmCheckout}
+            color="secondary"
+            variant="contained"
+          >
             Xác nhận
           </Button>
         </DialogActions>

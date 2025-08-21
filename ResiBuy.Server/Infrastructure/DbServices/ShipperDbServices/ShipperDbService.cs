@@ -112,7 +112,7 @@ namespace ResiBuy.Server.Infrastructure.DbServices.ShipperDbServices
             }
         }
 
-        public async Task<Shipper> UpdateShipperLocationAsync(Guid shipperId, Guid locationId)
+        public async Task<Shipper> UpdateShipperLocationAsync(Guid shipperId, Guid? locationId)
         {
             try
             {
@@ -120,7 +120,10 @@ namespace ResiBuy.Server.Infrastructure.DbServices.ShipperDbServices
                 if (shipper == null)
                     throw new CustomException(ExceptionErrorCode.NotFound, "Shipper không tồn tại");
 
-                shipper.LastLocationId = locationId;
+                if (locationId != null)
+                {
+                    shipper.LastLocationId = locationId.Value;
+                }
                 await _context.SaveChangesAsync();
                 return shipper;
             }
@@ -134,7 +137,7 @@ namespace ResiBuy.Server.Infrastructure.DbServices.ShipperDbServices
             }
         }
 
-        public async Task<Shipper> UpdateShipperStatusAsync(Guid shipperId, bool isOnline, Guid AreaId)
+        public async Task<Shipper> UpdateShipperStatusAsync(Guid shipperId, bool isOnline, Guid? AreaId)
         {
             try
             {
@@ -155,14 +158,23 @@ namespace ResiBuy.Server.Infrastructure.DbServices.ShipperDbServices
                     {
                         isInShift = nowHour >= shipper.StartWorkTime || nowHour <= shipper.EndWorkTime;
                     }
-                    await UpdateShipperLocationAsync(shipperId, AreaId);
-
                     if (!isInShift)
                         throw new CustomException(ExceptionErrorCode.UpdateFailed, "Ngoài giờ làm việc, không thể bật online");
+                    if (AreaId == null)
+                        throw new CustomException(ExceptionErrorCode.ValidationFailed, "Khu vực không được để trống khi bật online");
+                    if (shipper.FirstTimeLogin != null)
+                    {
+                        throw new CustomException(ExceptionErrorCode.UpdateFailed, "Bạn đã điểm danh hôm nay rồi!");
+                    }
+                    await UpdateShipperLocationAsync(shipperId, AreaId);
+                }
+                else
+                {
+                    await CheckOutShipperAsync(shipperId);
                 }
 
 
-                shipper.IsOnline = isOnline;
+                    shipper.IsOnline = isOnline;
                 if (shipper.FirstTimeLogin == null)
                 {
                     shipper.FirstTimeLogin = DateTime.Now;
@@ -180,7 +192,7 @@ namespace ResiBuy.Server.Infrastructure.DbServices.ShipperDbServices
             }
         }
 
-        public async Task CheckInShipperAsync(Guid shipperId, bool isOnline)
+        public async Task CheckOutShipperAsync(Guid shipperId)
         {
             try
             {
@@ -188,13 +200,7 @@ namespace ResiBuy.Server.Infrastructure.DbServices.ShipperDbServices
                 if (shipper == null)
                     throw new CustomException(ExceptionErrorCode.NotFound, "Shipper không tồn tại");
 
-                var isLate = false;
-                if (isOnline)
-                {
-                    var nowTime = (float)DateTime.Now.TimeOfDay.TotalHours;
-                    if (nowTime > shipper.StartWorkTime + 0.25f)
-                        isLate = true;
-                }
+                var isLate = true;
 
                 var timeSheet = new TimeSheet(shipperId, DateTime.Now, isLate);
                 await _context.TimeSheets.AddAsync(timeSheet);
