@@ -2,7 +2,6 @@ using ResiBuy.Server.Infrastructure.DbServices.OrderDbServices;
 using ResiBuy.Server.Infrastructure.DbServices.ReportServices;
 using ResiBuy.Server.Infrastructure.Model.DTOs.ReportDtos;
 using ResiBuy.Server.Infrastructure.Model.EventDataDto;
-using System.Globalization;
 
 namespace ResiBuy.Server.Application.Commands.ReportCommands
 {
@@ -45,29 +44,41 @@ namespace ResiBuy.Server.Application.Commands.ReportCommands
                 mailService.SendEmailInAnotherThread(userToMail.Email, "Đơn hàng bị tố cáo", htmlBody);
             return ResponseModel.SuccessResponse();
         }
-        
+
         private static string BuildOrderReportedEmailBody(Guid orderId, string? title, string? description)
         {
             var vi = new CultureInfo("vi-VN");
-            var nowLocal = DateTime.Now;
-            var nowIso = DateTime.UtcNow.ToString("o");
+            var nowUtc = DateTime.UtcNow;
+            var nowLocal = TimeZoneInfo.ConvertTimeFromUtc(nowUtc, TimeZoneInfo.FindSystemTimeZoneById("SE Asia Standard Time"));
+            var nowIso = nowUtc.ToString("o");
             string nowLocalText = nowLocal.ToString("HH:mm 'ngày' dd/MM/yyyy", vi);
 
-            return $@"<div style='font-family: Arial, sans-serif; color:#222;'>
-  <h2 style='color:#d32f2f; margin:0 0 8px;'>Đơn hàng bị báo cáo</h2>
-  <p style='font-size:16px; line-height:1.6; margin:8px 0;'>
-    Đơn hàng <strong>#{orderId}</strong> đã bị báo cáo lúc <time datetime='{nowIso}'>{nowLocalText}</time>.
-  </p>
-  {(string.IsNullOrWhiteSpace(title) && string.IsNullOrWhiteSpace(description) ? string.Empty : $"<div style='background:#fafafa; border:1px solid #eee; padding:12px; border-radius:6px; margin:8px 0;'>
-    <div style='font-weight:600; margin-bottom:6px;'>Lý do báo cáo</div>
-    {(string.IsNullOrWhiteSpace(title) ? string.Empty : $"<div style='margin:2px 0;'><span style='font-weight:600;'>Tiêu đề:</span> {System.Net.WebUtility.HtmlEncode(title)}</div>")}
-    {(string.IsNullOrWhiteSpace(description) ? string.Empty : $"<div style='margin:2px 0; white-space:pre-wrap;'><span style='font-weight:600;'>Mô tả:</span> {System.Net.WebUtility.HtmlEncode(description)}</div>")}
-  </div>")}
+            var reasonSection = string.Empty;
+            if (!string.IsNullOrWhiteSpace(title) || !string.IsNullOrWhiteSpace(description))
+            {
+                var titleHtml = string.IsNullOrWhiteSpace(title) ? string.Empty :
+                    $"<div style='margin:2px 0;'><span style='font-weight:600;'>Tiêu đề:</span> {System.Net.WebUtility.HtmlEncode(title)}</div>";
 
-  <p style='font-size:16px; line-height:1.6; margin:8px 0;'>
-    Vui lòng liên hệ ban quản lý để được hỗ trợ giải quyết.
-  </p>
-</div>";
+                var descriptionHtml = string.IsNullOrWhiteSpace(description) ? string.Empty :
+                    $"<div style='margin:2px 0; white-space:pre-wrap;'><span style='font-weight:600;'>Mô tả:</span> {System.Net.WebUtility.HtmlEncode(description)}</div>";
+
+                reasonSection = $@"<div style='background:#fafafa; border:1px solid #eee; padding:12px; border-radius:6px; margin:8px 0;'>
+                     <div style='font-weight:600; margin-bottom:6px;'>Lý do báo cáo</div>
+                      {titleHtml}
+                      {descriptionHtml}
+                    </div>";
+            }
+
+            return $@"<div style='font-family: Arial, sans-serif; color:#222;'>
+                    <h2 style='color:#d32f2f; margin:0 0 8px;'>Đơn hàng bị báo cáo</h2>
+                    <p style='font-size:16px; line-height:1.6; margin:8px 0;'>
+                     Đơn hàng <strong>#{orderId}</strong> đã bị báo cáo lúc <time datetime='{nowIso}'>{nowLocalText}</time>.
+                    </p>
+                    {reasonSection}
+                    <p style='font-size:16px; line-height:1.6; margin:8px 0;'>
+                     Vui lòng liên hệ ban quản lý để được hỗ trợ giải quyết.
+                     </p>
+                    </div>";
         }
     }
 }
