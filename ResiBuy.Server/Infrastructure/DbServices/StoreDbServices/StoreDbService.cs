@@ -48,6 +48,7 @@ namespace ResiBuy.Server.Infrastructure.DbServices.StoreDbServices
                 var store = await _context.Stores.Include(s => s.Room)
                         .ThenInclude(r => r.Building)
                         .ThenInclude(b => b.Area)
+                        .Include(s => s.Owner)
                     .FirstOrDefaultAsync(s => s.Id == id);
                 return store;
             }

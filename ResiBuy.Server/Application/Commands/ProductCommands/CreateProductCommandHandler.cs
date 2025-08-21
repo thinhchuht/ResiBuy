@@ -15,12 +15,43 @@ namespace ResiBuy.Server.Application.Commands.ProductCommands
 
                 var product = new Product( dto.Name, dto.Describe, dto.Discount, dto.StoreId, dto.CategoryId);
 
+                if (string.IsNullOrWhiteSpace(dto.Name))
+                    throw new CustomException(ExceptionErrorCode.ValidationFailed, "Tên sản phẩm không được để trống.");
+                var existedProduct = await productDbService.GetByNameAsync(dto.StoreId, dto.Name);
+                if (existedProduct != null)
+                {
+                    throw new CustomException(ExceptionErrorCode.ValidationFailed,
+                        $"Sản phẩm '{dto.Name}' đã tồn tại trong cửa hàng này.");
+                }
+
+                if (dto.StoreId == Guid.Empty)
+                    throw new CustomException(ExceptionErrorCode.ValidationFailed, "StoreId không hợp lệ.");
+                if (dto.CategoryId == Guid.Empty)
+                    throw new CustomException(ExceptionErrorCode.ValidationFailed, "CategoryId không hợp lệ.");
+                if (dto.Discount < 0)
+                {
+                    throw new CustomException(ExceptionErrorCode.ValidationFailed, "Giảm giá không được nhỏ hơn 0.");
+                }
 
                 var detailDataSets = new List<HashSet<string>>();
 
                 foreach (var detailDto in dto.ProductDetails)
                 {
                     var detail = new ProductDetail(detailDto.Price, detailDto.Weight, detailDto.Quantity, detailDto.IsOutOfStock);
+
+                    if (detailDto.Price <= 0)
+                        throw new CustomException(ExceptionErrorCode.ValidationFailed, "Giá sản phẩm chi tiết phải lớn hơn 0.");
+
+                    if (detailDto.Weight < 0)
+                        throw new CustomException(ExceptionErrorCode.ValidationFailed, "Trọng lượng không hợp lệ.");
+
+                    if (detailDto.Quantity < 0)
+                        throw new CustomException(ExceptionErrorCode.ValidationFailed, "Số lượng không hợp lệ.");
+
+                    if (detailDto.IsOutOfStock && detailDto.Quantity > 0)
+                        throw new CustomException(ExceptionErrorCode.ValidationFailed, "Sản phẩm đã hết hàng thì số lượng phải bằng 0.");
+
+
                     var dataSet = new HashSet<string>();
 
                     if (detailDto.AdditionalData != null && detailDto.AdditionalData.Any())

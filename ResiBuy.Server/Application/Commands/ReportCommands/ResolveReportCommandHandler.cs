@@ -1,4 +1,4 @@
-﻿using ResiBuy.Server.Infrastructure.DbServices.OrderDbServices;
+using ResiBuy.Server.Infrastructure.DbServices.OrderDbServices;
 using ResiBuy.Server.Infrastructure.DbServices.ReportServices;
 using ResiBuy.Server.Infrastructure.Model.EventDataDto;
 
@@ -17,8 +17,9 @@ namespace ResiBuy.Server.Application.Commands.ReportCommands
              await reportDbService.UpdateAsync(report);
             var order = await orderDbService.GetById(report.OrderId);
             var lockedUsers = new List<string>();
+            var lockedUserMails = new List<string>();
             //order.Status = OrderStatus.Cancelled;
-            if(command.IsAddReportTarget)
+            if (command.IsAddReportTarget)
             {
                 if (report.ReportTarget == ReportTarget.Customer)
                 {
@@ -29,17 +30,19 @@ namespace ResiBuy.Server.Application.Commands.ReportCommands
                         user.IsLocked = true;
                         await userDbService.UpdateAsync(user);
                         lockedUsers.Add(user.Id);
+                        lockedUserMails.Add(user.Email);
                     }
                 }
                 if (report.ReportTarget == ReportTarget.Store)
                 {
-                    var store = await storeDbService.GetByIdBaseAsync(Guid.Parse(report.TargetId)) ?? throw new CustomException(ExceptionErrorCode.ValidationFailed, "Không tìm thấy cửa hàng");
+                    var store = await storeDbService.GetStoreByIdAsync(Guid.Parse(report.TargetId)) ?? throw new CustomException(ExceptionErrorCode.ValidationFailed, "Không tìm thấy cửa hàng");
                     store.ReportCount += 1;
                     if (store.ReportCount == Constants.MaxReportCount)
                     {
                         store.IsLocked = true;
                         await storeDbService.UpdateAsync(store);
                         lockedUsers.Add(store.OwnerId);
+                        lockedUserMails.Add(store.Owner.Email);
                     }
                 }
                 if (report.ReportTarget == ReportTarget.Shipper)
@@ -51,6 +54,7 @@ namespace ResiBuy.Server.Application.Commands.ReportCommands
                         shipper.IsLocked = true;
                         await shipperDbService.UpdateAsync(shipper);
                         lockedUsers.Add(shipper.User.Id);
+                        lockedUserMails.Add(shipper.User.Email);
                     }
                 }
             }
@@ -69,8 +73,38 @@ namespace ResiBuy.Server.Application.Commands.ReportCommands
             await notificationService.SendNotificationAsync(Constants.ReportResolved,
                 new ResolveReportDto(report.Id, report.OrderId, report.TargetId, command.IsAddReportTarget, report.ReportTarget, storeName),
                 Constants.AdminHubGroup, notiUser);
-            //await mailService.SendEmailAsync();
+
+            string htmlBody = BuildLockedAccountEmailBody(report.ReportTarget);
+            foreach (var mail in lockedUserMails)
+            {
+                mailService.SendEmailInAnotherThread(mail,$"Khóa tài khoản", htmlBody);
+            }
             return ResponseModel.SuccessResponse();
+        }
+
+        private static string BuildLockedAccountEmailBody(ReportTarget target)
+        {
+            string targetLabel = target switch
+            {
+                ReportTarget.Customer => "Khách hàng",
+                ReportTarget.Store => "Cửa hàng",
+                ReportTarget.Shipper => "Người giao hàng",
+                _ => "Tài khoản"
+            };
+            var vi = new CultureInfo("vi-VN");
+            var nowLocal = DateTime.Now;
+            var nowIso = DateTime.UtcNow.ToString("o");
+            string nowLocalText = nowLocal.ToString("HH:mm 'ngày' dd/MM/yyyy", vi);
+
+            return $@"<div style='font-family: Arial, sans-serif; color:#222;'>
+                    <h2 style='color:#d32f2f; margin:0 0 8px;'>Khóa {targetLabel}</h2>
+                    <p style='font-size:16px; line-height:1.6; margin:8px 0;'>
+                     {targetLabel} của bạn đã bị khóa lúc <time datetime='{nowIso}'>{nowLocalText}</time> do vượt quá số lần cảnh cáo.
+                    </p>
+                    <p style='font-size:16px; line-height:1.6; margin:8px 0;'>
+                        Vui lòng liên hệ ban quản lý để được hỗ trợ.
+                    </p>
+                   </div>";
         }
     }
 }

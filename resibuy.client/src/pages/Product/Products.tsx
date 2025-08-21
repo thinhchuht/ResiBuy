@@ -28,6 +28,7 @@ const Products = () => {
   const categoryId = searchParams.get("categoryId");
   const storeId = searchParams.get("storeId");
   const searchKeyword = searchParams.get("search") || "";
+  const reloadKey = searchParams.get("_r") || "";
   const [selectedCategory, setSelectedCategory] = useState<Category | null>(null);
   const [sortBy, setSortBy] = useState("newest");
   const [priceRange, setPriceRange] = useState([0, 50000000]);
@@ -95,7 +96,7 @@ const Products = () => {
     };
     fetchProducts();
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [page, pageSize, selectedCategory, priceRange, storeId, sortBy, searchKeyword]);
+  }, [page, pageSize, selectedCategory, priceRange, storeId, sortBy, searchKeyword, reloadKey]);
 
 
 
