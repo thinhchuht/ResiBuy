@@ -235,22 +235,23 @@ export default function StoresPage() {
   };
 
   const columns = [
-    {
-      key: "id",
-      label: "ID Cửa Hàng",
-      sortable: true,
-      render: (store) => (
-        <Typography
-          variant="body2"
-          sx={{
-            fontFamily: "monospace",
-            fontWeight: "medium",
-            color: "primary.main",
-          }}
-        >
-          {store.id}
-        </Typography>
-      ),
+     {
+      key: "stt",
+      label: "STT",
+      sortable: false,
+      render: (store) => {
+        const index = stores.indexOf(store);
+        const pageSize = 15; // Lấy từ itemsPerPage của CustomTable
+        console.log("STT render (StoresPage):", { pageNumber, pageSize, index });
+        const stt = index >= 0 && !isNaN(pageNumber) && pageNumber > 0
+          ? (pageNumber - 1) * pageSize + index + 1
+          : index + 1;
+        return (
+          <Typography variant="body2" sx={{ color: "grey.900" }}>
+            {stt}
+          </Typography>
+        );
+      },
     },
     {
       key: "name",

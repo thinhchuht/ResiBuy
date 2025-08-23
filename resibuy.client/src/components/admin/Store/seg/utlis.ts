@@ -298,15 +298,15 @@ export function useStoresLogic() {
       const stores = response.data.items || [];
       const headers = [
         "Id",
-        "Name",
-        "Description",
-        "Phone Number",
-        "Status",
-        "Open",
-        "Create at",
-        "Room",
-        "Building",
-        "Area",
+        "Tên",
+        "Mô tả",
+        "SĐT",
+        "Trạng thái",
+        "Mở Cửa",
+        "Ngày tạo",
+        "Phòng",
+        "Tòa",
+        "Khu vực",
       ];
       const csvContent = [
         headers.join(","),
@@ -316,8 +316,8 @@ export function useStoresLogic() {
             `"${store.name}"`,
             `"${store.description || ""}"`,
             `"${store.phoneNumber || ""}"`,
-            store.isLocked ? "Locked" : "Unlock",
-            store.isOpen ? "Open" : "Close",
+            store.isLocked ? "Khóa" : "Không khóa",
+            store.isOpen ? "Mở cửa" : "ĐÓng cưae",
             new Date(store.createdAt).toLocaleDateString(),
             `"${store.room?.name || "N/A"}"`,
             `"${store.room?.buildingName || "N/A"}"`,
@@ -402,9 +402,9 @@ export function useStoresLogic() {
   };
 };
 
-// ... (Các hàm khác như useStoreForm, getStatusColor, formatCurrency, formatOrderStatus, getOrderStatusColor, formatDate không thay đổi)
+
 export const useStoreForm = (editStore) => {
-  const [formData, setFormData] = useState({
+  const initialFormData = {
     name: "",
     description: "",
     ownerId: "",
@@ -412,12 +412,12 @@ export const useStoreForm = (editStore) => {
     phoneNumber: "",
     isLocked: false,
     isOpen: true,
-  });
+  };
 
+  const [formData, setFormData] = useState(initialFormData);
   const [errors, setErrors] = useState({});
   const [isSubmitting, setIsSubmitting] = useState(false);
   const toast = useToastify();
-
   useEffect(() => {
     if (editStore) {
       setFormData({
@@ -442,7 +442,7 @@ export const useStoreForm = (editStore) => {
     }
   }, [editStore]);
 
-  const handleInputChange = (field, value) => {
+   const handleInputChange = (field, value) => {
     setFormData((prev) => ({ ...prev, [field]: value }));
     if (errors[field]) {
       setErrors((prev) => ({ ...prev, [field]: "" }));
@@ -462,7 +462,9 @@ export const useStoreForm = (editStore) => {
 
     if (!editStore && !data.roomId) {
       errors.roomId = "Phòng là bắt buộc khi tạo cửa hàng mới";
-    } else if (!/^\d{10,11}$/.test(data.phoneNumber)) {
+    }
+
+    if (!/^\d{10,11}$/.test(data.phoneNumber)) {
       errors.phoneNumber = "Số điện thoại phải có 10 hoặc 11 chữ số";
     }
 
@@ -491,6 +493,9 @@ export const useStoreForm = (editStore) => {
 
     try {
       await onSubmit(storeData);
+      if (!editStore) {
+        setFormData(initialFormData); // Reset form after successful submission for new store
+      }
     } catch (error) {
       console.error("Lỗi khi gửi dữ liệu cửa hàng:", error);
       toast.error("Lỗi khi gửi dữ liệu cửa hàng");
@@ -525,7 +530,12 @@ export const getStatusColor = (isOpen, isLocked) => {
         color: "warning.dark",
       };
 };
-
+export const formatShippingAddress = (order: Order): string => {
+  const { roomQueryResult } = order;
+  if (!roomQueryResult) return "Không có thông tin địa chỉ";
+  const { name, buildingName, areaName } = roomQueryResult;
+  return `${name}, ${buildingName}, ${areaName}`;
+};
 export const formatCurrency = (value) => {
   if (value == null) return "0 VNĐ";
   return new Intl.NumberFormat("vi-VN", {
@@ -540,6 +550,8 @@ export const formatOrderStatus = (status: OrderStatus): string => {
       return "Chờ Xử Lý";
     case OrderStatus.Processing:
       return "Đang Xử Lý";
+       case OrderStatus.CustomerNotAvailable:
+      return "Chờ nhận";
     case OrderStatus.Shipped:
       return "Đang Giao";
     case OrderStatus.Delivered:
@@ -561,6 +573,8 @@ export const getOrderStatusColor = (
       return { bgcolor: "#FFF3E0", color: "#F97316" };
     case OrderStatus.Processing:
       return { bgcolor: "#E0F7FA", color: "#0891B2" };
+      case OrderStatus.CustomerNotAvailable:
+      return { bgcolor: "#f4cdcdff", color: "#f78800ff" };
     case OrderStatus.Shipped:
       return { bgcolor: "#DBEAFE", color: "#3B82F6" };
     case OrderStatus.Delivered:

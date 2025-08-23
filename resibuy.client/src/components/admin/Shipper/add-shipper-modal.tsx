@@ -40,7 +40,7 @@ export function AddShipperModal({
   onSubmit,
   editingShipper,
 }: AddShipperModalProps) {
-  const { formData, errors, isSubmitting, handleInputChange, handleSubmit } = useShipperForm(editingShipper);
+  const { formData, errors, isSubmitting, handleInputChange, handleSubmit, resetForm } = useShipperForm(editingShipper);
   const [areas, setAreas] = useState<Area[]>([]);
   const [selectedArea, setSelectedArea] = useState<Area | null>(null);
 
@@ -68,6 +68,13 @@ export function AddShipperModal({
     }
   }, [editingShipper, formData.lastLocationId, areas]);
 
+  // Reset form và selectedArea khi đóng modal
+  const handleClose = () => {
+    resetForm();
+    setSelectedArea(null);
+    onClose();
+  };
+
   // Chuyển đổi chuỗi HH:mm thành đối tượng Date để sử dụng trong TimePicker
   const parseTimeToDate = (time: string): Date | null => {
     if (!time) return null;
@@ -89,7 +96,7 @@ export function AddShipperModal({
   return (
     <Dialog
       open={isOpen}
-      onClose={onClose}
+      onClose={handleClose}
       maxWidth="sm"
       fullWidth
       sx={{
@@ -133,7 +140,7 @@ export function AddShipperModal({
           </Typography>
         </Box>
         <IconButton
-          onClick={onClose}
+          onClick={handleClose}
           sx={{
             color: "grey.400",
             bgcolor: "background.paper",
@@ -602,52 +609,51 @@ export function AddShipperModal({
               </Grid>
             </Grid>
           </Box>
+
+          <DialogActions
+            sx={{
+              p: 3,
+              borderTop: 1,
+              borderColor: "grey.200",
+              bgcolor: "background.paper",
+              position: "sticky",
+              bottom: 0,
+              display: "flex",
+              justifyContent: "flex-end",
+              gap: 1,
+            }}
+          >
+            <Button
+              onClick={handleClose}
+              sx={{
+                px: 3,
+                py: 1,
+                bgcolor: "grey.100",
+                color: "grey.700",
+                borderRadius: 2,
+                "&:hover": { bgcolor: "grey.200" },
+              }}
+            >
+              Hủy
+            </Button>
+            <Button
+              type="submit"
+              disabled={isSubmitting}
+              sx={{
+                px: 3,
+                py: 1,
+                bgcolor: "primary.main",
+                color: "white",
+                borderRadius: 2,
+                "&:hover": { bgcolor: "primary.dark" },
+                "&:disabled": { opacity: 0.5, cursor: "not-allowed" },
+              }}
+            >
+              {isSubmitting ? "Đang Lưu..." : editingShipper ? "Cập Nhật Shipper" : "Thêm Shipper"}
+            </Button>
+          </DialogActions>
         </form>
       </DialogContent>
-
-      <DialogActions
-        sx={{
-          p: 3,
-          borderTop: 1,
-          borderColor: "grey.200",
-          bgcolor: "background.paper",
-          position: "sticky",
-          bottom: 0,
-          display: "flex",
-          justifyContent: "flex-end",
-          gap: 1,
-        }}
-      >
-        <Button
-          onClick={onClose}
-          sx={{
-            px: 3,
-            py: 1,
-            bgcolor: "grey.100",
-            color: "grey.700",
-            borderRadius: 2,
-            "&:hover": { bgcolor: "grey.200" },
-          }}
-        >
-          Hủy
-        </Button>
-        <Button
-          type="submit"
-          disabled={isSubmitting}
-          onClick={(e) => handleSubmit(e as any, onSubmit)}
-          sx={{
-            px: 3,
-            py: 1,
-            bgcolor: "primary.main",
-            color: "white",
-            borderRadius: 2,
-            "&:hover": { bgcolor: "primary.dark" },
-            "&:disabled": { opacity: 0.5, cursor: "not-allowed" },
-          }}
-        >
-          {isSubmitting ? "Đang Lưu..." : editingShipper ? "Cập Nhật Shipper" : "Thêm Shipper"}
-        </Button>
-      </DialogActions>
     </Dialog>
   );
 }

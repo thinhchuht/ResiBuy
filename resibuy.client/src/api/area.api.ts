@@ -23,8 +23,8 @@ const areaApi = {
   // Tạo khu vực mới
   create: async (data: {
     name: string;
-    latitude: number;
-    longtitude: number;
+    latitude: string;
+    longitude: string;
   }) => {
     const response = await axiosClient.post(`${areaUrl}/create`, data);
     return response.data;

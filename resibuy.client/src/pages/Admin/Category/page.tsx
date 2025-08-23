@@ -29,6 +29,7 @@ interface Category {
     name: string;
     categoryId: string;
   };
+  stt?: number; // Thêm thuộc tính stt để lưu số thứ tự
 }
 
 function CategoryStatsCards() {
@@ -112,14 +113,9 @@ export default function CategoriesPage() {
     handleEditCategory,
     handleCloseAddModal,
     handleSubmitCategory,
-    handleDeleteCategory,
     handleExportCategories,
-
   } = useCategoriesLogic();
 
-  const [pageNumber, setPageNumber] = useState(1); // 1-based, khớp với API
-  const [pageSize] = useState(15); // pageSize cố định
-  const [totalCount, setTotalCount] = useState(0);
   const [fetchedCategories, setFetchedCategories] = useState<Category[]>([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -133,44 +129,54 @@ export default function CategoriesPage() {
       if (!categories || categories.length === 0) {
         setError("Không tìm thấy danh mục nào");
         setFetchedCategories([]);
-        setTotalCount(0);
       } else {
-        const start = (pageNumber - 1) * pageSize;
-        const end = pageNumber * pageSize;
-        const slicedCategories = categories.slice(start, end);
-        console.log("Fetched categories:", slicedCategories);
-        setFetchedCategories(slicedCategories);
-        setTotalCount(categories.length);
+        const updatedCategories = categories.map((category, index) => ({
+          ...category,
+          stt: index + 1, // Gán STT dựa trên vị trí trong mảng
+          image: category.image
+            ? {
+                ...category.image,
+                thumbUrl: category.image.thumbUrl
+                  ? `${category.image.thumbUrl}?t=${Date.now()}`
+                  : category.image.thumbUrl,
+                url: category.image.url
+                  ? `${category.image.url}?t=${Date.now()}`
+                  : category.image.url,
+              }
+            : category.image,
+        }));
+        console.log("Fetched categories:", updatedCategories);
+        setFetchedCategories(updatedCategories);
       }
       setLoading(false);
     } catch (err: unknown) {
-      const errorMessage = err instanceof Error ? err.message : 'Lỗi không xác định';
+      const errorMessage = err instanceof Error ? err.message : "Lỗi không xác định";
       console.error("Error in CategoriesPage useEffect:", err);
       setError(`Lỗi khi xử lý danh sách danh mục: ${errorMessage}`);
       setFetchedCategories([]);
-      setTotalCount(0);
       setLoading(false);
     }
-  }, [pageNumber, pageSize, categories]);
+  }, [categories]);
 
   const columns = [
     {
-      key: "id" as keyof Category,
-      label: "ID Danh Mục",
-      sortable: true,
+      key: "stt" as keyof Category,
+      label: "STT",
+      sortable: false,
       render: (category: Category) => (
         <Typography
           variant="body2"
           sx={{
             fontFamily: "monospace",
             fontWeight: "medium",
-            color: "primary.main",
+            color: "text.primary",
           }}
         >
-          {category.id}
+          {category.stt || "N/A"}
         </Typography>
       ),
     },
+  
     {
       key: "name" as keyof Category,
       label: "Danh Mục",
@@ -239,17 +245,16 @@ export default function CategoriesPage() {
           variant="outlined"
           size="small"
           sx={{
-            fontWeight: 'medium',
-            '& .MuiChip-icon': {
-              color: category.status ? 'success.main' : 'error.main',
+            fontWeight: "medium",
+            "& .MuiChip-icon": {
+              color: category.status ? "success.main" : "error.main",
             },
-            borderColor: category.status ? 'success.main' : 'error.main',
-            color: category.status ? 'success.dark' : 'error.dark',
+            borderColor: category.status ? "success.main" : "error.main",
+            color: category.status ? "success.dark" : "error.dark",
           }}
         />
       ),
     },
-    
     {
       key: "actions" as keyof Category,
       label: "Hành Động",
@@ -287,7 +292,6 @@ export default function CategoriesPage() {
           >
             <Edit sx={{ fontSize: 16 }} />
           </IconButton>
-          
         </Box>
       ),
     },
@@ -357,16 +361,13 @@ export default function CategoriesPage() {
 
         <CustomTable
           data={fetchedCategories}
-          totalCount={totalCount}
           columns={columns}
           onAddItem={handleAddCategory}
           onExport={handleExportCategories}
-          onPageChange={setPageNumber}
           headerTitle="Tất Cả Danh Mục"
           description="Quản lý danh mục"
           showExport={true}
           showBulkActions={false}
-          itemsPerPage={pageSize}
         />
       </Box>
 
@@ -375,7 +376,6 @@ export default function CategoriesPage() {
         onClose={handleCloseDetailModal}
         category={selectedCategory}
         onEdit={handleEditCategory}
-        onDelete={handleDeleteCategory}
       />
 
       <AddCategoryModal

@@ -214,19 +214,23 @@ export default function RoomsPage() {
   };
 
   const columns = [
-    {
-      key: "id" as keyof RoomDto,
-      label: "ID Phòng",
-      sortable: true,
-      render: (room: RoomDto) => (
-        <Typography
-          variant="body2"
-          sx={{ fontFamily: "monospace", fontWeight: "medium", color: "primary.main" }}
-        >
-          {room.id}
+   {
+    key: "stt" as keyof RoomDto,
+    label: "STT",
+    sortable: false,
+    render: (user: RoomDto) => {
+      const index = rooms.indexOf(user); // Tính index từ mảng users
+      console.log("STT render:", { pageNumber, pageSize, index }); // Debug log
+      const stt = isNaN(pageNumber) || isNaN(pageSize) || !pageNumber || !pageSize
+        ? index + 1
+        : (pageNumber - 1) * pageSize + index + 1;
+      return (
+        <Typography variant="body2" sx={{ color: "grey.900" }}>
+          {stt}
         </Typography>
-      ),
+      );
     },
+  },
     {
       key: "name" as keyof RoomDto,
       label: "Tên Phòng",
