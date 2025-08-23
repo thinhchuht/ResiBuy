@@ -123,7 +123,7 @@ export default function AreasPage() {
     handleUpdateStatus,
   } = useAreasLogic();
 
-  const { importModal, handleOpenImportModal, handleFileChange, handleConfirmImport, handleDownloadTemplate, handleImportModalClose } = handleImport(fetchAreas);
+  const { importModal, isConfirmLoading, handleOpenImportModal, handleFileChange, handleConfirmImport, handleDownloadTemplate, handleImportModalClose } = handleImport(fetchAreas);
 
   const [confirmModal, setConfirmModal] = useState<{
     open: boolean;
@@ -268,6 +268,7 @@ export default function AreasPage() {
       <ConfirmModal
         open={importModal.open}
         title="Xác nhận Import"
+        loading={isConfirmLoading}
         message={
           <Box>
             <Typography>{importModal.message}</Typography>

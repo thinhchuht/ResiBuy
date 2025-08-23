@@ -328,6 +328,7 @@ export const formatDate = (dateString: string) => {
 
 export const handleImport = (fetchAreas: () => Promise<void>) => {
   const toast = useToastify();
+  const [isConfirmLoading, setIsConfirmLoading] = useState(false);
   const [importModal, setImportModal] = useState<{
     open: boolean;
     message: string;
@@ -385,16 +386,23 @@ export const handleImport = (fetchAreas: () => Promise<void>) => {
       };
       if (responseData.code === 0 && responseData.data && Array.isArray(responseData.data.data)) {
         toast.info(responseData.message);
+        
+        const existingEntities = Array.isArray(responseData.data.existingEntities) ? responseData.data.existingEntities : [];
+        const newEntities = Array.isArray(responseData.data.newEntities) ? responseData.data.newEntities : [];
+        const hasNewEntities = newEntities.length > 0;
+        
         setImportModal({
           open: true,
-          message: responseData.data.newEntities.length === 0 
-            ? "Không có thực thể nào được thêm." 
-            : responseData.message || "Thành công",
-          existingEntities: Array.isArray(responseData.data.existingEntities) ? responseData.data.existingEntities : [],
-          newEntities: Array.isArray(responseData.data.newEntities) ? responseData.data.newEntities : [],
+          message: hasNewEntities 
+            ? responseData.message || "Thành công"
+            : "Không có thực thể nào được thêm mới.",
+          existingEntities,
+          newEntities,
           data: Array.isArray(responseData.data.data) ? responseData.data.data : [],
           errors: Array.isArray(responseData.data.errors) ? responseData.data.errors : [],
-          onConfirm: () => handleConfirmImport(responseData.data.data || []),
+          onConfirm: hasNewEntities 
+            ? () => handleConfirmImport(responseData.data.data || [])
+            : () => handleImportModalClose(), // Chỉ đóng modal nếu không có thực thể mới
         });
       } else {
         toast.error(responseData.message || "Dữ liệu trả về không hợp lệ");
@@ -411,6 +419,7 @@ export const handleImport = (fetchAreas: () => Promise<void>) => {
   };
 
   const handleConfirmImport = async (data: ImportData[]) => {
+    setIsConfirmLoading(true);
     try {
       const response = await importApi.confirm(data);
       const responseData = response.data as { code: number; message: string };
@@ -429,6 +438,8 @@ export const handleImport = (fetchAreas: () => Promise<void>) => {
       console.error("Confirm import error:", JSON.stringify(error, null, 2));
       toast.error(errorMessage);
       handleImportModalClose();
+    } finally {
+      setIsConfirmLoading(false);
     }
   };
 
@@ -457,6 +468,7 @@ export const handleImport = (fetchAreas: () => Promise<void>) => {
 
   return {
     importModal,
+    isConfirmLoading,
     setImportModal,
     handleOpenImportModal,
     handleImportModalClose,

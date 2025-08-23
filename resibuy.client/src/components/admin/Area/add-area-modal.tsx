@@ -1,7 +1,19 @@
-import { Dialog, DialogTitle, DialogContent, DialogActions, Box, Typography, TextField, Button, IconButton, FormControlLabel, Checkbox } from "@mui/material";
+import {
+  Dialog,
+  DialogTitle,
+  DialogContent,
+  DialogActions,
+  Box,
+  Typography,
+  TextField,
+  Button,
+  IconButton,
+  FormControlLabel,
+  Checkbox,
+} from "@mui/material";
 import { Close, LocationOn as AreaIcon } from "@mui/icons-material";
 import type { AreaDto } from "../../../types/dtoModels";
-import { useState,useEffect } from "react";
+import { useState, useEffect } from "react";
 import { GoogleMap, LoadScript, Marker } from "@react-google-maps/api";
 import type { AreaFormData } from "./seg/utlis";
 
@@ -132,9 +144,18 @@ export function AddAreaModal({
   onSubmit,
   editArea,
 }: AddAreaModalProps) {
-  const { formData, errors, isSubmitting, handleInputChange, handleSubmit, handleClose: clearFormData } = useAreaForm(editArea);
+  const {
+    formData,
+    errors,
+    isSubmitting,
+    handleInputChange,
+    handleSubmit,
+    handleClose: clearFormData,
+  } = useAreaForm(editArea);
   const [mapCenter, setMapCenter] = useState(
-    editArea ? { lat: editArea.latitude, lng: editArea.longitude } : defaultCenter
+    editArea
+      ? { lat: editArea.latitude, lng: editArea.longitude }
+      : defaultCenter
   );
 
   const handleMapClick = (event: google.maps.MapMouseEvent) => {
@@ -198,10 +219,7 @@ export function AddAreaModal({
           >
             {editArea ? "Sửa Khu vực" : "Thêm Khu vực Mới"}
           </Typography>
-          <Typography
-            variant="body2"
-            sx={{ color: "grey.500" }}
-          >
+          <Typography variant="body2" sx={{ color: "grey.500" }}>
             {editArea ? "Cập nhật thông tin khu vực" : "Tạo khu vực mới"}
           </Typography>
         </Box>
@@ -314,7 +332,9 @@ export function AddAreaModal({
                     "& .MuiOutlinedInput-root": {
                       borderRadius: 2,
                       "& fieldset": {
-                        borderColor: errors.latitude ? "error.main" : "grey.300",
+                        borderColor: errors.latitude
+                          ? "error.main"
+                          : "grey.300",
                       },
                     },
                     "& .MuiInputBase-input": {
@@ -349,7 +369,9 @@ export function AddAreaModal({
                     "& .MuiOutlinedInput-root": {
                       borderRadius: 2,
                       "& fieldset": {
-                        borderColor: errors.longitude ? "error.main" : "grey.300",
+                        borderColor: errors.longitude
+                          ? "error.main"
+                          : "grey.300",
                       },
                     },
                     "& .MuiInputBase-input": {
@@ -372,7 +394,7 @@ export function AddAreaModal({
                 >
                   Chọn Vị Trí Trên Bản Đồ
                 </Typography>
-                <LoadScript googleMapsApiKey="AIzaSyCPHyVDPA_vymymkUPxWdX2VLN0Hlb4yt8">
+                <LoadScript googleMapsApiKey="AIzaSyAjdoFr8FEz_oEzRH1PwUClVqIO3EPeX9U">
                   <GoogleMap
                     mapContainerStyle={mapContainerStyle}
                     center={mapCenter}
@@ -390,7 +412,9 @@ export function AddAreaModal({
                     control={
                       <Checkbox
                         checked={formData.isActive}
-                        onChange={(e) => handleInputChange("isActive", e.target.checked)}
+                        onChange={(e) =>
+                          handleInputChange("isActive", e.target.checked)
+                        }
                         color="primary"
                       />
                     }
@@ -449,7 +473,11 @@ export function AddAreaModal({
             "&:disabled": { opacity: 0.5, cursor: "not-allowed" },
           }}
         >
-          {isSubmitting ? "Đang Lưu..." : editArea ? "Cập Nhật Khu vực" : "Thêm Khu vực"}
+          {isSubmitting
+            ? "Đang Lưu..."
+            : editArea
+            ? "Cập Nhật Khu vực"
+            : "Thêm Khu vực"}
         </Button>
       </DialogActions>
     </Dialog>
