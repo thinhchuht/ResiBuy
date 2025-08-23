@@ -36,6 +36,10 @@ export interface UserDto {
   isLocked: boolean;
   createdAt: string;
   updatedAt: string;
+ avatar?: {
+    url: string;
+  };
+  rooms:string[];
 }
 
 export interface RoomDetailDto {
@@ -52,6 +56,7 @@ export interface RoomDto {
   name: string;
   isActive?: boolean;
   buildingId?: string;
+  userCount?: string;
 }
 
 export interface CreateRoomDto {
@@ -86,4 +91,34 @@ export interface CreateCategoryDto {
 
 export interface UpdateCategoryDto extends CreateCategoryDto {
   id: string;
+}
+export interface OrderDto {
+  id: string;
+  userId: string;
+  shipper?: {
+    phoneNumber: string;
+  };
+  createAt: string;
+  updateAt?: string;
+  status: string;
+  paymentStatus: string;
+  paymentMethod: string;
+  totalPrice: number;
+  shippingFee?: number;
+  note?: string;
+  roomQueryResult?: {
+    name: string;
+    buildingName: string;
+    areaName: string;
+  };
+  store?: {
+    name: string;
+  };
+  orderItems: {
+    id: string;
+    productId: string;
+    productName: string;
+    quantity: number;
+    price: number;
+  }[];
 }

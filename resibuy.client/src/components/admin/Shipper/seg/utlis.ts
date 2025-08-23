@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback } from "react";
+import { useState, useEffect } from "react";
 import shipperApi from "../../../../api/ship.api";
 import orderApi from "../../../../api/order.api";
 import { useToastify } from "../../../../hooks/useToastify";
@@ -60,6 +60,33 @@ export const useShipperForm = (editingShipper?: Shipper | null) => {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const toast = useToastify();
 
+  // Hàm reset form về trạng thái ban đầu
+  const resetForm = () => {
+    setFormData({
+      email: "",
+      fullName: "",
+      phoneNumber: "",
+      dateOfBirth: "",
+      identityNumber: "",
+      startWorkTime: "08:00",
+      endWorkTime: "17:00",
+      isAvailable: true,
+      password: "",
+      lastLocationId: "",
+    });
+    setErrors({
+      email: "",
+      fullName: "",
+      phoneNumber: "",
+      dateOfBirth: "",
+      identityNumber: "",
+      startWorkTime: "",
+      endWorkTime: "",
+      password: "",
+      lastLocationId: "",
+    });
+  };
+
   useEffect(() => {
     if (editingShipper) {
       setFormData({
@@ -75,29 +102,7 @@ export const useShipperForm = (editingShipper?: Shipper | null) => {
         lastLocationId: editingShipper.lastLocationId || "",
       });
     } else {
-      setFormData({
-        email: "",
-        fullName: "",
-        phoneNumber: "",
-        dateOfBirth: "",
-        identityNumber: "",
-        startWorkTime: "08:00",
-        endWorkTime: "17:00",
-        isAvailable: true,
-        password: "",
-        lastLocationId: "",
-      });
-      setErrors({
-        email: "",
-        fullName: "",
-        phoneNumber: "",
-        dateOfBirth: "",
-        identityNumber: "",
-        startWorkTime: "",
-        endWorkTime: "",
-        password: "",
-        lastLocationId: "",
-      });
+      resetForm();
     }
   }, [editingShipper]);
 
@@ -222,6 +227,7 @@ export const useShipperForm = (editingShipper?: Shipper | null) => {
       await onSubmit(shipper);
       console.log("Submit shipper success, showing toast:", editingShipper ? "Cập nhật shipper thành công!" : "Thêm shipper thành công!");
       toast.success(editingShipper ? "Cập nhật shipper thành công!" : "Thêm shipper thành công!");
+      resetForm(); // Reset form sau khi submit thành công
     } catch (error: any) {
       console.error("Submit shipper error:", error);
       toast.error(error.message || "Lỗi khi lưu shipper");
@@ -236,6 +242,7 @@ export const useShipperForm = (editingShipper?: Shipper | null) => {
     isSubmitting,
     handleInputChange,
     handleSubmit,
+    resetForm, // Export hàm resetForm
   };
 };
 
@@ -271,13 +278,14 @@ export const formatWorkTime = (time: number): string => {
   return `${hours.toString().padStart(2, "0")}:${minutes.toString().padStart(2, "0")}`;
 };
 
-// Hàm định dạng trạng thái đơn hàng
 export const formatOrderStatus = (status: OrderStatus): string => {
   switch (status) {
     case OrderStatus.Pending:
       return "Chờ Xử Lý";
     case OrderStatus.Processing:
       return "Đang Xử Lý";
+       case OrderStatus.CustomerNotAvailable:
+      return "Chờ nhận";
     case OrderStatus.Shipped:
       return "Đang Giao";
     case OrderStatus.Delivered:
@@ -291,7 +299,6 @@ export const formatOrderStatus = (status: OrderStatus): string => {
   }
 };
 
-// Hàm lấy màu trạng thái đơn hàng
 export const getOrderStatusColor = (
   status: OrderStatus
 ): { bgcolor: string; color: string } => {
@@ -300,6 +307,8 @@ export const getOrderStatusColor = (
       return { bgcolor: "#FFF3E0", color: "#F97316" };
     case OrderStatus.Processing:
       return { bgcolor: "#E0F7FA", color: "#0891B2" };
+      case OrderStatus.CustomerNotAvailable:
+      return { bgcolor: "#f4cdcdff", color: "#f78800ff" };
     case OrderStatus.Shipped:
       return { bgcolor: "#DBEAFE", color: "#3B82F6" };
     case OrderStatus.Delivered:
@@ -315,7 +324,7 @@ export const getOrderStatusColor = (
 
 // Hàm tính thống kê shipper
 export const calculateShipperStats = async () => {
-  const { toast } = useToastify();
+  const  toast  = useToastify;
   try {
     const response = await shipperApi.stats();
     if (response.code !== 0) {
@@ -358,7 +367,7 @@ export const useShippersLogic = () => {
   const toast = useToastify();
 
   // Lấy danh sách shipper
-  const fetchShippers = useCallback(async (page: number = 1, size: number = 15) => {
+  const fetchShippers = async (page: number = 1, size: number = 15) => {
     try {
       const response = await shipperApi.getAll(page, size);
       console.log("Fetch shippers response:", response);
@@ -377,10 +386,10 @@ export const useShippersLogic = () => {
       setTotalCount(0);
       setTotalPages(1);
     }
-  }, [toast]);
+  };
 
   // Tìm kiếm shipper với bộ lọc
-  const fetchShippersWithFilters = useCallback(async (
+  const fetchShippersWithFilters = async (
     keyWord?: string,
     isOnline?: boolean,
     isLocked?: boolean,
@@ -405,7 +414,7 @@ export const useShippersLogic = () => {
       setTotalCount(0);
       setTotalPages(1);
     }
-  }, [toast]);
+  };
 
   useEffect(() => {
     if (Object.keys(searchParams).length === 0) {
@@ -419,7 +428,7 @@ export const useShippersLogic = () => {
         pageSize
       );
     }
-  }, [ pageNumber, searchParams]);
+  }, [pageNumber, searchParams]);
 
   const handleViewShipper = async (shipper: Shipper) => {
     try {
@@ -469,7 +478,7 @@ export const useShippersLogic = () => {
     setEditingShipper(null);
   };
 
-  const handleSubmitShipper = async (shipper: Shipper) => {
+  const handleSubmitShipper = async (shipper: Partial<Shipper>) => {
     try {
       if (editingShipper) {
         const updateResponse = await shipperApi.update({
@@ -545,12 +554,12 @@ export const useShippersLogic = () => {
         fullName: shipper.fullName || "",
         email: shipper.email || "",
         phoneNumber: shipper.phoneNumber || "",
-        isLocked: shipper.isLocked ? "Locked" : "UnLocked",
+        isLocked: shipper.isLocked ? "Khóa" : "Không khóa",
         workTime: `${formatWorkTime(shipper.startWorkTime)} - ${formatWorkTime(shipper.endWorkTime)}`,
         lastLocationName: shipper.lastLocationName || "",
       }));
       const csv = [
-        ["ID", "Full Name", "Email", "Phone Number", "Status", "Work time", "Last Location"],
+        ["ID", "Họ tên", "Email", "SĐT", "Trạng thái", "Thời gian làm việc", "Vị trí cuối"],
         ...csvData.map((row) => [
           row.id,
           `"${row.fullName}"`,
@@ -563,7 +572,8 @@ export const useShippersLogic = () => {
       ]
         .map((row) => row.join(","))
         .join("\n");
-      const blob = new Blob([csv], { type: "text/csv" });
+         const BOM = "\uFEFF"; 
+const blob = new Blob([BOM + csv], { type: "text/csv;charset=utf-8;" });
       const url = window.URL.createObjectURL(blob);
       const a = document.createElement("a");
       a.href = url;
@@ -582,7 +592,7 @@ export const useShippersLogic = () => {
     return shipper.isLocked;
   };
 
-  const getShipperOrders = useCallback(async (shipperId: string, pageNumber: number = 1, pageSize: number = 10) => {
+  const getShipperOrders = async (shipperId: string, pageNumber: number = 1, pageSize: number = 10) => {
     try {
       const response = await orderApi.getAll(undefined, undefined, undefined, undefined, undefined, shipperId, pageNumber, pageSize);
       console.log(`Get orders for shipper ${shipperId} response:`, response);
@@ -598,7 +608,7 @@ export const useShippersLogic = () => {
       toast.error(error.message || "Lỗi khi lấy danh sách đơn hàng");
       return { items: [], totalCount: 0, pageNumber: 1, pageSize, totalPages: 1 };
     }
-  }, [toast]);
+  };
 
   return {
     shippers,

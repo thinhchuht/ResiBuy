@@ -497,34 +497,46 @@ export function EditRoleModal({ isOpen, onClose, onSubmit, userId }: EditRoleMod
               </Box>
 
               {/* Role Selection */}
-              <Box sx={{ mb: 3 }}>
-                <Typography
-                  variant="h6"
-                  sx={{
-                    color: "grey.900",
-                    mb: 2,
-                    fontWeight: "medium",
-                  }}
-                >
-                  Vai Trò
-                </Typography>
-                <Box sx={{ display: "flex", flexDirection: "column", gap: 1 }}>
-                  {["SHIPPER", "CUSTOMER", "SELLER"].map((role) => (
-                    <FormControlLabel
-                      key={role}
-                      control={
-                        <Checkbox
-                          checked={roles.includes(role)}
-                          onChange={() => handleRoleChange(role)}
-                          disabled={initialRoles.includes(role)}
-                        />
-                      }
-                      label={role}
-                      sx={{ color: "grey.700" }}
-                    />
-                  ))}
-                </Box>
-              </Box>
+             {/* Role Selection */}
+<Box sx={{ mb: 3 }}>
+  <Typography
+    variant="h6"
+    sx={{
+      color: "grey.900",
+      mb: 2,
+      fontWeight: "medium",
+    }}
+  >
+    Vai Trò
+  </Typography>
+  <Box sx={{ display: "flex", flexDirection: "column", gap: 1 }}>
+    {[
+      { value: "CUSTOMER", label: "Khách Hàng", color: "success.main" },
+      { value: "USER", label: "Người Dùng", color: "info.main" },
+      { value: "ADMIN", label: "Quản Trị", color: "error.main" },
+      { value: "SELLER", label: "Người Bán", color: "warning.main" },
+      { value: "SHIPPER", label: "Shipper", color: "primary.main" },
+    ].map((role) => (
+      <FormControlLabel
+        key={role.value}
+        control={
+          <Checkbox
+            checked={roles.includes(role.value)}
+            onChange={() => handleRoleChange(role.value)}
+            disabled={initialRoles.includes(role.value)}
+            sx={{ color: role.color }}
+          />
+        }
+        label={
+          <Typography sx={{ color: role.color }}>
+            {role.label}
+          </Typography>
+        }
+        sx={{ color: "grey.700" }}
+      />
+    ))}
+  </Box>
+</Box>
 
               {/* Shipper Data */}
               {roles.includes("SHIPPER") && !initialRoles.includes("SHIPPER") && (

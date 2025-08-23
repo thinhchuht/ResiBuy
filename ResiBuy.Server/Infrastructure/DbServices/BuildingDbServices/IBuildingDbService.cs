@@ -8,5 +8,6 @@
         Task<Building> CreateAsync(string name, Guid areaId);
         Task<Building> GetBuildingByNameAndAreaIdAssync(string name, Guid areaId);
         Task<int> CountAsync();
+        Task<bool> IsNameExistsAsync(string name, Guid areaId);
     }
 }

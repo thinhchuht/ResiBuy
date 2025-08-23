@@ -1,21 +1,9 @@
-import {
-  Dialog,
-  DialogTitle,
-  DialogContent,
-  DialogActions,
-  Box,
-  Typography,
-  TextField,
-  Button,
-  IconButton,
-  FormControlLabel,
-  Checkbox,
-} from "@mui/material";
+import { Dialog, DialogTitle, DialogContent, DialogActions, Box, Typography, TextField, Button, IconButton, FormControlLabel, Checkbox } from "@mui/material";
 import { Close, LocationOn as AreaIcon } from "@mui/icons-material";
-import { useAreaForm } from "./seg/utlis";
-import { GoogleMap, LoadScript, Marker } from "@react-google-maps/api";
 import type { AreaDto } from "../../../types/dtoModels";
-import { useState } from "react";
+import { useState,useEffect } from "react";
+import { GoogleMap, LoadScript, Marker } from "@react-google-maps/api";
+import type { AreaFormData } from "./seg/utlis";
 
 interface AddAreaModalProps {
   isOpen: boolean;
@@ -37,14 +25,114 @@ const defaultCenter = {
   lng: 106.7009,
 };
 
+export const useAreaForm = (editArea?: AreaDto | null) => {
+  const [formData, setFormData] = useState<AreaFormData>({
+    name: editArea?.name || "",
+    latitude: editArea?.latitude || 10.7769,
+    longitude: editArea?.longitude || 106.7009,
+    isActive: editArea?.isActive ?? true,
+  });
+  const [errors, setErrors] = useState<Partial<AreaFormData>>({});
+  const [isSubmitting, setIsSubmitting] = useState(false);
+
+  useEffect(() => {
+    setFormData({
+      name: editArea?.name || "",
+      latitude: editArea?.latitude || 10.7769,
+      longitude: editArea?.longitude || 106.7009,
+      isActive: editArea?.isActive ?? true,
+    });
+  }, [editArea]);
+
+  const handleInputChange = (field: keyof AreaFormData, value: any) => {
+    setFormData((prev) => ({ ...prev, [field]: value }));
+    if (errors[field]) {
+      setErrors((prev) => ({ ...prev, [field]: undefined }));
+    }
+  };
+
+  const validateForm = (data: AreaFormData) => {
+    const errors: Partial<AreaFormData> = {};
+    if (!data.name?.trim()) {
+      errors.name = "Tên khu vực là bắt buộc";
+    }
+    if (data.latitude === undefined || isNaN(data.latitude)) {
+      errors.latitude = "Vĩ độ không hợp lệ";
+    }
+    if (data.longitude === undefined || isNaN(data.longitude)) {
+      errors.longitude = "Kinh độ không hợp lệ";
+    }
+    return errors;
+  };
+
+  const handleSubmit = async (
+    e: React.FormEvent,
+    onSubmit: (data: AreaDto) => void,
+    onReset: () => void // Thêm callback để reset mapCenter
+  ) => {
+    e.preventDefault();
+    setIsSubmitting(true);
+    setErrors({});
+
+    const validationErrors = validateForm(formData);
+    if (Object.keys(validationErrors).length > 0) {
+      setErrors(validationErrors);
+      setIsSubmitting(false);
+      return;
+    }
+
+    const areaData: AreaDto = {
+      ...formData,
+      id: editArea?.id || undefined,
+    };
+
+    try {
+      await onSubmit(areaData);
+      if (!editArea) {
+        setFormData({
+          name: "",
+          latitude: 10.7769,
+          longitude: 106.7009,
+          isActive: true,
+        });
+        setErrors({});
+        onReset(); // Gọi reset mapCenter sau khi thêm mới
+      }
+    } catch (error: any) {
+      console.error("Lỗi khi submit khu vực:", error.message);
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
+
+  const handleClose = () => {
+    setFormData({
+      name: "",
+      latitude: 10.7769,
+      longitude: 106.7009,
+      isActive: true,
+    });
+    setErrors({});
+    setIsSubmitting(false);
+  };
+
+  return {
+    formData,
+    errors,
+    isSubmitting,
+    handleInputChange,
+    handleSubmit,
+    handleClose,
+  };
+};
+
 export function AddAreaModal({
   isOpen,
   onClose,
   onSubmit,
   editArea,
 }: AddAreaModalProps) {
-  const { formData, errors, isSubmitting, handleInputChange, handleSubmit } =
-    useAreaForm(editArea);
+  const { formData, errors, isSubmitting, handleInputChange, handleSubmit, handleClose: clearFormData } = useAreaForm(editArea);
   const [mapCenter, setMapCenter] = useState(
     editArea ? { lat: editArea.latitude, lng: editArea.longitude } : defaultCenter
   );
@@ -59,12 +147,22 @@ export function AddAreaModal({
     }
   };
 
+  const handleModalClose = () => {
+    clearFormData();
+    setMapCenter(defaultCenter); // Reset mapCenter khi đóng modal
+    onClose();
+  };
+
+  const handleResetMap = () => {
+    setMapCenter(defaultCenter); // Reset mapCenter về giá trị mặc định
+  };
+
   if (!isOpen) return null;
 
   return (
     <Dialog
       open={isOpen}
-      onClose={onClose}
+      onClose={handleModalClose}
       maxWidth="sm"
       fullWidth
       sx={{
@@ -108,7 +206,7 @@ export function AddAreaModal({
           </Typography>
         </Box>
         <IconButton
-          onClick={onClose}
+          onClick={handleModalClose}
           sx={{
             color: "grey.400",
             bgcolor: "background.paper",
@@ -133,7 +231,7 @@ export function AddAreaModal({
           gap: 3,
         }}
       >
-        <form onSubmit={(e) => handleSubmit(e, onSubmit)}>
+        <form onSubmit={(e) => handleSubmit(e, onSubmit, handleResetMap)}>
           <Box sx={{ mb: 2 }}>
             <Typography
               variant="h6"
@@ -274,7 +372,7 @@ export function AddAreaModal({
                 >
                   Chọn Vị Trí Trên Bản Đồ
                 </Typography>
-                <LoadScript googleMapsApiKey="AIzaSyAjdoFr8FEz_oEzRH1PwUClVqIO3EPeX9U">
+                <LoadScript googleMapsApiKey="AIzaSyCPHyVDPA_vymymkUPxWdX2VLN0Hlb4yt8">
                   <GoogleMap
                     mapContainerStyle={mapContainerStyle}
                     center={mapCenter}
@@ -326,7 +424,7 @@ export function AddAreaModal({
         }}
       >
         <Button
-          onClick={onClose}
+          onClick={handleModalClose}
           sx={{
             px: 3,
             py: 1,
@@ -340,7 +438,7 @@ export function AddAreaModal({
         </Button>
         <Button
           disabled={isSubmitting}
-          onClick={(e) => handleSubmit(e as any, onSubmit)}
+          onClick={(e) => handleSubmit(e as any, onSubmit, handleResetMap)}
           sx={{
             px: 3,
             py: 1,

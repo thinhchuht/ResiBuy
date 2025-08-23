@@ -38,7 +38,7 @@ import { AdapterDateFns } from "@mui/x-date-pickers/AdapterDateFns";
 import { LocalizationProvider } from "@mui/x-date-pickers/LocalizationProvider";
 import { startOfDay, endOfDay, startOfWeek, endOfWeek, startOfMonth, endOfMonth, startOfYear, endOfYear, format } from "date-fns";
 import type { Shipper, Order } from "../../../types/models";
-import CustomTable from "../../../components/CustomTable";
+import CustomTableV2 from "../../../components/CustomTableV2"; // Thay CustomTable bằng CustomTableV2
 
 interface ShipperDetailModalProps {
   isOpen: boolean;
@@ -404,7 +404,7 @@ export function ShipperDetailModal({
     return () => {
       isMounted = false;
     };
-  }, [isOpen, shipper?.id, activeTab, orderPagination.pageNumber, orderPagination.pageSize, ]);
+  }, [isOpen, shipper?.id, activeTab, orderPagination.pageNumber, orderPagination.pageSize]);
 
   const handleCustomFeeSearch = async () => {
     if (!startDate || !endDate) {
@@ -456,6 +456,7 @@ export function ShipperDetailModal({
     {
       key: "id" as keyof Order,
       label: "ID Đơn Hàng",
+      sortable: true, // Thêm sortable
       render: (row) => (
         <Typography sx={{ fontFamily: "monospace", fontSize: "0.875rem", color: "primary.main" }}>
           {row.id}
@@ -465,6 +466,7 @@ export function ShipperDetailModal({
     {
       key: "status" as keyof Order,
       label: "Trạng Thái",
+      sortable: false,
       render: (row) => (
         <Chip
           label={formatOrderStatus(row.status)}
@@ -480,6 +482,7 @@ export function ShipperDetailModal({
     {
       key: "totalPrice" as keyof Order,
       label: "Tổng Tiền",
+      sortable: true, // Thêm sortable
       render: (row) => (
         <Typography sx={{ fontSize: "0.875rem", color: "grey.900" }}>
           {formatCurrency(row.totalPrice)}
@@ -489,6 +492,7 @@ export function ShipperDetailModal({
     {
       key: "shippingFee" as keyof Order,
       label: "Phí Giao Hàng",
+      sortable: true, // Thêm sortable
       render: (row) => (
         <Typography sx={{ fontSize: "0.875rem", color: "grey.900" }}>
           {formatCurrency(row.shippingFee)}
@@ -498,6 +502,7 @@ export function ShipperDetailModal({
     {
       key: "shippingAddress" as keyof Order,
       label: "Địa Chỉ Giao Hàng",
+      sortable: false,
       render: (row) => (
         <Typography sx={{ fontSize: "0.875rem", color: "grey.900" }}>
           {formatShippingAddress(row)}
@@ -507,6 +512,7 @@ export function ShipperDetailModal({
     {
       key: "createAt" as keyof Order,
       label: "Ngày Tạo",
+      sortable: true, // Thêm sortable
       render: (row) => (
         <Typography sx={{ fontSize: "0.875rem", color: "grey.900" }}>
           {formatDate(row.createAt)}
@@ -516,6 +522,7 @@ export function ShipperDetailModal({
     {
       key: "actions" as keyof Order,
       label: "Hành Động",
+      sortable: false,
       render: (row) => (
         <IconButton
           onClick={() => handleViewOrder(row)}
@@ -968,13 +975,15 @@ export function ShipperDetailModal({
                   <CircularProgress />
                 </Box>
               ) : orders.length > 0 ? (
-                <CustomTable
+                <CustomTableV2
                   columns={orderColumns}
                   data={orders}
                   headerTitle="Danh Sách Đơn Hàng"
                   totalCount={orderPagination.totalCount}
                   itemsPerPage={orderPagination.pageSize}
+                  page={orderPagination.pageNumber - 1} // Đồng bộ với Pagination (0-based)
                   onPageChange={handleOrderPageChange}
+                  description={`Đơn hàng của shipper ${shipper.fullName}`}
                 />
               ) : (
                 <Box sx={{ textAlign: "center", py: 4, color: "grey.500" }}>

@@ -1,26 +1,35 @@
-﻿namespace ResiBuy.Server.Infrastructure.DbServices.BuildingDbServices
+﻿
+namespace ResiBuy.Server.Infrastructure.DbServices.BuildingDbServices
 {
     public class BuildingDbService : BaseDbService<Building>, IBuildingDbService
     {
         private readonly ResiBuyContext context;
         private readonly IAreaDbService areaDbService;
+
         public BuildingDbService(ResiBuyContext context, IAreaDbService areaDbService) : base(context)
         {
             this.context = context;
             this.areaDbService = areaDbService;
         }
 
+        public async Task<bool> IsNameExistsAsync(string name, Guid areaId)
+        {
+            return await context.Buildings.AnyAsync(b => b.Name == name && b.AreaId == areaId);
+        }
+
         public async Task<Building> CreateAsync(string name, Guid areaId)
         {
             try
             {
-                if (string.IsNullOrEmpty(name)) throw new CustomException(ExceptionErrorCode.ValidationFailed, "Tên tòa nhà là bắt buộc");
-                var existBuilding = await GetBuildingByNameAndAreaIdAssync(name, areaId);
-                if (existBuilding != null)
-                {
-                    throw new CustomException(ExceptionErrorCode.CreateFailed, "Đã tồn tại toàn nhà này");
-                }
-                var area = await areaDbService.GetByIdAsync(areaId) ?? throw new CustomException(ExceptionErrorCode.NotFound, "Area not found");
+                if (string.IsNullOrEmpty(name))
+                    throw new CustomException(ExceptionErrorCode.ValidationFailed, "Tên tòa nhà là bắt buộc");
+
+                if (await IsNameExistsAsync(name, areaId))
+                    throw new CustomException(ExceptionErrorCode.DuplicateValue, $"Tòa nhà với tên {name} đã tồn tại trong khu vực");
+
+                var area = await areaDbService.GetByIdAsync(areaId)
+                    ?? throw new CustomException(ExceptionErrorCode.NotFound, "Khu vực không tồn tại");
+
                 var building = new Building
                 {
                     Name = name,
@@ -83,6 +92,7 @@
                 throw new CustomException(ExceptionErrorCode.RepositoryError, ex.Message);
             }
         }
+
         public async Task<int> CountAsync()
         {
             try

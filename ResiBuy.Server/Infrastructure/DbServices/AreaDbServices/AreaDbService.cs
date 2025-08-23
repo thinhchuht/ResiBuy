@@ -96,8 +96,29 @@ namespace ResiBuy.Server.Infrastructure.DbServices.AreaDbServices
         }
         public async Task<bool> IsNameExistsAsync(string name)
         {
-            return await _context.Areas.AnyAsync(a => a.Name.ToLower() == name.ToLower());
+            return await _context.Areas.AnyAsync(a => a.Name == name);
         }
-
+        public override async Task<IEnumerable<Area>> AddRangeAsync(IEnumerable<Area> entities)
+        {
+            try
+            {
+                foreach (var entity in entities)
+                {
+                    if (await IsNameExistsAsync(entity.Name))
+                    {
+                        throw new CustomException(ExceptionErrorCode.RepositoryError, $"Khu vực với tên {entity.Name} đã tồn tại");
+                    }
+                }
+                return await base.AddRangeAsync(entities);
+            }
+            catch (CustomException)
+            {
+                throw;
+            }
+            catch (Exception ex)
+            {
+                throw new CustomException(ExceptionErrorCode.RepositoryError, ex.Message);
+            }
+        }
     }
 }

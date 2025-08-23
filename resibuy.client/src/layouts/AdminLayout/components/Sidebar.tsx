@@ -129,9 +129,9 @@ export function Sidebar() {
         </Stack>
 
         <Stack direction="row" spacing={1}>
-          <IconButton size="small" sx={{ color: "text.secondary" }}>
+          {/* <IconButton size="small" sx={{ color: "text.secondary" }}>
             <Settings sx={{ width: 16, height: 16 }} />
-          </IconButton>
+          </IconButton> */}
           <IconButton size="small" sx={{ color: "text.secondary" }} onClick={handleLogout}>
             <Logout sx={{ width: 16, height: 16 }} />
           </IconButton>

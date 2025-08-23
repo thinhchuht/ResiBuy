@@ -281,30 +281,42 @@ export function useRoomsLogic(buildingId?: string) {
     [selectedRoom, fetchRoomsByBuildingId, buildingId, pageNumber, toast]
   );
 
-  const handleExportRooms = useCallback(() => {
-    const headers = ["Room ID", "Name", "Status", "Building ID"];
-    const csvContent = [
-      headers.join(","),
-      ...rooms.map((room) =>
-        [
-          room.id || "",
-          `"${room.name}"`,
-          room.isActive ? "Active" : "Inactive",
-          room.buildingId || "",
-        ].join(",")
-      ),
-    ].join("\n");
+  const handleExportRooms = useCallback(async () => {
+    try {
+      const response = buildingId
+        ? await roomApi.getByBuildingId(buildingId, 1, 9999999)
+        : await roomApi.getAll(1, Number.MAX_SAFE_INTEGER);
+      
+      const roomsData = response.items || [];
+      
+      const headers = ["Room ID", "Tên", "Trạng thái"];
+      const csvContent = [
+        headers.join(","),
+        ...roomsData.map((room) =>
+          [
+            room.id || "",
+            `"${room.name.replace(/"/g, '""')}"`, 
+            room.isActive ? "Hoạt động" : "Không hoạt động",
+            room.buildingId || "",
+          ].join(",")
+        ),
+      ].join("\n");
 
-    const blob = new Blob([csvContent], { type: "text/csv" });
-    const url = window.URL.createObjectURL(blob);
-    const a = document.createElement("a");
-    a.href = url;
-    a.download = `rooms_${new Date().toISOString().split("T")[0]}.csv`;
-    a.click();
-    window.URL.revokeObjectURL(url);
-    toast.success("Export danh sách phòng thành công!");
-  }, [rooms, toast]);
+    const BOM = "\uFEFF"; // BOM cho UTF-8
+const blob = new Blob([BOM + csvContent], { type: "text/csv;charset=utf-8;" });
 
+      const url = window.URL.createObjectURL(blob);
+      const a = document.createElement("a");
+      a.href = url;
+      a.download = `rooms_${new Date().toISOString().split("T")[0]}.csv`;
+      a.click();
+      window.URL.revokeObjectURL(url);
+      toast.success("Xuất danh sách phòng thành công!");
+    } catch (err: unknown) {
+      const errorMessage = err instanceof Error ? err.message : "Lỗi khi xuất danh sách phòng";
+      toast.error(errorMessage);
+    }
+  }, [buildingId, toast]);
   return {
     rooms,
     selectedRoom,

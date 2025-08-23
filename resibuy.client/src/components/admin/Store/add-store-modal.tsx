@@ -22,7 +22,7 @@ import {
   Person,
   MeetingRoom,
 } from "@mui/icons-material";
-import { useStoreForm, useStoresLogic } from "./seg/utlis"; // Import useStoresLogic
+import { useStoreForm, useStoresLogic } from "./seg/utlis";
 import userApi from "../../../api/user.api";
 import roomApi from "../../../api/room.api";
 import storeApi from "../../../api/storee.api";
@@ -30,7 +30,7 @@ import { useToastify } from "../../../hooks/useToastify";
 
 export function AddStoreModal({ isOpen, onClose, onSubmit, editStore }) {
   const { formData, errors, isSubmitting, handleInputChange, handleSubmit } = useStoreForm(editStore);
-  const { getUserById } = useStoresLogic(); // Lấy getUserById từ useStoresLogic
+  const { getUserById } = useStoresLogic();
   const [users, setUsers] = useState([]);
   const [rooms, setRooms] = useState([]);
   const [selectedUser, setSelectedUser] = useState(null);
@@ -51,10 +51,9 @@ export function AddStoreModal({ isOpen, onClose, onSubmit, editStore }) {
     const fetchData = async () => {
       try {
         if (editStore) {
-          // Chế độ chỉnh sửa: Lấy thông tin cửa hàng và thông tin người dùng
           const [storeRes, userRes] = await Promise.all([
             storeApi.getById(editStore.id),
-            getUserById(editStore.ownerId), // Gọi getUserById từ useStoresLogic
+            getUserById(editStore.ownerId),
           ]);
 
           if (storeRes.code === 0) {
@@ -65,14 +64,13 @@ export function AddStoreModal({ isOpen, onClose, onSubmit, editStore }) {
           }
 
           if (userRes) {
-            setSelectedUser(userRes); // Cập nhật selectedUser với dữ liệu từ getUserById
+            setSelectedUser(userRes);
           } else {
             toast.error("Không thể lấy thông tin chủ sở hữu");
             setSelectedUser({ id: editStore.ownerId, fullName: "", email: editStore.ownerId });
           }
         } else {
-          // Chế độ thêm mới: Lấy danh sách người dùng
-          const res = await userApi.getAllUser(1, 100);
+          const res = await userApi.getAllUser(1, 100000000);
           if (res.code === 0) {
             setUsers(res.data.items || []);
           } else {
@@ -92,7 +90,7 @@ export function AddStoreModal({ isOpen, onClose, onSubmit, editStore }) {
     };
 
     fetchData();
-  }, [isOpen, editStore ]);
+  }, [isOpen, editStore,]);
 
   useEffect(() => {
     if (isOpen && !editStore && formData.ownerId) {
@@ -109,17 +107,30 @@ export function AddStoreModal({ isOpen, onClose, onSubmit, editStore }) {
         .finally(() => {
           setLoading(false);
         });
-    } else if (!formData.ownerId) {
+    } else {
       setRooms([]);
     }
   }, [isOpen, editStore, formData.ownerId]);
+
+  const handleClose = () => {
+    onClose();
+    if (!editStore) {
+      handleInputChange("name", "");
+      handleInputChange("description", "");
+      handleInputChange("ownerId", "");
+      handleInputChange("roomId", "");
+      handleInputChange("phoneNumber", "");
+      handleInputChange("isLocked", false);
+      handleInputChange("isOpen", true);
+    }
+  };
 
   if (!isOpen) return null;
 
   return (
     <Dialog
       open={isOpen}
-      onClose={onClose}
+      onClose={handleClose}
       maxWidth="md"
       fullWidth
       sx={{
@@ -161,7 +172,7 @@ export function AddStoreModal({ isOpen, onClose, onSubmit, editStore }) {
           </Typography>
         </Box>
         <IconButton
-          onClick={onClose}
+          onClick={handleClose}
           sx={{
             color: "grey.400",
             bgcolor: "background.paper",
@@ -327,8 +338,8 @@ export function AddStoreModal({ isOpen, onClose, onSubmit, editStore }) {
                     <TextField
                       fullWidth
                       value={
-                        selectedUser && (selectedUser.fullName || selectedUser.email)
-                          ? `${selectedUser.fullName || "N/A"} - ${selectedUser.email || selectedUser.id}`
+                        selectedUser && (selectedUser.fullName || selectedUser.email || selectedUser.identityNumber)
+                          ? `${selectedUser.fullName || "N/A"} - ${selectedUser.email || selectedUser.id} - ${selectedUser.identityNumber}`
                           : formData.ownerId
                       }
                       disabled
@@ -355,18 +366,19 @@ export function AddStoreModal({ isOpen, onClose, onSubmit, editStore }) {
                         options={users}
                         getOptionLabel={(user) =>
                           user.fullName || user.email
-                            ? `${user.fullName || "N/A"} - ${user.email || user.id}`
+                            ? `${user.fullName || "N/A"} - ${user.email || user.id} - ${user.identityNumber}`
                             : user.id
                         }
                         value={users.find((user) => user.id === formData.ownerId) || null}
                         onChange={(event, newValue) => {
                           handleInputChange("ownerId", newValue ? newValue.id : "");
+                          setSelectedUser(newValue);
                         }}
                         renderInput={(params) => (
                           <TextField
                             {...params}
                             label="Chọn chủ sở hữu"
-                            placeholder="Nhập tên hoặc email để tìm kiếm"
+                            placeholder="Nhập tên, CCCD hoặc email để tìm kiếm"
                             error={!!errors.ownerId}
                             sx={{
                               bgcolor: "background.paper",
@@ -449,6 +461,7 @@ export function AddStoreModal({ isOpen, onClose, onSubmit, editStore }) {
                         value={rooms.find((room) => room.id === formData.roomId) || null}
                         onChange={(event, newValue) => {
                           handleInputChange("roomId", newValue ? newValue.id : "");
+                          setSelectedRoom(newValue);
                         }}
                         disabled={!formData.ownerId}
                         renderInput={(params) => (
@@ -652,7 +665,7 @@ export function AddStoreModal({ isOpen, onClose, onSubmit, editStore }) {
         }}
       >
         <Button
-          onClick={onClose}
+          onClick={handleClose}
           sx={{
             px: 3,
             py: 1,

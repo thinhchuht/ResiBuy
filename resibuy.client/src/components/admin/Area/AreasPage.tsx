@@ -1,11 +1,12 @@
-import { useState, useEffect } from "react";
-import { Box, Typography, IconButton, Link, Breadcrumbs } from "@mui/material";
-import {  Edit, Visibility, Delete, Lock, LockOpen, NavigateNext, LocationOn as AreaIcon } from "@mui/icons-material";
+import { useState } from "react";
+import { Box, Typography, IconButton, Link, Breadcrumbs, List, ListItem, ListItemText } from "@mui/material";
+import { Edit, Lock, LockOpen, NavigateNext, LocationOn as AreaIcon } from "@mui/icons-material";
 import CustomTable from "../../CustomTable";
 import { AddAreaModal } from "./add-area-modal";
-import { useAreasLogic, calculateAreaStats } from "./seg/utlis";
+import { ImportExcelModal } from "./ImportExcelModal";
+import { useAreasLogic, calculateAreaStats, handleImport } from "./seg/utlis"; // Sửa từ utlis thành utils
 import { StatsCard } from "../../../layouts/AdminLayout/components/StatsCard";
-import { ConfirmModal } from "../../../components/ConfirmModal"; // Thêm import ConfirmModal
+import { ConfirmModal } from "../../ConfirmModal";
 import type { AreaDto } from "../../../types/dtoModels";
 import { Link as RouterLink } from "react-router-dom";
 
@@ -64,17 +65,18 @@ export default function AreasPage() {
     editingArea,
     loading,
     error,
+    fetchAreas,
     handleViewArea,
     handleCloseDetailModal,
     handleAddArea,
     handleEditArea,
     handleCloseAddModal,
     handleSubmitArea,
-    handleDeleteArea,
     handleExportAreas,
     handleUpdateStatus,
   } = useAreasLogic();
 
+  const { importModal, handleOpenImportModal, handleFileChange, handleConfirmImport, handleDownloadTemplate, handleImportModalClose } = handleImport(fetchAreas);
 
   const [confirmModal, setConfirmModal] = useState<{
     open: boolean;
@@ -88,6 +90,7 @@ export default function AreasPage() {
     onConfirm: () => {},
   });
 
+  const [isImportModalOpen, setIsImportModalOpen] = useState(false);
 
   const handleOpenConfirmModal = (areaId: string, isActive: boolean) => {
     setConfirmModal({
@@ -101,20 +104,38 @@ export default function AreasPage() {
     });
   };
 
+  const handleOpenImportExcelModal = () => {
+    setIsImportModalOpen(true);
+  };
+
+  const handleCloseImportExcelModal = () => {
+    setIsImportModalOpen(false);
+  };
+
+  const handleImportExcelSubmit = async (file: File) => {
+    await handleFileChange(file);
+    setIsImportModalOpen(false);
+  };
+
   const columns = [
+    
     {
-      key: "id" as keyof AreaDto,
-      label: "ID Khu vực",
-      sortable: true,
-      render: (area: AreaDto) => (
-        <Typography
-          variant="body2"
-          sx={{ fontFamily: "monospace", fontWeight: "medium", color: "primary.main" }}
-        >
-          {area.id}
+    key: "stt" as keyof AreaDto,
+    label: "STT",
+    sortable: false,
+    render: (area: AreaDto) => {
+      const index = areas.indexOf(area); 
+      const pageNumber = 1;
+      const pageSize = 100; 
+      console.log("STT render (AreasPage):", { pageNumber, pageSize, index }); // Debug log
+      const stt = index >= 0 ? (pageNumber - 1) * pageSize + index + 1 : index + 1;
+      return (
+        <Typography variant="body2" sx={{ color: "grey.900" }}>
+          {stt}
         </Typography>
-      ),
+      );
     },
+  },
     {
       key: "name" as keyof AreaDto,
       label: "Tên Khu vực",
@@ -141,7 +162,7 @@ export default function AreasPage() {
       render: (area: AreaDto) => (
         <Box sx={{ display: "flex", alignItems: "center", gap: 0.5 }}>
           <IconButton
-            onClick={() => handleOpenConfirmModal(area.id!, area.isActive)} // Gọi modal xác nhận
+            onClick={() => handleOpenConfirmModal(area.id!, area.isActive)}
             sx={{
               color: area.isActive ? "error.main" : "success.main",
               p: 0.5,
@@ -196,6 +217,59 @@ export default function AreasPage() {
         message={confirmModal.message}
         onConfirm={confirmModal.onConfirm}
         onClose={() => setConfirmModal({ open: false, title: "", message: "", onConfirm: () => {} })}
+      />
+      <ConfirmModal
+        open={importModal.open}
+        title="Xác nhận Import"
+        message={
+          <Box>
+            <Typography>{importModal.message}</Typography>
+            {importModal.errors.length > 0 && (
+              <>
+                <Typography variant="h6" sx={{ mt: 2, color: "error.main" }}>Lỗi trong file:</Typography>
+                <List>
+                  {importModal.errors.map((error, index) => (
+                    <ListItem key={index}>
+                      <ListItemText primary={error} />
+                    </ListItem>
+                  ))}
+                </List>
+              </>
+            )}
+            {importModal.existingEntities.length > 0 && (
+              <>
+                <Typography variant="h6" sx={{ mt: 2 }}>Thực thể đã tồn tại:</Typography>
+                <List>
+                  {importModal.existingEntities.map((entity, index) => (
+                    <ListItem key={index}>
+                      <ListItemText primary={entity} />
+                    </ListItem>
+                  ))}
+                </List>
+              </>
+            )}
+            {importModal.newEntities.length > 0 && (
+              <>
+                <Typography variant="h6" sx={{ mt: 2 }}>Thực thể sẽ tạo mới:</Typography>
+                <List>
+                  {importModal.newEntities.map((entity, index) => (
+                    <ListItem key={index}>
+                      <ListItemText primary={entity} />
+                    </ListItem>
+                  ))}
+                </List>
+              </>
+            )}
+          </Box>
+        }
+        onConfirm={importModal.onConfirm}
+        onClose={() => handleImportModalClose()}
+      />
+      <ImportExcelModal
+        isOpen={isImportModalOpen}
+        onClose={handleCloseImportExcelModal}
+        onSubmit={handleImportExcelSubmit}
+        onDownloadTemplate={handleDownloadTemplate}
       />
       <Box
         component="header"
@@ -254,7 +328,9 @@ export default function AreasPage() {
           description="Quản lý khu vực"
           showExport={true}
           showBulkActions={false}
-          itemsPerPage={15}
+          itemsPerPage={100}
+          showImport={true}
+          onImport={handleOpenImportExcelModal}
         />
 
         <AddAreaModal
