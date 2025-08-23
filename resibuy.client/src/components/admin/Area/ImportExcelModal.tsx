@@ -1,4 +1,4 @@
-import { useState } from "react";
+import React, { useState } from "react";
 import {
   Dialog,
   DialogTitle,
@@ -11,29 +11,29 @@ import {
   CircularProgress,
   Paper,
 } from "@mui/material";
-import { CloudUpload, Description, Download } from "@mui/icons-material";
+import { CloudUpload, Description } from "@mui/icons-material";
 import { useToastify } from "../../../hooks/useToastify";
-import * as XLSX from "xlsx";
 
 interface ImportExcelModalProps {
   isOpen: boolean;
   onClose: () => void;
   onSubmit: (file: File) => Promise<void>;
+  onDownloadTemplate: () => void;
 }
 
-export function ImportExcelModal({ isOpen, onClose, onSubmit }: ImportExcelModalProps) {
+export function ImportExcelModal({ isOpen, onClose, onSubmit, onDownloadTemplate }: ImportExcelModalProps) {
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
   const [isUploading, setIsUploading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState<string | null>(null);
-  const  toast  = useToastify();
+  const toast = useToastify();
 
   const handleFileSelect = (event: React.ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0];
     if (file) {
       const fileExtension = file.name.split(".").pop()?.toLowerCase();
-      if (fileExtension !== "xlsx" && fileExtension !== "xls") {
-        setError("Chỉ chấp nhận file Excel (.xlsx, .xls)");
+      if (fileExtension !== "xlsx" && fileExtension !== "xls" && fileExtension !== "csv") {
+        setError("Chỉ chấp nhận file Excel (.xlsx, .xls) hoặc CSV (.csv)");
         setSelectedFile(null);
         return;
       }
@@ -46,7 +46,7 @@ export function ImportExcelModal({ isOpen, onClose, onSubmit }: ImportExcelModal
 
   const handleSubmit = async () => {
     if (!selectedFile) {
-      setError("Vui lòng chọn file Excel");
+      setError("Vui lòng chọn file Excel hoặc CSV");
       return;
     }
 
@@ -56,15 +56,15 @@ export function ImportExcelModal({ isOpen, onClose, onSubmit }: ImportExcelModal
 
     try {
       await onSubmit(selectedFile);
-      setSuccess("Nhập Excel thành công!");
-      toast.success("Nhập Excel thành công!");
+      setSuccess("Nhập file thành công!");
+      toast.success("Nhập file thành công!");
       setTimeout(() => {
         onClose();
         setSelectedFile(null);
         setSuccess(null);
       }, 1000);
     } catch (err: unknown) {
-      const errorMessage = err instanceof Error ? err.message : "Có lỗi xảy ra khi nhập Excel";
+      const errorMessage = err instanceof Error ? err.message : "Có lỗi xảy ra khi nhập file";
       setError(errorMessage);
       toast.error(errorMessage);
     } finally {
@@ -90,38 +90,14 @@ export function ImportExcelModal({ isOpen, onClose, onSubmit }: ImportExcelModal
     const file = event.dataTransfer.files[0];
     if (file) {
       const fileExtension = file.name.split(".").pop()?.toLowerCase();
-      if (fileExtension !== "xlsx" && fileExtension !== "xls") {
-        setError("Chỉ chấp nhận file Excel (.xlsx, .xls)");
+      if (fileExtension !== "xlsx" && fileExtension !== "xls" && fileExtension !== "csv") {
+        setError("Chỉ chấp nhận file Excel (.xlsx, .xls) hoặc CSV (.csv)");
         return;
       }
 
       setSelectedFile(file);
       setError(null);
       setSuccess(null);
-    }
-  };
-
-  const handleDownloadTemplate = () => {
-    try {
-      // Define the template data
-      const templateData = [
-        {
-          CCCD: "680687342233",
-          "Họ và Tên": "Lê Phúc Linh",
-          "Ngày sinh": "30/03/2007",
-        },
-      ];
-
-      // Create a new workbook and worksheet
-      const ws = XLSX.utils.json_to_sheet(templateData);
-      const wb = XLSX.utils.book_new();
-      XLSX.utils.book_append_sheet(wb, ws, "Template");
-
-      // Generate and download the Excel file
-      XLSX.writeFile(wb, "resident_import_template.xlsx");
-    } catch (err: unknown) {
-      const errorMessage = err instanceof Error ? err.message : "Lỗi khi tạo file mẫu";
-      toast.error(errorMessage);
     }
   };
 
@@ -142,7 +118,7 @@ export function ImportExcelModal({ isOpen, onClose, onSubmit }: ImportExcelModal
         <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
           <Description sx={{ color: "primary.main" }} />
           <Typography variant="h6" sx={{ color: "grey.900" }}>
-            Gửi lên Excel
+            Nhập File Excel hoặc CSV
           </Typography>
         </Box>
       </DialogTitle>
@@ -150,16 +126,16 @@ export function ImportExcelModal({ isOpen, onClose, onSubmit }: ImportExcelModal
       <DialogContent sx={{ pt: 2 }}>
         <Box sx={{ mb: 2 }}>
           <Typography variant="body2" sx={{ color: "grey.600", mb: 2 }}>
-            Chọn file Excel để <span style={{ fontWeight: "bold", color: "red" }}>CHO PHÉP CƯ DÂN ĐĂNG KÍ TÀI KHOẢN, KHÔNG PHẢI TẠO NGƯỜI DÙNG MỚI TRÊN HỆ THỐNG</span>. File phải có định dạng .xlsx hoặc .xls.
+           <span style={{ fontWeight: "bold", color: "red" }}>LƯU Ý:</span> Hệ thống sẽ kiểm tra tất cả các thực thể, nếu thực thể nào chưa có thì sẽ tạo mới, nếu khu vực đã tồn tại thì bạn chỉ cần nhập tên hệ thống sẽ tự thêm các thực thể còn lại. File phải có định dạng .xlsx, .xls hoặc .csv với các cột: Tên khu vực, Vĩ độ, Kinh độ, Tên tòa nhà, Tên phòng.
           </Typography>
 
           <Button
             variant="outlined"
-            startIcon={<Download />}
-            onClick={handleDownloadTemplate}
-            sx={{ mb: 2, color: "primary.main", borderColor: "primary.main" }}
+            color="primary"
+            onClick={onDownloadTemplate}
+            sx={{ mb: 2 }}
           >
-            Tải File Mẫu
+            Tải Template
           </Button>
 
           {error && (
@@ -196,7 +172,7 @@ export function ImportExcelModal({ isOpen, onClose, onSubmit }: ImportExcelModal
             <input
               id="file-input"
               type="file"
-              accept=".xlsx,.xls"
+              accept=".xlsx,.xls,.csv"
               onChange={handleFileSelect}
               style={{ display: "none" }}
             />
@@ -218,7 +194,7 @@ export function ImportExcelModal({ isOpen, onClose, onSubmit }: ImportExcelModal
             ) : (
               <Box>
                 <Typography variant="h6" sx={{ color: "grey.700", mb: 1 }}>
-                  Kéo thả file Excel vào đây
+                  Kéo thả file Excel hoặc CSV vào đây
                 </Typography>
                 <Typography variant="body2" sx={{ color: "grey.500" }}>
                   Hoặc click để chọn file
@@ -256,7 +232,7 @@ export function ImportExcelModal({ isOpen, onClose, onSubmit }: ImportExcelModal
               Đang xử lý...
             </Box>
           ) : (
-            "Nhập Excel"
+            "Nhập File"
           )}
         </Button>
       </DialogActions>

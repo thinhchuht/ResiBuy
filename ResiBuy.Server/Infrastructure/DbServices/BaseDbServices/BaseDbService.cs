@@ -201,5 +201,17 @@ namespace ResiBuy.Server.Infrastructure.DbServices.BaseDbServices
         {
             return await context.SaveChangesAsync();
         }
+        public virtual async Task<IEnumerable<T>> AddRangeAsync(IEnumerable<T> entities)
+        {
+            try
+            {
+                await _dbSet.AddRangeAsync(entities);
+                return entities;
+            }
+            catch (Exception ex)
+            {
+                throw new CustomException(ExceptionErrorCode.RepositoryError, ex.Message);
+            }
+        }
     }
 }

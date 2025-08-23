@@ -34,30 +34,20 @@ export function AddCategoryModal({
   onSubmit,
   editCategory,
 }: AddCategoryModalProps) {
-  const { formData, errors, isSubmitting, handleInputChange, handleSubmit } =
+  const { formData, errors, isSubmitting, handleInputChange, handleSubmit, handleClose } =
     useCategoryForm(editCategory);
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
   const [imagePreview, setImagePreview] = useState<string | null>(editCategory?.image?.url || null);
   const [imageData, setImageData] = useState<CategoryFormData["image"] | null>(
     editCategory?.image || null
   );
-  const  toast  = useToastify();
+  const toast = useToastify();
 
-  // Reset form và hình ảnh khi editCategory thay đổi
+  // Reset hình ảnh khi editCategory thay đổi
   useEffect(() => {
-    if (editCategory) {
-      handleInputChange("name", editCategory.name || "");
-      handleInputChange("status", editCategory.status || "");
-      setImagePreview(editCategory.image?.url || null);
-      setImageData(editCategory.image || null);
-      setSelectedFile(null);
-    } else {
-      handleInputChange("name", "");
-      handleInputChange("status", "");
-      setImagePreview(null);
-      setImageData(null);
-      setSelectedFile(null);
-    }
+    setImagePreview(editCategory?.image?.url || null);
+    setImageData(editCategory?.image || null);
+    setSelectedFile(null);
   }, [editCategory]);
 
   // Xử lý khi chọn file hình ảnh
@@ -95,7 +85,7 @@ export function AddCategoryModal({
         uploadedImage = {
           id: response.data.id,
           url: response.data.url,
-          thumbUrl: response.data.thumbnailUrl || "", // Đảm bảo thumbUrl được gửi
+          thumbUrl: response.data.thumbnailUrl || "",
           name: response.data.name || "",
         };
         if (!uploadedImage.id || !uploadedImage.url) {
@@ -111,6 +101,7 @@ export function AddCategoryModal({
 
       console.log("Submitting category data:", categoryData);
       await onSubmit(categoryData);
+      handleClose(); // Reset form sau khi submit
       onClose();
     } catch (error: any) {
       console.error("Lỗi khi submit danh mục:", error);
@@ -118,12 +109,20 @@ export function AddCategoryModal({
     }
   };
 
+  const handleModalClose = () => {
+    handleClose(); // Reset form khi đóng modal
+    setImagePreview(null);
+    setImageData(null);
+    setSelectedFile(null);
+    onClose();
+  };
+
   if (!isOpen) return null;
 
   return (
     <Dialog
       open={isOpen}
-      onClose={onClose}
+      onClose={handleModalClose}
       maxWidth="sm"
       fullWidth
       sx={{
@@ -167,7 +166,7 @@ export function AddCategoryModal({
           </Typography>
         </Box>
         <IconButton
-          onClick={onClose}
+          onClick={handleModalClose}
           sx={{
             color: "grey.400",
             bgcolor: "background.paper",
@@ -193,7 +192,6 @@ export function AddCategoryModal({
         }}
       >
         <form id="category-form" onSubmit={(e) => handleSubmit(e, onFormSubmit)}>
-          {/* Thông Tin Cơ Bản */}
           <Box sx={{ mb: 2 }}>
             <Typography
               variant="h6"
@@ -210,7 +208,6 @@ export function AddCategoryModal({
             </Typography>
 
             <Box sx={{ display: "flex", flexDirection: "column", gap: 2 }}>
-              {/* Tên Danh Mục */}
               <Box>
                 <Typography
                   variant="body2"
@@ -261,7 +258,6 @@ export function AddCategoryModal({
                 )}
               </Box>
 
-              {/* Trạng Thái */}
               <Box>
                 <Typography
                   variant="body2"
@@ -302,7 +298,6 @@ export function AddCategoryModal({
                 </FormControl>
               </Box>
 
-              {/* Upload Hình Ảnh */}
               <Box>
                 <Typography
                   variant="body2"
@@ -374,7 +369,7 @@ export function AddCategoryModal({
         }}
       >
         <Button
-          onClick={onClose}
+          onClick={handleModalClose}
           sx={{
             px: 3,
             py: 1,

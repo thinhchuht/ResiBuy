@@ -27,6 +27,9 @@ import { useUserForm } from "./seg/utils";
 import roomApi from "../../../api/room.api";
 import areaApi from "../../../api/area.api";
 import buildingApi from "../../../api/building.api";
+import userApi from "../../../api/user.api";
+import ConfirmCodeModal from "../../ConfirmCodeModal";
+import { useToastify } from "../../../hooks/useToastify";
 import type { UserDto, RoomDto, AreaDto, BuildingDto } from "../../../types/dtoModels";
 
 interface AddUserModalProps {
@@ -45,10 +48,10 @@ interface AddUserModalProps {
 }
 
 export function AddUserModal({ isOpen, onClose, onSubmit, editingUser }: AddUserModalProps) {
-  const { formData, errors, isSubmitting, handleInputChange, handleSubmit } = useUserForm(editingUser);
+const { formData, errors, isSubmitting, setIsSubmitting, handleInputChange, handleSubmit, validateForm, resetForm } = useUserForm(editingUser);
   const [roomModalOpen, setRoomModalOpen] = useState(false);
   const [rooms, setRooms] = useState<RoomDto[]>([]);
-  const [selectedRooms, setSelectedRooms] = useState<RoomDto[]>([]); // Thêm trạng thái để lưu các phòng đã chọn
+  const [selectedRooms, setSelectedRooms] = useState<RoomDto[]>([]);
   const [isLoadingRooms, setIsLoadingRooms] = useState(false);
   const [roomError, setRoomError] = useState<string | null>(null);
   const [pageNumber, setPageNumber] = useState(1);
@@ -62,8 +65,11 @@ export function AddUserModal({ isOpen, onClose, onSubmit, editingUser }: AddUser
   const [buildings, setBuildings] = useState<BuildingDto[]>([]);
   const [areaId, setAreaId] = useState<string>("");
   const [buildingId, setBuildingId] = useState<string>("");
+  const [confirmCodeModalOpen, setConfirmCodeModalOpen] = useState(false);
+  const [confirmCode, setConfirmCode] = useState("");
+  const [isSubmittingCode, setIsSubmittingCode] = useState(false);
+  const  toast  = useToastify();
 
-  // Khởi tạo rooms và selectedRooms với editingUser.rooms khi edit
   useEffect(() => {
     if (editingUser && editingUser.rooms) {
       setRooms(editingUser.rooms);
@@ -74,7 +80,6 @@ export function AddUserModal({ isOpen, onClose, onSubmit, editingUser }: AddUser
     }
   }, [editingUser]);
 
-  // Lấy danh sách khu vực khi mở modal chọn phòng
   useEffect(() => {
     if (roomModalOpen) {
       const fetchAreas = async () => {
@@ -90,14 +95,13 @@ export function AddUserModal({ isOpen, onClose, onSubmit, editingUser }: AddUser
     }
   }, [roomModalOpen]);
 
-  // Lấy danh sách tòa nhà khi areaId thay đổi
   useEffect(() => {
     if (roomModalOpen && areaId) {
       const fetchBuildings = async () => {
         try {
           const response = await buildingApi.getByAreaId(areaId);
           setBuildings(response);
-          setBuildingId(""); // Reset buildingId khi areaId thay đổi
+          setBuildingId("");
         } catch (error: any) {
           console.error("Error fetching buildings:", error);
           setRoomError(error.message || "Lỗi khi lấy danh sách tòa nhà");
@@ -110,7 +114,6 @@ export function AddUserModal({ isOpen, onClose, onSubmit, editingUser }: AddUser
     }
   }, [roomModalOpen, areaId]);
 
-  // Hàm lấy danh sách phòng
   const fetchRooms = useCallback(async () => {
     setIsLoadingRooms(true);
     try {
@@ -141,7 +144,6 @@ export function AddUserModal({ isOpen, onClose, onSubmit, editingUser }: AddUser
           response = await roomApi.getAll(pageNumber, pageSize, isActiveFilter, noUsersFilter);
         }
       }
-      // Giữ các phòng đã chọn (selectedRooms) và thêm các phòng mới từ API
       const existingRoomIds = selectedRooms.map((r) => r.id);
       const newRooms = response.items.filter((room) => !existingRoomIds.includes(room.id));
       setRooms([...selectedRooms, ...newRooms]);
@@ -156,12 +158,10 @@ export function AddUserModal({ isOpen, onClose, onSubmit, editingUser }: AddUser
     }
   }, [pageNumber, pageSize, searchTerm, isActiveFilter, noUsersFilter, buildingId, selectedRooms]);
 
-  // Lấy danh sách phòng khi mở modal chọn phòng hoặc khi các bộ lọc/tham số thay đổi
   useEffect(() => {
     if (roomModalOpen) {
       fetchRooms();
     } else {
-      // Khi đóng modal, chỉ giữ selectedRooms
       setRooms(selectedRooms);
       setPageNumber(1);
       setSearchTerm("");
@@ -172,14 +172,12 @@ export function AddUserModal({ isOpen, onClose, onSubmit, editingUser }: AddUser
     }
   }, [roomModalOpen, fetchRooms, selectedRooms]);
 
-  // Xử lý chọn/xóa phòng
   const handleRoomSelect = (roomId: string) => {
     const newRoomIds = formData.roomIds.includes(roomId)
       ? formData.roomIds.filter((id) => id !== roomId)
       : [...formData.roomIds, roomId];
     handleInputChange("roomIds", newRoomIds);
 
-    // Cập nhật selectedRooms
     if (newRoomIds.includes(roomId)) {
       const selectedRoom = rooms.find((r) => r.id === roomId);
       if (selectedRoom && !selectedRooms.find((r) => r.id === roomId)) {
@@ -190,48 +188,41 @@ export function AddUserModal({ isOpen, onClose, onSubmit, editingUser }: AddUser
     }
   };
 
-  // Xóa phòng khỏi danh sách đã chọn
   const handleRoomDelete = (roomId: string) => {
     handleInputChange("roomIds", formData.roomIds.filter((id) => id !== roomId));
     setSelectedRooms(selectedRooms.filter((r) => r.id !== roomId));
   };
 
-  // Mở/đóng modal chọn phòng
   const handleOpenRoomModal = () => setRoomModalOpen(true);
   const handleCloseRoomModal = () => {
     setRoomModalOpen(false);
   };
 
-  // Xử lý thay đổi khu vực
   const handleAreaChange = (event: React.ChangeEvent<{ value: unknown }>) => {
     setAreaId(event.target.value as string);
-    setPageNumber(1); // Reset về trang 1 khi thay đổi khu vực
+    setPageNumber(1);
   };
 
-  // Xử lý thay đổi tòa nhà
   const handleBuildingChange = (event: React.ChangeEvent<{ value: unknown }>) => {
     setBuildingId(event.target.value as string);
-    setPageNumber(1); // Reset về trang 1 khi thay đổi tòa nhà
+    setPageNumber(1);
   };
 
-  // Xử lý tìm kiếm
   const handleSearchChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     setSearchTerm(e.target.value);
-    setPageNumber(1); // Reset về trang 1 khi tìm kiếm
+    setPageNumber(1);
   };
 
-  // Xử lý thay đổi bộ lọc
   const handleIsActiveFilterChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     setIsActiveFilter(e.target.checked);
-    setPageNumber(1); // Reset về trang 1 khi thay đổi bộ lọc
+    setPageNumber(1);
   };
 
   const handleNoUsersFilterChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     setNoUsersFilter(e.target.checked);
-    setPageNumber(1); // Reset về trang 1 khi thay đổi bộ lọc
+    setPageNumber(1);
   };
 
-  // Xử lý phân trang
   const handlePreviousPage = () => {
     if (pageNumber > 1) {
       setPageNumber(pageNumber - 1);
@@ -244,17 +235,95 @@ export function AddUserModal({ isOpen, onClose, onSubmit, editingUser }: AddUser
     }
   };
 
-  // Format ngày sinh
-  const handleDateChange = (date: Date | null) => {
+const handleDateChange = (date: Date | null) => {
     if (date) {
-      handleInputChange("dateOfBirth", date.toISOString().split("T")[0]);
+      const formattedDate = date.toLocaleDateString("vi-VN", {
+        day: "2-digit",
+        month: "2-digit",
+        year: "numeric",
+      }).split("/").join("-");
+      handleInputChange("dateOfBirth", formattedDate);
     }
   };
 
-  // Gửi formData và rooms khi submit
+  const handleSendCode = async () => {
+    if (!validateForm()) {
+      toast.error("Vui lòng nhập đầy đủ thông tin hợp lệ!");
+      return;
+    }
+    setIsSubmitting(true);
+    try {
+      const payload = {
+        email: formData.email,
+        phoneNumber: formData.phoneNumber,
+        password: formData.password,
+        fullName: formData.fullName,
+        dateOfBirth: new Date(formData.dateOfBirth),
+        identityNumber: formData.identityNumber,
+        roomIds: formData.roomIds,
+      };
+      console.log("Sending code with payload:", payload);
+      const response = await userApi.getCode(payload);
+      console.log("Get code response:", response);
+      if (response && !response.error) {
+        setConfirmCodeModalOpen(true);
+        toast.success("Mã xác nhận đã được gửi!");
+      } else {
+        throw new Error(response?.error?.message || "Gửi mã xác nhận thất bại!");
+      }
+    } catch (error: any) {
+      console.error("Send code error:", error);
+      toast.error(error.message || "Lỗi khi gửi mã xác nhận");
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
+
+const handleConfirmCodeSubmit = async () => {
+  if (!confirmCode) {
+    toast.error("Vui lòng nhập mã xác nhận!");
+    return;
+  }
+  setIsSubmittingCode(true);
+  try {
+    const payload = {
+      email: formData.email,
+      phoneNumber: formData.phoneNumber,
+      password: formData.password,
+      fullName: formData.fullName,
+      dateOfBirth: new Date(formData.dateOfBirth),
+      identityNumber: formData.identityNumber,
+      roomIds: formData.roomIds,
+      code: confirmCode,
+    };
+    console.log("Creating user with payload:", payload);
+    const response = await userApi.createUser(payload);
+    console.log("Create user response:", response);
+    if (response && !response.error) {
+      setConfirmCodeModalOpen(false);
+      setConfirmCode("");
+      resetForm(); // Reset form
+      setSelectedRooms([]); // Reset danh sách phòng đã chọn
+      onClose(); // Đóng modal
+      toast.success("Thêm người dùng thành công!");
+    } else {
+      throw new Error(response?.error?.message || "Tạo người dùng thất bại!");
+    }
+  } catch (error: any) {
+    console.error("Create user error:", error);
+    toast.error(error.message || "Lỗi khi tạo người dùng");
+  } finally {
+    setIsSubmittingCode(false);
+  }
+};
   const handleFormSubmit = (e: React.FormEvent<HTMLFormElement>) => {
     console.log("handleFormSubmit called");
-    handleSubmit(e, (user) => onSubmit(user, selectedRooms));
+    e.preventDefault();
+    if (editingUser) {
+      handleSubmit(e, (user) => onSubmit(user, selectedRooms));
+    } else {
+      handleSendCode();
+    }
   };
 
   if (!isOpen) return null;
@@ -333,7 +402,6 @@ export function AddUserModal({ isOpen, onClose, onSubmit, editingUser }: AddUser
           }}
         >
           <form id="user-form" onSubmit={handleFormSubmit}>
-            {/* Thông Tin Cơ Bản */}
             <Box sx={{ mb: 2 }}>
               <Typography
                 variant="h6"
@@ -350,7 +418,6 @@ export function AddUserModal({ isOpen, onClose, onSubmit, editingUser }: AddUser
               </Typography>
 
               <Box sx={{ display: "flex", flexDirection: "column", gap: 2 }}>
-                {/* Email */}
                 <Box>
                   <Typography
                     variant="body2"
@@ -402,7 +469,6 @@ export function AddUserModal({ isOpen, onClose, onSubmit, editingUser }: AddUser
                   )}
                 </Box>
 
-                {/* Họ Tên */}
                 <Box>
                   <Typography
                     variant="body2"
@@ -454,7 +520,6 @@ export function AddUserModal({ isOpen, onClose, onSubmit, editingUser }: AddUser
                   )}
                 </Box>
 
-                {/* Số Điện Thoại */}
                 <Box>
                   <Typography
                     variant="body2"
@@ -506,7 +571,6 @@ export function AddUserModal({ isOpen, onClose, onSubmit, editingUser }: AddUser
                   )}
                 </Box>
 
-                {/* Ngày Sinh */}
                 <Box>
                   <Typography
                     variant="body2"
@@ -518,51 +582,43 @@ export function AddUserModal({ isOpen, onClose, onSubmit, editingUser }: AddUser
                   >
                     Ngày Sinh *
                   </Typography>
-                  <DatePicker
-                    value={formData.dateOfBirth ? new Date(formData.dateOfBirth) : null}
-                    onChange={handleDateChange}
-                    disabled={!!editingUser}
-                    slotProps={{
-                      textField: {
-                        fullWidth: true,
-                        size: "small",
-                        error: !!errors.dateOfBirth,
-                        placeholder: "Chọn ngày sinh",
-                        sx: {
-                          bgcolor: "background.paper",
-                          "& .MuiOutlinedInput-root": {
-                            borderRadius: 2,
-                            "& fieldset": {
-                              borderColor: errors.dateOfBirth ? "error.main" : "grey.300",
-                            },
-                            "&:hover fieldset": {
-                              borderColor: errors.dateOfBirth ? "error.main" : "grey.500",
-                            },
-                            "&.Mui-focused fieldset": {
-                              borderColor: "primary.main",
-                              boxShadow: "0 0 0 2px rgba(59, 130, 246, 0.5)",
-                            },
-                          },
-                          "& .MuiInputBase-input": {
-                            color: "grey.700",
-                            px: 1.5,
-                            py: 1,
-                          },
+                  <TextField
+                    fullWidth
+                    value={formData.dateOfBirth}
+                    onChange={(e) => handleInputChange("dateOfBirth", e.target.value)}
+                    size="small"
+                    error={!!errors.dateOfBirth}
+                    helperText={errors.dateOfBirth}
+                    type="date"
+                    InputLabelProps={{ shrink: true }}
+                    InputProps={{
+                      readOnly: !!editingUser,
+                    }}
+                    sx={{
+                      bgcolor: "background.paper",
+                      "& .MuiOutlinedInput-root": {
+                        borderRadius: 2,
+                        "& fieldset": {
+                          borderColor: errors.dateOfBirth ? "error.main" : "grey.300",
                         },
+                        "&:hover fieldset": {
+                          borderColor: errors.dateOfBirth ? "error.main" : "grey.500",
+                        },
+                        "&.Mui-focused fieldset": {
+                          borderColor: "primary.main",
+                          boxShadow: "0 0 0 2px rgba(59, 130, 246, 0.5)",
+                        },
+                      },
+                      "& .MuiInputBase-input": {
+                        color: "grey.700",
+                        px: 1.5,
+                        py: 1,
+                        backgroundColor: editingUser ? "grey.100" : "background.paper",
                       },
                     }}
                   />
-                  {errors.dateOfBirth && (
-                    <Typography
-                      variant="caption"
-                      sx={{ color: "error.main", mt: 0.5 }}
-                    >
-                      {errors.dateOfBirth}
-                    </Typography>
-                  )}
                 </Box>
 
-                {/* CMND/CCCD */}
                 <Box>
                   <Typography
                     variant="body2"
@@ -614,7 +670,6 @@ export function AddUserModal({ isOpen, onClose, onSubmit, editingUser }: AddUser
                   )}
                 </Box>
 
-                {/* Mật Khẩu */}
                 {!editingUser && (
                   <Box>
                     <Typography
@@ -668,7 +723,6 @@ export function AddUserModal({ isOpen, onClose, onSubmit, editingUser }: AddUser
                   </Box>
                 )}
 
-                {/* Phòng Đã Chọn */}
                 <Box>
                   <Typography
                     variant="body2"
@@ -792,12 +846,11 @@ export function AddUserModal({ isOpen, onClose, onSubmit, editingUser }: AddUser
               "&:disabled": { opacity: 0.5, cursor: "not-allowed" },
             }}
           >
-            {isSubmitting ? "Đang Lưu..." : editingUser ? "Cập Nhật Phòng" : "Thêm Người Dùng"}
+            {isSubmitting ? <CircularProgress size={20} color="inherit" /> : editingUser ? "Cập Nhật Phòng" : "Thêm Người Dùng"}
           </Button>
         </DialogActions>
       </Dialog>
 
-      {/* Modal chọn phòng */}
       <Dialog
         open={roomModalOpen}
         onClose={handleCloseRoomModal}
@@ -837,7 +890,6 @@ export function AddUserModal({ isOpen, onClose, onSubmit, editingUser }: AddUser
             gap: 2,
           }}
         >
-          {/* Tìm kiếm và bộ lọc */}
           <Box sx={{ display: "flex", flexDirection: "column", gap: 2, mb: 2 }}>
             <FormControl fullWidth size="small">
               <InputLabel id="area-select-label">Khu Vực</InputLabel>
@@ -948,7 +1000,6 @@ export function AddUserModal({ isOpen, onClose, onSubmit, editingUser }: AddUser
             </Box>
           </Box>
 
-          {/* Danh sách phòng */}
           {isLoadingRooms ? (
             <Box sx={{ display: "flex", justifyContent: "center", p: 3 }}>
               <CircularProgress />
@@ -973,7 +1024,6 @@ export function AddUserModal({ isOpen, onClose, onSubmit, editingUser }: AddUser
             </Box>
           )}
 
-          {/* Phân trang */}
           {totalPages > 1 && (
             <Box sx={{ display: "flex", justifyContent: "space-between", alignItems: "center", mt: 2 }}>
               <Typography variant="body2" color="grey.700">
@@ -1041,6 +1091,18 @@ export function AddUserModal({ isOpen, onClose, onSubmit, editingUser }: AddUser
           </Button>
         </DialogActions>
       </Dialog>
+
+      <ConfirmCodeModal
+        open={confirmCodeModalOpen}
+        onClose={() => {
+          setConfirmCodeModalOpen(false);
+          setConfirmCode("");
+        }}
+        onSubmit={handleConfirmCodeSubmit}
+        isSubmitting={isSubmittingCode}
+        code={confirmCode}
+        setCode={setConfirmCode}
+      />
     </LocalizationProvider>
   );
 }

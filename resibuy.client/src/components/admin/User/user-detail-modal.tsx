@@ -33,7 +33,9 @@ import { useToastify } from "../../../hooks/useToastify";
 import type { UserDto, OrderDto } from "../../../types/dtoModels";
 import { formatDate, formatDateWithoutTime } from "./seg/utils";
 import CustomTable from "../../../components/CustomTable";
-
+import { formatOrderStatus } from "../Store/seg/utlis";
+import { getOrderStatusColor } from "../Store/seg/utlis";
+import CustomTableV2 from "../../CustomTableV2";
 interface UserDetailModalProps {
   isOpen: boolean;
   onClose: () => void;
@@ -125,7 +127,7 @@ const OrderDetailDialog: React.FC<OrderDetailDialogProps> = ({ open, onClose, or
             <Typography variant="body2" sx={{ color: "grey.500", fontWeight: "medium" }}>
               Trạng Thái
             </Typography>
-            <Typography sx={{ color: "grey.900" }}>{order.status}</Typography>
+            <Typography sx={{ color: "grey.900" }}>{formatOrderStatus(order.status)}</Typography>
           </Box>
           <Box>
             <Typography variant="body2" sx={{ color: "grey.500", fontWeight: "medium" }}>
@@ -239,7 +241,7 @@ export function UserDetailModal({ isOpen, onClose, user, onEdit, onToggleLock }:
   const [loadingStats, setLoadingStats] = useState(false);
   const [selectedOrder, setSelectedOrder] = useState<OrderDto | null>(null);
   const [isOrderDetailOpen, setIsOrderDetailOpen] = useState(false);
-  const { toast } = useToastify();
+  const toast = useToastify();
   const navigate = useNavigate();
   const pageSize = 10;
 
@@ -272,7 +274,7 @@ export function UserDetailModal({ isOpen, onClose, user, onEdit, onToggleLock }:
           setLoadingStats(false);
         });
     }
-  }, [isOpen, user?.id, toast]);
+  }, [isOpen, user?.id]);
 
   // Fetch order list when switching to orders tab
   useEffect(() => {
@@ -286,8 +288,9 @@ export function UserDetailModal({ isOpen, onClose, user, onEdit, onToggleLock }:
             setOrders((prev) => ({
               ...prev,
               items: response.items,
-              pageNumber: response.pageNumber || 1,
-              totalPages: response.totalPages || 1,
+              totalPages: Number(response.totalPages) || 1,
+              totalCount: Number(response.totalCount) || 0,
+              pageNumber: Number(response.pageNumber) || prev.pageNumber, // Đồng bộ với API
             }));
           } else {
             throw new Error("Dữ liệu đơn hàng không hợp lệ");
@@ -296,12 +299,13 @@ export function UserDetailModal({ isOpen, onClose, user, onEdit, onToggleLock }:
         .catch((err: any) => {
           console.error("Fetch orders error:", err);
           toast.error(err.message || "Lỗi khi lấy danh sách đơn hàng");
+          setOrders((prev) => ({ ...prev, items: [], pageNumber: 1 }));
         })
         .finally(() => {
           setLoadingOrders(false);
         });
     }
-  }, [isOpen, user?.id, activeTab, orders.pageNumber, toast]);
+  }, [isOpen, user?.id, activeTab, orders.pageNumber, pageSize]);
 
   const handleViewOrder = (order: OrderDto) => {
     setSelectedOrder(order);
@@ -340,15 +344,14 @@ export function UserDetailModal({ isOpen, onClose, user, onEdit, onToggleLock }:
       ),
     },
     {
-      key: "status" as keyof OrderDto,
+      key: "status",
       label: "Trạng Thái",
-      sortable: true,
       render: (order: OrderDto) => (
         <Chip
-          label={order.status}
+          label={formatOrderStatus(order.status)}
           sx={{
-            bgcolor: "primary.light",
-            color: "primary.main",
+            bgcolor: getOrderStatusColor(order.status).bgcolor,
+            color: getOrderStatusColor(order.status).color,
             fontSize: "0.75rem",
             height: 24,
           }}
@@ -834,17 +837,18 @@ export function UserDetailModal({ isOpen, onClose, user, onEdit, onToggleLock }:
                   <CircularProgress />
                 </Box>
               ) : orders.items.length > 0 ? (
-                <CustomTable
+                <CustomTableV2
                   data={orders.items}
                   totalCount={orders.totalCount}
                   columns={columns}
-                  onPageChange={(event, newPage) => setOrders((prev) => ({ ...prev, pageNumber: newPage + 1 }))}
+                  onPageChange={(newPage) => {
+                    console.log("onPageChange called with newPage:", newPage);
+                    setOrders((prev) => ({ ...prev, pageNumber: newPage }));
+                  }}
                   itemsPerPage={pageSize}
+                  page={orders.pageNumber - 1} // Đồng bộ với Pagination (0-based)
                   headerTitle="Danh Sách Đơn Hàng"
                   description={`Đơn hàng của ${user.fullName || "người dùng"}`}
-                  showExport={false}
-                  showBulkActions={false}
-                  
                 />
               ) : (
                 <Box sx={{ textAlign: "center", py: 4, color: "grey.500" }}>

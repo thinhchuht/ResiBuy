@@ -139,12 +139,11 @@ export function useBuildingsLogic(areaId?: string) {
             throw new Error(response.message || "Lỗi khi thêm tòa nhà");
           }
         }
-        setIsAddModalOpen(false);
-        setEditingBuilding(null);
       } catch (err: any) {
         toast.error(err.message || "Lỗi khi lưu tòa nhà");
       } finally {
         setLoading(false);
+        handleCloseAddModal(); // Đóng modal sau khi submit
       }
     },
     [editingBuilding, selectedBuilding, fetchBuildingsByAreaId, toast, areaId]
@@ -174,20 +173,21 @@ export function useBuildingsLogic(areaId?: string) {
   );
 
   const handleExportBuildings = useCallback(() => {
-    const headers = ["Building ID", "Name", "Status", "Area ID"];
+    const headers = ["ID", "Tên", "Trạng thái"];
     const csvContent = [
       headers.join(","),
       ...buildings.map((building) =>
         [
           building.id || "",
           `"${building.name}"`,
-          building.isActive ? "Active" : "Inactive",
+          building.isActive ? "Hoạt động" : "Không hoạt động",
           building.areaId || "",
         ].join(",")
       ),
     ].join("\n");
 
-    const blob = new Blob([csvContent], { type: "text/csv" });
+       const BOM = "\uFEFF"; 
+const blob = new Blob([BOM + csvContent], { type: "text/csv;charset=utf-8;" });
     const url = window.URL.createObjectURL(blob);
     const a = document.createElement("a");
     a.href = url;
@@ -221,11 +221,11 @@ export function useBuildingsLogic(areaId?: string) {
 }
 
 // Hook quản lý form tòa nhà
-export const useBuildingForm = (editBuilding?: BuildingDto | null) => {
+export const useBuildingForm = (editBuilding?: BuildingDto | null, defaultAreaId?: string) => {
   const [formData, setFormData] = useState<BuildingFormData>({
     name: editBuilding?.name || "",
     isActive: editBuilding?.isActive ?? true,
-    areaId: editBuilding?.areaId || "",
+    areaId: editBuilding?.areaId || defaultAreaId || "",
   });
   const [errors, setErrors] = useState<Partial<BuildingFormData>>({});
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -234,9 +234,9 @@ export const useBuildingForm = (editBuilding?: BuildingDto | null) => {
     setFormData({
       name: editBuilding?.name || "",
       isActive: editBuilding?.isActive ?? true,
-      areaId: editBuilding?.areaId || "",
+      areaId: editBuilding?.areaId || defaultAreaId || "",
     });
-  }, [editBuilding]);
+  }, [editBuilding, defaultAreaId]);
 
   const handleInputChange = (field: keyof BuildingFormData, value: any) => {
     setFormData((prev) => ({ ...prev, [field]: value }));
@@ -278,11 +278,28 @@ export const useBuildingForm = (editBuilding?: BuildingDto | null) => {
 
     try {
       await onSubmit(buildingData);
+      // Reset form sau khi submit, giữ nguyên areaId
+      setFormData({
+        name: "",
+        isActive: true,
+        areaId: formData.areaId,
+      });
+      setErrors({});
     } catch (error: any) {
       console.error("Lỗi khi submit tòa nhà:", error.message);
     } finally {
       setIsSubmitting(false);
     }
+  };
+
+  const handleClose = () => {
+    setFormData({
+      name: "",
+      isActive: true,
+      areaId: formData.areaId, // Giữ nguyên areaId
+    });
+    setErrors({});
+    setIsSubmitting(false);
   };
 
   return {
@@ -291,6 +308,7 @@ export const useBuildingForm = (editBuilding?: BuildingDto | null) => {
     isSubmitting,
     handleInputChange,
     handleSubmit,
+    handleClose,
   };
 };
 

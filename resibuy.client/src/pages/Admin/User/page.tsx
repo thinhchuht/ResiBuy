@@ -212,23 +212,23 @@ export default function UserPage() {
   };
 
   const columns = [
-    {
-      key: "id" as keyof UserDto,
-      label: "ID Người Dùng",
-      sortable: true,
-      render: (user: UserDto) => (
-        <Typography
-          variant="body2"
-          sx={{
-            fontFamily: "monospace",
-            fontWeight: "medium",
-            color: "primary.main",
-          }}
-        >
-          {user.id}
+   {
+    key: "stt" as keyof UserDto,
+    label: "STT",
+    sortable: false,
+    render: (user: UserDto) => {
+      const index = users.indexOf(user); 
+      console.log("STT render:", { pageNumber, pageSize, index }); // Debug log
+      const stt = isNaN(pageNumber) || isNaN(pageSize) || !pageNumber || !pageSize
+        ? index + 1
+        : (pageNumber - 1) * pageSize + index + 1;
+      return (
+        <Typography variant="body2" sx={{ color: "grey.900" }}>
+          {stt}
         </Typography>
-      ),
+      );
     },
+  },
     {
       key: "fullName" as keyof UserDto,
       label: "Họ Tên",
@@ -287,39 +287,36 @@ export default function UserPage() {
       ),
     },
     {
-      key: "isLocked" as keyof UserDto,
-      label: "Trạng Thái Khóa",
-      sortable: true,
-      render: (user: UserDto) => (
-        <Typography
-          variant="body2"
-          sx={{ color: user.isLocked ? "error.main" : "success.main" }}
-        >
-          {user.isLocked ? "Đã Khóa" : "Hoạt động"}
-        </Typography>
-      ),
-    },
-    {
-      key: "roles" as keyof UserDto,
-      label: "Vai Trò",
-      sortable: false,
-      render: (user: UserDto) => (
-        <Box sx={{ display: "flex", gap: 0.5, flexWrap: "wrap" }}>
-          {user.roles.map((role) => (
-            <Chip
-              key={role}
-              label={role}
-              sx={{
-                bgcolor: "primary.light",
-                color: "primary.main",
-                fontSize: "0.75rem",
-                height: 24,
-              }}
-            />
-          ))}
-        </Box>
-      ),
-    },
+  key: "roles" as keyof UserDto,
+  label: "Vai Trò",
+  sortable: false,
+  render: (user: UserDto) => (
+    <Box sx={{ display: "flex", gap: 0.5, flexWrap: "wrap" }}>
+      {user.roles.map((role) => {
+        const roleConfig: Record<string, { label: string; color: string; bgColor: string }> = {
+          CUSTOMER: { label: "Khách Hàng", color: "#1976d2", bgColor: "#e3f2fd" },
+          USER: { label: "Người Dùng", color: "#388e3c", bgColor: "#e8f5e9" },
+          ADMIN: { label: "Quản Trị", color: "#d81b60", bgColor: "#fce4ec" },
+          SELLER: { label: "Người Bán", color: "#f57c00", bgColor: "#fff3e0" },
+             SHIPPER: { label: "Nhân viên giao hàng", color: "#5da478ff", bgColor: "#fbe1e1ff" },
+        };
+        const config = roleConfig[role] || { label: role, color: "grey.500", bgColor: "grey.100" };
+        return (
+          <Chip
+            key={role}
+            label={config.label}
+            sx={{
+              bgcolor: config.bgColor,
+              color: config.color,
+              fontSize: "0.75rem",
+              height: 24,
+            }}
+          />
+        );
+      })}
+    </Box>
+  ),
+},
     {
       key: "rooms" as keyof UserDto,
       label: "Phòng",
