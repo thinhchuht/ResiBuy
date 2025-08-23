@@ -33,7 +33,6 @@ import {
 } from "@mui/material";
 import {
   Edit as EditIcon,
-  Delete as DeleteIcon,
   Refresh as RefreshIcon,
   FilterAlt as FilterIcon,
   Clear as ClearIcon,
@@ -557,7 +556,6 @@ const VoucherPage: React.FC = () => {
                               onChange={() => handleToggleStatus(voucher)}
                               color="primary"
                               size="small"
-                              disabled={status === "expired"}
                             />
                           </Stack>
                         </TableCell>
@@ -585,7 +583,6 @@ const VoucherPage: React.FC = () => {
                                 color="error"
                                 disabled={status === "active"}
                               >
-                                <DeleteIcon fontSize="small" />
                               </IconButton>
                             </Tooltip>
                           </Stack>
