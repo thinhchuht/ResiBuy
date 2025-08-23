@@ -24,7 +24,7 @@ const areaApi = {
   create: async (data: {
     name: string;
     latitude: string;
-    longtitude: string;
+    longitude: string;
   }) => {
     const response = await axiosClient.post(`${areaUrl}/create`, data);
     return response.data;

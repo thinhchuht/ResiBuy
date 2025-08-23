@@ -1,6 +1,6 @@
 import { useState } from "react";
-import { Box, Typography, IconButton, Link, Breadcrumbs, List, ListItem, ListItemText } from "@mui/material";
-import { Edit, Lock, LockOpen, NavigateNext, LocationOn as AreaIcon } from "@mui/icons-material";
+import { Box, Typography, IconButton, Link, Breadcrumbs, List, ListItem, ListItemText, Button } from "@mui/material";
+import { Edit, Lock, LockOpen, NavigateNext, LocationOn as AreaIcon, ExpandMore, ExpandLess } from "@mui/icons-material";
 import CustomTable from "../../CustomTable";
 import { AddAreaModal } from "./add-area-modal";
 import { ImportExcelModal } from "./ImportExcelModal";
@@ -53,6 +53,53 @@ function AreaStatsCards({ areas }: { areas: AreaDto[] }) {
         />
       ))}
     </Box>
+  );
+}
+
+// Component để hiển thị danh sách có thể mở rộng
+function ExpandableEntityList({ 
+  title, 
+  entities, 
+  titleColor = "inherit" 
+}: { 
+  title: string; 
+  entities: string[]; 
+  titleColor?: string;
+}) {
+  const [showAll, setShowAll] = useState(false);
+  const SHOW_LIMIT = 10;
+  
+  if (entities.length === 0) return null;
+
+  const displayedEntities = showAll ? entities : entities.slice(0, SHOW_LIMIT);
+  const hasMore = entities.length > SHOW_LIMIT;
+
+  return (
+    <>
+      <Typography variant="h6" sx={{ mt: 2, color: titleColor }}>
+        {title} ({entities.length})
+      </Typography>
+      <List>
+        {displayedEntities.map((entity, index) => (
+          <ListItem key={index}>
+            <ListItemText primary={entity} />
+          </ListItem>
+        ))}
+      </List>
+      {hasMore && (
+        <Box sx={{ display: 'flex', justifyContent: 'center', mt: 1 }}>
+          <Button
+            variant="text"
+            size="small"
+            onClick={() => setShowAll(!showAll)}
+            startIcon={showAll ? <ExpandLess /> : <ExpandMore />}
+            sx={{ color: 'primary.main' }}
+          >
+            {showAll ? `Ẩn bớt (${entities.length - SHOW_LIMIT})` : `Xem thêm (${entities.length - SHOW_LIMIT})`}
+          </Button>
+        </Box>
+      )}
+    </>
   );
 }
 
@@ -226,7 +273,9 @@ export default function AreasPage() {
             <Typography>{importModal.message}</Typography>
             {importModal.errors.length > 0 && (
               <>
-                <Typography variant="h6" sx={{ mt: 2, color: "error.main" }}>Lỗi trong file:</Typography>
+                <Typography variant="h6" sx={{ mt: 2, color: "error.main" }}>
+                  Lỗi trong file: ({importModal.errors.length})
+                </Typography>
                 <List>
                   {importModal.errors.map((error, index) => (
                     <ListItem key={index}>
@@ -236,30 +285,14 @@ export default function AreasPage() {
                 </List>
               </>
             )}
-            {importModal.existingEntities.length > 0 && (
-              <>
-                <Typography variant="h6" sx={{ mt: 2 }}>Thực thể đã tồn tại:</Typography>
-                <List>
-                  {importModal.existingEntities.map((entity, index) => (
-                    <ListItem key={index}>
-                      <ListItemText primary={entity} />
-                    </ListItem>
-                  ))}
-                </List>
-              </>
-            )}
-            {importModal.newEntities.length > 0 && (
-              <>
-                <Typography variant="h6" sx={{ mt: 2 }}>Thực thể sẽ tạo mới:</Typography>
-                <List>
-                  {importModal.newEntities.map((entity, index) => (
-                    <ListItem key={index}>
-                      <ListItemText primary={entity} />
-                    </ListItem>
-                  ))}
-                </List>
-              </>
-            )}
+            <ExpandableEntityList 
+              title="Thực thể đã tồn tại" 
+              entities={importModal.existingEntities}
+            />
+            <ExpandableEntityList 
+              title="Thực thể sẽ tạo mới" 
+              entities={importModal.newEntities}
+            />
           </Box>
         }
         onConfirm={importModal.onConfirm}
