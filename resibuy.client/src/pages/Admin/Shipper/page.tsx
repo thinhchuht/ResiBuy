@@ -211,22 +211,22 @@ export default function ShippersPage() {
 
   const columns = [
     {
-      key: "id" as keyof Shipper,
-      label: "ID Shipper",
-      sortable: true,
-      render: (shipper: Shipper) => (
-        <Typography
-          variant="body2"
-          sx={{
-            fontFamily: "monospace",
-            fontWeight: "medium",
-            color: "primary.main",
-          }}
-        >
-          {shipper.id}
+    key: "stt" as keyof Shipper,
+    label: "STT",
+    sortable: false,
+    render: (user: Shipper) => {
+      const index = shippers.indexOf(user); // Tính index từ mảng users
+      console.log("STT render:", { pageNumber, pageSize, index }); // Debug log
+      const stt = isNaN(pageNumber) || isNaN(pageSize) || !pageNumber || !pageSize
+        ? index + 1
+        : (pageNumber - 1) * pageSize + index + 1;
+      return (
+        <Typography variant="body2" sx={{ color: "grey.900" }}>
+          {stt}
         </Typography>
-      ),
+      );
     },
+  },
     {
       key: "fullName" as keyof Shipper,
       label: "Họ Tên",
@@ -536,18 +536,8 @@ export default function ShippersPage() {
             showExport={true}
             showBulkActions={false}
             itemsPerPage={pageSize}
-            filters={filters}
-            onFilterChange={(newFilters) => {
-              setLocalFilters((prev) => ({
-                ...prev,
-                ...Object.fromEntries(
-                  Object.entries(newFilters).map(([key, value]) => [
-                    key,
-                    value === "" ? undefined : value === "true",
-                  ])
-                ),
-              }));
-            }}
+showSearch={false}
+          
           />
         </Box>
 

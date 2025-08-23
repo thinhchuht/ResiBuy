@@ -31,7 +31,21 @@ export function useCategoriesLogic() {
       const response = await categoryApi.getAll();
       console.log("API response in fetchCategories:", response);
       if (response?.code === 0 && Array.isArray(response.data)) {
-        setCategories(response.data);
+        const updatedCategories = response.data.map((category: Category) => ({
+          ...category,
+          image: category.image
+            ? {
+                ...category.image,
+                thumbUrl: category.image.thumbUrl
+                  ? `${category.image.thumbUrl}?t=${Date.now()}`
+                  : category.image.thumbUrl,
+                url: category.image.url
+                  ? `${category.image.url}?t=${Date.now()}`
+                  : category.image.url,
+              }
+            : category.image,
+        }));
+        setCategories(updatedCategories);
       } else {
         throw new Error(response?.message || "Dữ liệu danh mục không hợp lệ");
       }
@@ -56,9 +70,23 @@ export function useCategoriesLogic() {
       const response = await categoryApi.getById(categoryId);
       console.log("View category response:", response);
       if (response?.code === 0 && response.data?.id) {
-        setSelectedCategory(response.data);
+        const updatedCategory = {
+          ...response.data,
+          image: response.data.image
+            ? {
+                ...response.data.image,
+                thumbUrl: response.data.image.thumbUrl
+                  ? `${response.data.image.thumbUrl}?t=${Date.now()}`
+                  : response.data.image.thumbUrl,
+                url: response.data.image.url
+                  ? `${response.data.image.url}?t=${Date.now()}`
+                  : response.data.image.url,
+              }
+            : response.data.image,
+        };
+        setSelectedCategory(updatedCategory);
         setIsDetailModalOpen(true);
-        console.log("setIsDetailModalOpen(true) called, selectedCategory:", response.data);
+        console.log("setIsDetailModalOpen(true) called, selectedCategory:", updatedCategory);
       } else {
         throw new Error("Danh mục không hợp lệ");
       }
@@ -80,7 +108,20 @@ export function useCategoriesLogic() {
   };
 
   const handleEditCategory = (category: Category) => {
-    setEditingCategory(category);
+    setEditingCategory({
+      ...category,
+      image: category.image
+        ? {
+            ...category.image,
+            thumbUrl: category.image.thumbUrl
+              ? `${category.image.thumbUrl}?t=${Date.now()}`
+              : category.image.thumbUrl,
+            url: category.image.url
+              ? `${category.image.url}?t=${Date.now()}`
+              : category.image.url,
+          }
+        : category.image,
+    });
     setIsAddModalOpen(true);
   };
 
@@ -100,17 +141,51 @@ export function useCategoriesLogic() {
         };
         console.log("Calling categoryApi.update with:", updateData);
         const response = await categoryApi.update(updateData);
-        console.log("Update successful");
-        await fetchCategories();
-        
-        // Update the selected category if it's the one being edited
+        console.log("Update successful, response:", response);
+        // Cập nhật trực tiếp categories để phản ánh thay đổi ngay lập tức
+        setCategories((prev) =>
+          prev.map((cat) =>
+            cat.id === editingCategory.id
+              ? {
+                  ...cat,
+                  name: updateData.name,
+                  status: updateData.status,
+                  image: updateData.image
+                    ? {
+                        ...updateData.image,
+                        thumbUrl: updateData.image.thumbUrl
+                          ? `${updateData.image.thumbUrl}?t=${Date.now()}`
+                          : updateData.image.thumbUrl,
+                        url: updateData.image.url
+                          ? `${updateData.image.url}?t=${Date.now()}`
+                          : updateData.image.url,
+                      }
+                    : updateData.image,
+                }
+              : cat
+          )
+        );
+        // Update selectedCategory if it's the one being edited
         if (selectedCategory && selectedCategory.id === editingCategory.id) {
           setSelectedCategory({
             ...selectedCategory,
-            ...updateData,
-            image: updateData.image || selectedCategory.image
+            name: updateData.name,
+            status: updateData.status,
+            image: updateData.image
+              ? {
+                  ...updateData.image,
+                  thumbUrl: updateData.image.thumbUrl
+                    ? `${updateData.image.thumbUrl}?t=${Date.now()}`
+                    : updateData.image.thumbUrl,
+                  url: updateData.image.url
+                    ? `${updateData.image.url}?t=${Date.now()}`
+                    : updateData.image.url,
+                }
+              : updateData.image,
           });
         }
+        // Gọi fetchCategories để đảm bảo đồng bộ với server
+        await fetchCategories();
       } else {
         const createData: CreateCategoryDto = {
           name: categoryData.name,
@@ -118,8 +193,26 @@ export function useCategoriesLogic() {
           image: categoryData.image || { id: "", url: "", thumbUrl: "", name: "" },
         };
         console.log("Calling categoryApi.create with:", createData);
-        await categoryApi.create(createData);
-        console.log("Create successful");
+        const response = await categoryApi.create(createData);
+        console.log("Create successful, response:", response);
+        // Thêm danh mục mới vào categories
+        setCategories((prev) => [
+          ...prev,
+          {
+            ...response.data,
+            image: response.data.image
+              ? {
+                  ...response.data.image,
+                  thumbUrl: response.data.image.thumbUrl
+                    ? `${response.data.image.thumbUrl}?t=${Date.now()}`
+                    : response.data.image.thumbUrl,
+                  url: response.data.image.url
+                    ? `${response.data.image.url}?t=${Date.now()}`
+                    : response.data.image.url,
+                }
+              : response.data.image,
+          },
+        ]);
         await fetchCategories();
       }
       setIsAddModalOpen(false);
@@ -130,37 +223,12 @@ export function useCategoriesLogic() {
     }
   };
 
-  const handleDeleteCategory = async (categoryId: string) => {
-    if (!categoryId) {
-      toast.error("ID danh mục không hợp lệ");
-      return;
-    }
-    if (
-      confirm(
-        "Bạn có chắc chắn muốn xóa danh mục này? Hành động này không thể hoàn tác."
-      )
-    ) {
-      try {
-        await categoryApi.delete(categoryId);
-        console.log("Delete successful for category:", categoryId);
-        await fetchCategories();
-        if (selectedCategory && selectedCategory.id === categoryId) {
-          handleCloseDetailModal();
-        }
-        toast.success("Xóa danh mục thành công!");
-      } catch (err: any) {
-        console.error("Delete category error:", err);
-        toast.error(err.message || "Lỗi khi xóa danh mục");
-      }
-    }
-  };
-
   const handleExportCategories = async () => {
     try {
       const response = await categoryApi.getAll();
       const categories = response?.code === 0 ? response.data : [];
       console.log("Export categories:", categories);
-      const headers = ["Category ID", "Name", "Total Products"];
+      const headers = ["ID", "Tên", "Tổng sản phẩm"];
       const csvContent = [
         headers.join(","),
         ...(await Promise.all(
@@ -171,7 +239,8 @@ export function useCategoriesLogic() {
         )),
       ].join("\n");
 
-      const blob = new Blob([csvContent], { type: "text/csv" });
+         const BOM = "\uFEFF"; 
+const blob = new Blob([BOM + csvContent], { type: "text/csv;charset=utf-8;" });
       const url = window.URL.createObjectURL(blob);
       const a = document.createElement("a");
       a.href = url;
@@ -262,7 +331,6 @@ export function useCategoriesLogic() {
     handleEditCategory,
     handleCloseAddModal,
     handleSubmitCategory,
-    handleDeleteCategory,
     handleExportCategories,
     countProductsByCategoryId,
     getProductsByCategoryId,
@@ -275,7 +343,7 @@ export function useCategoriesLogic() {
 export const useCategoryForm = (editCategory?: Category | null) => {
   const [formData, setFormData] = useState<CategoryFormData>({
     name: editCategory?.name || "",
-    status: editCategory?.status ||true,
+    status: editCategory?.status ?? true,
     image: editCategory?.image || undefined,
   });
 
@@ -287,14 +355,8 @@ export const useCategoryForm = (editCategory?: Category | null) => {
     if (editCategory) {
       setFormData({
         name: editCategory.name || "",
-        status: editCategory.status ||true,
+        status: editCategory.status ?? true,
         image: editCategory.image || undefined,
-      });
-    } else {
-      setFormData({
-        name: "",
-        status:true,
-        image: undefined,
       });
     }
   }, [editCategory]);
@@ -313,7 +375,6 @@ export const useCategoryForm = (editCategory?: Category | null) => {
       errors.name = "Tên danh mục là bắt buộc";
     }
     
-    // Status is a required field
     if (data.status === undefined || data.status === null) {
       errors.status = "Trạng thái là bắt buộc";
     }
@@ -342,6 +403,12 @@ export const useCategoryForm = (editCategory?: Category | null) => {
     try {
       await onSubmit(formData);
       toast.success(editCategory ? "Cập nhật danh mục thành công!" : "Thêm danh mục mới thành công!");
+      setFormData({
+        name: "",
+        status: true,
+        image: undefined,
+      });
+      setErrors({});
     } catch (error: any) {
       console.error("Submit form error:", error);
       toast.error("Lỗi khi submit danh mục");
@@ -350,12 +417,23 @@ export const useCategoryForm = (editCategory?: Category | null) => {
     }
   };
 
+  const handleClose = () => {
+    setFormData({
+      name: "",
+      status: true,
+      image: undefined,
+    });
+    setErrors({});
+    setIsSubmitting(false);
+  };
+
   return {
     formData,
     errors,
     isSubmitting,
     handleInputChange,
     handleSubmit,
+    handleClose,
   };
 };
 

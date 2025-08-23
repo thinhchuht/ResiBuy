@@ -129,19 +129,23 @@ export default function BuildingsPage() {
   };
 
   const columns = [
-    {
-      key: "id" as keyof BuildingDto,
-      label: "ID Tòa Nhà",
-      sortable: true,
-      render: (building: BuildingDto) => (
-        <Typography
-          variant="body2"
-          sx={{ fontFamily: "monospace", fontWeight: "medium", color: "primary.main" }}
-        >
-          {building.id}
+     {
+    key: "stt" as keyof BuildingDto,
+    label: "STT",
+    sortable: false,
+    render: (area: BuildingDto) => {
+      const index = buildings.indexOf(area); 
+      const pageNumber = 1;
+      const pageSize = 100; 
+      console.log("STT render (AreasPage):", { pageNumber, pageSize, index }); // Debug log
+      const stt = index >= 0 ? (pageNumber - 1) * pageSize + index + 1 : index + 1;
+      return (
+        <Typography variant="body2" sx={{ color: "grey.900" }}>
+          {stt}
         </Typography>
-      ),
+      );
     },
+  },
     {
       key: "name" as keyof BuildingDto,
       label: "Tên Tòa Nhà",
@@ -293,7 +297,7 @@ export default function BuildingsPage() {
           description="Quản lý tòa nhà"
           showExport={true}
           showBulkActions={false}
-          itemsPerPage={15}
+          itemsPerPage={100}
         />
 
         <AddBuildingModal

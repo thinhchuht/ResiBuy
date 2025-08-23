@@ -23,7 +23,6 @@ interface UserFormErrors {
   roomIds: string;
 }
 
-// Hàm định dạng ngày giờ
 export const formatDate = (date: string): string => {
   return new Date(date).toLocaleString("vi-VN", {
     day: "2-digit",
@@ -35,16 +34,14 @@ export const formatDate = (date: string): string => {
   });
 };
 
-// Hàm định dạng ngày giờ
 export const formatDateWithoutTime = (date: string): string => {
-  return new Date(date).toLocaleString("vi-VN", {
+  return new Date(date).toLocaleDateString("vi-VN", {
     day: "2-digit",
     month: "2-digit",
     year: "numeric",
   });
 };
 
-// Hook useUserForm
 export const useUserForm = (editingUser?: UserDto | null) => {
   const [formData, setFormData] = useState<UserFormData>({
     email: "",
@@ -69,6 +66,27 @@ export const useUserForm = (editingUser?: UserDto | null) => {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const  toast  = useToastify();
 
+  const resetForm = () => {
+    setFormData({
+      email: "",
+      fullName: "",
+      phoneNumber: "",
+      dateOfBirth: "",
+      identityNumber: "",
+      password: "",
+      roomIds: [],
+    });
+    setErrors({
+      email: "",
+      fullName: "",
+      phoneNumber: "",
+      dateOfBirth: "",
+      identityNumber: "",
+      password: "",
+      roomIds: "",
+    });
+  };
+
   useEffect(() => {
     if (editingUser) {
       setFormData({
@@ -80,16 +98,6 @@ export const useUserForm = (editingUser?: UserDto | null) => {
         password: "",
         roomIds: editingUser.rooms?.map((room) => room.id) || [],
       });
-    } else {
-      setFormData({
-        email: "",
-        fullName: "",
-        phoneNumber: "",
-        dateOfBirth: "",
-        identityNumber: "",
-        password: "",
-        roomIds: [],
-      });
       setErrors({
         email: "",
         fullName: "",
@@ -99,6 +107,8 @@ export const useUserForm = (editingUser?: UserDto | null) => {
         password: "",
         roomIds: "",
       });
+    } else {
+      resetForm();
     }
   }, [editingUser]);
 
@@ -155,22 +165,26 @@ export const useUserForm = (editingUser?: UserDto | null) => {
       }
 
       if (!formData.password) {
-  newErrors.password = "Mật khẩu là bắt buộc khi tạo mới";
-  isValid = false;
-} else if (formData.password.length < 8) {
-  newErrors.password = "Mật khẩu phải có ít nhất 8 ký tự";
-  isValid = false;
-} else if (!/(?=.*[a-z])/.test(formData.password)) {
-  newErrors.password = "Mật khẩu phải có ít nhất 1 chữ thường";
-  isValid = false;
-} else if (!/(?=.*[A-Z])/.test(formData.password)) {
-  newErrors.password = "Mật khẩu phải có ít nhất 1 chữ hoa";
-  isValid = false;
-} else if (!/(?=.*\d)/.test(formData.password)) {
-  newErrors.password = "Mật khẩu phải có ít nhất 1 số";
-  isValid = false;
-}
+        newErrors.password = "Mật khẩu là bắt buộc khi tạo mới";
+        isValid = false;
+      } else if (formData.password.length < 8) {
+        newErrors.password = "Mật khẩu phải có ít nhất 8 ký tự";
+        isValid = false;
+      } else if (!/(?=.*[a-z])/.test(formData.password)) {
+        newErrors.password = "Mật khẩu phải có ít nhất 1 chữ thường";
+        isValid = false;
+      } else if (!/(?=.*[A-Z])/.test(formData.password)) {
+        newErrors.password = "Mật khẩu phải có ít nhất 1 chữ hoa";
+        isValid = false;
+      } else if (!/(?=.*\d)/.test(formData.password)) {
+        newErrors.password = "Mật khẩu phải có ít nhất 1 số";
+        isValid = false;
+      }
+    }
 
+    if (formData.roomIds.length === 0) {
+      newErrors.roomIds = "Vui lòng chọn ít nhất một phòng";
+      isValid = false;
     }
 
     setErrors(newErrors);
@@ -204,15 +218,17 @@ export const useUserForm = (editingUser?: UserDto | null) => {
   return {
     formData,
     errors,
+    setIsSubmitting,
     isSubmitting,
     handleInputChange,
     handleSubmit,
+    validateForm,
+    resetForm, // Thêm resetForm vào object trả về
   };
 };
 
-// Hàm tính thống kê người dùng
 export const calculateUserStats = async () => {
-  const { toast } = useToastify();
+  const  toast  = useToastify();
   try {
     const response = await userApi.getstats();
     console.log("API getstats response:", response);
@@ -235,7 +251,6 @@ export const calculateUserStats = async () => {
   }
 };
 
-// Hook useUsersLogic
 export const useUsersLogic = () => {
   const [users, setUsers] = useState<UserDto[]>([]);
   const [totalCount, setTotalCount] = useState(0);
@@ -251,7 +266,6 @@ export const useUsersLogic = () => {
   const [searchTerm, setSearchTerm] = useState("");
   const  toast  = useToastify();
 
-  // Lấy danh sách người dùng
   const fetchUsers = useCallback(async (page: number = 1, pageSize: number = 15, keyword: string = "") => {
     try {
       const response = keyword
@@ -295,6 +309,7 @@ export const useUsersLogic = () => {
   const handleCloseDetailModal = () => {
     setIsDetailModalOpen(false);
     setSelectedUser(null);
+    
   };
 
   const handleAddUser = () => {
@@ -328,6 +343,7 @@ export const useUsersLogic = () => {
   const handleCloseAddModal = () => {
     setIsAddModalOpen(false);
     setEditingUser(null);
+    
   };
 
   const handleCloseEditRoleModal = () => {
@@ -447,17 +463,15 @@ export const useUsersLogic = () => {
         throw new Error(response.message || "Lỗi khi lấy danh sách người dùng");
       }
       
-      // Define CSV headers
-      const headers = ["ID", "Full Name", "Email", "Phone Number", "Status", "Role", "Room", "Date of Birth", "Created at"];
+      const headers = ["ID", "Họ tên", "Email", "Số điện thoại", "Trạng thái", "Vai trò", "Phòng", "Ngày sinh", "Ngày tạo"];
       
-      // Process user data for CSV
       const csvRows = response.data.items.map((user: UserDto) => {
         const userData = [
           user.id,
           `"${user.fullName || ''}"`,
           user.email || '',
           user.phoneNumber || '',
-          user.isLocked ? "Locked" : "UnLocked",
+          user.isLocked ? "Khóa" : "Không khóa",
           `"${user.roles.join(", ")}"`,
           `"${user.rooms?.map((room) => room.name).join(", ") || ''}"`,
           formatDateWithoutTime(user.dateOfBirth),
@@ -466,14 +480,13 @@ export const useUsersLogic = () => {
         return userData.join(',');
       });
       
-      // Combine headers and data
       const csvContent = [
         headers.join(','),
         ...csvRows
       ].join('\n');
       
-      // Create and trigger download
-      const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+     const BOM = "\uFEFF"; 
+const blob = new Blob([BOM + csvContent], { type: "text/csv;charset=utf-8;" });
       const url = URL.createObjectURL(blob);
       const link = document.createElement('a');
       link.href = url;
@@ -497,7 +510,6 @@ export const useUsersLogic = () => {
       const response = await userApi.importExcel(formData);
       
       if (response.code === 0) {
-        // Refresh the user list after successful import
         await fetchUsers(pageNumber, pageSize, searchTerm);
         return response.data;
       } else {
@@ -507,7 +519,7 @@ export const useUsersLogic = () => {
       console.error("Import Excel error:", error);
       const errorMessage = error instanceof Error ? error.message : "Có lỗi xảy ra khi nhập file Excel";
       toast.error(errorMessage);
-      throw error; // Re-throw to be handled by the component
+      throw error;
     }
   };
 
@@ -549,5 +561,6 @@ export const useUsersLogic = () => {
     handleSearch,
     fetchUsers,
     calculateUserStats,
+    formatDateWithoutTime,
   };
 };

@@ -1,4 +1,5 @@
-﻿namespace ResiBuy.Server.Infrastructure.DbServices.RoomDbServices
+﻿
+namespace ResiBuy.Server.Infrastructure.DbServices.RoomDbServices
 {
     public class RoomDbService : BaseDbService<Room>, IRoomDbService
     {
@@ -9,16 +10,25 @@
             _context = context;
         }
 
+        public async Task<bool> IsNameExistsAsync(Guid buildingId, string name)
+        {
+            return await _context.Rooms.AnyAsync(r => r.BuildingId == buildingId && r.Name.ToLower() == name.ToLower());
+        }
+
         public async Task<Room> CreateAsync(Guid buildingId, string name)
         {
             try
             {
-                if (buildingId == Guid.Empty) throw new CustomException(ExceptionErrorCode.ValidationFailed, "Cần Id toàn nhà");
-                if (string.IsNullOrEmpty(name)) throw new CustomException(ExceptionErrorCode.ValidationFailed, "Tên tòa nhà là bắt buộc");
-                var getRoom = await GetByRoomNameAndBuildingIdAsync(buildingId, name);
-                if (getRoom != null)
-                    throw new CustomException(ExceptionErrorCode.DuplicateValue, "Phòng đã tồn tại");
-                var room = new Room(name, buildingId); 
+                if (buildingId == Guid.Empty)
+                    throw new CustomException(ExceptionErrorCode.ValidationFailed, "Cần Id tòa nhà");
+
+                if (string.IsNullOrEmpty(name))
+                    throw new CustomException(ExceptionErrorCode.ValidationFailed, "Tên phòng là bắt buộc");
+
+                if (await IsNameExistsAsync(buildingId, name))
+                    throw new CustomException(ExceptionErrorCode.DuplicateValue, $"Phòng với tên {name} đã tồn tại trong tòa nhà");
+
+                var room = new Room(name, buildingId);
                 await CreateAsync(room);
                 return room;
             }
@@ -36,11 +46,11 @@
             }
             catch (Exception ex)
             {
-                throw new CustomException(ExceptionErrorCode.RepositoryError,ex.Message);
+                throw new CustomException(ExceptionErrorCode.RepositoryError, ex.Message);
             }
         }
 
-        public async Task<PagedResult<Room>> GetAllRoomsAsync(int pageNumber, int pageSize, bool? IsActive = null,bool? NoUsers = null)
+        public async Task<PagedResult<Room>> GetAllRoomsAsync(int pageNumber, int pageSize, bool? IsActive = null, bool? NoUsers = null)
         {
             try
             {
@@ -81,7 +91,6 @@
         {
             try
             {
-
                 var room = await _context.Rooms.Include(r => r.Building).ThenInclude(b => b.Area).FirstOrDefaultAsync(r => r.Id == id);
                 return room;
             }
@@ -90,6 +99,7 @@
                 throw new CustomException(ExceptionErrorCode.RepositoryError, ex.Message);
             }
         }
+
         public async Task<Room> GetByIdAsync(Guid id)
         {
             try
@@ -101,6 +111,7 @@
                 throw new CustomException(ExceptionErrorCode.RepositoryError, ex.Message);
             }
         }
+
         public async Task<IEnumerable<Room>> GetBatchAsync(IEnumerable<Guid> ids)
         {
             try
@@ -139,10 +150,8 @@
                     .Where(r => r.BuildingId == buildingId)
                     .AsQueryable();
 
-          
                 if (isActive.HasValue)
                     query = query.Where(r => r.IsActive == isActive.Value);
-
 
                 if (noUsers.HasValue)
                 {
@@ -222,8 +231,8 @@
                 throw new CustomException(ExceptionErrorCode.RepositoryError, ex.Message);
             }
         }
-        public async Task<PagedResult<Room>> SearchRoomsByNameAndBuildingAsync(Guid buildingId, string keyword, int pageNumber, int pageSize, bool? isActive = null,
-    bool? noUsers = null)
+
+        public async Task<PagedResult<Room>> SearchRoomsByNameAndBuildingAsync(Guid buildingId, string keyword, int pageNumber, int pageSize, bool? isActive = null, bool? noUsers = null)
         {
             try
             {
@@ -234,7 +243,7 @@
                     throw new CustomException(ExceptionErrorCode.ValidationFailed, "Số trang và số phần tử phải lớn hơn 0");
 
                 var query = _context.Rooms
-                    .Include(r => r.UserRooms) // cần include để dùng Any()
+                    .Include(r => r.UserRooms)
                     .Where(r => r.BuildingId == buildingId)
                     .AsQueryable();
 
@@ -267,6 +276,7 @@
                 throw new CustomException(ExceptionErrorCode.RepositoryError, ex.Message);
             }
         }
+
         public async Task<PagedResult<Room>> GetRoomsByStatusAsync(bool isActive, int pageNumber, int pageSize)
         {
             try
@@ -291,6 +301,7 @@
                 throw new CustomException(ExceptionErrorCode.RepositoryError, ex.Message);
             }
         }
+
         public async Task<PagedResult<Room>> GetRoomsByStatusAndBuildingAsync(Guid buildingId, bool isActive, int pageNumber, int pageSize)
         {
             try
@@ -315,6 +326,7 @@
                 throw new CustomException(ExceptionErrorCode.RepositoryError, ex.Message);
             }
         }
+
         public async Task<Room?> GetByNameAsync(string name)
         {
             return await _context.Rooms.FirstOrDefaultAsync(r => r.Name == name);
@@ -336,6 +348,7 @@
                 throw new CustomException(ExceptionErrorCode.RepositoryError, ex.Message);
             }
         }
+
         public async Task<IEnumerable<Room>> GetRoomsByUserIdAsync(string userId)
         {
             try
@@ -357,7 +370,5 @@
                 throw new CustomException(ExceptionErrorCode.RepositoryError, ex.Message);
             }
         }
-
     }
-
 }

@@ -36,37 +36,29 @@ export function AddBuildingModal({
   editBuilding,
 }: AddBuildingModalProps) {
   const { areaId } = useParams<{ areaId: string }>();
-  const { formData, errors, isSubmitting, handleInputChange, handleSubmit } =
-    useBuildingForm(editBuilding);
+  const { formData, errors, isSubmitting, handleInputChange, handleSubmit, handleClose } =
+    useBuildingForm(editBuilding, areaId);
   const { areas, fetchAreas, loading: areasLoading, error: areasError } = useAreasLogic();
 
-  // Gọi fetchAreas ngay khi component mount để đảm bảo areas sẵn sàng
+  // Gọi fetchAreas ngay khi component mount
   useEffect(() => {
     fetchAreas();
   }, []);
 
-  // Đặt giá trị mặc định cho form khi thêm hoặc sửa tòa nhà
-  useEffect(() => {
-    if (editBuilding) {
-      handleInputChange("name", editBuilding.name || "");
-      handleInputChange("isActive", editBuilding.isActive ?? true);
-      handleInputChange("areaId", areaId || "");
-    } else {
-      handleInputChange("name", "");
-      handleInputChange("isActive", true);
-      handleInputChange("areaId", areaId || "");
-    }
-  }, [editBuilding, areaId, areas]);
-
   // Tìm tên khu vực dựa trên areaId
   const selectedArea = areas.find((area) => area.id === formData.areaId);
+
+  const handleModalClose = () => {
+    handleClose(); // Gọi hàm reset form
+    onClose();
+  };
 
   if (!isOpen) return null;
 
   return (
     <Dialog
       open={isOpen}
-      onClose={onClose}
+      onClose={handleModalClose}
       maxWidth="sm"
       fullWidth
       sx={{
@@ -110,7 +102,7 @@ export function AddBuildingModal({
           </Typography>
         </Box>
         <IconButton
-          onClick={onClose}
+          onClick={handleModalClose}
           sx={{
             color: "grey.400",
             bgcolor: "background.paper",
@@ -136,7 +128,6 @@ export function AddBuildingModal({
         }}
       >
         <form onSubmit={(e) => handleSubmit(e, onSubmit)}>
-          {/* Thông Tin Cơ Bản */}
           <Box sx={{ mb: 2 }}>
             <Typography
               variant="h6"
@@ -153,7 +144,6 @@ export function AddBuildingModal({
             </Typography>
 
             <Box sx={{ display: "flex", flexDirection: "column", gap: 2 }}>
-              {/* Tên Tòa Nhà */}
               <Box>
                 <Typography
                   variant="body2"
@@ -204,7 +194,6 @@ export function AddBuildingModal({
                 )}
               </Box>
 
-              {/* Khu vực */}
               <Box>
                 <Typography
                   variant="body2"
@@ -285,7 +274,6 @@ export function AddBuildingModal({
                 )}
               </Box>
 
-              {/* Trạng Thái */}
               {editBuilding && (
                 <Box>
                   <FormControlLabel
@@ -326,7 +314,7 @@ export function AddBuildingModal({
         }}
       >
         <Button
-          onClick={onClose}
+          onClick={handleModalClose}
           sx={{
             px: 3,
             py: 1,

@@ -39,7 +39,7 @@ namespace ResiBuy.Server.Application.Queries.ShipperQueries
                 PhoneNumber = shipper.User?.PhoneNumber,
                 IdentityNumber = shipper.User?.IdentityNumber,
                 DateOfBirth = shipper.User?.DateOfBirth,
-                IsLocked = shipper.User?.IsLocked,
+                IsLocked = shipper.IsLocked,
                 FullName = shipper.User?.FullName,
                 CreatedAt = shipper.User?.CreatedAt,
                 UpdatedAt = shipper.User?.UpdatedAt

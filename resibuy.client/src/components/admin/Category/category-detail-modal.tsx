@@ -21,7 +21,7 @@ import {
 import type { Category, Product } from "../../../types/models";
 import { useNavigate } from "react-router-dom";
 import CustomTable from "../../../components/CustomTable";
-
+import CustomTableV2 from "../../CustomTableV2";
 interface CategoryDetailModalProps {
   isOpen: boolean;
   onClose: () => void;
@@ -112,81 +112,81 @@ export function CategoryDetailModal({
   }
 
   const columns = [
-    {
-      key: "id" as keyof Product,
-      label: "ID Sản Phẩm",
-      sortable: true,
-      render: (product: Product) => (
-        <Typography
-          variant="body2"
-          sx={{
-            fontFamily: "monospace",
-            fontWeight: "medium",
-            color: "primary.main",
-          }}
-        >
-          {product.id}
-        </Typography>
-      ),
-    },
-    {
-      key: "name" as keyof Product,
-      label: "Tên",
-      sortable: true,
-      render: (product: Product) => (
-        <Typography
-          variant="body2"
-          sx={{
-            color: "primary.main",
-            cursor: "pointer",
-            textDecoration: "none",
-            transition: "all 0.3s ease-in-out",
-            "&:hover": {
-              backgroundImage: "linear-gradient(90deg, red, orange, yellow, green, blue, indigo, violet)",
-              WebkitBackgroundClip: "text",
-              WebkitTextFillColor: "transparent",
-            },
-          }}
-          onClick={() => navigate(`/products?id=${product.id}`)}
-        >
-          {product.name}
-        </Typography>
-      ),
-    },
-    {
-      key: "price" as keyof Product,
-      label: "Giá",
-      sortable: true,
-      render: (product: Product) => (
-        <Typography variant="body2" sx={{ color: "grey.900" }}>
-          {product.productDetails[0] ? formatCurrency(product.productDetails[0].price) : "N/A"}
-        </Typography>
-      ),
-    },
-    {
-      key: "isOutOfStock" as keyof Product,
-      label: "Trạng Thái",
-      sortable: true,
-      render: (product: Product) => (
-        <Typography variant="body2" sx={{ color: "grey.900" }}>
-          {product.productDetails[0]
-            ? product.productDetails[0].isOutOfStock
-              ? "Hết hàng"
-              : "Còn hàng"
-            : "N/A"}
-        </Typography>
-      ),
-
-    },
-     {
-      key: "sold",
-      label: "Đã bán",
-      render: (row) => (
-        <Typography sx={{ fontSize: "0.875rem", color: "grey.900" }}>
-          {row.productDetails?.[0] ? (row.sold) : "N/A"}
-        </Typography>
-      ),
-    },
+   {
+    key: "id" as keyof Product,
+    label: "ID Sản Phẩm",
+    sortable: true,
+    render: (product: Product) => (
+      <Typography
+        variant="body2"
+        sx={{
+          fontFamily: "monospace",
+          fontWeight: "medium",
+          color: "primary.main",
+        }}
+      >
+        {product.id}
+      </Typography>
+    ),
+  },
+  {
+    key: "name" as keyof Product,
+    label: "Tên",
+    sortable: true,
+    render: (product: Product) => (
+      <Typography
+        variant="body2"
+        sx={{
+          color: "primary.main",
+          cursor: "pointer",
+          textDecoration: "none",
+          transition: "all 0.3s ease-in-out",
+          "&:hover": {
+            backgroundImage: "linear-gradient(90deg, red, orange, yellow, green, blue, indigo, violet)",
+            WebkitBackgroundClip: "text",
+            WebkitTextFillColor: "transparent",
+          },
+        }}
+        onClick={() => navigate(`/products?id=${product.id}`)}
+      >
+        {product.name}
+      </Typography>
+    ),
+  },
+  {
+    key: "price" as keyof Product,
+    label: "Giá",
+    sortable: true,
+    render: (product: Product) => (
+      <Typography variant="body2" sx={{ color: "grey.900" }}>
+        {product.productDetails[0] ? formatCurrency(product.productDetails[0].price) : "N/A"}
+      </Typography>
+    ),
+  },
+  {
+    key: "isOutOfStock" as keyof Product,
+    label: "Trạng Thái",
+    sortable: true,
+    render: (product: Product) => (
+      <Typography variant="body2" sx={{ color: "grey.900" }}>
+        {product.productDetails[0]
+          ? product.productDetails[0].isOutOfStock
+            ? "Hết hàng"
+            : "Còn hàng"
+          : "N/A"}
+      </Typography>
+    ),
+  },
+  {
+    key: "sold" as keyof Product, // Thêm key và sortable
+    label: "Đã bán",
+    sortable: true, // Thêm sortable
+    render: (row: Product) => (
+      <Typography sx={{ fontSize: "0.875rem", color: "grey.900" }}>
+        {row.productDetails?.[0] ? row.sold : "N/A"}
+      </Typography>
+    ),
+  },
   ];
 
   return (
@@ -365,45 +365,46 @@ export function CategoryDetailModal({
       </DialogContent>
 
       <DialogContent
-        sx={{
-          p: 3,
-          flex: 1,
-          overflowY: "auto",
-          minHeight: "300px",
-          display: "flex",
-          flexDirection: "column",
-          gap: 3,
-        }}
-      >
-        <Box>
-          <Typography variant="h6" sx={{ color: "grey.900", mb: 2 }}>
-            Sản Phẩm ({totalProducts} sản phẩm)
-          </Typography>
-          {loadingProducts ? (
-            <Box sx={{ display: "flex", justifyContent: "center", py: 4 }}>
-              <CircularProgress />
-            </Box>
-          ) : products.length > 0 ? (
-            <CustomTable
-              data={products}
-              totalCount={totalCount}
-              columns={columns}
-              onPageChange={(page) => setPageNumber(page)}
-              headerTitle=""
-              description=""
-              showExport={false}
-              showBulkActions={false}
-              itemsPerPage={pageSize}
-              showSearch={false}
-            />
-          ) : (
-            <Box sx={{ textAlign: "center", py: 4, color: "grey.500" }}>
-              <Inventory sx={{ fontSize: 48, color: "grey.300", mb: 2 }} />
-              <Typography>Không tìm thấy sản phẩm cho danh mục này</Typography>
-            </Box>
-          )}
-        </Box>
-      </DialogContent>
+  sx={{
+    p: 3,
+    flex: 1,
+    overflowY: "auto",
+    minHeight: "300px",
+    display: "flex",
+    flexDirection: "column",
+    gap: 3,
+  }}
+>
+  <Box>
+    <Typography variant="h6" sx={{ color: "grey.900", mb: 2 }}>
+      Sản Phẩm ({totalProducts} sản phẩm)
+    </Typography>
+    {loadingProducts ? (
+      <Box sx={{ display: "flex", justifyContent: "center", py: 4 }}>
+        <CircularProgress />
+      </Box>
+    ) : products.length > 0 ? (
+      <CustomTable
+        data={products}
+        totalCount={totalCount}
+        columns={columns}
+        onPageChange={(page) => setPageNumber(page + 1)} // Điều chỉnh sang 1-based
+        headerTitle="Danh Sách Sản Phẩm"
+        description={`Sản phẩm thuộc danh mục ${category.name}`}
+        showExport={false}
+        showBulkActions={false}
+        itemsPerPage={pageSize}
+        showSearch={false}
+        page={pageNumber - 1} // Thêm prop page để đồng bộ với CustomTable
+      />
+    ) : (
+      <Box sx={{ textAlign: "center", py: 4, color: "grey.500" }}>
+        <Inventory sx={{ fontSize: 48, color: "grey.300", mb: 2 }} />
+        <Typography>Không tìm thấy sản phẩm cho danh mục này</Typography>
+      </Box>
+    )}
+  </Box>
+</DialogContent>
     </Dialog>
   );
 }

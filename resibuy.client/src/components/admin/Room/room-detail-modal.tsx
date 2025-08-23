@@ -335,7 +335,7 @@ export default function RoomDetailModal({
   const [isDeleteConfirmOpen, setIsDeleteConfirmOpen] = useState(false);
   const [userIdToDelete, setUserIdToDelete] = useState<string | null>(null);
   const [deleteLoading, setDeleteLoading] = useState(false);
-  const { toast } = useToastify();
+  const  toast  = useToastify();
 
   // Sync room prop with local state
   useEffect(() => {

@@ -13,7 +13,7 @@ namespace ResiBuy.Server.Infrastructure.DbServices.BaseDbServices
         Task<T> UpdateAsync(T entity);
         Task<T> DeleteAsync(Guid id);
         Task<IDbContextTransaction> BeginTransactionAsync();
-
+        Task<IEnumerable<T>> AddRangeAsync(IEnumerable<T> entities);
         Task<T> CreateTransactionAsync(T entity);
         Task<IEnumerable<T>> CreateBatchTransactionAsync(IEnumerable<T> entities);
 

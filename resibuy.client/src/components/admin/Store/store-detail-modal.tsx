@@ -1,4 +1,3 @@
-
 import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import {
@@ -30,6 +29,7 @@ import {
   formatDate,
   formatOrderStatus,
   getOrderStatusColor,
+  formatShippingAddress, // Add this import
   useStoresLogic,
 } from "../../../components/admin/Store/seg/utlis";
 import orderApi from "../../../api/order.api";
@@ -37,7 +37,7 @@ import type { Store, Order } from "../../../types/models";
 import { useToastify } from "../../../hooks/useToastify";
 import CustomTable from "../../../components/CustomTable";
 import { ConfirmModal } from "../../../components/ConfirmModal";
-
+import CustomTableV2 from "../../../components/CustomTableV2";
 interface StoreDetailModalProps {
   isOpen: boolean;
   onClose: () => void;
@@ -57,13 +57,6 @@ const OrderDetailDialog: React.FC<OrderDetailDialogProps> = ({ open, onClose, or
   const navigate = useNavigate();
   if (!open || !order) return null;
 
-  const formatShippingAddress = (order: Order): string => {
-    const { roomQueryResult } = order;
-    if (!roomQueryResult) return "Không có thông tin địa chỉ";
-    const { name, buildingName, areaName } = roomQueryResult;
-    return `${name}, ${buildingName}, ${areaName}`;
-  };
-
   return (
     <Dialog
       open={open}
@@ -72,7 +65,7 @@ const OrderDetailDialog: React.FC<OrderDetailDialogProps> = ({ open, onClose, or
       fullWidth
       sx={{
         "& .MuiDialog-paper": {
-          maxWidth: "80rem",
+          maxWidth: "40rem",
           height: "90vh",
           margin: 0,
           borderRadius: 0,
@@ -188,12 +181,12 @@ const OrderDetailDialog: React.FC<OrderDetailDialogProps> = ({ open, onClose, or
                     </th>
                   </tr>
                 </thead>
-                <tbody>
+                <tbody style={{}}>
                   {order.orderItems.map((item) => (
                     <tr key={item.id}>
                       <td
                         style={{
-                          padding: "8px",
+                        textAlign: "center",
                           fontSize: "0.875rem",
                           color: "#3b82f6",
                           cursor: "pointer",
@@ -215,8 +208,8 @@ const OrderDetailDialog: React.FC<OrderDetailDialogProps> = ({ open, onClose, or
                       >
                         {item.productName}
                       </td>
-                      <td style={{ padding: "8px", fontSize: "0.875rem" }}>{item.quantity}</td>
-                      <td style={{ padding: "8px", fontSize: "0.875rem" }}>{formatCurrency(item.price)}</td>
+                      <td style={{ padding: "8px", fontSize: "0.875rem," ,textAlign: "center", }}>{item.quantity}</td>
+                      <td style={{ padding: "8px", fontSize: "0.875rem" ,textAlign: "center" }}>{formatCurrency(item.price)}</td>
                     </tr>
                   ))}
                 </tbody>
@@ -442,145 +435,156 @@ export function StoreDetailModal({
   };
 
   const productColumns = [
-    {
-      key: "id",
-      label: "ID Sản Phẩm",
-      render: (row) => (
-        <Typography sx={{ fontFamily: "monospace", fontSize: "0.875rem", color: "primary.main" }}>
-          {row.id}
-        </Typography>
-      ),
-    },
-    {
-      key: "name",
-      label: "Tên",
-      render: (row) => (
-        <Typography
-          sx={{
-            fontSize: "0.875rem",
-            color: "primary.main",
-            cursor: "pointer",
-            textDecoration: "none",
-            transition: "all 0.3s ease-in-out",
-            "&:hover": {
-              backgroundImage: "linear-gradient(90deg, red, orange, yellow, green, blue, indigo, violet)",
-              WebkitBackgroundClip: "text",
-              WebkitTextFillColor: "transparent",
-            },
-          }}
-          onClick={() => navigate(`/products?id=${row.id}`)}
-        >
-          {row.name}
-        </Typography>
-      ),
-    },
-    {
-      key: "price",
-      label: "Giá",
-      render: (row) => (
-        <Typography sx={{ fontSize: "0.875rem", color: "grey.900" }}>
-          {row.productDetails?.[0] ? formatCurrency(row.productDetails[0].price) : "N/A"}
-        </Typography>
-      ),
-    },
-    {
-      key: "sold",
-      label: "Đã bán",
-      render: (row) => (
-        <Typography sx={{ fontSize: "0.875rem", color: "grey.900" }}>
-          {row.productDetails?.[0] ? row.sold : "N/A"}
-        </Typography>
-      ),
-    },
-    {
-      key: "isOutOfStock",
-      label: "Trạng Thái",
-      render: (row) => (
-        <Typography sx={{ fontSize: "0.875rem", color: "grey.900" }}>
-          {row.productDetails?.[0]
-            ? row.productDetails[0].isOutOfStock
-              ? "Hết hàng"
-              : "Còn hàng"
-            : "N/A"}
-        </Typography>
-      ),
-    },
-  ];
-
+  {
+    key: "id" as keyof Product, // Thêm key
+    label: "ID Sản Phẩm",
+    sortable: true, // Thêm sortable
+    render: (row) => (
+      <Typography sx={{ fontFamily: "monospace", fontSize: "0.875rem", color: "primary.main" }}>
+        {row.id}
+      </Typography>
+    ),
+  },
+  {
+    key: "name" as keyof Product, // Thêm key
+    label: "Tên",
+    sortable: true, // Thêm sortable
+    render: (row) => (
+      <Typography
+        sx={{
+          fontSize: "0.875rem",
+          color: "primary.main",
+          cursor: "pointer",
+          textDecoration: "none",
+          transition: "all 0.3s ease-in-out",
+          "&:hover": {
+            backgroundImage: "linear-gradient(90deg, red, orange, yellow, green, blue, indigo, violet)",
+            WebkitBackgroundClip: "text",
+            WebkitTextFillColor: "transparent",
+          },
+        }}
+        onClick={() => navigate(`/products?id=${row.id}`)}
+      >
+        {row.name}
+      </Typography>
+    ),
+  },
+  {
+    key: "price" as keyof Product, // Thêm key
+    label: "Giá",
+    sortable: true, // Thêm sortable
+    render: (row) => (
+      <Typography sx={{ fontSize: "0.875rem", color: "grey.900" }}>
+        {row.productDetails?.[0] ? formatCurrency(row.productDetails[0].price) : "N/A"}
+      </Typography>
+    ),
+  },
+  {
+    key: "sold" as keyof Product, // Thêm key
+    label: "Đã bán",
+    sortable: true, // Thêm sortable
+    render: (row) => (
+      <Typography sx={{ fontSize: "0.875rem", color: "grey.900" }}>
+        {row.productDetails?.[0] ? row.sold : "N/A"}
+      </Typography>
+    ),
+  },
+  {
+    key: "isOutOfStock" as keyof Product, // Thêm key
+    label: "Trạng Thái",
+    sortable: true, // Thêm sortable
+    render: (row) => (
+      <Typography sx={{ fontSize: "0.875rem", color: "grey.900" }}>
+        {row.productDetails?.[0]
+          ? row.productDetails[0].isOutOfStock
+            ? "Hết hàng"
+            : "Còn hàng"
+          : "N/A"}
+      </Typography>
+    ),
+  },
+];
   const orderColumns = [
-    {
-      key: "id",
-      label: "ID Đơn Hàng",
-      render: (row) => (
-        <Typography sx={{ fontFamily: "monospace", fontSize: "0.875rem", color: "primary.main" }}>
-          {row.id}
-        </Typography>
-      ),
-    },
-    {
-      key: "status",
-      label: "Trạng Thái",
-      render: (row) => (
-        <Chip
-          label={formatOrderStatus(row.status)}
-          sx={{
-            bgcolor: getOrderStatusColor(row.status).bgcolor,
-            color: getOrderStatusColor(row.status).color,
-            fontSize: "0.75rem",
-            height: 24,
-          }}
-        />
-      ),
-    },
-    {
-      key: "totalPrice",
-      label: "Tổng Tiền",
-      render: (row) => (
-        <Typography sx={{ fontSize: "0.875rem", color: "grey.900" }}>
-          {formatCurrency(row.totalPrice)}
-        </Typography>
-      ),
-    },
-    {
-      key: "shippingFee",
-      label: "Phí Giao Hàng",
-      render: (row) => (
-        <Typography sx={{ fontSize: "0.875rem", color: "grey.900" }}>
-          {formatCurrency(row.shippingFee)}
-        </Typography>
-      ),
-    },
-    {
-      key: "shippingAddress",
-      label: "Địa Chỉ Giao Hàng",
-      render: (row) => (
-        <Typography sx={{ fontSize: "0.875rem", color: "grey.900" }}>
-          {formatShippingAddress(row)}
-        </Typography>
-      ),
-    },
-    {
-      key: "createAt",
-      label: "Ngày Tạo",
-      render: (row) => (
-        <Typography sx={{ fontSize: "0.875rem", color: "grey.900" }}>
-          {formatDate(row.createAt)}
-        </Typography>
-      ),
-    },
-    {
-      key: "actions",
-      label: "Hành Động",
-      render: (row) => (
-        <IconButton
-          onClick={() => handleViewOrder(row)}
-          sx={{ color: "primary.main" }}
-        >
-          <Visibility sx={{ fontSize: 20 }} />
-        </IconButton>
-      ),
-    },
-  ];
+  {
+    key: "id" as keyof Order, // Thêm key
+    label: "ID Đơn Hàng",
+    sortable: true, // Thêm sortable
+    render: (row) => (
+      <Typography sx={{ fontFamily: "monospace", fontSize: "0.875rem", color: "primary.main" }}>
+        {row.id}
+      </Typography>
+    ),
+  },
+  {
+    key: "status" as keyof Order, // Thêm key
+    label: "Trạng Thái",
+    sortable: false, // Không sắp xếp cột trạng thái
+    render: (row) => (
+      <Chip
+        label={formatOrderStatus(row.status)}
+        sx={{
+          bgcolor: getOrderStatusColor(row.status).bgcolor,
+          color: getOrderStatusColor(row.status).color,
+          fontSize: "0.75rem",
+          height: 24,
+        }}
+      />
+    ),
+  },
+  {
+    key: "totalPrice" as keyof Order, // Thêm key
+    label: "Tổng Tiền",
+    sortable: true, // Thêm sortable
+    render: (row) => (
+      <Typography sx={{ fontSize: "0.875rem", color: "grey.900" }}>
+        {formatCurrency(row.totalPrice)}
+      </Typography>
+    ),
+  },
+  {
+    key: "shippingFee" as keyof Order, // Thêm key
+    label: "Phí Giao Hàng",
+    sortable: true, // Thêm sortable
+    render: (row) => (
+      <Typography sx={{ fontSize: "0.875rem", color: "grey.900" }}>
+        {formatCurrency(row.shippingFee)}
+      </Typography>
+    ),
+  },
+  {
+    key: "shippingAddress" as keyof Order, // Thêm key
+    label: "Địa Chỉ Giao Hàng",
+    sortable: false, // Không sắp xếp cột địa chỉ
+    render: (row) => (
+      <Typography sx={{ fontSize: "0.875rem", color: "grey.900" }}>
+        {formatShippingAddress(row)}
+      </Typography>
+    ),
+  },
+  {
+    key: "createAt" as keyof Order, // Thêm key
+    label: "Ngày Tạo",
+    sortable: true, // Thêm sortable
+    render: (row) => (
+      <Typography sx={{ fontSize: "0.875rem", color: "grey.900" }}>
+        {formatDate(row.createAt)}
+      </Typography>
+    ),
+  },
+  {
+    key: "actions" as keyof Order, // Thêm key
+    label: "Hành Động",
+    sortable: false, // Không sắp xếp cột hành động
+    render: (row) => (
+      <IconButton
+        onClick={() => handleViewOrder(row)}
+        sx={{ color: "primary.main" }}
+      >
+        <Visibility sx={{ fontSize: 20 }} />
+      </IconButton>
+    ),
+  },
+];
 
   if (!isOpen || !store) return null;
 
@@ -944,59 +948,62 @@ export function StoreDetailModal({
             </Box>
           )}
 
-          {activeTab === "products" && (
-            <Box>
-              <Typography variant="h6" sx={{ color: "grey.900", mb: 2 }}>
-                Sản Phẩm ({totalProducts} sản phẩm)
-              </Typography>
-              {loadingProducts ? (
-                <Box sx={{ display: "flex", justifyContent: "center", py: 4 }}>
-                  <CircularProgress />
-                </Box>
-              ) : products.length > 0 ? (
-                <CustomTable
-                  columns={productColumns}
-                  data={products}
-                  headerTitle="Danh Sách Sản Phẩm"
-                  totalCount={productPagination.totalCount}
-                  itemsPerPage={productPagination.pageSize}
-                  onPageChange={handleProductPageChange}
-                />
-              ) : (
-                <Box sx={{ textAlign: "center", py: 4, color: "grey.500" }}>
-                  <Inventory sx={{ fontSize: 48, color: "grey.300", mb: 2 }} />
-                  <Typography>Không tìm thấy sản phẩm cho cửa hàng này</Typography>
-                </Box>
-              )}
-            </Box>
-          )}
-
-          {activeTab === "orders" && (
-            <Box>
-              <Typography variant="h6" sx={{ color: "grey.900", mb: 2 }}>
-                Đơn Hàng ({totalOrders} đơn hàng)
-              </Typography>
-              {loadingOrders ? (
-                <Box sx={{ display: "flex", justifyContent: "center", py: 4 }}>
-                  <CircularProgress />
-                </Box>
-              ) : orders.length > 0 ? (
-                <CustomTable
-                  columns={orderColumns}
-                  data={orders}
-                  headerTitle="Danh Sách Đơn Hàng"
-                  totalCount={orderPagination.totalCount}
-                  itemsPerPage={orderPagination.pageSize}
-                  onPageChange={handleOrderPageChange}
-                />
-              ) : (
-                <Box sx={{ textAlign: "center", py: 4, color: "grey.500" }}>
-                  <ShoppingCart sx={{ fontSize: 48, color: "grey.300", mb: 2 }} />
-                  <Typography>Không tìm thấy đơn hàng cho cửa hàng này</Typography>
-                </Box>
-              )}
-            </Box>
-          )}
+       {activeTab === "products" && (
+  <Box>
+    <Typography variant="h6" sx={{ color: "grey.900", mb: 2 }}>
+      Sản Phẩm ({totalProducts} sản phẩm)
+    </Typography>
+    {loadingProducts ? (
+      <Box sx={{ display: "flex", justifyContent: "center", py: 4 }}>
+        <CircularProgress />
+      </Box>
+    ) : products.length > 0 ? (
+      <CustomTableV2
+        columns={productColumns}
+        data={products}
+        headerTitle="Danh Sách Sản Phẩm"
+        totalCount={productPagination.totalCount}
+        itemsPerPage={productPagination.pageSize}
+        page={productPagination.pageNumber - 1} // Chuyển sang 0-based
+        onPageChange={(page) => handleProductPageChange(page + 1)} // Chuyển sang 1-based
+        description={`Sản phẩm của cửa hàng ${store.name}`}
+      />
+    ) : (
+      <Box sx={{ textAlign: "center", py: 4, color: "grey.500" }}>
+        <Inventory sx={{ fontSize: 48, color: "grey.300", mb: 2 }} />
+        <Typography>Không tìm thấy sản phẩm cho cửa hàng này</Typography>
+      </Box>
+    )}
+  </Box>
+)}
+{activeTab === "orders" && (
+  <Box>
+    <Typography variant="h6" sx={{ color: "grey.900", mb: 2 }}>
+      Đơn Hàng ({totalOrders} đơn hàng)
+    </Typography>
+    {loadingOrders ? (
+      <Box sx={{ display: "flex", justifyContent: "center", py: 4 }}>
+        <CircularProgress />
+      </Box>
+    ) : orders.length > 0 ? (
+      <CustomTableV2
+        columns={orderColumns}
+        data={orders}
+        headerTitle="Danh Sách Đơn Hàng"
+        totalCount={orderPagination.totalCount}
+        itemsPerPage={orderPagination.pageSize}
+        page={orderPagination.pageNumber - 1} // Chuyển sang 0-based
+        onPageChange={(page) => handleOrderPageChange(page + 1)} // Chuyển sang 1-based
+        description={`Đơn hàng của cửa hàng ${store.name}`}
+      />
+    ) : (
+      <Box sx={{ textAlign: "center", py: 4, color: "grey.500" }}>
+        <ShoppingCart sx={{ fontSize: 48, color: "grey.300", mb: 2 }} />
+        <Typography>Không tìm thấy đơn hàng cho cửa hàng này</Typography>
+      </Box>
+    )}
+  </Box>
+)}
         </DialogContent>
       </Dialog>
       <OrderDetailDialog
