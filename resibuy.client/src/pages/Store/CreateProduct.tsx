@@ -20,6 +20,7 @@ import {
     Stack,
     Paper,
     Container,
+    Alert,
 } from "@mui/material";
 import {
     Add,
@@ -35,17 +36,20 @@ import { v4 } from "uuid";
 import axiosClient from "../../api/base.api";
 import type { CategoryDto } from "../../types/storeData";
 import { useNavigate, useParams } from "react-router-dom";
+import { useToastify } from "../../hooks/useToastify.ts";
 
 interface AdditionalDataInput {
     key: string;
     value: string;
 }
+
 interface Image {
     id: string;
     url: string;
     thumbUrl: string;
     name: string;
 }
+
 interface ProductDetailInput {
     price: number;
     weight: number;
@@ -54,6 +58,7 @@ interface ProductDetailInput {
     image: Image;
     additionalData: AdditionalDataInput[];
 }
+
 interface ProductInput {
     name: string;
     describe: string;
@@ -62,33 +67,34 @@ interface ProductInput {
     categoryId: string;
     productDetails: ProductDetailInput[];
 }
+
 interface Classify {
     key: string;
     value: string[];
 }
 
+interface ValidationErrors {
+    [key: string]: string;
+}
+
 // Main component
 export default function CreateProduct() {
-    useEffect(() => {
-        axiosClient
-            .get("api/Category/categories")
-            .then((res) => {
-                const templist: CategoryDto[] = res.data.data || [];
-                setListCategory(templist);
-            })
-            .catch((err) => console.error(err));
-    }, []);
-
+    const { error: showError, success: showSuccess } = useToastify();
     const { storeId } = useParams<{ storeId: string }>();
     const navigate = useNavigate();
 
+    // State declarations
     const [listCategory, setListCategory] = useState<CategoryDto[]>([]);
-    const [priceErrors, setPriceErrors] = useState<{ [key: number]: string }>({});
-    const [weightErrors, setWeightErrors] = useState<{ [key: number]: string }>({});
-    const [quantityErrors, setQuantityErrors] = useState<{ [key: number]: string }>({});
-    const [uploadingImages, setUploadingImages] = useState<{
-        [key: number]: boolean;
-    }>({});
+    const [isLoading, setIsLoading] = useState(false);
+
+    // Error states consolidated
+    const [formErrors, setFormErrors] = useState<ValidationErrors>({});
+    const [classifyErrors, setClassifyErrors] = useState<ValidationErrors>({});
+    const [attributeErrors, setAttributeErrors] = useState<ValidationErrors>({});
+    const [priceErrors, setPriceErrors] = useState<ValidationErrors>({});
+    const [weightErrors, setWeightErrors] = useState<ValidationErrors>({});
+    const [quantityErrors, setQuantityErrors] = useState<ValidationErrors>({});
+    const [uploadingImages, setUploadingImages] = useState<{ [key: number]: boolean }>({});
 
     const [product, setProduct] = useState<ProductInput>({
         name: "",
@@ -98,17 +104,52 @@ export default function CreateProduct() {
         categoryId: "",
         productDetails: [],
     });
-    const [listProductDetail, setListProductDetail] = useState<
-        ProductDetailInput[]
-    >([]);
+
+    const [listProductDetail, setListProductDetail] = useState<ProductDetailInput[]>([]);
     const [classifies, setClassifies] = useState<Classify[]>([]);
 
-    const addClassifies = () =>
-        setClassifies((prev) => [...prev, { key: "", value: [] }]);
-    const removeClassify = (index: number) =>
-        setClassifies((prev) => prev.filter((_, i) => i !== index));
-    const removeclassifyValue = (classifyIndex: number, valueIndex: number) =>
-        setClassifies((prev) =>
+    // Load categories on mount
+    useEffect(() => {
+        const loadCategories = async () => {
+            try {
+                const response = await axiosClient.get("api/Category/categories");
+                const categories: CategoryDto[] = response.data.data || [];
+                setListCategory(categories);
+            } catch (error) {
+                console.error("Error loading categories:", error);
+                showError("Không thể tải danh sách danh mục");
+            }
+        };
+
+        loadCategories();
+    }, [showError]);
+
+    // Classification management functions
+    const addClassifies = () => {
+        setClassifies(prev => [...prev, { key: "", value: [] }]);
+    };
+
+    const removeClassify = (index: number) => {
+        setClassifies(prev => prev.filter((_, i) => i !== index));
+        // Clear related errors
+        const newClassifyErrors = { ...classifyErrors };
+        const newAttributeErrors = { ...attributeErrors };
+
+        delete newClassifyErrors[`classify_${index}`];
+
+        // Clear attribute errors for this classify
+        Object.keys(newAttributeErrors).forEach(key => {
+            if (key.startsWith(`classify_${index}_`)) {
+                delete newAttributeErrors[key];
+            }
+        });
+
+        setClassifyErrors(newClassifyErrors);
+        setAttributeErrors(newAttributeErrors);
+    };
+
+    const removeClassifyValue = (classifyIndex: number, valueIndex: number) => {
+        setClassifies(prev =>
             prev.map((item, idx) =>
                 idx === classifyIndex
                     ? { ...item, value: item.value.filter((_, vi) => vi !== valueIndex) }
@@ -116,17 +157,27 @@ export default function CreateProduct() {
             )
         );
 
-    const updateClassifyKey = (index: number, newKey: string) =>
-        setClassifies((prev) =>
+        // Clear related error
+        const newAttributeErrors = { ...attributeErrors };
+        delete newAttributeErrors[`classify_${classifyIndex}_value_${valueIndex}`];
+        setAttributeErrors(newAttributeErrors);
+    };
+
+    const updateClassifyKey = (index: number, newKey: string) => {
+        setClassifies(prev =>
             prev.map((item, i) => (i === index ? { ...item, key: newKey } : item))
         );
 
-    const updateClassifyValue = (
-        classifyIndex: number,
-        valueIndex: number,
-        newValue: string
-    ) =>
-        setClassifies((prev) =>
+        // Clear error when user starts typing
+        if (newKey.trim()) {
+            const newClassifyErrors = { ...classifyErrors };
+            delete newClassifyErrors[`classify_${index}`];
+            setClassifyErrors(newClassifyErrors);
+        }
+    };
+
+    const updateClassifyValue = (classifyIndex: number, valueIndex: number, newValue: string) => {
+        setClassifies(prev =>
             prev.map((item, i) =>
                 i === classifyIndex
                     ? {
@@ -139,14 +190,140 @@ export default function CreateProduct() {
             )
         );
 
-    const addClassifyValue = (classifyIndex: number) =>
-        setClassifies((prev) =>
+        // Clear error when user starts typing
+        if (newValue.trim()) {
+            const newAttributeErrors = { ...attributeErrors };
+            delete newAttributeErrors[`classify_${classifyIndex}_value_${valueIndex}`];
+            setAttributeErrors(newAttributeErrors);
+        }
+    };
+
+    const addClassifyValue = (classifyIndex: number) => {
+        setClassifies(prev =>
             prev.map((item, i) =>
                 i === classifyIndex ? { ...item, value: [...item.value, ""] } : item
             )
         );
+    };
 
-    // Validate price function
+    // Validation functions
+    const validateBasicInfo = (): boolean => {
+        const newFormErrors: ValidationErrors = {};
+        let isValid = true;
+
+        if (!product.name.trim()) {
+            newFormErrors.name = "Tên sản phẩm không được để trống";
+            isValid = false;
+        }
+
+        if (!product.categoryId) {
+            newFormErrors.categoryId = "Vui lòng chọn danh mục sản phẩm";
+            isValid = false;
+        }
+
+        if (product.discount < 0 || product.discount > 99) {
+            newFormErrors.discount = "Giảm giá phải từ 0 đến 99%";
+            isValid = false;
+        }
+
+        setFormErrors(newFormErrors);
+
+        if (!isValid) {
+            showError("Vui lòng kiểm tra lại thông tin cơ bản");
+        }
+
+        return isValid;
+    };
+
+    const validateClassifies = (): boolean => {
+        const newClassifyErrors: ValidationErrors = {};
+        const newAttributeErrors: ValidationErrors = {};
+        let isValid = true;
+
+        if (classifies.length === 0) {
+            showError("Vui lòng thêm ít nhất một phân loại sản phẩm");
+            return false;
+        }
+
+        classifies.forEach((classify, i) => {
+            // Check classify key
+            if (!classify.key.trim()) {
+                newClassifyErrors[`classify_${i}`] = "Tên phân loại không được để trống";
+                isValid = false;
+            }
+
+            // Check if classify has values
+            if (classify.value.length === 0) {
+                showError(`Phân loại "${classify.key || `phân loại ${i + 1}`}" phải có ít nhất một thuộc tính`);
+                isValid = false;
+            }
+
+            // Check each value
+            classify.value.forEach((value, j) => {
+                if (!value.trim()) {
+                    newAttributeErrors[`classify_${i}_value_${j}`] = "Thuộc tính không được để trống";
+                    isValid = false;
+                }
+            });
+        });
+
+        setClassifyErrors(newClassifyErrors);
+        setAttributeErrors(newAttributeErrors);
+
+        if (!isValid) {
+            showError("Vui lòng kiểm tra lại thông tin phân loại");
+        }
+
+        return isValid;
+    };
+
+    const validateProductDetails = (): boolean => {
+        let isValid = true;
+        const newPriceErrors: ValidationErrors = {};
+        const newWeightErrors: ValidationErrors = {};
+        const newQuantityErrors: ValidationErrors = {};
+
+        listProductDetail.forEach((detail, index) => {
+            // Validate price
+            if (detail.price <= 0) {
+                newPriceErrors[index] = "Giá phải lớn hơn 0";
+                isValid = false;
+            } else if (detail.price % 500 !== 0) {
+                newPriceErrors[index] = "Giá phải là bội số của 500";
+                isValid = false;
+            }
+
+            // Validate weight
+            if (detail.weight < 0 || detail.weight > 999) {
+                newWeightErrors[index] = "Cân nặng phải từ 0 đến 999g";
+                isValid = false;
+            }
+
+            // Validate quantity
+            if (detail.quantity < 0 || detail.quantity > 999) {
+                newQuantityErrors[index] = "Số lượng phải từ 0 đến 999";
+                isValid = false;
+            }
+
+            // Validate image
+            if (!detail.image?.url) {
+                showError(`Vui lòng tải ảnh cho tất cả các chi tiết sản phẩm`);
+                isValid = false;
+            }
+        });
+
+        setPriceErrors(newPriceErrors);
+        setWeightErrors(newWeightErrors);
+        setQuantityErrors(newQuantityErrors);
+
+        if (!isValid) {
+            showError("Vui lòng kiểm tra lại thông tin chi tiết sản phẩm");
+        }
+
+        return isValid;
+    };
+
+    // Individual field validation
     const validatePrice = (price: number, index: number) => {
         const newErrors = { ...priceErrors };
 
@@ -161,7 +338,6 @@ export default function CreateProduct() {
         setPriceErrors(newErrors);
     };
 
-    // Updated validate weight function
     const validateWeight = (weight: number, index: number) => {
         const newErrors = { ...weightErrors };
 
@@ -176,7 +352,6 @@ export default function CreateProduct() {
         setWeightErrors(newErrors);
     };
 
-    // Updated validate quantity function
     const validateQuantity = (quantity: number, index: number) => {
         const newErrors = { ...quantityErrors };
 
@@ -191,10 +366,9 @@ export default function CreateProduct() {
         setQuantityErrors(newErrors);
     };
 
-    // HÀM sinh tổ hợp các thuộc tính
+    // Generate product combinations
     const generateProductDetail = () => {
-        if (classifies.length === 0) {
-            alert("nhập đủ thông tin thêm");
+        if (!validateBasicInfo() || !validateClassifies()) {
             return;
         }
 
@@ -208,143 +382,132 @@ export default function CreateProduct() {
                 ]);
             });
         });
-        console.log(listAdditionalData);
-        addToProductDetail(listAdditionalData);
+
+        // Clear existing product details and errors
+        setListProductDetail([]);
+        setPriceErrors({});
+        setWeightErrors({});
+        setQuantityErrors({});
+
+        // Generate new product details
+        const newProductDetails: ProductDetailInput[] = listAdditionalData.map((data) => ({
+            price: 0,
+            weight: 0,
+            quantity: 0,
+            isOutOfStock: false,
+            image: { id: "", url: "", thumbUrl: "", name: "" },
+            additionalData: data,
+        }));
+
+        setListProductDetail(newProductDetails);
+        showSuccess(`Đã tạo ${newProductDetails.length} chi tiết sản phẩm`);
     };
 
-    const addToProductDetail = (listAdditionalData: AdditionalDataInput[][]) => {
-        if (listProductDetail.length === 0) {
-            listAdditionalData.forEach((data) => {
-                const productDetail: ProductDetailInput = {
-                    price: 0,
-                    weight: 0,
-                    quantity: 0,
-                    isOutOfStock: false,
-                    image: { id: "", url: "", thumbUrl: "", name: "" },
-                    additionalData: data,
-                };
-                setListProductDetail((prev) => [...prev, productDetail]);
-            });
-        } else {
-            setListProductDetail([]);
-            setPriceErrors({}); // Clear price errors when regenerating
-            setWeightErrors({}); // Clear weight errors when regenerating
-            setQuantityErrors({}); // Clear quantity errors when regenerating
-            addToProductDetail(listAdditionalData);
-        }
+    // Helper function to format classification text
+    const classifyText = (productDetail: ProductDetailInput): string => {
+        return productDetail.additionalData
+            .map((data) => `${data.key}: ${data.value}`)
+            .join(", ");
     };
 
-    function classyfyText(productDetail: ProductDetailInput) {
-        let text = "";
-        productDetail.additionalData.forEach((data) => {
-            if (text !== "") {
-                text = text + ", ";
-            }
-            text = text + `${data.key}: ${data.value}`;
-        });
-        return text;
-    }
-
-    async function uploadImg(file: File, index: number) {
-        setUploadingImages((prev) => ({ ...prev, [index]: true }));
+    // Image upload function
+    const uploadImg = async (file: File, index: number) => {
+        setUploadingImages(prev => ({ ...prev, [index]: true }));
 
         try {
-            // Simulate loading delay for better UX (remove this in production)
-            await new Promise((resolve) => setTimeout(resolve, 500));
-
             const formData = new FormData();
             const id = v4();
             formData.append("id", id);
             formData.append("file", file);
 
-            const resp = await axiosClient.post("/api/Cloudinary/upload", formData, {
+            const response = await axiosClient.post("/api/Cloudinary/upload", formData, {
                 headers: {
                     "Content-Type": "multipart/form-data",
                 },
             });
 
-            if (resp.status === 200) {
-                const data = resp.data;
-                const newList = [...listProductDetail];
-                newList[index].image = {
-                    id: data.id,
-                    thumbUrl: data.thumbnailUrl,
-                    url: data.url,
-                    name: data.name,
-                };
-                setListProductDetail(newList);
-                console.log("listProductDetail", listProductDetail[index]);
+            if (response.status === 200) {
+                const data = response.data;
+                setListProductDetail(prev => {
+                    const newList = [...prev];
+                    newList[index].image = {
+                        id: data.id,
+                        thumbUrl: data.thumbnailUrl,
+                        url: data.url,
+                        name: data.name,
+                    };
+                    return newList;
+                });
+                showSuccess("Tải ảnh thành công!");
             }
         } catch (error) {
             console.error("Error uploading image:", error);
-            alert("Lỗi khi tải ảnh lên. Vui lòng thử lại!");
+            showError("Lỗi khi tải ảnh lên. Vui lòng thử lại!");
         } finally {
-            setUploadingImages((prev) => ({ ...prev, [index]: false }));
+            setUploadingImages(prev => ({ ...prev, [index]: false }));
         }
-    }
+    };
 
-    const CreateProductAsync = async () => {
-        // Validate if there are no product details
+    // Create product function
+    const createProductAsync = async () => {
+        if (isLoading) return;
+
+        if (!validateBasicInfo()) return;
+
         if (listProductDetail.length === 0) {
-            alert(
-                "Vui lòng tạo ít nhất một chi tiết sản phẩm trước khi tạo sản phẩm."
-            );
+            showError("Vui lòng tạo ít nhất một chi tiết sản phẩm trước khi tạo sản phẩm.");
             return;
         }
 
-        // Validate all images are uploaded
-        const missingImages = listProductDetail.some(
-            (detail) => !detail.image?.url || detail.image.url === ""
-        );
-        if (missingImages) {
-            alert("Vui lòng tải ảnh cho tất cả các chi tiết sản phẩm.");
-            return;
-        }
+        if (!validateProductDetails()) return;
 
-        // Validate all prices, weights, and quantities before creating product
-        const hasErrors = Object.keys(priceErrors).length > 0 ||
-            Object.keys(weightErrors).length > 0 ||
-            Object.keys(quantityErrors).length > 0;
+        setIsLoading(true);
 
-        const hasInvalidData = listProductDetail.some((detail, index) => {
-            let hasError = false;
+        try {
+            const productToCreate: ProductInput = {
+                ...product,
+                productDetails: listProductDetail,
+            };
 
-            // Validate price
-            if (detail.price <= 0 || detail.price % 500 !== 0) {
-                validatePrice(detail.price, index);
-                hasError = true;
-            }
+            const response = await axiosClient.post("api/Product", productToCreate);
 
-            // Updated weight validation
-            if (detail.weight < 0 || detail.weight > 999) {
-                validateWeight(detail.weight, index);
-                hasError = true;
-            }
-
-            // Updated quantity validation
-            if (detail.quantity < 0 || detail.quantity > 999) {
-                validateQuantity(detail.quantity, index);
-                hasError = true;
-            }
-
-            return hasError;
-        });
-
-        if (hasErrors || hasInvalidData) {
-            alert(
-                "Vui lòng kiểm tra lại thông tin sản phẩm. Giá phải là bội số của 500 và lớn hơn 0, cân nặng và số lượng phải từ 0 đến 999."
-            );
-            return;
-        }
-
-        const tempProduct: ProductInput = {
-            ...product,
-            productDetails: listProductDetail,
-        };
-        await axiosClient.post("api/Product", tempProduct).then((res) => {
-            if (res.status === 200) {
+            if (response.status === 200) {
+                showSuccess("Tạo sản phẩm thành công!");
                 navigate(`/store/${storeId}/productPage`);
             }
+        } catch (error) {
+            console.error("Error creating product:", error);
+            showError("Lỗi khi tạo sản phẩm. Vui lòng thử lại!");
+        } finally {
+            setIsLoading(false);
+        }
+    };
+
+    // Handler functions for form updates
+    const updateProductField = (field: keyof ProductInput, value: string | number) => {
+        setProduct(prev => ({ ...prev, [field]: value }));
+
+        // Clear related errors
+        if (field === 'name' && value && formErrors.name) {
+            setFormErrors(prev => {
+                const newErrors = { ...prev };
+                delete newErrors.name;
+                return newErrors;
+            });
+        } else if (field === 'categoryId' && value && formErrors.categoryId) {
+            setFormErrors(prev => {
+                const newErrors = { ...prev };
+                delete newErrors.categoryId;
+                return newErrors;
+            });
+        }
+    };
+
+    const updateProductDetail = (index: number, field: keyof ProductDetailInput, value: any) => {
+        setListProductDetail(prev => {
+            const newList = [...prev];
+            (newList[index] as any)[field] = value;
+            return newList;
         });
     };
 
@@ -354,18 +517,20 @@ export default function CreateProduct() {
                 <Stack spacing={4}>
                     {/* Header */}
                     <Paper elevation={0} sx={{ p: 3, bgcolor: "white", borderRadius: 2 }}>
-                        <Typography
-                            variant="h4"
-                            fontWeight="bold"
-                            color="primary"
-                            gutterBottom
-                        >
+                        <Typography variant="h4" fontWeight="bold" color="primary" gutterBottom>
                             Tạo sản phẩm mới
                         </Typography>
                         <Typography variant="body1" color="text.secondary">
                             Điền thông tin chi tiết để tạo sản phẩm cho cửa hàng của bạn
                         </Typography>
                     </Paper>
+
+                    {/* Show validation summary if there are errors */}
+                    {Object.keys(formErrors).length > 0 && (
+                        <Alert severity="error">
+                            Vui lòng sửa các lỗi sau: {Object.values(formErrors).join(", ")}
+                        </Alert>
+                    )}
 
                     {/* Product Basic Information */}
                     <Paper elevation={0} sx={{ borderRadius: 3, overflow: "hidden" }}>
@@ -394,9 +559,9 @@ export default function CreateProduct() {
                                         required
                                         variant="outlined"
                                         value={product.name}
-                                        onChange={(e) =>
-                                            setProduct({ ...product, name: e.target.value })
-                                        }
+                                        error={!!formErrors.name}
+                                        helperText={formErrors.name}
+                                        onChange={(e) => updateProductField('name', e.target.value)}
                                         sx={{
                                             "& .MuiOutlinedInput-root": {
                                                 borderRadius: 2,
@@ -407,11 +572,12 @@ export default function CreateProduct() {
                                         select
                                         label="Danh mục"
                                         fullWidth
+                                        required
                                         variant="outlined"
                                         value={product.categoryId || ""}
-                                        onChange={(e) =>
-                                            setProduct({ ...product, categoryId: e.target.value })
-                                        }
+                                        error={!!formErrors.categoryId}
+                                        helperText={formErrors.categoryId}
+                                        onChange={(e) => updateProductField('categoryId', e.target.value)}
                                         sx={{
                                             "& .MuiOutlinedInput-root": {
                                                 borderRadius: 2,
@@ -433,9 +599,7 @@ export default function CreateProduct() {
                                     rows={4}
                                     variant="outlined"
                                     value={product.describe}
-                                    onChange={(e) =>
-                                        setProduct({ ...product, describe: e.target.value })
-                                    }
+                                    onChange={(e) => updateProductField('describe', e.target.value)}
                                     sx={{
                                         "& .MuiOutlinedInput-root": {
                                             borderRadius: 2,
@@ -450,17 +614,13 @@ export default function CreateProduct() {
                                         fullWidth
                                         variant="outlined"
                                         value={product.discount}
-                                        error={product.discount > 99}
-                                        helperText={
-                                            product.discount > 99
-                                                ? "Giảm giá không được vượt quá 99%"
-                                                : ""
-                                        }
-                                        inputProps={{ min: 0, max: 100 }}
+                                        error={!!formErrors.discount}
+                                        helperText={formErrors.discount || "Nhập giá trị từ 0 đến 99"}
+                                        inputProps={{ min: 0, max: 99 }}
                                         onChange={(e) => {
                                             const value = Number(e.target.value);
-                                            if (value >= 0 && value <= 100) {
-                                                setProduct({ ...product, discount: value });
+                                            if (value >= 0 && value <= 99) {
+                                                updateProductField('discount', value);
                                             }
                                         }}
                                         sx={{
@@ -508,6 +668,8 @@ export default function CreateProduct() {
                                                     required
                                                     variant="outlined"
                                                     size="medium"
+                                                    error={!!classifyErrors[`classify_${classifiesIndex}`]}
+                                                    helperText={classifyErrors[`classify_${classifiesIndex}`]}
                                                     onChange={(e) =>
                                                         updateClassifyKey(classifiesIndex, e.target.value)
                                                     }
@@ -555,6 +717,8 @@ export default function CreateProduct() {
                                                                 required
                                                                 size="small"
                                                                 variant="outlined"
+                                                                error={!!attributeErrors[`classify_${classifiesIndex}_value_${valueIndex}`]}
+                                                                helperText={attributeErrors[`classify_${classifiesIndex}_value_${valueIndex}`]}
                                                                 onChange={(e) =>
                                                                     updateClassifyValue(
                                                                         classifiesIndex,
@@ -572,7 +736,7 @@ export default function CreateProduct() {
                                                                 color="error"
                                                                 size="small"
                                                                 onClick={() =>
-                                                                    removeclassifyValue(
+                                                                    removeClassifyValue(
                                                                         classifiesIndex,
                                                                         valueIndex
                                                                     )
@@ -612,6 +776,7 @@ export default function CreateProduct() {
                                     variant="contained"
                                     color="primary"
                                     onClick={generateProductDetail}
+                                    disabled={classifies.length === 0}
                                     size="large"
                                     sx={{
                                         alignSelf: "flex-end",
@@ -633,8 +798,7 @@ export default function CreateProduct() {
                             <Box
                                 sx={{
                                     p: 3,
-                                    background:
-                                        "linear-gradient(135deg, #4facfe 0%, #00f2fe 100%)",
+                                    background: "linear-gradient(135deg, #4facfe 0%, #00f2fe 100%)",
                                     color: "white",
                                 }}
                             >
@@ -643,7 +807,7 @@ export default function CreateProduct() {
                                         <PhotoCamera />
                                     </Avatar>
                                     <Typography variant="h6" fontWeight="bold">
-                                        Chi tiết sản phẩm
+                                        Chi tiết sản phẩm ({listProductDetail.length})
                                     </Typography>
                                 </Stack>
                             </Box>
@@ -651,24 +815,12 @@ export default function CreateProduct() {
                                 <Table sx={{ minWidth: 800 }}>
                                     <TableHead>
                                         <TableRow sx={{ bgcolor: "grey.50" }}>
-                                            <TableCell sx={{ fontWeight: "bold" }}>
-                                                Phân loại
-                                            </TableCell>
-                                            <TableCell sx={{ fontWeight: "bold" }}>
-                                                Giá (VNĐ)
-                                            </TableCell>
-                                            <TableCell sx={{ fontWeight: "bold" }}>
-                                                Cân nặng (g)
-                                            </TableCell>
-                                            <TableCell sx={{ fontWeight: "bold" }}>
-                                                Số lượng
-                                            </TableCell>
-                                            <TableCell sx={{ fontWeight: "bold" }}>
-                                                Hết hàng
-                                            </TableCell>
-                                            <TableCell sx={{ fontWeight: "bold" }}>
-                                                Ảnh sản phẩm
-                                            </TableCell>
+                                            <TableCell sx={{ fontWeight: "bold" }}>Phân loại</TableCell>
+                                            <TableCell sx={{ fontWeight: "bold" }}>Giá (VNĐ)</TableCell>
+                                            <TableCell sx={{ fontWeight: "bold" }}>Cân nặng (g)</TableCell>
+                                            <TableCell sx={{ fontWeight: "bold" }}>Số lượng</TableCell>
+                                            <TableCell sx={{ fontWeight: "bold" }}>Hết hàng</TableCell>
+                                            <TableCell sx={{ fontWeight: "bold" }}>Ảnh sản phẩm</TableCell>
                                         </TableRow>
                                     </TableHead>
                                     <TableBody>
@@ -676,7 +828,7 @@ export default function CreateProduct() {
                                             <TableRow key={index} hover>
                                                 <TableCell>
                                                     <Chip
-                                                        label={classyfyText(productDetail)}
+                                                        label={classifyText(productDetail)}
                                                         variant="outlined"
                                                         size="small"
                                                         sx={{ maxWidth: 200 }}
@@ -690,14 +842,10 @@ export default function CreateProduct() {
                                                         error={!!priceErrors[index]}
                                                         helperText={priceErrors[index]}
                                                         onChange={(e) => {
-                                                            const newList = [...listProductDetail];
                                                             const newPrice = Number(e.target.value);
-                                                            newList[index].price = newPrice;
-                                                            setListProductDetail(newList);
+                                                            updateProductDetail(index, 'price', newPrice);
                                                         }}
-                                                        onBlur={() =>
-                                                            validatePrice(productDetail.price, index)
-                                                        }
+                                                        onBlur={() => validatePrice(productDetail.price, index)}
                                                         sx={{
                                                             "& .MuiOutlinedInput-root": { borderRadius: 2 },
                                                         }}
@@ -712,16 +860,12 @@ export default function CreateProduct() {
                                                         helperText={weightErrors[index]}
                                                         inputProps={{ min: 0, max: 999 }}
                                                         onChange={(e) => {
-                                                            const newList = [...listProductDetail];
                                                             const newWeight = Number(e.target.value);
                                                             if (newWeight <= 999) {
-                                                                newList[index].weight = newWeight;
-                                                                setListProductDetail(newList);
+                                                                updateProductDetail(index, 'weight', newWeight);
                                                             }
                                                         }}
-                                                        onBlur={() =>
-                                                            validateWeight(productDetail.weight, index)
-                                                        }
+                                                        onBlur={() => validateWeight(productDetail.weight, index)}
                                                         sx={{
                                                             "& .MuiOutlinedInput-root": { borderRadius: 2 },
                                                         }}
@@ -736,16 +880,12 @@ export default function CreateProduct() {
                                                         helperText={quantityErrors[index]}
                                                         inputProps={{ min: 0, max: 999 }}
                                                         onChange={(e) => {
-                                                            const newList = [...listProductDetail];
                                                             const newQuantity = Number(e.target.value);
                                                             if (newQuantity <= 999) {
-                                                                newList[index].quantity = newQuantity;
-                                                                setListProductDetail(newList);
+                                                                updateProductDetail(index, 'quantity', newQuantity);
                                                             }
                                                         }}
-                                                        onBlur={() =>
-                                                            validateQuantity(productDetail.quantity, index)
-                                                        }
+                                                        onBlur={() => validateQuantity(productDetail.quantity, index)}
                                                         sx={{
                                                             "& .MuiOutlinedInput-root": { borderRadius: 2 },
                                                         }}
@@ -755,19 +895,13 @@ export default function CreateProduct() {
                                                     <Checkbox
                                                         checked={productDetail.isOutOfStock}
                                                         onChange={(e) => {
-                                                            const newList = [...listProductDetail];
-                                                            newList[index].isOutOfStock = e.target.checked;
-                                                            setListProductDetail(newList);
+                                                            updateProductDetail(index, 'isOutOfStock', e.target.checked);
                                                         }}
                                                         color="primary"
                                                     />
                                                 </TableCell>
                                                 <TableCell>
-                                                    <Stack
-                                                        spacing={2}
-                                                        alignItems="center"
-                                                        sx={{ minWidth: 120 }}
-                                                    >
+                                                    <Stack spacing={2} alignItems="center" sx={{ minWidth: 120 }}>
                                                         {uploadingImages[index] ? (
                                                             <Box
                                                                 sx={{
@@ -798,7 +932,6 @@ export default function CreateProduct() {
                                                                     onChange={(e) => {
                                                                         const file = e.target.files?.[0];
                                                                         if (file) {
-                                                                            // Reset input value để có thể chọn lại cùng file
                                                                             e.target.value = "";
                                                                             uploadImg(file, index);
                                                                         }
@@ -861,10 +994,7 @@ export default function CreateProduct() {
                                                                     bgcolor: "grey.50",
                                                                 }}
                                                             >
-                                                                <Warning
-                                                                    color="warning"
-                                                                    sx={{ fontSize: 24 }}
-                                                                />
+                                                                <Warning color="warning" sx={{ fontSize: 24 }} />
                                                                 <Typography
                                                                     variant="caption"
                                                                     color="text.secondary"
@@ -889,23 +1019,37 @@ export default function CreateProduct() {
                     {listProductDetail.length > 0 && (
                         <Stack direction="row" justifyContent="flex-end" spacing={2}>
                             <Button
+                                variant="outlined"
+                                onClick={() => navigate(`/store/${storeId}/productPage`)}
+                                size="large"
+                                sx={{ borderRadius: 3, px: 4, py: 2 }}
+                            >
+                                Hủy
+                            </Button>
+                            <Button
                                 variant="contained"
                                 color="primary"
-                                onClick={CreateProductAsync}
+                                onClick={createProductAsync}
+                                disabled={isLoading}
                                 size="large"
                                 sx={{
                                     borderRadius: 3,
                                     px: 6,
                                     py: 2,
                                     boxShadow: 4,
-                                    background:
-                                        "linear-gradient(135deg, #667eea 0%, #764ba2 100%)",
-                                    "&:hover": {
-                                        boxShadow: 6,
-                                    },
+                                    background: "linear-gradient(135deg, #667eea 0%, #764ba2 100%)",
+                                    "&:hover": { boxShadow: 6 },
+                                    "&:disabled": { opacity: 0.7 },
                                 }}
                             >
-                                Tạo sản phẩm
+                                {isLoading ? (
+                                    <Stack direction="row" alignItems="center" spacing={1}>
+                                        <CircularProgress size={20} color="inherit" />
+                                        <Typography>Đang tạo...</Typography>
+                                    </Stack>
+                                ) : (
+                                    "Tạo sản phẩm"
+                                )}
                             </Button>
                         </Stack>
                     )}
