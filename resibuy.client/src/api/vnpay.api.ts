@@ -43,6 +43,15 @@ const vnPayApi = {
       return { success: false, error };
     }
   },
+    getStorePaymentUrl: async (storeId: string) => {
+        try {
+            const response = await axiosClient.post(`${vnPayUrl}/create-store-payment/${storeId}`);
+            return { success: true, data: response.data };
+        } catch (error: any) {
+            console.error("Create store payment failed:", error);
+            return { success: false, error };
+        }
+    },
 
   getSessionStatistics: async (): Promise<{ success: boolean; data?: SessionStatistics; error?: any }> => {
     try {

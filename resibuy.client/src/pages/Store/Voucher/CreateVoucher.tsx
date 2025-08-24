@@ -13,6 +13,7 @@ import {
 import React, { useState } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import axios from "../../../api/base.api";
+import {useToastify} from "../../../hooks/useToastify.ts";
 
 type VoucherType = "Amount" | "Percentage";
 
@@ -229,10 +230,10 @@ const VoucherCreatePage: React.FC = () => {
     setErrors(newErrors);
     return Object.keys(newErrors).length === 0;
   };
-
+    const { error: showError, success: showSuccess } = useToastify();
   const handleCreate = async () => {
     if (!storeId) {
-      alert("Không tìm thấy storeId");
+      showError("Không tìm thấy storeId")
       return;
     }
 
@@ -252,11 +253,11 @@ const VoucherCreatePage: React.FC = () => {
       };
 
       await axios.post("/api/Voucher", payload);
-      alert("Tạo voucher thành công");
+      showSuccess("Tạo voucher thành công")
       navigate(`/store/${storeId}/vouchers`);
     } catch (error) {
       console.error("Lỗi khi tạo voucher:", error);
-      alert("Tạo voucher thất bại");
+      showError("Tạo voucher thất bại");
     }
   };
 

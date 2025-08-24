@@ -1,8 +1,10 @@
-﻿using ResiBuy.Server.Services.MyBackgroundService.CheckoutSessionService;
+﻿using System.Threading.Tasks;
+using ResiBuy.Server.Infrastructure.DbServices.StoreDbServices;
+using ResiBuy.Server.Services.MyBackgroundService.CheckoutSessionService;
 
 namespace ResiBuy.Server.Services.VNPayServices
 {
-    public class VNPayService(IConfiguration configuration, ICheckoutSessionService checkoutSessionService) : IVNPayService
+    public class VNPayService(IConfiguration configuration, ICheckoutSessionService checkoutSessionService, IStoreDbService storeDbService) : IVNPayService
     {
         public string CreatePaymentUrl(decimal amount, Guid orderId, string orderInfo)
         {
@@ -31,6 +33,22 @@ namespace ResiBuy.Server.Services.VNPayServices
             queryString += "&vnp_SecureHash=" + hash;
             var url = $"{configuration.GetValue<string>("VnPay:BaseUrl")}?{queryString}";
             return url;
+        }
+
+        public async Task<string> StorePayFee(Guid storeId)
+        {
+            var store = await storeDbService.GetStoreByIdAsync(storeId);
+            if (store == null)
+                throw new CustomException(ExceptionErrorCode.NotFound,"Store not found");
+
+            if (store.IsPayFee)
+                throw new InvalidOperationException("Store has already paid the fee");
+
+            var feeAmount = configuration.GetValue<decimal>("StoreFee:Amount", 200000); // Default 200,000 VND
+            var orderInfo = $"Thanh toan phi cua hang {store.Name}";
+
+            // Tạo payment URL với storeId làm orderId
+            return CreatePaymentUrl(feeAmount, storeId, orderInfo);
         }
 
         public bool ValidatePayment(string responseData)
@@ -69,6 +87,56 @@ namespace ResiBuy.Server.Services.VNPayServices
                 }
             }
             return hash.ToString();
+        }
+        public async Task<bool> ProcessStorePaymentCallback(string responseData)
+        {
+            try
+            {
+                if (!ValidatePayment(responseData))
+                    return false;
+
+                var responseParams = ParseResponseData(responseData);
+
+                if (!responseParams.ContainsKey("vnp_ResponseCode") ||
+                    responseParams["vnp_ResponseCode"] != "00")
+                    return false;
+
+                if (!responseParams.ContainsKey("vnp_TxnRef") ||
+                    !Guid.TryParse(responseParams["vnp_TxnRef"], out var storeId))
+                    return false;
+
+                var store = await storeDbService.GetStoreByIdAsync(storeId);
+                if (store == null)
+                    return false;
+                store.IsPayFee = true;
+                await storeDbService.UpdateAsync(store);
+
+                return true;
+            }
+            catch (Exception ex)
+            {
+                // Log error
+                Console.WriteLine($"Error processing store payment callback: {ex.Message}");
+                return false;
+            }
+
+        }
+
+        private Dictionary<string, string> ParseResponseData(string responseData)
+        {
+            var result = new Dictionary<string, string>();
+            var responseParams = responseData.Split('&');
+
+            foreach (var param in responseParams)
+            {
+                var keyValue = param.Split('=');
+                if (keyValue.Length == 2)
+                {
+                    result[keyValue[0]] = Uri.UnescapeDataString(keyValue[1]);
+                }
+            }
+
+            return result;
         }
         public class VnPayCompare : IComparer<string>
         {
