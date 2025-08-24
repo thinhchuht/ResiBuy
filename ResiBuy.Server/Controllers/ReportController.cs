@@ -46,7 +46,7 @@ namespace ResiBuy.Server.Controllers
         }
 
         [HttpPut("{id}/resolve")]
-        public async Task<IActionResult> UpdateReport(Guid id, bool isAddReportTarget)
+        public async Task<IActionResult> UpdateReport(Guid id, [FromBody] bool isAddReportTarget)
         {
             var result = await mediator.Send(new ResolveReportCommand(id, isAddReportTarget));
             return Ok(result);
