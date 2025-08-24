@@ -485,9 +485,9 @@ export default function UpdateProduct() {
         showSuccess("Cập nhật sản phẩm thành công!");
         navigate(`/store/${storeId}/productPage`);
       }
-    } catch (error) {
+    } catch (error: any) {
       console.error("Error updating product:", error);
-      showError("Lỗi khi cập nhật sản phẩm. Vui lòng thử lại!");
+      showError(`Lỗi khi cập nhật sản phẩm: ${error.response.data.message}. Vui lòng thử lại!`);
     } finally {
       setUpdating(false);
     }

@@ -4,7 +4,6 @@ import {
     Typography,
     Button,
     Stack,
-    Card,
     CardContent,
     CardHeader,
     ToggleButtonGroup,
@@ -15,7 +14,6 @@ import {
     Paper,
     Container,
     Avatar,
-    Divider,
 } from "@mui/material";
 import {
     LocalOffer,
@@ -190,8 +188,6 @@ const UpdateVoucher: React.FC = () => {
             case "startDate":
                 if (!value) {
                     newErrors.startDate = "Chọn ngày bắt đầu";
-                } else if (value < todayStr) {
-                    newErrors.startDate = "Ngày bắt đầu phải là hôm nay hoặc sau hôm nay";
                 } else {
                     delete newErrors.startDate;
                     // Re-validate endDate if it exists
@@ -275,8 +271,6 @@ const UpdateVoucher: React.FC = () => {
         // Validate dates
         if (!formData.startDate) {
             newErrors.startDate = "Chọn ngày bắt đầu";
-        } else if (formData.startDate < todayStr) {
-            newErrors.startDate = "Ngày bắt đầu phải là hôm nay hoặc sau hôm nay";
         }
 
         if (!formData.endDate) {
@@ -366,11 +360,11 @@ const UpdateVoucher: React.FC = () => {
             setSuccess("Cập nhật voucher thành công!");
 
             setTimeout(() => {
-                navigate(`/store/${storeId}/voucher`);
+                navigate(`/store/${storeId}/vouchers`);
             }, 1500);
-        } catch (error) {
+        } catch (error: any) {
             console.error("Lỗi khi cập nhật voucher:", error);
-            setError("Cập nhật voucher thất bại. Vui lòng thử lại!");
+            setError(`Cập nhật voucher thất bại: ${error.response.data.message}. Vui lòng thử lại!`);
         } finally {
             setIsSubmitting(false);
         }
