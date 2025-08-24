@@ -10,12 +10,24 @@ import {
   IconButton,
   FormControlLabel,
   Checkbox,
+  Autocomplete,
+  Paper,
 } from "@mui/material";
-import { Close, LocationOn as AreaIcon } from "@mui/icons-material";
+import { 
+  Close, 
+  LocationOn as AreaIcon, 
+  Fullscreen, 
+  FullscreenExit,
+  Search as SearchIcon,
+  MyLocation as MyLocationIcon
+} from "@mui/icons-material";
 import type { AreaDto } from "../../../types/dtoModels";
-import { useState, useEffect } from "react";
-import { GoogleMap, LoadScript, Marker } from "@react-google-maps/api";
+import { useState, useEffect, useRef } from "react";
+import mapboxgl from "mapbox-gl";
 import type { AreaFormData } from "./seg/utlis";
+
+// Cần cài đặt mapbox-gl: npm install mapbox-gl @types/mapbox-gl
+ import 'mapbox-gl/dist/mapbox-gl.css';
 
 interface AddAreaModalProps {
   isOpen: boolean;
@@ -33,9 +45,12 @@ const mapContainerStyle = {
 };
 
 const defaultCenter = {
-  lat: 10.7769, // Trung tâm TP.HCM
+  lat: 10.7769, 
   lng: 106.7009,
 };
+
+
+const MAPBOX_ACCESS_TOKEN = import.meta.env.VITE_MAPBOX_ACCESS_TOKEN;
 
 export const useAreaForm = (editArea?: AreaDto | null) => {
   const [formData, setFormData] = useState<AreaFormData>({
@@ -138,6 +153,325 @@ export const useAreaForm = (editArea?: AreaDto | null) => {
   };
 };
 
+// Mapbox Map Component
+interface MapboxMapProps {
+  center: { lat: number; lng: number };
+  onMapClick: (lng: number, lat: number) => void;
+  isOpen: boolean;
+  isFullscreen: boolean;
+  onToggleFullscreen: () => void;
+}
+
+const MapboxMap: React.FC<MapboxMapProps> = ({ 
+  center, 
+  onMapClick, 
+  isOpen, 
+  isFullscreen,
+  onToggleFullscreen
+}) => {
+  const mapContainer = useRef<HTMLDivElement>(null);
+  const map = useRef<mapboxgl.Map | null>(null);
+  const marker = useRef<mapboxgl.Marker | null>(null);
+  const [searchQuery, setSearchQuery] = useState<string>('');
+  const [searchResults, setSearchResults] = useState<SearchResult[]>([]);
+  const [isSearching, setIsSearching] = useState<boolean>(false);
+
+  // Function to search places using Mapbox Geocoding API
+  const searchPlaces = async (query: string) => {
+    if (!query.trim() || !MAPBOX_ACCESS_TOKEN ) {
+      setSearchResults([]);
+      return;
+    }
+
+    setIsSearching(true);
+    try {
+      const response = await fetch(
+        `https://api.mapbox.com/geocoding/v5/mapbox.places/${encodeURIComponent(query)}.json?access_token=${MAPBOX_ACCESS_TOKEN}&country=VN&limit=5`
+      );
+      
+      if (!response.ok) {
+        throw new Error(`HTTP error! status: ${response.status}`);
+      }
+      
+      const data = await response.json();
+      setSearchResults(data.features || []);
+    } catch (error) {
+      console.error('Error searching places:', error);
+      setSearchResults([]);
+    } finally {
+      setIsSearching(false);
+    }
+  };
+
+  // Debounce search function
+  useEffect(() => {
+    const timeoutId = setTimeout(() => {
+      searchPlaces(searchQuery);
+    }, 300);
+
+    return () => clearTimeout(timeoutId);
+  }, [searchQuery]);
+
+  // Get user's current location
+  const getCurrentLocation = () => {
+    if (navigator.geolocation) {
+      navigator.geolocation.getCurrentPosition(
+        (position) => {
+          const { latitude, longitude } = position.coords;
+          onMapClick(longitude, latitude);
+          if (map.current) {
+            map.current.flyTo({
+              center: [longitude, latitude],
+              zoom: 15,
+              duration: 2000
+            });
+          }
+        },
+        (error) => {
+          console.error('Error getting location:', error);
+          alert('Không thể lấy vị trí hiện tại. Vui lòng kiểm tra quyền truy cập vị trí.');
+        }
+      );
+    } else {
+      alert('Trình duyệt không hỗ trợ định vị.');
+    }
+  };
+
+  // Handle search result selection
+  const handleSearchResultSelect = (result: SearchResult | null) => {
+    if (result) {
+      const [lng, lat] = result.center;
+      onMapClick(lng, lat);
+      if (map.current) {
+        map.current.flyTo({
+          center: [lng, lat],
+          zoom: 15,
+          duration: 2000
+        });
+      }
+      setSearchQuery('');
+      setSearchResults([]);
+    }
+  };
+
+  useEffect(() => {
+    if (!mapContainer.current || !isOpen || !MAPBOX_ACCESS_TOKEN || MAPBOX_ACCESS_TOKEN === "YOUR_MAPBOX_ACCESS_TOKEN_HERE") {
+      console.error('Mapbox access token is missing or invalid');
+      return;
+    }
+
+    // Initialize map
+    mapboxgl.accessToken = MAPBOX_ACCESS_TOKEN;
+    
+    try {
+      map.current = new mapboxgl.Map({
+        container: mapContainer.current,
+        style: 'mapbox://styles/mapbox/streets-v12',
+        center: [center.lng, center.lat],
+        zoom: 15,
+        attributionControl: false,
+      });
+
+      // Handle map load event
+      map.current.on('load', () => {
+        console.log('Map loaded successfully');
+      });
+
+      // Handle map errors
+      map.current.on('error', (e) => {
+        console.error('Map error:', e.error);
+      });
+
+      // Add navigation control after map loads
+      map.current.addControl(new mapboxgl.NavigationControl(), 'top-right');
+
+      // Add click event listener
+      map.current.on('click', (e) => {
+        const { lng, lat } = e.lngLat;
+        onMapClick(lng, lat);
+      });
+
+      // Add initial marker
+      marker.current = new mapboxgl.Marker({
+        color: '#3b82f6', // Blue color
+        draggable: true,
+      })
+        .setLngLat([center.lng, center.lat])
+        .addTo(map.current);
+
+      // Add drag event to marker
+      marker.current.on('dragend', () => {
+        if (marker.current) {
+          const lngLat = marker.current.getLngLat();
+          onMapClick(lngLat.lng, lngLat.lat);
+        }
+      });
+    } catch (error) {
+      console.error('Error initializing map:', error);
+    }
+
+    // Cleanup function
+    return () => {
+      if (map.current) {
+        map.current.remove();
+        map.current = null;
+      }
+      if (marker.current) {
+        marker.current = null;
+      }
+    };
+  }, [isOpen]);
+
+  useEffect(() => {
+    if (map.current && marker.current) {
+      // Update map center and marker position
+      map.current.setCenter([center.lng, center.lat]);
+      marker.current.setLngLat([center.lng, center.lat]);
+    }
+  }, [center]);
+
+  // Resize map when fullscreen changes
+  useEffect(() => {
+    if (map.current) {
+      setTimeout(() => {
+        map.current?.resize();
+      }, 100);
+    }
+  }, [isFullscreen]);
+
+  const mapHeight = isFullscreen ? '70vh' : '300px';
+
+  return (
+    <Box sx={{ position: 'relative' }}>
+      {/* Search and Controls Bar */}
+      <Box
+        sx={{
+          position: 'absolute',
+          top: 8,
+          left: 8,
+          right: 8,
+          zIndex: 10,
+          display: 'flex',
+          gap: 1,
+        }}
+      >
+        {/* Search Autocomplete */}
+        <Autocomplete
+          sx={{ 
+            flex: 1,
+            maxWidth: isFullscreen ? 400 : 250,
+            '& .MuiOutlinedInput-root': {
+              backgroundColor: 'white',
+              fontSize: '14px',
+            }
+          }}
+          options={searchResults}
+          getOptionLabel={(option) => option.place_name}
+          loading={isSearching}
+          onInputChange={(_, newValue) => setSearchQuery(newValue)}
+          onChange={(_, newValue) => handleSearchResultSelect(newValue)}
+          renderInput={(params) => (
+            <TextField
+              {...params}
+              placeholder="Tìm kiếm địa điểm..."
+              size="small"
+              InputProps={{
+                ...params.InputProps,
+                startAdornment: <SearchIcon sx={{ color: 'grey.500', mr: 1 }} />,
+              }}
+            />
+          )}
+          renderOption={(props, option) => (
+            <Box component="li" {...props}>
+              <Typography variant="body2" sx={{ fontSize: '14px' }}>
+                {option.place_name}
+              </Typography>
+            </Box>
+          )}
+          PaperComponent={({ children, ...props }) => (
+            <Paper {...props} sx={{ maxHeight: 200, overflow: 'auto' }}>
+              {children}
+            </Paper>
+          )}
+        />
+
+        {/* Control Buttons */}
+        <Box sx={{ display: 'flex', gap: 1 }}>
+          {/* Current Location Button */}
+          <IconButton
+            onClick={getCurrentLocation}
+            size="small"
+            sx={{
+              backgroundColor: 'white',
+              color: 'primary.main',
+              boxShadow: 1,
+              '&:hover': {
+                backgroundColor: 'grey.100',
+              },
+            }}
+          >
+            <MyLocationIcon />
+          </IconButton>
+
+          {/* Fullscreen Toggle Button */}
+          <IconButton
+            onClick={onToggleFullscreen}
+            size="small"
+            sx={{
+              backgroundColor: 'white',
+              color: 'primary.main',
+              boxShadow: 1,
+              '&:hover': {
+                backgroundColor: 'grey.100',
+              },
+            }}
+          >
+            {isFullscreen ? <FullscreenExit /> : <Fullscreen />}
+          </IconButton>
+        </Box>
+      </Box>
+
+      {/* Map Container */}
+      <div
+        ref={mapContainer}
+        style={{
+          width: "100%",
+          height: mapHeight,
+          borderRadius: "8px",
+          border: "1px solid #d1d5db",
+          transition: 'height 0.3s ease',
+          minHeight: isFullscreen ? '70vh' : '300px',
+          backgroundColor: '#f8f9fa', // Fallback background color
+        }}
+      />
+      
+      {/* Loading/Error Message */}
+      {!MAPBOX_ACCESS_TOKEN || MAPBOX_ACCESS_TOKEN === "YOUR_MAPBOX_ACCESS_TOKEN_HERE" ? (
+        <Box
+          sx={{
+            position: 'absolute',
+            top: '50%',
+            left: '50%',
+            transform: 'translate(-50%, -50%)',
+            textAlign: 'center',
+            backgroundColor: 'rgba(255, 255, 255, 0.9)',
+            padding: 2,
+            borderRadius: 1,
+            border: '1px solid #e0e0e0',
+          }}
+        >
+          <Typography variant="body2" color="error">
+            Mapbox Access Token chưa được cấu hình
+          </Typography>
+          <Typography variant="caption" color="text.secondary">
+            Vui lòng cập nhật MAPBOX_ACCESS_TOKEN trong code
+          </Typography>
+        </Box>
+      ) : null}
+    </Box>
+  );
+};
+
 export function AddAreaModal({
   isOpen,
   onClose,
@@ -152,30 +486,43 @@ export function AddAreaModal({
     handleSubmit,
     handleClose: clearFormData,
   } = useAreaForm(editArea);
+  
   const [mapCenter, setMapCenter] = useState(
     editArea
       ? { lat: editArea.latitude, lng: editArea.longitude }
       : defaultCenter
   );
 
-  const handleMapClick = (event: google.maps.MapMouseEvent) => {
-    if (event.latLng) {
-      const lat = event.latLng.lat();
-      const lng = event.latLng.lng();
-      handleInputChange("latitude", lat);
-      handleInputChange("longitude", lng);
-      setMapCenter({ lat, lng });
+  const [isFullscreen, setIsFullscreen] = useState(false);
+useEffect(() => {
+    if (editArea) {
+      setMapCenter({
+        lat: editArea.latitude,
+        lng: editArea.longitude,
+      });
+    } else {
+      setMapCenter(defaultCenter);
     }
+  }, [editArea]);
+  const handleMapClick = (lng: number, lat: number) => {
+    handleInputChange("latitude", lat);
+    handleInputChange("longitude", lng);
+    setMapCenter({ lat, lng });
   };
 
   const handleModalClose = () => {
     clearFormData();
-    setMapCenter(defaultCenter); // Reset mapCenter khi đóng modal
+    setMapCenter(defaultCenter); 
+    setIsFullscreen(false); // Reset fullscreen khi đóng modal
     onClose();
   };
 
   const handleResetMap = () => {
-    setMapCenter(defaultCenter); // Reset mapCenter về giá trị mặc định
+    setMapCenter(defaultCenter); 
+  };
+
+  const handleToggleFullscreen = () => {
+    setIsFullscreen(!isFullscreen);
   };
 
   if (!isOpen) return null;
@@ -184,16 +531,18 @@ export function AddAreaModal({
     <Dialog
       open={isOpen}
       onClose={handleModalClose}
-      maxWidth="sm"
+      maxWidth={isFullscreen ? "lg" : "sm"}
       fullWidth
+      fullScreen={isFullscreen}
       sx={{
         "& .MuiDialog-paper": {
-          maxWidth: "32rem",
-          margin: 0,
-          borderRadius: 0,
+          maxWidth: isFullscreen ? "none" : "32rem",
+          margin: isFullscreen ? 0 : "auto",
+          borderRadius: isFullscreen ? 0 : 0,
           boxShadow: 24,
           transform: isOpen ? "translateX(0)" : "translateX(100%)",
           transition: "transform 0.3s ease-in-out",
+          height: isFullscreen ? "100vh" : "auto",
         },
       }}
       PaperProps={{ sx: { bgcolor: "background.paper" } }}
@@ -394,16 +743,13 @@ export function AddAreaModal({
                 >
                   Chọn Vị Trí Trên Bản Đồ
                 </Typography>
-                <LoadScript googleMapsApiKey="AIzaSyAjdoFr8FEz_oEzRH1PwUClVqIO3EPeX9U">
-                  <GoogleMap
-                    mapContainerStyle={mapContainerStyle}
-                    center={mapCenter}
-                    zoom={15}
-                    onClick={handleMapClick}
-                  >
-                    <Marker position={mapCenter} />
-                  </GoogleMap>
-                </LoadScript>
+                <MapboxMap
+                  center={mapCenter}
+                  onMapClick={handleMapClick}
+                  isOpen={isOpen}
+                  isFullscreen={isFullscreen}
+                  onToggleFullscreen={handleToggleFullscreen}
+                />
               </Box>
 
               {editArea && (
