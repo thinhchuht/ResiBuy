@@ -120,6 +120,7 @@ namespace ResiBuy.Server.Application.Commands.OrderCommands
                 {
                     var user = await userDbService.GetUserById(order.UserId);
                     var shippingAddress = await roomDbService.GetByIdAsync(order.ShippingAddressId);
+                    await shipperDbService.UpdateTimeDelevery(order.ShipperId.Value);
                     if (user != null && shippingAddress != null)
                     {
                         var htmlBody = GenerateCreateOrderHtmlBody(new[] { order }, user, shippingAddress);

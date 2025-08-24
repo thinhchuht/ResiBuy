@@ -40,6 +40,14 @@ interface CheckoutSummarySectionProps {
     selectedOtherRoom: string;
     paymentMethod: string;
   }) => void;
+  onAddressChange?: (info: {
+    deliveryType: "my-room" | "other";
+    selectedRoom: string;
+    selectedArea: string;
+    selectedBuilding: string;
+    selectedOtherRoom: string;
+    paymentMethod: string;
+  }) => void;
   userRooms?: {
     roomId: string;
     roomName: string;
@@ -91,7 +99,7 @@ const formatPrice = (price?: number | null) => {
   );
 };
 
-const CheckoutSummarySection = ({ orders, grandTotal, onCheckout, userRooms = [], isLoading = false }: CheckoutSummarySectionProps) => {
+const CheckoutSummarySection = ({ orders, grandTotal, onCheckout, onAddressChange, userRooms = [], isLoading = false }: CheckoutSummarySectionProps) => {
   const { error: showError } = useToastify();
 
   const [areasData, setAreasData] = useState<Area[]>([]);
@@ -280,6 +288,15 @@ const CheckoutSummarySection = ({ orders, grandTotal, onCheckout, userRooms = []
                           setFieldValue("selectedOtherRoom", "");
                           if (!values.selectedRoom && userRooms.length > 0) {
                             setFieldValue("selectedRoom", userRooms[0].roomId);
+                            // Auto notify parent when switching back to my-room and defaulting a room
+                            onAddressChange?.({
+                              ...values,
+                              deliveryType: "my-room",
+                              selectedRoom: userRooms[0].roomId,
+                              selectedArea: "",
+                              selectedBuilding: "",
+                              selectedOtherRoom: "",
+                            });
                           }
                         } else {
                           setFieldValue("selectedRoom", "");
@@ -294,7 +311,20 @@ const CheckoutSummarySection = ({ orders, grandTotal, onCheckout, userRooms = []
                 {values.deliveryType === "my-room" ? (
                   <FormControl fullWidth sx={{ mt: 2 }} error={touched.selectedRoom && Boolean(errors.selectedRoom)}>
                     <InputLabel>Chọn phòng</InputLabel>
-                    <Select name="selectedRoom" value={values.selectedRoom} label="Chọn phòng" onChange={handleChange} onBlur={() => handleFieldBlur("selectedRoom")}>
+                    <Select
+                      name="selectedRoom"
+                      value={values.selectedRoom}
+                      label="Chọn phòng"
+                      onChange={(e) => {
+                        handleChange(e);
+                        // Auto notify parent on my-room change
+                        onAddressChange?.({
+                          ...values,
+                          selectedRoom: e.target.value as string,
+                        });
+                      }}
+                      onBlur={() => handleFieldBlur("selectedRoom")}
+                    >
                       {userRooms.map((room) => (
                         <MenuItem key={room.roomId} value={room.roomId}>
                           {`${room.roomName} - ${room.buildingName} - ${room.areaName}`}
@@ -371,7 +401,12 @@ const CheckoutSummarySection = ({ orders, grandTotal, onCheckout, userRooms = []
                       value={selectedOtherRoomObject}
                       onChange={(_, newValue) => {
                         setSelectedOtherRoomObject(newValue);
-                        setFieldValue("selectedOtherRoom", newValue ? newValue.id : "");
+                        setFieldValue("selectedOtherRoom", newValue?.id ?? "");
+                        // Auto notify parent on other-room change
+                        onAddressChange?.({
+                          ...values,
+                          selectedOtherRoom: newValue?.id ?? "",
+                        });
                       }}
                       onInputChange={(_, newInputValue) => {
                         setRoomSearchText(newInputValue);

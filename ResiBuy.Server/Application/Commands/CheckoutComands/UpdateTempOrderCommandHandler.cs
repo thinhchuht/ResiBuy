@@ -1,4 +1,4 @@
-﻿using ResiBuy.Server.Infrastructure.DbServices.CartItemDbService;
+using ResiBuy.Server.Infrastructure.DbServices.CartItemDbService;
 using ResiBuy.Server.Infrastructure.DbServices.OrderDbServices;
 using ResiBuy.Server.Infrastructure.DbServices.VoucherDbServices;
 using ResiBuy.Server.Infrastructure.Model.DTOs.CheckoutDtos;
@@ -26,7 +26,7 @@ namespace ResiBuy.Server.Application.Commands.CheckoutComands
             if (request.Dto.AddressId.HasValue)
             {
                 var room = await roomDbService.GetByIdAsync(request.Dto.AddressId.Value);
-                if(!room.IsActive) throw new CustomException(ExceptionErrorCode.ValidationFailed, $"Phòng {room.Name} hiện đang không hoạt động, hãy chọn địa chỉ khác");
+                if (!room.IsActive) throw new CustomException(ExceptionErrorCode.ValidationFailed, $"Phòng {room.Name} hiện đang không hoạt động, hãy chọn địa chỉ khác");
                 if (!room.Building.IsActive) throw new CustomException(ExceptionErrorCode.ValidationFailed, $"Tòa nhà {room.Building.Name} hiện đang không hoạt động, hãy chọn địa chỉ khác");
                 if (!room.Building.IsActive) throw new CustomException(ExceptionErrorCode.ValidationFailed, $"Tòa nhà {room.Building.Area.Name} hiện đang không hoạt động, hãy chọn địa chỉ khác");
                 checkoutData.AddressId = request.Dto.AddressId;
@@ -42,7 +42,7 @@ namespace ResiBuy.Server.Application.Commands.CheckoutComands
                     if (request.Dto.AddressId.HasValue)
                     {
                         var weight = order.ProductDetails.Select(pd => pd.Weight).Sum();
-                        updateOrder.ShippingFee = await orderDbService.ShippingFeeCharged(request.Dto.AddressId.Value, store.RoomId, weight);
+                        order.ShippingFee = await orderDbService.ShippingFeeCharged(request.Dto.AddressId.Value, store.RoomId, weight);
                     }
                     order.Note = updateOrder.Note;
                     if (updateOrder.VoucherId.HasValue && updateOrder.VoucherId != Guid.Empty)
@@ -53,7 +53,7 @@ namespace ResiBuy.Server.Application.Commands.CheckoutComands
                         var voucher = await voucherDbService.GetByIdBaseAsync(updateOrder.VoucherId.Value);
                         if (voucher == null || voucher.StoreId != order.StoreId)
                             throw new CustomException(ExceptionErrorCode.ValidationFailed, "Voucher không hợp lệ hoặc không thuộc cửa hàng này");
-                        if(voucher.Quantity <= 0) throw new CustomException(ExceptionErrorCode.ValidationFailed, "Voucher đã hết hàng");
+                        if (voucher.Quantity <= 0) throw new CustomException(ExceptionErrorCode.ValidationFailed, "Voucher đã hết hàng");
                         await voucherDbService.CheckIsActiveVouchers([voucher.Id]);
                         if (voucher.MinOrderPrice > order.TotalBeforeDiscount)
                             throw new CustomException(ExceptionErrorCode.ValidationFailed, $"Đơn hàng của bạn chưa đủ điều kiện sử dụng voucher này, cần tối thiểu {voucher.MinOrderPrice}đ");

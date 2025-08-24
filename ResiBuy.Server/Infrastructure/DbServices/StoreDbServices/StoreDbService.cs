@@ -48,6 +48,7 @@ namespace ResiBuy.Server.Infrastructure.DbServices.StoreDbServices
                 var store = await _context.Stores.Include(s => s.Room)
                         .ThenInclude(r => r.Building)
                         .ThenInclude(b => b.Area)
+                        .Include(s => s.Owner)
                     .FirstOrDefaultAsync(s => s.Id == id);
                 return store;
             }
@@ -234,9 +235,10 @@ namespace ResiBuy.Server.Infrastructure.DbServices.StoreDbServices
 
         public async Task<Dictionary<int, ProductAndSale>> TopSaleProduct(Guid storeId, DateTime startDate, DateTime endDate)
         {
-            var store = await _context.Stores.Include(s => s.Orders).ThenInclude(o => o.Items).ThenInclude(i => i.ProductDetail).ThenInclude(p => p.Product).FirstOrDefaultAsync(s => s.Id == storeId);
+            var store = await _context.Stores.Include(s => s.Orders).ThenInclude(o => o.Items).ThenInclude(i => i.ProductDetail).ThenInclude(p => p.Product)
+                .ThenInclude(p => p.ProductDetails).ThenInclude(pd => pd.Image).FirstOrDefaultAsync(s => s.Id == storeId);
             Dictionary<int, ProductAndSale> productAndSales = new Dictionary<int, ProductAndSale>();
-            var successedOrder = store.Orders.Where(o => o.Status == OrderStatus.Delivered && o.CreateAt >= startDate && o.CreateAt <= endDate);
+            var successedOrder = store.Orders.Where(o => o.Status == OrderStatus.Delivered && o.UpdateAt >= startDate && o.UpdateAt <= endDate);
             foreach (var order in successedOrder)
             {
                 foreach (var item in order.Items)

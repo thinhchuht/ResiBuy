@@ -29,10 +29,24 @@ namespace ResiBuy.Server.Application.Commands.CheckoutComands
             var voucherIds = checkoutData.Orders.Select(o => o.VoucherId).ToList();
             var checkVoucherRs = await voucherDbService.CheckIsActiveVouchers(voucherIds);
             if (!checkVoucherRs.IsSuccess()) throw new CustomException(ExceptionErrorCode.ValidationFailed, checkVoucherRs.Message);
+            var productDetailIds = checkoutData.Orders.SelectMany(o => o.ProductDetails).Select(pd => pd.Id).ToList();
+
+            var productDetails = await productDetailDbService.GetBatchAsync(productDetailIds);
+
+            foreach (var pd in productDetails)
+            {
+                if (pd.Product.IsOutOfStock || pd.IsOutOfStock || pd.Quantity <= 0) throw new CustomException(ExceptionErrorCode.ValidationFailed, $"Mặt hàng {pd.Product.Name} đã hết hàng.");
+                var orderPds = checkoutData.Orders
+                    .SelectMany(o => o.ProductDetails)
+                    .Where(opd => opd.Id == pd.Id);
+
+                if (orderPds.Any(opd => opd.Quantity > pd.Quantity))
+                    throw new CustomException(ExceptionErrorCode.ValidationFailed, $"Mặt hàng {pd.Product.Name} chỉ còn {pd.Quantity} sản phẩm.");
+            }
             cart.IsCheckingOut = true;
             try
             {
-               await cartDbService.UpdateAsync(cart);
+                await cartDbService.UpdateAsync(cart);
             }
             catch (DbUpdateConcurrencyException)
             {
@@ -61,13 +75,8 @@ namespace ResiBuy.Server.Application.Commands.CheckoutComands
                     }).ToList()
                 }).ToList()
             };
-            var productDetailIds = checkoutData.Orders.SelectMany(o => o.ProductDetails).Select(pd => pd.Id).ToList();
-            var rs = await productDetailDbService.CheckIsOutOfStock(productDetailIds);
-            if(rs.IsSuccess())
-            {
-                var message = JsonSerializer.Serialize(checkoutDto);
-                producer.ProduceMessageAsync("checkout", message, "checkout-topic");
-            }
+            var message = JsonSerializer.Serialize(checkoutDto);
+            producer.ProduceMessageAsync("checkout", message, "checkout-topic");
             return ResponseModel.SuccessResponse();
         }
     }

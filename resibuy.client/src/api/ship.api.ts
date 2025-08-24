@@ -58,6 +58,15 @@ const shipperApi = {
     return response.data;
   },
 
+  ShipperCheckOut: async (shipperId: string, isOnline: boolean) => {
+    const response = await axiosClient.put(
+      `${shipperUrl}/status`,
+      { shipperId, isOnline },
+      { headers: { "Content-Type": "application/json" } }
+    );
+    return response.data;
+  },
+
   stats: async () => {
     const response = await axiosClient.get(`${shipperUrl}/stats`);
     return response.data;

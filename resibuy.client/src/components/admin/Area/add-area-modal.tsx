@@ -13,6 +13,7 @@ import {
   Autocomplete,
   Paper,
 } from "@mui/material";
+
 import { 
   Close, 
   LocationOn as AreaIcon, 
@@ -25,8 +26,6 @@ import type { AreaDto } from "../../../types/dtoModels";
 import { useState, useEffect, useRef } from "react";
 import mapboxgl from "mapbox-gl";
 import type { AreaFormData } from "./seg/utlis";
-
-// Cần cài đặt mapbox-gl: npm install mapbox-gl @types/mapbox-gl
  import 'mapbox-gl/dist/mapbox-gl.css';
 
 interface AddAreaModalProps {
@@ -51,6 +50,8 @@ const defaultCenter = {
 
 
 const MAPBOX_ACCESS_TOKEN = import.meta.env.VITE_MAPBOX_ACCESS_TOKEN;
+
+
 
 export const useAreaForm = (editArea?: AreaDto | null) => {
   const [formData, setFormData] = useState<AreaFormData>({
@@ -123,7 +124,7 @@ export const useAreaForm = (editArea?: AreaDto | null) => {
           isActive: true,
         });
         setErrors({});
-        onReset(); // Gọi reset mapCenter sau khi thêm mới
+        onReset(); 
       }
     } catch (error: any) {
       console.error("Lỗi khi submit khu vực:", error.message);
@@ -472,6 +473,7 @@ const MapboxMap: React.FC<MapboxMapProps> = ({
   );
 };
 
+
 export function AddAreaModal({
   isOpen,
   onClose,
@@ -487,6 +489,8 @@ export function AddAreaModal({
     handleClose: clearFormData,
   } = useAreaForm(editArea);
   
+
+
   const [mapCenter, setMapCenter] = useState(
     editArea
       ? { lat: editArea.latitude, lng: editArea.longitude }
@@ -525,6 +529,16 @@ useEffect(() => {
     setIsFullscreen(!isFullscreen);
   };
 
+  const handleModalClose = () => {
+    clearFormData();
+    setMapCenter(defaultCenter); // Reset mapCenter khi đóng modal
+    onClose();
+  };
+
+  const handleResetMap = () => {
+    setMapCenter(defaultCenter); // Reset mapCenter về giá trị mặc định
+  };
+
   if (!isOpen) return null;
 
   return (
@@ -532,6 +546,7 @@ useEffect(() => {
       open={isOpen}
       onClose={handleModalClose}
       maxWidth={isFullscreen ? "lg" : "sm"}
+
       fullWidth
       fullScreen={isFullscreen}
       sx={{
