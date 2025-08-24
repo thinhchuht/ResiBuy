@@ -13,13 +13,13 @@ import {
   Autocomplete,
   Paper,
 } from "@mui/material";
-import { 
-  Close, 
-  LocationOn as AreaIcon, 
-  Fullscreen, 
+import {
+  Close,
+  LocationOn as AreaIcon,
+  Fullscreen,
   FullscreenExit,
   Search as SearchIcon,
-  MyLocation as MyLocationIcon
+  MyLocation as MyLocationIcon,
 } from "@mui/icons-material";
 import type { AreaDto } from "../../../types/dtoModels";
 import { useState, useEffect, useRef } from "react";
@@ -27,7 +27,7 @@ import mapboxgl from "mapbox-gl";
 import type { AreaFormData } from "./seg/utlis";
 
 // Cần cài đặt mapbox-gl: npm install mapbox-gl @types/mapbox-gl
- import 'mapbox-gl/dist/mapbox-gl.css';
+import "mapbox-gl/dist/mapbox-gl.css";
 
 interface AddAreaModalProps {
   isOpen: boolean;
@@ -45,10 +45,9 @@ const mapContainerStyle = {
 };
 
 const defaultCenter = {
-  lat: 10.7769, 
+  lat: 10.7769,
   lng: 106.7009,
 };
-
 
 const MAPBOX_ACCESS_TOKEN = import.meta.env.VITE_MAPBOX_ACCESS_TOKEN;
 
@@ -162,23 +161,23 @@ interface MapboxMapProps {
   onToggleFullscreen: () => void;
 }
 
-const MapboxMap: React.FC<MapboxMapProps> = ({ 
-  center, 
-  onMapClick, 
-  isOpen, 
+const MapboxMap: React.FC<MapboxMapProps> = ({
+  center,
+  onMapClick,
+  isOpen,
   isFullscreen,
-  onToggleFullscreen
+  onToggleFullscreen,
 }) => {
   const mapContainer = useRef<HTMLDivElement>(null);
   const map = useRef<mapboxgl.Map | null>(null);
   const marker = useRef<mapboxgl.Marker | null>(null);
-  const [searchQuery, setSearchQuery] = useState<string>('');
+  const [searchQuery, setSearchQuery] = useState<string>("");
   const [searchResults, setSearchResults] = useState<SearchResult[]>([]);
   const [isSearching, setIsSearching] = useState<boolean>(false);
 
   // Function to search places using Mapbox Geocoding API
   const searchPlaces = async (query: string) => {
-    if (!query.trim() || !MAPBOX_ACCESS_TOKEN ) {
+    if (!query.trim() || !MAPBOX_ACCESS_TOKEN) {
       setSearchResults([]);
       return;
     }
@@ -186,17 +185,19 @@ const MapboxMap: React.FC<MapboxMapProps> = ({
     setIsSearching(true);
     try {
       const response = await fetch(
-        `https://api.mapbox.com/geocoding/v5/mapbox.places/${encodeURIComponent(query)}.json?access_token=${MAPBOX_ACCESS_TOKEN}&country=VN&limit=5`
+        `https://api.mapbox.com/geocoding/v5/mapbox.places/${encodeURIComponent(
+          query
+        )}.json?access_token=${MAPBOX_ACCESS_TOKEN}&country=VN&limit=5`
       );
-      
+
       if (!response.ok) {
         throw new Error(`HTTP error! status: ${response.status}`);
       }
-      
+
       const data = await response.json();
       setSearchResults(data.features || []);
     } catch (error) {
-      console.error('Error searching places:', error);
+      console.error("Error searching places:", error);
       setSearchResults([]);
     } finally {
       setIsSearching(false);
@@ -223,17 +224,19 @@ const MapboxMap: React.FC<MapboxMapProps> = ({
             map.current.flyTo({
               center: [longitude, latitude],
               zoom: 15,
-              duration: 2000
+              duration: 2000,
             });
           }
         },
         (error) => {
-          console.error('Error getting location:', error);
-          alert('Không thể lấy vị trí hiện tại. Vui lòng kiểm tra quyền truy cập vị trí.');
+          console.error("Error getting location:", error);
+          alert(
+            "Không thể lấy vị trí hiện tại. Vui lòng kiểm tra quyền truy cập vị trí."
+          );
         }
       );
     } else {
-      alert('Trình duyệt không hỗ trợ định vị.');
+      alert("Trình duyệt không hỗ trợ định vị.");
     }
   };
 
@@ -246,68 +249,73 @@ const MapboxMap: React.FC<MapboxMapProps> = ({
         map.current.flyTo({
           center: [lng, lat],
           zoom: 15,
-          duration: 2000
+          duration: 2000,
         });
       }
-      setSearchQuery('');
+      setSearchQuery("");
       setSearchResults([]);
     }
   };
 
   useEffect(() => {
-    if (!mapContainer.current || !isOpen || !MAPBOX_ACCESS_TOKEN || MAPBOX_ACCESS_TOKEN === "YOUR_MAPBOX_ACCESS_TOKEN_HERE") {
-      console.error('Mapbox access token is missing or invalid');
+    if (
+      !mapContainer.current ||
+      !isOpen ||
+      !MAPBOX_ACCESS_TOKEN ||
+      MAPBOX_ACCESS_TOKEN === "YOUR_MAPBOX_ACCESS_TOKEN_HERE"
+    ) {
+      console.error("Mapbox access token is missing or invalid");
       return;
     }
 
     // Initialize map
     mapboxgl.accessToken = MAPBOX_ACCESS_TOKEN;
-    
+
     try {
       map.current = new mapboxgl.Map({
         container: mapContainer.current,
-        style: 'mapbox://styles/mapbox/streets-v12',
+        style: "mapbox://styles/mapbox/streets-v12",
         center: [center.lng, center.lat],
         zoom: 15,
         attributionControl: false,
       });
 
       // Handle map load event
-      map.current.on('load', () => {
-        console.log('Map loaded successfully');
+      map.current.on("load", () => {
+        console.log("Map loaded successfully");
       });
 
       // Handle map errors
-      map.current.on('error', (e) => {
-        console.error('Map error:', e.error);
+      map.current.on("error", (e) => {
+        console.error("Map error:", e.error);
       });
 
       // Add navigation control after map loads
-      map.current.addControl(new mapboxgl.NavigationControl(), 'top-right');
+      map.current.addControl(new mapboxgl.NavigationControl(), "top-right");
 
       // Add click event listener
-      map.current.on('click', (e) => {
+      map.current.on("click", (e) => {
         const { lng, lat } = e.lngLat;
         onMapClick(lng, lat);
       });
 
       // Add initial marker
       marker.current = new mapboxgl.Marker({
-        color: '#3b82f6', // Blue color
+        color: "#3b82f6", // Blue color
         draggable: true,
       })
         .setLngLat([center.lng, center.lat])
         .addTo(map.current);
 
       // Add drag event to marker
-      marker.current.on('dragend', () => {
+      marker.current.on("dragend", () => {
         if (marker.current) {
           const lngLat = marker.current.getLngLat();
           onMapClick(lngLat.lng, lngLat.lat);
         }
       });
     } catch (error) {
-      console.error('Error initializing map:', error);
+      console.error("Error initializing map:", error);
     }
 
     // Cleanup function
@@ -339,31 +347,31 @@ const MapboxMap: React.FC<MapboxMapProps> = ({
     }
   }, [isFullscreen]);
 
-  const mapHeight = isFullscreen ? '70vh' : '300px';
+  const mapHeight = isFullscreen ? "70vh" : "300px";
 
   return (
-    <Box sx={{ position: 'relative' }}>
+    <Box sx={{ position: "relative" }}>
       {/* Search and Controls Bar */}
       <Box
         sx={{
-          position: 'absolute',
+          position: "absolute",
           top: 8,
           left: 8,
           right: 8,
           zIndex: 10,
-          display: 'flex',
+          display: "flex",
           gap: 1,
         }}
       >
         {/* Search Autocomplete */}
         <Autocomplete
-          sx={{ 
+          sx={{
             flex: 1,
             maxWidth: isFullscreen ? 400 : 250,
-            '& .MuiOutlinedInput-root': {
-              backgroundColor: 'white',
-              fontSize: '14px',
-            }
+            "& .MuiOutlinedInput-root": {
+              backgroundColor: "white",
+              fontSize: "14px",
+            },
           }}
           options={searchResults}
           getOptionLabel={(option) => option.place_name}
@@ -377,36 +385,38 @@ const MapboxMap: React.FC<MapboxMapProps> = ({
               size="small"
               InputProps={{
                 ...params.InputProps,
-                startAdornment: <SearchIcon sx={{ color: 'grey.500', mr: 1 }} />,
+                startAdornment: (
+                  <SearchIcon sx={{ color: "grey.500", mr: 1 }} />
+                ),
               }}
             />
           )}
           renderOption={(props, option) => (
             <Box component="li" {...props}>
-              <Typography variant="body2" sx={{ fontSize: '14px' }}>
+              <Typography variant="body2" sx={{ fontSize: "14px" }}>
                 {option.place_name}
               </Typography>
             </Box>
           )}
           PaperComponent={({ children, ...props }) => (
-            <Paper {...props} sx={{ maxHeight: 200, overflow: 'auto' }}>
+            <Paper {...props} sx={{ maxHeight: 200, overflow: "auto" }}>
               {children}
             </Paper>
           )}
         />
 
         {/* Control Buttons */}
-        <Box sx={{ display: 'flex', gap: 1 }}>
+        <Box sx={{ display: "flex", gap: 1 }}>
           {/* Current Location Button */}
           <IconButton
             onClick={getCurrentLocation}
             size="small"
             sx={{
-              backgroundColor: 'white',
-              color: 'primary.main',
+              backgroundColor: "white",
+              color: "primary.main",
               boxShadow: 1,
-              '&:hover': {
-                backgroundColor: 'grey.100',
+              "&:hover": {
+                backgroundColor: "grey.100",
               },
             }}
           >
@@ -418,11 +428,11 @@ const MapboxMap: React.FC<MapboxMapProps> = ({
             onClick={onToggleFullscreen}
             size="small"
             sx={{
-              backgroundColor: 'white',
-              color: 'primary.main',
+              backgroundColor: "white",
+              color: "primary.main",
               boxShadow: 1,
-              '&:hover': {
-                backgroundColor: 'grey.100',
+              "&:hover": {
+                backgroundColor: "grey.100",
               },
             }}
           >
@@ -439,25 +449,26 @@ const MapboxMap: React.FC<MapboxMapProps> = ({
           height: mapHeight,
           borderRadius: "8px",
           border: "1px solid #d1d5db",
-          transition: 'height 0.3s ease',
-          minHeight: isFullscreen ? '70vh' : '300px',
-          backgroundColor: '#f8f9fa', // Fallback background color
+          transition: "height 0.3s ease",
+          minHeight: isFullscreen ? "70vh" : "300px",
+          backgroundColor: "#f8f9fa", // Fallback background color
         }}
       />
-      
+
       {/* Loading/Error Message */}
-      {!MAPBOX_ACCESS_TOKEN || MAPBOX_ACCESS_TOKEN === "YOUR_MAPBOX_ACCESS_TOKEN_HERE" ? (
+      {!MAPBOX_ACCESS_TOKEN ||
+      MAPBOX_ACCESS_TOKEN === "YOUR_MAPBOX_ACCESS_TOKEN_HERE" ? (
         <Box
           sx={{
-            position: 'absolute',
-            top: '50%',
-            left: '50%',
-            transform: 'translate(-50%, -50%)',
-            textAlign: 'center',
-            backgroundColor: 'rgba(255, 255, 255, 0.9)',
+            position: "absolute",
+            top: "50%",
+            left: "50%",
+            transform: "translate(-50%, -50%)",
+            textAlign: "center",
+            backgroundColor: "rgba(255, 255, 255, 0.9)",
             padding: 2,
             borderRadius: 1,
-            border: '1px solid #e0e0e0',
+            border: "1px solid #e0e0e0",
           }}
         >
           <Typography variant="body2" color="error">
@@ -486,7 +497,7 @@ export function AddAreaModal({
     handleSubmit,
     handleClose: clearFormData,
   } = useAreaForm(editArea);
-  
+
   const [mapCenter, setMapCenter] = useState(
     editArea
       ? { lat: editArea.latitude, lng: editArea.longitude }
@@ -494,7 +505,7 @@ export function AddAreaModal({
   );
 
   const [isFullscreen, setIsFullscreen] = useState(false);
-useEffect(() => {
+  useEffect(() => {
     if (editArea) {
       setMapCenter({
         lat: editArea.latitude,
@@ -512,13 +523,13 @@ useEffect(() => {
 
   const handleModalClose = () => {
     clearFormData();
-    setMapCenter(defaultCenter); 
+    setMapCenter(defaultCenter);
     setIsFullscreen(false); // Reset fullscreen khi đóng modal
     onClose();
   };
 
   const handleResetMap = () => {
-    setMapCenter(defaultCenter); 
+    setMapCenter(defaultCenter);
   };
 
   const handleToggleFullscreen = () => {
