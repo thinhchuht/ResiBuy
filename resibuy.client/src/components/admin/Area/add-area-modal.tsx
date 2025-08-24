@@ -26,7 +26,6 @@ import { useState, useEffect, useRef } from "react";
 import mapboxgl from "mapbox-gl";
 import type { AreaFormData } from "./seg/utlis";
 
-// Cần cài đặt mapbox-gl: npm install mapbox-gl @types/mapbox-gl
 import "mapbox-gl/dist/mapbox-gl.css";
 
 interface AddAreaModalProps {
@@ -36,13 +35,6 @@ interface AddAreaModalProps {
   editArea?: AreaDto | null;
 }
 
-const mapContainerStyle = {
-  width: "100%",
-  height: "300px",
-  borderRadius: "8px",
-  border: "1px solid",
-  borderColor: "grey.300",
-};
 
 const defaultCenter = {
   lat: 10.7769,
@@ -187,7 +179,7 @@ const MapboxMap: React.FC<MapboxMapProps> = ({
       const response = await fetch(
         `https://api.mapbox.com/geocoding/v5/mapbox.places/${encodeURIComponent(
           query
-        )}.json?access_token=${MAPBOX_ACCESS_TOKEN}&country=VN&limit=5`
+        )}.json?access_token=${MAPBOX_ACCESS_TOKEN}&country=VN&limit=5&language=vi`
       );
 
       if (!response.ok) {
@@ -268,7 +260,7 @@ const MapboxMap: React.FC<MapboxMapProps> = ({
       return;
     }
 
-    // Initialize map
+    // Initialize map with Vietnamese style
     mapboxgl.accessToken = MAPBOX_ACCESS_TOKEN;
 
     try {
@@ -278,11 +270,45 @@ const MapboxMap: React.FC<MapboxMapProps> = ({
         center: [center.lng, center.lat],
         zoom: 15,
         attributionControl: false,
+        // Thêm tham số để hiển thị tiếng Việt
+        transformRequest: (url, resourceType) => {
+          if (url.includes('mapbox.com')) {
+            return {
+              url: url + (url.includes('?') ? '&' : '?') + 'language=vi',
+            };
+          }
+          return { url };
+        },
+      });
+
+      // Set map language to Vietnamese after initialization
+      map.current.on('style.load', () => {
+        // Đặt ngôn ngữ cho các layer có text
+        const layers = map.current?.getStyle().layers;
+        if (layers) {
+          layers.forEach((layer) => {
+            if (layer.type === 'symbol' && layer.layout && layer.layout['text-field']) {
+              // Cập nhật text-field để hiển thị tiếng Việt nếu có
+              map.current?.setLayoutProperty(layer.id, 'text-field', [
+                'coalesce',
+                ['get', 'name_vi'],
+                ['get', 'name_en'],
+                ['get', 'name']
+              ]);
+            }
+          });
+        }
       });
 
       // Handle map load event
       map.current.on("load", () => {
         console.log("Map loaded successfully");
+        
+        // Thêm nguồn dữ liệu và layer cho labels tiếng Việt
+        map.current?.addSource('vietnamese-labels', {
+          type: 'vector',
+          url: 'mapbox://mapbox.mapbox-streets-v8'
+        });
       });
 
       // Handle map errors
@@ -290,8 +316,13 @@ const MapboxMap: React.FC<MapboxMapProps> = ({
         console.error("Map error:", e.error);
       });
 
-      // Add navigation control after map loads
-      map.current.addControl(new mapboxgl.NavigationControl(), "top-right");
+      // Add navigation control after map loads với labels tiếng Việt
+      const nav = new mapboxgl.NavigationControl({
+        showCompass: true,
+        showZoom: true,
+        visualizePitch: false
+      });
+      map.current.addControl(nav, "top-right");
 
       // Add click event listener
       map.current.on("click", (e) => {
@@ -419,6 +450,7 @@ const MapboxMap: React.FC<MapboxMapProps> = ({
                 backgroundColor: "grey.100",
               },
             }}
+            title="Vị trí hiện tại"
           >
             <MyLocationIcon />
           </IconButton>
@@ -435,6 +467,7 @@ const MapboxMap: React.FC<MapboxMapProps> = ({
                 backgroundColor: "grey.100",
               },
             }}
+            title={isFullscreen ? "Thu nhỏ" : "Toàn màn hình"}
           >
             {isFullscreen ? <FullscreenExit /> : <Fullscreen />}
           </IconButton>
