@@ -80,7 +80,7 @@ const ShipperSidebar: React.FC = () => {
       
       <Box sx={{ p: 3, textAlign: "center" }}>
         <Typography variant="h6" fontWeight="bold">
-          ResiBuy Shipper
+         Giao Hàng ResiBuy 
         </Typography>
 
         <Stack alignItems="center" spacing={1} mt={3}>
