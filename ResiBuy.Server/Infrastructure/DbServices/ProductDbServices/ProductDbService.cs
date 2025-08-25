@@ -1,7 +1,4 @@
-﻿using DocumentFormat.OpenXml.Office2010.Excel;
-using Microsoft.EntityFrameworkCore;
-
-namespace ResiBuy.Server.Infrastructure.DbServices.ProductDbServices
+﻿namespace ResiBuy.Server.Infrastructure.DbServices.ProductDbServices
 {
     public class ProductDbService : BaseDbService<Product>, IProductDbService
     {
@@ -15,6 +12,7 @@ namespace ResiBuy.Server.Infrastructure.DbServices.ProductDbServices
         {
             try {    
                 return _context.Products
+                    .Include(p => p.Store)
                     .Include(p => p.ProductDetails)
                         .ThenInclude(pd => pd.Image)
                     .Include(p => p.ProductDetails)
