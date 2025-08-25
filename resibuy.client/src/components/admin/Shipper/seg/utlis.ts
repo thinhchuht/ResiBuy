@@ -58,7 +58,7 @@ export const useShipperForm = (editingShipper?: Shipper | null) => {
   });
 
   const [isSubmitting, setIsSubmitting] = useState(false);
-  const toast = useToastify();
+
 
   // Hàm reset form về trạng thái ban đầu
   const resetForm = () => {
@@ -134,11 +134,10 @@ export const useShipperForm = (editingShipper?: Shipper | null) => {
         isValid = false;
       }
 
-      if (!formData.fullName) {
-        newErrors.fullName = "Họ tên là bắt buộc";
-        isValid = false;
-      }
-
+    if (!formData.fullName || formData.fullName.trim().length === 0) {
+      newErrors.fullName = "Họ tên là bắt buộc";
+      isValid = false;
+    }
       if (!formData.phoneNumber) {
         newErrors.phoneNumber = "Số điện thoại là bắt buộc";
         isValid = false;
@@ -188,53 +187,51 @@ export const useShipperForm = (editingShipper?: Shipper | null) => {
     return isValid;
   };
 
-  const handleSubmit = async (
-    e: React.FormEvent<HTMLFormElement>,
-    onSubmit: (shipper: Shipper) => void
-  ) => {
-    e.preventDefault();
-    if (!validateForm()) return;
+const handleSubmit = async (
+  e: React.FormEvent<HTMLFormElement>,
+  onSubmit: (shipper: Shipper) => Promise<void>
+) => {
+  e.preventDefault();
+  if (!validateForm()) return;
 
-    setIsSubmitting(true);
+  setIsSubmitting(true);
 
-    const parseTime = (time: string): number => {
-      const [hours, minutes] = time.split(":").map(Number);
-      return hours + (minutes / 60);
-    };
-
-    const shipper: Shipper = {
-      id: editingShipper?.id || `shipper-${Date.now()}`,
-      userId: editingShipper?.userId || `user-${Date.now()}`,
-      email: formData.email,
-      fullName: formData.fullName,
-      phoneNumber: formData.phoneNumber,
-      dateOfBirth: new Date(formData.dateOfBirth).toISOString(),
-      identityNumber: formData.identityNumber,
-      isOnline: editingShipper?.isOnline || formData.isAvailable,
-      isLocked: editingShipper?.isLocked ?? !formData.isAvailable,
-      isShipping: editingShipper?.isShipping || false,
-      orders: editingShipper?.orders || [],
-      startWorkTime: parseTime(formData.startWorkTime),
-      endWorkTime: parseTime(formData.endWorkTime),
-      reportCount: editingShipper?.reportCount || 0,
-      lastLocationId: formData.lastLocationId,
-      lastLocation: editingShipper?.lastLocation || { id: formData.lastLocationId, name: "" },
-      lastLocationName: editingShipper?.lastLocationName || "",
-      password: formData.password,
-    };
-
-    try {
-      await onSubmit(shipper);
-      console.log("Submit shipper success, showing toast:", editingShipper ? "Cập nhật shipper thành công!" : "Thêm shipper thành công!");
-      toast.success(editingShipper ? "Cập nhật shipper thành công!" : "Thêm shipper thành công!");
-      resetForm(); // Reset form sau khi submit thành công
-    } catch (error: any) {
-      console.error("Submit shipper error:", error);
-      toast.error(error.message || "Lỗi khi lưu shipper");
-    } finally {
-      setIsSubmitting(false);
-    }
+  const parseTime = (time: string): number => {
+    const [hours, minutes] = time.split(":").map(Number);
+    return hours + (minutes / 60);
   };
+
+  const shipper: Shipper = {
+    id: editingShipper?.id || `shipper-${Date.now()}`,
+    userId: editingShipper?.userId || `user-${Date.now()}`,
+    email: formData.email,
+    fullName: formData.fullName,
+    phoneNumber: formData.phoneNumber,
+    dateOfBirth: new Date(formData.dateOfBirth).toISOString(),
+    identityNumber: formData.identityNumber,
+    isOnline: editingShipper?.isOnline || formData.isAvailable,
+    isLocked: editingShipper?.isLocked ?? !formData.isAvailable,
+    isShipping: editingShipper?.isShipping || false,
+    orders: editingShipper?.orders || [],
+    startWorkTime: parseTime(formData.startWorkTime),
+    endWorkTime: parseTime(formData.endWorkTime),
+    reportCount: editingShipper?.reportCount || 0,
+    lastLocationId: formData.lastLocationId,
+    lastLocation: editingShipper?.lastLocation || { id: formData.lastLocationId, name: "" },
+    lastLocationName: editingShipper?.lastLocationName || "",
+    password: formData.password,
+  };
+
+  try {
+    await onSubmit(shipper);
+    resetForm();
+  } catch (error: any) {
+    console.error("Submit shipper error:", error);
+  } finally {
+    setIsSubmitting(false);
+  }
+};
+
 
   return {
     formData,
@@ -349,7 +346,7 @@ export const calculateShipperStats = async () => {
 };
 
 // Hook useShippersLogic
-export const useShippersLogic = () => {
+export const useShippersLogic = (setStats?: (stats: { totalShippers: number; totalOnline: number; totalShipping: number; totalReported: number }) => void) => {
   const [shippers, setShippers] = useState<Shipper[]>([]);
   const [totalCount, setTotalCount] = useState(0);
   const [pageNumber, setPageNumber] = useState(1);
@@ -479,68 +476,140 @@ export const useShippersLogic = () => {
   };
 
   const handleSubmitShipper = async (shipper: Partial<Shipper>) => {
-    try {
-      if (editingShipper) {
-        const updateResponse = await shipperApi.update({
-          id: shipper.id,
-          startWorkTime: shipper.startWorkTime,
-          endWorkTime: shipper.endWorkTime,
-          isLocked: shipper.isLocked,
-        });
-        console.log("Update shipper response:", updateResponse);
-
-        if (shipper.lastLocationId !== editingShipper.lastLocationId) {
-          const locationResponse = await shipperApi.updateLocation({
-            shipperId: shipper.id,
-            locationId: shipper.lastLocationId,
-          });
-          console.log("Update location response:", locationResponse);
-        }
-
-        setShippers((prev) =>
-          prev.map((s) => (s.id === shipper.id ? { ...s, ...shipper } : s))
-        );
-      } else {
-        const createResponse = await shipperApi.create({
-          phoneNumber: shipper.phoneNumber,
-          email: shipper.email,
-          password: shipper.password,
-          fullName: shipper.fullName,
-          dateOfBirth: shipper.dateOfBirth,
-          identityNumber: shipper.identityNumber,
-          startWorkTime: shipper.startWorkTime,
-          endWorkTime: shipper.endWorkTime,
-          lastLocationId: shipper.lastLocationId,
-        });
-        console.log("Create shipper response:", createResponse);
-        await fetchShippers(pageNumber, pageSize);
+  try {
+    if (editingShipper) {
+      const updateResponse = await shipperApi.update({
+        id: shipper.id,
+        startWorkTime: shipper.startWorkTime,
+        endWorkTime: shipper.endWorkTime,
+        isLocked: shipper.isLocked,
+      });
+      console.log("Update shipper response:", updateResponse);
+      if (updateResponse.code !== 0) {
+        throw new Error(updateResponse.message || "Lỗi khi cập nhật shipper");
       }
-      handleCloseAddModal();
-      console.log("Submit shipper success, showing toast:", editingShipper ? "Cập nhật shipper thành công!" : "Thêm shipper thành công!");
-      toast.success(editingShipper ? "Cập nhật shipper thành công!" : "Thêm shipper thành công!");
-    } catch (error: any) {
-      console.error("Submit shipper error:", error);
-      toast.error(error.message || "Lỗi khi lưu shipper");
-    }
-  };
 
-  const handleToggleLockShipper = async (shipperId: string, currentLockStatus: boolean) => {
-    try {
-      const newLockStatus = !currentLockStatus;
-      const response = await shipperApi.update({ id: shipperId, isLocked: newLockStatus });
-      console.log("Toggle lock response:", response);
+      if (shipper.lastLocationId !== editingShipper.lastLocationId) {
+        const locationResponse = await shipperApi.updateLocation({
+          shipperId: shipper.id,
+          locationId: shipper.lastLocationId,
+        });
+        console.log("Update location response:", locationResponse);
+        if (locationResponse.code !== 0) {
+          throw new Error(locationResponse.message || "Lỗi khi cập nhật vị trí shipper");
+        }
+      }
+
       setShippers((prev) =>
-        prev.map((s) =>
-          s.id === shipperId ? { ...s, isLocked: newLockStatus } : s
-        )
+        prev.map((s) => (s.id === shipper.id ? { ...s, ...shipper } : s))
       );
-      console.log("Toggle lock success, showing toast:", newLockStatus ? "Khóa shipper thành công!" : "Mở khóa shipper thành công!");
-      toast.success(newLockStatus ? "Khóa shipper thành công!" : "Mở khóa shipper thành công!");
-    } catch (error: any) {
-      console.error("Toggle lock shipper error:", error);
-      toast.error(error.message || "Lỗi khi thay đổi trạng thái khóa shipper");
+      toast.success("Cập nhật shipper thành công!");
+
+      // Làm mới danh sách shipper
+      if (Object.keys(searchParams).length === 0) {
+        await fetchShippers(pageNumber, pageSize);
+      } else {
+        await fetchShippersWithFilters(
+          searchParams.keyWord,
+          searchParams.isOnline,
+          searchParams.isLocked,
+          pageNumber,
+          pageSize
+        );
+      }
+
+      // Làm mới stats
+      if (setStats) {
+        const newStats = await calculateShipperStats();
+        setStats(newStats);
+      }
+    } else {
+      const createResponse = await shipperApi.create({
+        phoneNumber: shipper.phoneNumber,
+        email: shipper.email,
+        password: shipper.password,
+        fullName: shipper.fullName,
+        dateOfBirth: shipper.dateOfBirth,
+        identityNumber: shipper.identityNumber,
+        startWorkTime: shipper.startWorkTime,
+        endWorkTime: shipper.endWorkTime,
+        lastLocationId: shipper.lastLocationId,
+      });
+      console.log("Create shipper response:", createResponse);
+      if (createResponse.code !== 0) {
+        throw new Error(createResponse.message || "Lỗi khi tạo shipper");
+      }
+      setShippers((prev) => [...prev, createResponse.data]);
+      toast.success("Thêm shipper thành công!");
+      await fetchShippers(pageNumber, pageSize);
+
+      // Làm mới stats
+      if (setStats) {
+        const newStats = await calculateShipperStats();
+        setStats(newStats);
+      }
     }
-  };
+    handleCloseAddModal();
+  } catch (error: any) {
+    console.error("Submit shipper error:", error);
+    const errorMessage = error.response?.data?.message || "Lỗi khi lưu shipper";
+    // toast.error(errorMessage);
+
+    // Làm mới stats ngay cả khi có lỗi để đảm bảo đồng bộ
+    if (setStats) {
+      const newStats = await calculateShipperStats();
+      setStats(newStats);
+    }
+  }
+};
+ 
+  const handleToggleLockShipper = async (shipperId: string, currentLockStatus: boolean) => {
+  try {
+    const newLockStatus = !currentLockStatus;
+    const response = await shipperApi.update({ id: shipperId, isLocked: newLockStatus });
+    console.log("Toggle lock response:", response);
+    if (response.code !== 0) {
+      throw new Error(response.message || "Lỗi khi thay đổi trạng thái khóa shipper");
+    }
+
+    setShippers((prev) =>
+      prev.map((s) =>
+        s.id === shipperId ? { ...s, isLocked: newLockStatus } : s
+      )
+    );
+    toast.success(newLockStatus ? "Khóa shipper thành công!" : "Mở khóa shipper thành công!");
+
+    // Làm mới danh sách shipper
+    if (Object.keys(searchParams).length === 0) {
+      await fetchShippers(pageNumber, pageSize);
+    } else {
+      await fetchShippersWithFilters(
+        searchParams.keyWord,
+        searchParams.isOnline,
+        searchParams.isLocked,
+        pageNumber,
+        pageSize
+      );
+    }
+
+    // Làm mới stats
+    if (setStats) {
+      const newStats = await calculateShipperStats();
+      console.log("New stats after toggle:", newStats); // Debug log
+      setStats(newStats);
+    }
+  } catch (error: any) {
+    console.error("Toggle lock shipper error:", error);
+    toast.error(error.message || "Lỗi khi thay đổi trạng thái khóa shipper");
+
+    // Làm mới stats ngay cả khi có lỗi để đảm bảo đồng bộ
+    if (setStats) {
+      const newStats = await calculateShipperStats();
+      console.log("New stats after error:", newStats); // Debug log
+      setStats(newStats);
+    }
+  }
+};
 
   const handleExportShippers = async () => {
     try {

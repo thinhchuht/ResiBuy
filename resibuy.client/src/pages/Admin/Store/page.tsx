@@ -612,6 +612,7 @@ export default function StoresPage() {
           headerTitle="Tất Cả Cửa Hàng"
           description="Quản lý cửa hàng, đơn hàng, sản phẩm"
           showExport={true}
+          showSearch={false}
           showBulkActions={false}
           itemsPerPage={15}
          

@@ -112,42 +112,45 @@ export function useBuildingsLogic(areaId?: string) {
   }, []);
 
   const handleSubmitBuilding = useCallback(
-    async (buildingData: BuildingDto) => {
-      setLoading(true);
-      try {
-        if (editingBuilding) {
-          const response = await buildingApi.update(buildingData);
-          if (response.code === 0) {
-            await fetchBuildingsByAreaId(buildingData.areaId!);
-            if (selectedBuilding && selectedBuilding.id === buildingData.id) {
-              setSelectedBuilding(response.data);
-            }
-            toast.success("Cập nhật tòa nhà thành công!");
-          } else {
-            throw new Error(response.message || "Lỗi khi cập nhật tòa nhà");
+  async (buildingData: BuildingDto) => {
+    setLoading(true);
+    try {
+      if (editingBuilding) {
+        const response = await buildingApi.update(buildingData);
+        if (response.code === 0) {
+          await fetchBuildingsByAreaId(buildingData.areaId!);
+          if (selectedBuilding && selectedBuilding.id === buildingData.id) {
+            setSelectedBuilding(response.data);
           }
+          toast.success("Cập nhật tòa nhà thành công!");
         } else {
-          const createData: CreateBuildingDto = {
-            name: buildingData.name,
-            areaId: buildingData.areaId || areaId || "",
-          };
-          const response = await buildingApi.create(createData);
-          if (response.code === 0) {
-            await fetchBuildingsByAreaId(buildingData.areaId!);
-            toast.success("Thêm tòa nhà mới thành công!");
-          } else {
-            throw new Error(response.message || "Lỗi khi thêm tòa nhà");
-          }
+          throw new Error(response.message || "Lỗi khi cập nhật tòa nhà");
         }
-      } catch (err: any) {
-        toast.error(err.message || "Lỗi khi lưu tòa nhà");
-      } finally {
-        setLoading(false);
-        handleCloseAddModal(); // Đóng modal sau khi submit
+      } else {
+        const createData: CreateBuildingDto = {
+          name: buildingData.name,
+          areaId: buildingData.areaId || areaId || "",
+        };
+        const response = await buildingApi.create(createData);
+        if (response.code === 0) {
+          await fetchBuildingsByAreaId(buildingData.areaId!);
+          toast.success("Thêm tòa nhà mới thành công!");
+        } else {
+          throw new Error(response.message || "Lỗi khi thêm tòa nhà");
+        }
       }
-    },
-    [editingBuilding, selectedBuilding, fetchBuildingsByAreaId, toast, areaId]
-  );
+    } catch (err: any) {
+      // Truy cập thông điệp lỗi từ API nếu có
+      const errorMessage =
+        err.response?.data?.message || err.message || "Lỗi khi lưu tòa nhà";
+      toast.error(errorMessage);
+    } finally {
+      setLoading(false);
+      handleCloseAddModal(); // Đóng modal sau khi submit
+    }
+  },
+  [editingBuilding, selectedBuilding, fetchBuildingsByAreaId, toast, areaId]
+);
 
   const handleUpdateStatus = useCallback(
     async (buildingId: string) => {

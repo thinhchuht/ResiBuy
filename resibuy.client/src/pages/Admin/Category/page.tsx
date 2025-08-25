@@ -368,6 +368,7 @@ export default function CategoriesPage() {
           description="Quản lý danh mục"
           showExport={true}
           showBulkActions={false}
+          itemsPerPage={100}
         />
       </Box>
 
