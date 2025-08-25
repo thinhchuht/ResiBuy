@@ -34,6 +34,7 @@ import { OrderStatus, PaymentStatus } from "../../../types/models";
 import { HubEventType, useEventHub, type HubEventHandler } from "../../../hooks/useEventHub";
 import type { ReportCreatedDto } from "../../../types/hubEventDto";
 import { StatsCard } from "../../../layouts/AdminLayout/components/StatsCard";
+import { useToastify } from "../../../hooks/useToastify";
 export interface Report {
   id: string;
   title: string;
@@ -110,7 +111,7 @@ export default function ReportsPage() {
   const [isLoadingStats, setIsLoadingStats] = useState(false);
   const [isDetailModalOpen, setIsDetailModalOpen] = useState(false);
   const [isConfirmModalOpen, setIsConfirmModalOpen] = useState(false);
-
+  const toast = useToastify();
   const handleOrderReported = useCallback(
     (data: ReportCreatedDto) => {
       const newReport: Report = {
@@ -326,6 +327,7 @@ export default function ReportsPage() {
       if (isDetailModalOpen) {
         handleCloseDetailModal();
       }
+      toast.success("Xử lý báo cáo thành công!");
     } catch (error) {
       console.error("Error resolving report:", error);
     }

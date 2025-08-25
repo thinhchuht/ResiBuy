@@ -127,16 +127,12 @@ function notifiConvert(item: NotificationApiItem, user?: User): Notification {
   if (match) status = match[1];
 
   const getReportTargetLabel = (reportTarget: string) => {
-    console.log("reportTarget", reportTarget);
     switch (reportTarget) {
       case "Customer":
-        console.log("Customer", reportTarget);
         return "Khách hàng";
       case "Store":
-        console.log("Store", reportTarget);
         return "Cửa hàng";
       case "Shipper":
-        console.log("Shipper", reportTarget);
         return "Người giao hàng";
       default:
         return "";
@@ -177,8 +173,7 @@ function notifiConvert(item: NotificationApiItem, user?: User): Notification {
       message = `Đơn hàng #${dataObj.id} đã được tạo`;
       break;
     case item.eventName === "OrderReported": {
-      console.log("dataObj", dataObj);
-      console.log("displayLabel", !displayLabel);
+
       if (dataObj.reportTarget === "Store" && displayLabel) {
         const userStore = user?.stores?.find((store: Store) => store.id === dataObj.targetId);
         displayLabel = userStore ? `[${userStore.name}] ` : "";
@@ -190,16 +185,13 @@ function notifiConvert(item: NotificationApiItem, user?: User): Notification {
       break;
     }
     case item.eventName === "ReportResolved": {
-      let storeLabel = "";
-      displayLabel = getReportTargetLabel(dataObj.reportTarget as string);
-      if (dataObj.reportTarget === "Store") {
+      if (dataObj.reportTarget === "Store" && displayLabel) {
         const userStore = user?.stores?.find((store: Store) => store.id === dataObj.targetId);
-        if (userStore) {
-          displayLabel = `[${userStore.name}] `;
-          storeLabel = displayLabel;
-        }
+        displayLabel = userStore ? `[${userStore.name}] ` : "";
+      } else {
+        displayLabel = getReportTargetLabel(dataObj.reportTarget as string);
       }
-      title = `${storeLabel} Báo cáo đơn hàng #${dataObj.orderId} đã được giải quyết`;
+      title = `[${displayLabel}] Báo cáo đơn hàng #${dataObj.orderId} đã được giải quyết`;
       message = dataObj.isAddReportTarget ? `Báo cáo đã được xử lý. ${displayLabel} sẽ bị tính thêm 1 lần cảnh cáo.` : "Báo cáo đã được đóng.";
       break;
     }
@@ -442,7 +434,6 @@ const AppBar: React.FC = () => {
   );
 
   const getReportTargetLabel = (reportTarget: string) => {
-    console.log("reportTarget", reportTarget);
     switch (reportTarget) {
       case "Customer":
         return "Khách hàng";
@@ -795,11 +786,9 @@ const AppBar: React.FC = () => {
     }
 
     if (orderId) {
-      console.log("Found orderId:", orderId);
       setOrderLoading(true);
       try {
         const orderData = await orderApi.getById(orderId);
-        console.log("Order data:", orderData);
         setSelectedOrder(orderData);
         setOrderModalOpen(true);
       } catch (error) {
@@ -808,11 +797,10 @@ const AppBar: React.FC = () => {
         setOrderLoading(false);
       }
     } else if (notification.storeId && notification.title.match(/^\[.*\]/)) {
-      console.log("Found storeId:", notification.storeId, "for notification:", notification.title);
       handleCloseOrderModal();
       navigate(`/store/${notification.storeId}/orders`);
     } else {
-      console.log("No orderId or storeId found for notification:", notification);
+      // No actionable target found for this notification
     }
   };
 
@@ -1583,7 +1571,13 @@ const AppBar: React.FC = () => {
                 size="small"
                 onClick={() => {
                   handleCloseOrderModal();
-                  if (selectedOrder?.store?.id && user?.roles?.includes("SELLER") && user?.stores?.some((store) => store.id === selectedOrder?.store?.id)) {
+                  if (
+                    user?.roles?.includes("SHIPPER") &&
+                    selectedOrder?.id &&
+                    (selectedOrder?.shipper?.id === user?.id || selectedOrder?.shipperId === user?.id)
+                  ) {
+                    navigate(`/shipper/order/${selectedOrder.id}`);
+                  } else if (selectedOrder?.store?.id && user?.roles?.includes("SELLER") && user?.stores?.some((store) => store.id === selectedOrder?.store?.id)) {
                     navigate(`/store/${selectedOrder.store.id}/orders`);
                   } else {
                     navigate("/orders");
