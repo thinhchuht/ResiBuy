@@ -39,7 +39,7 @@ import { LocalizationProvider } from "@mui/x-date-pickers/LocalizationProvider";
 import { startOfDay, endOfDay, startOfWeek, endOfWeek, startOfMonth, endOfMonth, startOfYear, endOfYear, format } from "date-fns";
 import type { Shipper, Order } from "../../../types/models";
 import CustomTableV2 from "../../../components/CustomTableV2"; // Thay CustomTable bằng CustomTableV2
-
+import { CalendarToday as TimesheetIcon } from "@mui/icons-material";import shipperApi from "../../../api/ship.api";
 interface ShipperDetailModalProps {
   isOpen: boolean;
   onClose: () => void;
@@ -47,7 +47,12 @@ interface ShipperDetailModalProps {
   onEdit?: (shipper: Shipper) => void;
   onDelete?: (shipperId: string) => void;
 }
-
+interface Timesheet {
+  id: number;
+  shipperId: string;
+  dateMark: string;
+  isLate: boolean;
+}
 interface OrderDetailDialogProps {
   open: boolean;
   onClose: () => void;
@@ -238,7 +243,7 @@ export function ShipperDetailModal({
   onEdit,
   onDelete,
 }: ShipperDetailModalProps) {
-  const [activeTab, setActiveTab] = useState<"overview" | "orders" | "shipping-fee">("overview");
+  const [activeTab, setActiveTab] = useState<"overview" | "orders" | "shipping-fee" | "timesheets">("overview");
   const [orders, setOrders] = useState<Order[]>([]);
   const [totalOrders, setTotalOrders] = useState<number>(0);
   const [totalRevenue, setTotalRevenue] = useState<number>(0);
@@ -258,11 +263,25 @@ export function ShipperDetailModal({
   const [customFee, setCustomFee] = useState<number>(0);
   const [startDate, setStartDate] = useState<Date | null>(null);
   const [endDate, setEndDate] = useState<Date | null>(null);
+  // Thêm state cho điểm danh
+  const [timesheets, setTimesheets] = useState<Timesheet[]>([]);
+  const [totalTimesheets, setTotalTimesheets] = useState<number>(0);
+  const [countLate, setCountLate] = useState<number>(0);
+  const [countOnTime, setCountOnTime] = useState<number>(0);
+  const [timesheetPagination, setTimesheetPagination] = useState({
+    pageNumber: 1,
+    pageSize: 10,
+    totalCount: 0,
+    totalPages: 1,
+  });
+  const [loadingTimesheets, setLoadingTimesheets] = useState(false);
+  const [timesheetStartDate, setTimesheetStartDate] = useState<Date | null>(startOfMonth(new Date()));
+  const [timesheetEndDate, setTimesheetEndDate] = useState<Date | null>(endOfMonth(new Date()));
   const { getShipperOrders, isShipperAvailable } = useShippersLogic();
   const toast = useToastify();
   const navigate = useNavigate();
 
-  useEffect(() => {
+useEffect(() => {
     if (!isOpen || !shipper?.id) return;
 
     let isMounted = true;
@@ -284,6 +303,7 @@ export function ShipperDetailModal({
           }
         }
 
+        // Fetch total orders
         try {
           const countResponse = await orderApi.countOrder({
             shipperId: shipper.id,
@@ -326,7 +346,8 @@ export function ShipperDetailModal({
         }
 
         // Fetch shipping fees for shipping-fee tab
-        if (activeTab === "shipping-fee") {
+        if 
+        (activeTab === "shipping-fee") {
           const currentDate = startOfDay(new Date());
 
           // Today
@@ -393,6 +414,43 @@ export function ShipperDetailModal({
             if (isMounted) setYearFee(0);
           }
         }
+
+        // Fetch timesheets for timesheets tab
+        if (activeTab === "timesheets" && timesheetStartDate && timesheetEndDate) {
+          setLoadingTimesheets(true);
+          try {
+            const timesheetResponse = await shipperApi.timesheets(
+              shipper.id,
+              format(startOfDay(timesheetStartDate), "yyyy-MM-dd'T'HH:mm:ss"),
+              format(endOfDay(timesheetEndDate), "yyyy-MM-dd'T'HH:mm:ss")
+            );
+            console.log("Timesheets response:", timesheetResponse);
+            if (isMounted) {
+              setTimesheets(timesheetResponse.data || []);
+              setTotalTimesheets(timesheetResponse.countAll || 0);
+              setCountLate(timesheetResponse.countLate || 0);
+              setCountOnTime(timesheetResponse.countOnTime || 0);
+              setTimesheetPagination({
+                pageNumber: timesheetPagination.pageNumber,
+                pageSize: timesheetPagination.pageSize,
+                totalCount: timesheetResponse.countAll || 0,
+                totalPages: Math.ceil((timesheetResponse.countAll || 0) / timesheetPagination.pageSize) || 1,
+              });
+            }
+          } catch (error: any) {
+            console.error("Fetch timesheets error:", error);
+            if (isMounted) {
+              setTimesheets([]);
+              setTotalTimesheets(0);
+              setCountLate(0);
+              setCountOnTime(0);
+              setTimesheetPagination((prev) => ({ ...prev, totalCount: 0, totalPages: 1 }));
+              toast.error(error.message || "Lỗi khi lấy danh sách điểm danh");
+            }
+          } finally {
+            if (isMounted) setLoadingTimesheets(false);
+          }
+        }
       } catch (error: any) {
         console.error("Fetch data error:", error);
         if (isMounted) toast.error(error.message || "Lỗi khi lấy dữ liệu");
@@ -404,7 +462,7 @@ export function ShipperDetailModal({
     return () => {
       isMounted = false;
     };
-  }, [isOpen, shipper?.id, activeTab, orderPagination.pageNumber, orderPagination.pageSize]);
+  }, [isOpen, shipper?.id, activeTab, orderPagination.pageNumber, orderPagination.pageSize, timesheetStartDate, timesheetEndDate]);
 
   const handleCustomFeeSearch = async () => {
     if (!startDate || !endDate) {
@@ -432,7 +490,11 @@ export function ShipperDetailModal({
   };
 
   const handleOrderPageChange = (pageNumber: number) => {
-    setOrderPagination((prev) => ({ ...prev, pageNumber }));
+    setOrderPagination((prev) => ({ ...prev, pageNumber: pageNumber + 1 }));
+  };
+
+  const handleTimesheetPageChange = (pageNumber: number) => {
+    setTimesheetPagination((prev) => ({ ...prev, pageNumber: pageNumber + 1 }));
   };
 
   const handleViewOrder = (order: Order) => {
@@ -533,12 +595,51 @@ export function ShipperDetailModal({
       ),
     },
   ];
-
+const timesheetColumns = [
+    {
+      key: "id" as keyof Timesheet,
+      label: "ID",
+      sortable: true,
+      render: (row: Timesheet) => (
+        <Typography sx={{ fontFamily: "monospace", fontSize: "0.875rem", color: "primary.main" }}>
+          {row.id}
+        </Typography>
+      ),
+    },
+    {
+      key: "dateMark" as keyof Timesheet,
+      label: "Ngày Điểm Danh",
+      sortable: true,
+      render: (row: Timesheet) => (
+        <Typography sx={{ fontSize: "0.875rem", color: "grey.900" }}>
+          {formatDate(row.dateMark)}
+        </Typography>
+      ),
+    },
+    {
+      key: "isLate" as keyof Timesheet,
+      label: "Trạng Thái",
+      sortable: true,
+      render: (row: Timesheet) => (
+        <Chip
+          label={row.isLate ? "Muộn" : "Đúng giờ"}
+        sx={{
+  bgcolor: row.isLate
+    ? "rgba(244, 67, 54, 0.15)"   
+    : "rgba(76, 175, 80, 0.15)",  
+  color: row.isLate ? "error.main" : "success.main",
+  fontSize: "0.75rem",
+  height: 24,
+}}
+        />
+      ),
+    },
+  ];
   if (!isOpen || !shipper) return null;
 
   const currentDate = startOfDay(new Date());
 
-  return (
+return (
     <>
       <Dialog
         open={isOpen}
@@ -744,6 +845,7 @@ export function ShipperDetailModal({
               { id: "overview", label: "Tổng Quan", icon: <ShipperIcon sx={{ fontSize: 16 }} /> },
               { id: "orders", label: "Đơn Hàng", icon: <OrderIcon sx={{ fontSize: 16 }} /> },
               { id: "shipping-fee", label: "Thu nhập từ đơn hoàn thành", icon: <WalletIcon sx={{ fontSize: 16 }} /> },
+              { id: "timesheets", label: "Điểm Danh", icon: <TimesheetIcon sx={{ fontSize: 16 }} /> }, // Thêm tab Điểm danh
             ].map((tab) => (
               <Tab
                 key={tab.id}
@@ -994,108 +1096,207 @@ export function ShipperDetailModal({
             </Box>
           )}
 
-          {activeTab === "shipping-fee" && (
-            <Box>
-              <Typography variant="h6" sx={{ color: "grey.900", mb: 2 }}>
-                Thu nhập từ đơn hoàn thành
-              </Typography>
-              <Box sx={{ display: "grid", gridTemplateColumns: { xs: "1fr", md: "1fr 1fr" }, gap: 3, mb: 4 }}>
-                <Box>
-                  <Typography variant="body2" sx={{ color: "grey.500", fontWeight: "medium" }}>
-                    Hôm Nay ({format(currentDate, "dd/MM/yyyy")})
-                  </Typography>
-                  <Typography sx={{ color: "grey.900", fontSize: "1.25rem", fontWeight: "bold" }}>
-                    {formatCurrency(todayFee)}
-                  </Typography>
-                </Box>
-                <Box>
-                  <Typography variant="body2" sx={{ color: "grey.500", fontWeight: "medium" }}>
-                    Tuần Này ({format(startOfWeek(currentDate, { weekStartsOn: 1 }), "dd/MM/yyyy")} - {format(endOfWeek(currentDate, { weekStartsOn: 1 }), "dd/MM/yyyy")})
-                  </Typography>
-                  <Typography sx={{ color: "grey.900", fontSize: "1.25rem", fontWeight: "bold" }}>
-                    {formatCurrency(weekFee)}
-                  </Typography>
-                </Box>
-                <Box>
-                  <Typography variant="body2" sx={{ color: "grey.500", fontWeight: "medium" }}>
-                    Tháng Này ({format(startOfMonth(currentDate), "dd/MM/yyyy")} - {format(endOfMonth(currentDate), "dd/MM/yyyy")})
-                  </Typography>
-                  <Typography sx={{ color: "grey.900", fontSize: "1.25rem", fontWeight: "bold" }}>
-                    {formatCurrency(monthFee)}
-                  </Typography>
-                </Box>
-                <Box>
-                  <Typography variant="body2" sx={{ color: "grey.500", fontWeight: "medium" }}>
-                    Năm Nay ({format(startOfYear(currentDate), "dd/MM/yyyy")} - {format(endOfYear(currentDate), "dd/MM/yyyy")})
-                  </Typography>
-                  <Typography sx={{ color: "grey.900", fontSize: "1.25rem", fontWeight: "bold" }}>
-                    {formatCurrency(yearFee)}
-                  </Typography>
-                </Box>
-              </Box>
-              <Typography
-                variant="h6"
-                sx={{ color: "grey.900", mb: 2 }}
-              >
-                Tùy Chỉnh Khoảng Thời Gian
-              </Typography>
-              <Box sx={{ display: "flex", gap: 2, alignItems: "center", mb: 2 }}>
-                <LocalizationProvider dateAdapter={AdapterDateFns}>
-                  <DatePicker
-                    label="Ngày Bắt Đầu"
-                    value={startDate}
-                    onChange={(newValue) => setStartDate(newValue)}
-                    renderInput={(params) => (
-                      <TextField
-                        {...params}
-                        size="small"
-                        sx={{ width: 200 }}
-                      />
-                    )}
-                  />
-                  <DatePicker
-                    label="Ngày Kết Thúc"
-                    value={endDate}
-                    onChange={(newValue) => setEndDate(newValue)}
-                    renderInput={(params) => (
-                      <TextField
-                        {...params}
-                        size="small"
-                        sx={{ width: 200 }}
-                      />
-                    )}
-                  />
-                </LocalizationProvider>
-                <Button
-                  variant="contained"
-                  onClick={handleCustomFeeSearch}
-                  sx={{
-                    px: 3,
-                    py: 1,
-                    bgcolor: "primary.main",
-                    color: "white",
-                    borderRadius: 2,
-                    "&:hover": { bgcolor: "primary.dark" },
-                  }}
-                >
-                  Áp dụng
-                </Button>
-              </Box>
-              {startDate && endDate && (
-                <Box>
-                  <Typography
-                    variant="body2"
-                    sx={{ color: "grey.500", fontWeight: "medium" }}
-                  >
-                    Thu nhập từ đơn hoàn thành ({format(startDate, "dd/MM/yyyy")} - {format(endDate, "dd/MM/yyyy")})
-                  </Typography>
-                  <Typography sx={{ color: "grey.900", fontSize: "1.25rem", fontWeight: "bold" }}>
-                    {formatCurrency(customFee)}
-                  </Typography>
-                </Box>
-              )}
-            </Box>
-          )}
+         {activeTab === "shipping-fee" && (
+  <Box>
+    <Typography variant="h6" sx={{ color: "grey.900", mb: 2 }}>
+      Thu nhập từ đơn hoàn thành
+    </Typography>
+    <Box sx={{ display: "grid", gridTemplateColumns: { xs: "1fr", md: "1fr 1fr" }, gap: 3, mb: 4 }}>
+      <Box>
+        <Typography variant="body2" sx={{ color: "grey.500", fontWeight: "medium" }}>
+          Hôm Nay ({format(currentDate, "dd/MM/yyyy")})
+        </Typography>
+        <Typography sx={{ color: "grey.900", fontSize: "1.25rem", fontWeight: "bold" }}>
+          {formatCurrency(todayFee)}
+        </Typography>
+      </Box>
+      <Box>
+        <Typography variant="body2" sx={{ color: "grey.500", fontWeight: "medium" }}>
+          Tuần Này ({format(startOfWeek(currentDate, { weekStartsOn: 1 }), "dd/MM/yyyy")} - {format(endOfWeek(currentDate, { weekStartsOn: 1 }), "dd/MM/yyyy")})
+        </Typography>
+        <Typography sx={{ color: "grey.900", fontSize: "1.25rem", fontWeight: "bold" }}>
+          {formatCurrency(weekFee)}
+        </Typography>
+      </Box>
+      <Box>
+        <Typography variant="body2" sx={{ color: "grey.500", fontWeight: "medium" }}>
+          Tháng Này ({format(startOfMonth(currentDate), "dd/MM/yyyy")} - {format(endOfMonth(currentDate), "dd/MM/yyyy")})
+        </Typography>
+        <Typography sx={{ color: "grey.900", fontSize: "1.25rem", fontWeight: "bold" }}>
+          {formatCurrency(monthFee)}
+        </Typography>
+      </Box>
+      <Box>
+        <Typography variant="body2" sx={{ color: "grey.500", fontWeight: "medium" }}>
+          Năm Nay ({format(startOfYear(currentDate), "dd/MM/yyyy")} - {format(endOfYear(currentDate), "dd/MM/yyyy")})
+        </Typography>
+        <Typography sx={{ color: "grey.900", fontSize: "1.25rem", fontWeight: "bold" }}>
+          {formatCurrency(yearFee)}
+        </Typography>
+      </Box>
+    </Box>
+    <Typography variant="h6" sx={{ color: "grey.900", mb: 2 }}>
+      Tùy Chỉnh Khoảng Thời Gian
+    </Typography>
+    <Box sx={{ display: "flex", gap: 2, alignItems: "center", mb: 2 }}>
+      <LocalizationProvider dateAdapter={AdapterDateFns}>
+        <DatePicker
+          label="Ngày Bắt Đầu"
+          value={startDate}
+          onChange={(newValue) => setStartDate(newValue)}
+          format="dd/MM/yyyy"
+          slotProps={{
+            textField: {
+              size: "small",
+              sx: { width: 200 },
+            },
+          }}
+        />
+        <DatePicker
+          label="Ngày Kết Thúc"
+          value={endDate}
+          onChange={(newValue) => setEndDate(newValue)}
+          format="dd/MM/yyyy"
+          slotProps={{
+            textField: {
+              size: "small",
+              sx: { width: 200 },
+            },
+          }}
+        />
+      </LocalizationProvider>
+      <Button
+        variant="contained"
+        onClick={handleCustomFeeSearch}
+        sx={{
+          px: 3,
+          py: 1,
+          bgcolor: "primary.main",
+          color: "white",
+          borderRadius: 2,
+          "&:hover": { bgcolor: "primary.dark" },
+        }}
+      >
+        Áp dụng
+      </Button>
+    </Box>
+    {startDate && endDate && (
+      <Box>
+        <Typography
+          variant="body2"
+          sx={{ color: "grey.500", fontWeight: "medium" }}
+        >
+          Thu nhập từ đơn hoàn thành ({format(startDate, "dd/MM/yyyy")} - {format(endDate, "dd/MM/yyyy")})
+        </Typography>
+        <Typography sx={{ color: "grey.900", fontSize: "1.25rem", fontWeight: "bold" }}>
+          {formatCurrency(customFee)}
+        </Typography>
+      </Box>
+    )}
+  </Box>
+)}
+
+{activeTab === "timesheets" && (
+  <Box>
+    <Typography variant="h6" sx={{ color: "grey.900", mb: 2 }}>
+      Điểm Danh ({totalTimesheets} lần điểm danh)
+    </Typography>
+    <Box sx={{ display: "grid", gridTemplateColumns: { xs: "1fr", md: "1fr 1fr" }, gap: 3, mb: 4 }}>
+      <Box>
+        <Typography variant="body2" sx={{ color: "grey.500", fontWeight: "medium" }}>
+          Đúng Giờ
+        </Typography>
+        <Typography sx={{ color: "success.main", fontSize: "1.25rem", fontWeight: "bold" }}>
+          {countOnTime}
+        </Typography>
+      </Box>
+      <Box>
+        <Typography variant="body2" sx={{ color: "grey.500", fontWeight: "medium" }}>
+          Muộn
+        </Typography>
+        <Typography sx={{ color: "error.main", fontSize: "1.25rem", fontWeight: "bold" }}>
+          {countLate}
+        </Typography>
+      </Box>
+    </Box>
+    <Typography variant="h6" sx={{ color: "grey.900", mb: 2 }}>
+      Tùy Chỉnh Khoảng Thời Gian
+    </Typography>
+    <Box sx={{ display: "flex", gap: 2, alignItems: "center", mb: 2 }}>
+      <LocalizationProvider dateAdapter={AdapterDateFns}>
+        <DatePicker
+          label="Ngày Bắt Đầu"
+          value={timesheetStartDate}
+          onChange={(newValue) => setTimesheetStartDate(newValue)}
+          format="dd/MM/yyyy"
+          slotProps={{
+            textField: {
+              size: "small",
+              sx: { width: 200 },
+            },
+          }}
+        />
+        <DatePicker
+          label="Ngày Kết Thúc"
+          value={timesheetEndDate}
+          onChange={(newValue) => setTimesheetEndDate(newValue)}
+          format="dd/MM/yyyy"
+          slotProps={{
+            textField: {
+              size: "small",
+              sx: { width: 200 },
+            },
+          }}
+        />
+      </LocalizationProvider>
+      <Button
+        variant="contained"
+        onClick={() => {
+          if (!timesheetStartDate || !timesheetEndDate) {
+            toast.error("Vui lòng chọn cả ngày bắt đầu và ngày kết thúc");
+            return;
+          }
+          if (timesheetStartDate > timesheetEndDate) {
+            toast.error("Ngày bắt đầu phải trước ngày kết thúc");
+            return;
+          }
+          setTimesheetPagination((prev) => ({ ...prev, pageNumber: 1 }));
+        }}
+        sx={{
+          px: 3,
+          py: 1,
+          bgcolor: "primary.main",
+          color: "white",
+          borderRadius: 2,
+          "&:hover": { bgcolor: "primary.dark" },
+        }}
+      >
+        Áp dụng
+      </Button>
+    </Box>
+    {loadingTimesheets ? (
+      <Box sx={{ display: "flex", justifyContent: "center", py: 4 }}>
+        <CircularProgress />
+      </Box>
+    ) : timesheets.length > 0 ? (
+      <CustomTableV2
+        columns={timesheetColumns}
+        data={timesheets}
+        headerTitle="Danh Sách Điểm Danh"
+        totalCount={timesheetPagination.totalCount}
+        itemsPerPage={timesheetPagination.pageSize}
+        page={timesheetPagination.pageNumber - 1}
+        onPageChange={handleTimesheetPageChange}
+        description={`Lịch sử điểm danh của shipper ${shipper.fullName}`}
+      />
+    ) : (
+      <Box sx={{ textAlign: "center", py: 4, color: "grey.500" }}>
+        <TimesheetIcon sx={{ fontSize: 48, color: "grey.300", mb: 2 }} />
+        <Typography>Không tìm thấy dữ liệu điểm danh</Typography>
+      </Box>
+    )}
+  </Box>
+)}
         </DialogContent>
       </Dialog>
       <OrderDetailDialog
