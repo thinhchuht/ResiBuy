@@ -512,8 +512,8 @@ export function EditRoleModal({ isOpen, onClose, onSubmit, userId }: EditRoleMod
   <Box sx={{ display: "flex", flexDirection: "column", gap: 1 }}>
     {[
       { value: "CUSTOMER", label: "Khách Hàng", color: "success.main" },
-      { value: "USER", label: "Người Dùng", color: "info.main" },
-      { value: "ADMIN", label: "Quản Trị", color: "error.main" },
+
+
       { value: "SELLER", label: "Người Bán", color: "warning.main" },
       { value: "SHIPPER", label: "Shipper", color: "primary.main" },
     ].map((role) => (

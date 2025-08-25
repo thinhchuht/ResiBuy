@@ -24,7 +24,9 @@ namespace ResiBuy.Server.Application.Commands.BuildingCommands
                 var existingBuilding = await buildingDbService.GetByIdAsync(dto.Id)
                     ?? throw new CustomException(ExceptionErrorCode.NotFound, $"Building với Id {dto.Id} không tồn tại");
                 existingBuilding.Name = dto.Name;
-                
+                var existingBuildingWithName = await buildingDbService.GetBuildingByNameAndAreaIdAssync(dto.Name, existingBuilding.AreaId);
+                if (existingBuildingWithName != null && existingBuildingWithName.Id != dto.Id)
+                    throw new CustomException(ExceptionErrorCode.DuplicateValue, $"Tòa nhà với tên {dto.Name} đã tồn tại trong khu vực");
                 existingBuilding.IsActive = dto.IsActive;
                 var updatedBuilding = await buildingDbService.UpdateAsync(existingBuilding);
                 return ResponseModel.SuccessResponse(dto);

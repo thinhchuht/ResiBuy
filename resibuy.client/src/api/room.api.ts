@@ -55,29 +55,19 @@ const roomApi = {
 
   // Tạo phòng
   create: async (data: CreateRoomDto): Promise<RoomDto> => {
-    try {
+    
       const response = await axiosClient.post(`${roomUrl}/create`, data);
-      if (response.data.code !== 0) {
-        throw new Error(response.data.message || "Lỗi khi tạo phòng");
-      }
-      return response.data.data;
-    } catch (error: any) {
-
-      throw new Error(error.message || "Lỗi khi gọi API tạo phòng");
-    }
+     
+      return response.data;
+    
   },
 
   // Cập nhật thông tin phòng
   update: async (data: RoomDto): Promise<RoomDto> => {
-    try {
       const response = await axiosClient.put(`${roomUrl}`, data);
-      if (response.data.code !== 0) {
-        throw new Error(response.data.message || "Lỗi khi cập nhật phòng");
-      }
-      return response.data.data;
-    } catch (error: any) {
-      throw new Error(error.message || "Lỗi khi gọi API cập nhật phòng");
-    }
+     
+      return response.data;
+   
   },
 
   // Cập nhật trạng thái phòng

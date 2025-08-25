@@ -11,6 +11,7 @@ import {
   IconButton,
   Grid,
   Autocomplete,
+  CircularProgress,
 } from "@mui/material";
 import { TimePicker } from "@mui/x-date-pickers/TimePicker";
 import { Close, LocalShipping as ShipperIcon } from "@mui/icons-material";
@@ -43,30 +44,34 @@ export function AddShipperModal({
   const { formData, errors, isSubmitting, handleInputChange, handleSubmit, resetForm } = useShipperForm(editingShipper);
   const [areas, setAreas] = useState<Area[]>([]);
   const [selectedArea, setSelectedArea] = useState<Area | null>(null);
+  const [isLoadingAreas, setIsLoadingAreas] = useState(false);
 
   // Lấy danh sách khu vực
   useEffect(() => {
     const fetchAreas = async () => {
       try {
+        setIsLoadingAreas(true);
         const response = await areaApi.getAll(false);
         console.log("Fetch areas response:", response);
         setAreas(response);
       } catch (error: any) {
         console.error("Fetch areas error:", error);
+      } finally {
+        setIsLoadingAreas(false);
       }
     };
     fetchAreas();
   }, []);
 
-  // Cập nhật selectedArea khi editingShipper hoặc areas thay đổi
+  // Cập nhật selectedArea khi formData.lastLocationId thay đổi
   useEffect(() => {
-    if (editingShipper && formData.lastLocationId && areas.length > 0) {
+    if (formData.lastLocationId && areas.length > 0) {
       const area = areas.find((a) => a.id === formData.lastLocationId);
       setSelectedArea(area || null);
     } else {
       setSelectedArea(null);
     }
-  }, [editingShipper, formData.lastLocationId, areas]);
+  }, [formData.lastLocationId, areas]);
 
   // Reset form và selectedArea khi đóng modal
   const handleClose = () => {
@@ -463,14 +468,25 @@ export function AddShipperModal({
                   onChange={(event, newValue) => {
                     setSelectedArea(newValue);
                     handleInputChange("lastLocationId", newValue ? newValue.id : "");
+                    console.log("Selected area:", newValue); // Debug log
                   }}
+                  disabled={isLoadingAreas}
                   renderInput={(params) => (
                     <TextField
                       {...params}
-                      placeholder="Chọn khu vực"
+                      placeholder={isLoadingAreas ? "Đang tải khu vực..." : "Chọn khu vực"}
                       size="small"
                       error={!!errors.lastLocationId}
                       helperText={errors.lastLocationId}
+                      InputProps={{
+                        ...params.InputProps,
+                        endAdornment: (
+                          <>
+                            {isLoadingAreas ? <CircularProgress color="inherit" size={20} /> : null}
+                            {params.InputProps.endAdornment}
+                          </>
+                        ),
+                      }}
                       sx={{
                         bgcolor: "background.paper",
                         "& .MuiOutlinedInput-root": {

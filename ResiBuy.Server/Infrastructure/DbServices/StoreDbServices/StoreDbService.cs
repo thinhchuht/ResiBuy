@@ -409,6 +409,46 @@ namespace ResiBuy.Server.Infrastructure.DbServices.StoreDbServices
             {
                 throw new CustomException(ExceptionErrorCode.RepositoryError, ex.Message);
             }
+
         }
+        public async Task<bool> CheckStorePhoneIsAvailable(string phone, string ownerId)
+        {
+            try
+            {
+                return await _context.Stores
+                    .AnyAsync(s => s.PhoneNumber == phone && s.OwnerId != ownerId);
+            }
+            catch (Exception ex)
+            {
+                throw new CustomException(ExceptionErrorCode.RepositoryError, ex.Message);
+            }
+        }
+
+        public async Task<bool> CheckStorePhoneWithIdAsync(string phone, Guid excludeId, string ownerId)
+        {
+            try
+            {
+                return await _context.Stores
+                    .AnyAsync(s => s.PhoneNumber == phone && s.Id != excludeId && s.OwnerId != ownerId);
+            }
+            catch (Exception ex)
+            {
+                throw new CustomException(ExceptionErrorCode.RepositoryError, ex.Message);
+            }
+        }
+
+        public async Task<bool> CheckStoreNameWithIdAsync(string name, Guid excludeId)
+        {
+            try
+            {
+                return await _context.Stores
+                    .AnyAsync(s => s.Name == name && s.Id != excludeId);
+            }
+            catch (Exception ex)
+            {
+                throw new CustomException(ExceptionErrorCode.RepositoryError, ex.Message);
+            }
+        }
+
     }
 }

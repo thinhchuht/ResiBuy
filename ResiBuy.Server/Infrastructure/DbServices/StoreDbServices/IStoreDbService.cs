@@ -5,6 +5,10 @@ namespace ResiBuy.Server.Infrastructure.DbServices.StoreDbServices
 {
     public interface IStoreDbService : IBaseDbService<Store>
     {
+        Task<bool> CheckStoreNameWithIdAsync(string name, Guid excludeId);
+        Task<bool> CheckStorePhoneIsAvailable(string phone, string ownerId);
+
+        Task<bool> CheckStorePhoneWithIdAsync(string phone, Guid excludeId, string ownerId);
         Task<PagedResult<Store>> GetAllStoresAsync(int pageNumber = 1, int pageSize = 5);
         Task<Store> GetStoreByIdAsync(Guid id);
         Task<PagedResult<Store>> GetStoreByOwnerIdAsync(string ownerId, int pageNumber = 1, int pageSize = 5);

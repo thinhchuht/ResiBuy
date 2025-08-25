@@ -250,7 +250,7 @@ export function useStoresLogic() {
       setIsAddModalOpen(false);
       setEditingStore(null);
     } catch (err) {
-      toast.error(err.message || "Lỗi khi lưu cửa hàng");
+      // toast.error(err.message || "Lỗi khi lưu cửa hàng");
     }
   };
 
