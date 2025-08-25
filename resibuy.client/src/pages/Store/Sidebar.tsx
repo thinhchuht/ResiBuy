@@ -137,7 +137,6 @@ const Sidebar: React.FC<SidebarProps> = ({
 
             if (result.success) {
                 // Redirect đến VNPay để thanh toán
-                debugger;
                 window.location.href = result.data.paymentUrl.result;
             } else {
                 const errorMessage = result.error?.response?.data?.message || "Không thể tạo thanh toán";
