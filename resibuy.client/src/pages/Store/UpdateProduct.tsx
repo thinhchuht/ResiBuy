@@ -39,6 +39,7 @@ import { v4 } from "uuid";
 import axiosClient from "../../api/base.api";
 import type { CategoryDto } from "../../types/storeData";
 import { useNavigate, useParams } from "react-router-dom";
+import {useToastify} from "../../hooks/useToastify.ts";
 
 interface AdditionalDataInput {
   id?: number;
@@ -191,7 +192,7 @@ export default function UpdateProduct() {
 
     loadData();
   }, [productId, storeId]);
-
+  const { error: showError, success:showSuccess } = useToastify();
   // Classification management functions
   const addClassifies = () =>
     setClassifies((prev) => [...prev, { key: "", value: [], isEdit: true }]);
@@ -322,7 +323,7 @@ export default function UpdateProduct() {
   // Generate product details from classifications
   const generateProductDetail = () => {
     if (classifies.length === 0) {
-      alert("Vui lòng nhập thông tin phân loại");
+        showError("Vui lòng nhập thông tin phân loại");
       return;
     }
 
@@ -418,7 +419,7 @@ export default function UpdateProduct() {
       }
     } catch (error) {
       console.error("Error uploading image:", error);
-      alert("Lỗi khi tải ảnh lên. Vui lòng thử lại!");
+      showError("Lỗi khi tải ảnh lên. Vui lòng thử lại!");
     } finally {
       setUploadingImages((prev) => ({ ...prev, [globalIndex]: false }));
     }
@@ -433,18 +434,18 @@ export default function UpdateProduct() {
       const allDetails = [...listProductDetail, ...newProductDetails];
 
       if (allDetails.length === 0) {
-        alert("Sản phẩm phải có ít nhất một chi tiết sản phẩm.");
+        showError("Sản phẩm phải có ít nhất một chi tiết sản phẩm.");
         return;
       }
 
       // Validate required fields
       if (!product.name.trim()) {
-        alert("Vui lòng nhập tên sản phẩm.");
+        showError("Vui lòng nhập tên sản phẩm.");
         return;
       }
 
       if (!product.categoryId) {
-        alert("Vui lòng chọn danh mục sản phẩm.");
+        showError("Vui lòng chọn danh mục sản phẩm.");
         return;
       }
 
@@ -459,7 +460,7 @@ export default function UpdateProduct() {
       });
 
       if (hasErrors || hasInvalidPrices) {
-        alert(
+        showError(
           "Vui lòng kiểm tra lại giá sản phẩm. Tất cả giá phải là bội số của 500 và lớn hơn 0."
         );
         return;
@@ -470,7 +471,7 @@ export default function UpdateProduct() {
         (detail) => !detail.image?.url || detail.image.url === ""
       );
       if (missingImages) {
-        alert("Vui lòng tải ảnh cho tất cả các chi tiết sản phẩm mới.");
+        showError("Vui lòng tải ảnh cho tất cả các chi tiết sản phẩm mới.");
         return;
       }
 
@@ -481,12 +482,12 @@ export default function UpdateProduct() {
 
       const response = await axiosClient.put("api/Product", tempProduct);
       if (response.status === 200) {
-        alert("Cập nhật sản phẩm thành công!");
+        showSuccess("Cập nhật sản phẩm thành công!");
         navigate(`/store/${storeId}/productPage`);
       }
     } catch (error) {
       console.error("Error updating product:", error);
-      alert("Lỗi khi cập nhật sản phẩm. Vui lòng thử lại!");
+      showError("Lỗi khi cập nhật sản phẩm. Vui lòng thử lại!");
     } finally {
       setUpdating(false);
     }

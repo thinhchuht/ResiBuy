@@ -39,7 +39,7 @@ namespace ResiBuy.Server.Controllers
         }
 
         [HttpGet("payment-callback")]
-        public IActionResult PaymentCallbackAsync([FromQuery] VNPayCallback callback)
+        public async Task<IActionResult> PaymentCallbackAsync([FromQuery] VNPayCallback callback)
         {
             var responseData = Request.QueryString.ToString().TrimStart('?');
             if (!vnPayService.ValidatePayment(responseData))
@@ -52,56 +52,79 @@ namespace ResiBuy.Server.Controllers
             if (callback.vnp_ResponseCode == "00" && callback.vnp_TransactionStatus == "00")
             {
                 var sessionId = callback.vnp_TxnRef;
-                var checkoutData = checkoutSessionService.GetCheckoutSession(sessionId);
-
-                if (checkoutData != null)
+                if (callback.vnp_OrderInfo.Contains("Thanh toan phi cua hang"))
                 {
-                    var checkoutDto = new CheckoutDto
+                    var storeId = callback.vnp_TxnRef;
+
+                    var isStorePaymentSuccess = await vnPayService.ProcessStorePaymentCallback(responseData);
+
+                    if (isStorePaymentSuccess)
                     {
-                        UserId = checkoutData.UserId,
-                        GrandTotal = checkoutData.GrandTotal,
-                        AddressId = checkoutData.AddressId ?? Guid.Empty,
-                        PaymentMethod = checkoutData.PaymentMethod,
-                        IsInstance = checkoutData.IsInstance,
-                        Orders = checkoutData.Orders.Select(order => new OrderDto
-                        {
-                            Id = order.Id,
-                            StoreId = order.StoreId,
-                            VoucherId = order.VoucherId,
-                            Note = order.Note,
-                            TotalPrice = order.TotalPrice,
-                            ShippingFee = order.ShippingFee,
-                            Items = order.ProductDetails.Select(pd => new OrderItemDto
-                            {
-                                ProductDetailId = pd.Id,
-                                Quantity = pd.Quantity,
-                                Price = pd.Price
-                            }).ToList()
-                        }).ToList()
-                    };
-                    try
-                    {
-                        var message = JsonSerializer.Serialize(checkoutDto);
-                        producer.ProduceMessageAsync("checkout", message, "checkout-topic");
-                        checkoutSessionService.RemoveCheckoutSession(sessionId);
                         var token = GenerateToken();
                         _paymentTokens[token] = DateTime.Now.AddMinutes(5);
-                        logger.LogError(token);
-                        logger.LogError(_paymentTokens[token].ToString());
-                        return Redirect($"http://localhost:5001/checkout-success?token={token}");
+                        return Redirect($"http://localhost:5001/store/{storeId}");
                     }
-                    catch (Exception)
+                    else
+                    {
+                        var token = GenerateToken();
+                        _paymentTokens[token] = DateTime.Now.AddMinutes(5);
+                        return Redirect($"http://localhost:5001/paymentFail");
+                    }
+                }
+                else
+                {
+                    // Xử lý order payment như cũ
+                    var checkoutData = checkoutSessionService.GetCheckoutSession(sessionId);
+
+                    if (checkoutData != null)
+                    {
+                        var checkoutDto = new CheckoutDto
+                        {
+                            UserId = checkoutData.UserId,
+                            GrandTotal = checkoutData.GrandTotal,
+                            AddressId = checkoutData.AddressId ?? Guid.Empty,
+                            PaymentMethod = checkoutData.PaymentMethod,
+                            IsInstance = checkoutData.IsInstance,
+                            Orders = checkoutData.Orders.Select(order => new OrderDto
+                            {
+                                Id = order.Id,
+                                StoreId = order.StoreId,
+                                VoucherId = order.VoucherId,
+                                Note = order.Note,
+                                TotalPrice = order.TotalPrice,
+                                ShippingFee = order.ShippingFee,
+                                Items = order.ProductDetails.Select(pd => new OrderItemDto
+                                {
+                                    ProductDetailId = pd.Id,
+                                    Quantity = pd.Quantity,
+                                    Price = pd.Price
+                                }).ToList()
+                            }).ToList()
+                        };
+                        try
+                        {
+                            var message = JsonSerializer.Serialize(checkoutDto);
+                            producer.ProduceMessageAsync("checkout", message, "checkout-topic");
+                            checkoutSessionService.RemoveCheckoutSession(sessionId);
+                            var token = GenerateToken();
+                            _paymentTokens[token] = DateTime.Now.AddMinutes(5);
+                            logger.LogError(token);
+                            logger.LogError(_paymentTokens[token].ToString());
+                            return Redirect($"http://localhost:5001/checkout-success?token={token}");
+                        }
+                        catch (Exception)
+                        {
+                            var token = GenerateToken();
+                            _paymentTokens[token] = DateTime.Now.AddMinutes(5);
+                            return Redirect($"http://localhost:5001/checkout-failed?token={token}");
+                        }
+                    }
+                    else
                     {
                         var token = GenerateToken();
                         _paymentTokens[token] = DateTime.Now.AddMinutes(5);
                         return Redirect($"http://localhost:5001/checkout-failed?token={token}");
                     }
-                }
-                else
-                {
-                    var token = GenerateToken();
-                    _paymentTokens[token] = DateTime.Now.AddMinutes(5);
-                    return Redirect($"http://localhost:5001/checkout-failed?token={token}");
                 }
             }
 
@@ -135,6 +158,27 @@ namespace ResiBuy.Server.Controllers
             return Ok(new { success = false });
         }
 
+        [HttpPost("create-store-payment/{storeId}")]
+        public async Task<IActionResult> CreateStorePayment(Guid storeId)
+        {
+            try
+            {
+                var paymentUrl = vnPayService.StorePayFee(storeId);
+                return Ok(new { PaymentUrl = paymentUrl });
+            }
+            catch (ArgumentException ex)
+            {
+                return NotFound(new { Message = ex.Message });
+            }
+            catch (InvalidOperationException ex)
+            {
+                return BadRequest(new { Message = ex.Message });
+            }
+            catch (Exception ex)
+            {
+                return StatusCode(500, new { Message = "Internal server error" });
+            }
+        }
         private string GenerateToken()
         {
             const string chars = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789";
@@ -150,6 +194,7 @@ namespace ResiBuy.Server.Controllers
             }
             return new string(token);
         }
+
     }
 
     public class VNPayCallback
