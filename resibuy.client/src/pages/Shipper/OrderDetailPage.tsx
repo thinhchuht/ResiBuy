@@ -97,12 +97,21 @@ function OrderDetail() {
   const toast = useToastify();
   const [order, setOrder] = useState<Order | null>(null);
   const [reportOpen, setReportOpen] = useState(false);
-  const [reportTargetType, setReportTargetType] = useState<"store" | "user" | "shipper">("store");
+  const [reportTargetType, setReportTargetType] = useState<
+    "store" | "user" | "shipper"
+  >("store");
   const [reportTitle, setReportTitle] = useState("");
   const [reportReason, setReportReason] = useState("");
   const [reportOtherReason, setReportOtherReason] = useState("");
   const [reportLoading, setReportLoading] = useState(false);
-  const reportReasons = ["Hàng không đúng mô tả", "Khách hàng không nhận hàng", "Khách hàng xúc phạm", "Khách hàng không liên lạc được", "Sản phẩm bị hỏng", "Khác"];
+  const reportReasons = [
+    "Hàng không đúng mô tả",
+    "Khách hàng không nhận hàng",
+    "Khách hàng xúc phạm",
+    "Khách hàng không liên lạc được",
+    "Sản phẩm bị hỏng",
+    "Khác",
+  ];
 
   useEffect(() => {
     const fetchOrder = async () => {
@@ -200,7 +209,10 @@ function OrderDetail() {
       }
 
       toast.success("Giao hàng thành công");
-      setOrder((prev) => prev && { ...prev, status: "Delivered", paymentStatus: "Paid" });
+      setOrder(
+        (prev) =>
+          prev && { ...prev, status: "Delivered", paymentStatus: "Paid" }
+      );
     } catch (err) {
       console.error(err);
       toast.error("Không thể cập nhật trạng thái!");
@@ -214,7 +226,11 @@ function OrderDetail() {
     }
 
     try {
-      await orderApi.updateOrderStatusShip(order.id, "CustomerNotAvailable", user.id);
+      await orderApi.updateOrderStatusShip(
+        order.id,
+        "CustomerNotAvailable",
+        user.id
+      );
       toast.success("Xác nhận không liên lạc được với khách hàng thành công");
       setOrder((prev) => prev && { ...prev, status: "CustomerNotAvailable" });
     } catch (err) {
@@ -230,9 +246,17 @@ function OrderDetail() {
     }
 
     try {
-      await orderApi.updateOrderSatus(user.id, order.id, "Cancelled", "Không liên lạc được với khách hàng");
+      await orderApi.updateOrderSatus(
+        user.id,
+        order.id,
+        "Cancelled",
+        "Không liên lạc được với khách hàng"
+      );
       toast.success("Xác nhận hủy đơn thành công");
-      setOrder((prev) => prev && { ...prev, status: "Cancelled", paymentStatus: "Failed" });
+      setOrder(
+        (prev) =>
+          prev && { ...prev, status: "Cancelled", paymentStatus: "Failed" }
+      );
     } catch (err) {
       console.error(err);
       toast.error("Không thể cập nhật trạng thái!");
@@ -246,7 +270,7 @@ function OrderDetail() {
       case "Processing":
         return "🔄 Cửa hàng đã xác nhận";
       case "Assigned":
-        return "📦 Đã gán cho shipper";
+        return "📦 Đã gán cho người giao hàng";
       case "Shipped":
         return "🚚 Đang giao hàng";
       case "Delivered":
@@ -322,7 +346,10 @@ function OrderDetail() {
                 {order.user.fullName} ({order.user.phoneNumber})
               </Typography>
               <Tooltip title="Sao chép số điện thoại">
-                <IconButton onClick={() => handleCopy(order.user.phoneNumber)} size="small">
+                <IconButton
+                  onClick={() => handleCopy(order.user.phoneNumber)}
+                  size="small"
+                >
                   <ContentCopyIcon fontSize="small" />
                 </IconButton>
               </Tooltip>
@@ -338,7 +365,10 @@ function OrderDetail() {
                 {order.store.name} ({order.store.phoneNumber})
               </Typography>
               <Tooltip title="Sao chép số điện thoại">
-                <IconButton onClick={() => handleCopy(order.store.phoneNumber)} size="small">
+                <IconButton
+                  onClick={() => handleCopy(order.store.phoneNumber)}
+                  size="small"
+                >
                   <ContentCopyIcon fontSize="small" />
                 </IconButton>
               </Tooltip>
@@ -376,23 +406,35 @@ function OrderDetail() {
             <Stack direction="row" spacing={1} alignItems="center">
               <PaymentIcon sx={{ verticalAlign: "middle" }} />
               <Typography variant="body2">
-                <strong>Thanh toán:</strong> {getPaymentMethodLabel(order.paymentMethod)}
+                <strong>Thanh toán:</strong>{" "}
+                {getPaymentMethodLabel(order.paymentMethod)}
               </Typography>
               <Chip
                 label={getPaymentStatusLabel(order.paymentStatus)}
-                color={order.paymentStatus === "Paid" ? "success" : order.paymentStatus === "Failed" ? "error" : order.paymentStatus === "Refunded" ? "default" : "warning"}
+                color={
+                  order.paymentStatus === "Paid"
+                    ? "success"
+                    : order.paymentStatus === "Failed"
+                    ? "error"
+                    : order.paymentStatus === "Refunded"
+                    ? "default"
+                    : "warning"
+                }
                 size="small"
               />
             </Stack>
 
             <Typography>
               <AttachMoneyIcon sx={{ mr: 1, verticalAlign: "middle" }} />
-              <strong>Tổng tiền:</strong> {order.totalPrice.toLocaleString()} đ
+              <strong>Tổng tiền hàng:</strong>{" "}
+              {(order.totalPrice - order.shippingFee).toLocaleString()} đ
             </Typography>
 
             <Typography>
               <LocalMallIcon sx={{ mr: 1, verticalAlign: "middle" }} />
-              <strong>Phí ship:</strong> {order.shippingFee?.toLocaleString()} đ
+              <strong>
+                Phí ship:
+              </strong> {order.shippingFee?.toLocaleString()} đ
             </Typography>
 
             {order.paymentMethod === "COD" ? (
@@ -403,11 +445,13 @@ function OrderDetail() {
                   color: "error.main",
                   display: "flex",
                   alignItems: "center",
-                }}>
+                }}
+              >
                 <MonetizationOnIcon sx={{ mr: 1 }} />
-                Tổng tiền thu: {(order.totalPrice + order.shippingFee).toLocaleString()} đ
+                Tổng tiền thu: {order.totalPrice.toLocaleString()} đ
               </Typography>
-            ) : order.paymentMethod === "BankTransfer" && order.paymentStatus === "Paid" ? (
+            ) : order.paymentMethod === "BankTransfer" &&
+              order.paymentStatus === "Paid" ? (
               <Typography
                 variant="subtitle1"
                 fontWeight="bold"
@@ -415,7 +459,8 @@ function OrderDetail() {
                   color: "error.main",
                   display: "flex",
                   alignItems: "center",
-                }}>
+                }}
+              >
                 <MonetizationOnIcon sx={{ mr: 1 }} />
                 Tổng tiền thu: 0 đ
               </Typography>
@@ -434,7 +479,11 @@ function OrderDetail() {
             </Typography>
 
             {order.orderItems.map((item) => (
-              <Card key={item.id} variant="outlined" sx={{ mb: 2, p: 1.5, display: "flex", alignItems: "center" }}>
+              <Card
+                key={item.id}
+                variant="outlined"
+                sx={{ mb: 2, p: 1.5, display: "flex", alignItems: "center" }}
+              >
                 {item.image?.thumbUrl && (
                   <Box
                     component="img"
@@ -452,13 +501,24 @@ function OrderDetail() {
 
                 <Box sx={{ flex: 1 }}>
                   <Typography fontWeight={600}>{item.productName}</Typography>
-                  <Stack direction="row" spacing={1} flexWrap="wrap" sx={{ mt: 0.5, mb: 1 }}>
+                  <Stack
+                    direction="row"
+                    spacing={1}
+                    flexWrap="wrap"
+                    sx={{ mt: 0.5, mb: 1 }}
+                  >
                     {item.addtionalData.map((ad) => (
-                      <Chip key={ad.id} label={`${ad.key}: ${ad.value}`} size="small" variant="outlined" />
+                      <Chip
+                        key={ad.id}
+                        label={`${ad.key}: ${ad.value}`}
+                        size="small"
+                        variant="outlined"
+                      />
                     ))}
                   </Stack>
                   <Typography variant="body2" color="text.secondary">
-                    Số lượng: <strong>{item.quantity}</strong> | Giá: <strong>{item.price.toLocaleString()} đ</strong>
+                    Số lượng: <strong>{item.quantity}</strong> | Giá:{" "}
+                    <strong>{item.price.toLocaleString()} đ</strong>
                   </Typography>
                 </Box>
               </Card>
@@ -466,39 +526,74 @@ function OrderDetail() {
 
             <Divider sx={{ my: 2 }} />
 
-            <Stack direction="row" spacing={2} justifyContent="space-between" flexWrap="wrap">
+            <Stack
+              direction="row"
+              spacing={2}
+              justifyContent="space-between"
+              flexWrap="wrap"
+            >
               {order.status === "Assigned" && (
-                <Button variant="contained" color="success" startIcon={<LocalShippingIcon />} onClick={handlePickedUp}>
+                <Button
+                  variant="contained"
+                  color="success"
+                  startIcon={<LocalShippingIcon />}
+                  onClick={handlePickedUp}
+                >
                   Đã lấy hàng
                 </Button>
               )}
 
               {order.status === "Shipped" && (
-                <Button variant="contained" color="primary" startIcon={<DoneAllIcon />} onClick={handleDelivered}>
+                <Button
+                  variant="contained"
+                  color="primary"
+                  startIcon={<DoneAllIcon />}
+                  onClick={handleDelivered}
+                >
                   Đã giao hàng
                 </Button>
               )}
 
               {order.status === "CustomerNotAvailable" && (
-                <Button variant="contained" color="primary" startIcon={<DoneAllIcon />} onClick={handleDelivered}>
+                <Button
+                  variant="contained"
+                  color="primary"
+                  startIcon={<DoneAllIcon />}
+                  onClick={handleDelivered}
+                >
                   Đã giao hàng
                 </Button>
               )}
 
               {order.status === "Shipped" && (
-                <Button variant="contained" color="error" startIcon={<PhoneMissedIcon />} onClick={handleCustomerNotAvailable}>
+                <Button
+                  variant="contained"
+                  color="error"
+                  startIcon={<PhoneMissedIcon />}
+                  onClick={handleCustomerNotAvailable}
+                >
                   Không liên lạc được với khách
                 </Button>
               )}
 
               {order.status === "CustomerNotAvailable" && (
-                <Button variant="contained" color="error" startIcon={<CancelIcon />} onClick={handleCancelled}>
+                <Button
+                  variant="contained"
+                  color="error"
+                  startIcon={<CancelIcon />}
+                  onClick={handleCancelled}
+                >
                   Hủy đơn hàng
                 </Button>
               )}
 
               {order.status !== "Reported" && (
-                <Button variant="contained" color="error" startIcon={<ReportProblemIcon />} onClick={handleOpenReport}>
+                <Button
+                  variant="contained"
+                  color="error"
+                  startIcon={<ReportProblemIcon />}
+                  onClick={handleOpenReport}
+                >
                   Báo cáo đơn hàng
                 </Button>
               )}
@@ -514,7 +609,8 @@ function OrderDetail() {
         fullWidth
         PaperProps={{
           sx: { borderRadius: 3, p: 1 },
-        }}>
+        }}
+      >
         <DialogTitle
           sx={{
             display: "flex",
@@ -523,7 +619,8 @@ function OrderDetail() {
             fontWeight: 700,
             color: "#ff9800",
             pb: 0,
-          }}>
+          }}
+        >
           <WarningAmberIcon color="warning" sx={{ fontSize: 28 }} />
           Báo cáo đơn hàng
         </DialogTitle>
@@ -535,20 +632,28 @@ function OrderDetail() {
             gap: 2,
             mt: 1,
             pb: 0,
-          }}>
-          <Typography variant="body2" sx={{ color: "#666", mb: 1, fontStyle: "italic" }}>
-            Nếu bạn gặp vấn đề với đơn hàng, hãy gửi báo cáo để chúng tôi hỗ trợ nhanh nhất.
+          }}
+        >
+          <Typography
+            variant="body2"
+            sx={{ color: "#666", mb: 1, fontStyle: "italic" }}
+          >
+            Nếu bạn gặp vấn đề với đơn hàng, hãy gửi báo cáo để chúng tôi hỗ trợ
+            nhanh nhất.
           </Typography>
 
           <TextField
             select
             label="Đối tượng báo cáo"
             value={reportTargetType}
-            onChange={(e) => setReportTargetType(e.target.value as "store" | "user")}
+            onChange={(e) =>
+              setReportTargetType(e.target.value as "store" | "user")
+            }
             fullWidth
             variant="outlined"
             size="small"
-            sx={{ borderRadius: 2, background: "#fafafa" }}>
+            sx={{ borderRadius: 2, background: "#fafafa" }}
+          >
             <MenuItem value="store">Cửa hàng</MenuItem>
             <MenuItem value="user" disabled={user?.id === order?.user.id}>
               Người dùng
@@ -565,7 +670,11 @@ function OrderDetail() {
             size="small"
             sx={{ borderRadius: 2, background: "#fafafa" }}
             inputProps={{ maxLength: 100 }}
-            helperText={reportTitle.length === 0 ? "Vui lòng nhập tiêu đề" : `${reportTitle.length}/100 ký tự`}
+            helperText={
+              reportTitle.length === 0
+                ? "Vui lòng nhập tiêu đề"
+                : `${reportTitle.length}/100 ký tự`
+            }
             error={reportTitle.length === 0}
           />
 
@@ -579,7 +688,8 @@ function OrderDetail() {
             size="small"
             sx={{ borderRadius: 2, background: "#fafafa" }}
             helperText={reportReason.length === 0 ? "Vui lòng chọn lý do" : ""}
-            error={reportReason.length === 0}>
+            error={reportReason.length === 0}
+          >
             {reportReasons.map((reason) => (
               <MenuItem key={reason} value={reason}>
                 {reason}
@@ -593,7 +703,8 @@ function OrderDetail() {
                 label="Lý do khác"
                 value={reportOtherReason}
                 onChange={(e) => {
-                  if (e.target.value.length <= 200) setReportOtherReason(e.target.value);
+                  if (e.target.value.length <= 200)
+                    setReportOtherReason(e.target.value);
                 }}
                 fullWidth
                 variant="outlined"
@@ -603,11 +714,24 @@ function OrderDetail() {
                 maxRows={6}
                 inputProps={{ maxLength: 200 }}
                 sx={{ borderRadius: 2, background: "#fafafa" }}
-                helperText={reportOtherReason.length === 0 ? "Vui lòng nhập lý do khác" : `${reportOtherReason.length}/200 ký tự`}
+                helperText={
+                  reportOtherReason.length === 0
+                    ? "Vui lòng nhập lý do khác"
+                    : `${reportOtherReason.length}/200 ký tự`
+                }
                 error={reportOtherReason.length === 0}
               />
-              <Box sx={{ display: "flex", justifyContent: "flex-end", mt: 0.5 }}>
-                <Typography variant="caption" color={reportOtherReason.length === 200 ? "error" : "text.secondary"}>
+              <Box
+                sx={{ display: "flex", justifyContent: "flex-end", mt: 0.5 }}
+              >
+                <Typography
+                  variant="caption"
+                  color={
+                    reportOtherReason.length === 200
+                      ? "error"
+                      : "text.secondary"
+                  }
+                >
                   {reportOtherReason.length}/200 ký tự
                 </Typography>
               </Box>
@@ -616,19 +740,30 @@ function OrderDetail() {
         </DialogContent>
 
         <DialogActions sx={{ px: 3, pb: 2, pt: 1 }}>
-          <Button onClick={handleCloseReport} color="inherit" disabled={reportLoading} sx={{ borderRadius: 2 }}>
+          <Button
+            onClick={handleCloseReport}
+            color="inherit"
+            disabled={reportLoading}
+            sx={{ borderRadius: 2 }}
+          >
             Hủy
           </Button>
           <Button
             onClick={handleSubmitReport}
             color="warning"
             variant="contained"
-            disabled={reportLoading || !reportTitle || !reportReason || (reportReason === "Khác" && !reportOtherReason)}
+            disabled={
+              reportLoading ||
+              !reportTitle ||
+              !reportReason ||
+              (reportReason === "Khác" && !reportOtherReason)
+            }
             sx={{
               borderRadius: 2,
               fontWeight: 700,
               boxShadow: "0 2px 8px #ff980033",
-            }}>
+            }}
+          >
             Gửi báo cáo
           </Button>
         </DialogActions>
