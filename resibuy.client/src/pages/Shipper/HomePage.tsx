@@ -98,6 +98,29 @@ function ShipperHome() {
     }
   }, [lastNewOrderId, lastConfirmedOrderId]);
 
+  const getOrderStatusLabel = (status: string): string => {
+    switch (status) {
+      case "Pending":
+        return "🕒 Chờ cửa hàng xác nhận";
+      case "Processing":
+        return "🔄 Cửa hàng đã xác nhận";
+      case "Assigned":
+        return "📦 Đã gán cho shipper";
+      case "Shipped":
+        return "🚚 Đang giao hàng";
+      case "Delivered":
+        return "✅ Đã giao hàng";
+      case "CustomerNotAvailable":
+        return "📞 Không liên lạc được với khách";
+      case "Cancelled":
+        return "❌ Đã hủy";
+      case "Reported":
+        return "⚠️ Đã báo cáo";
+      case "None":
+      default:
+        return "Không xác định";
+    }
+  };
   return (
     <Box sx={{ p: 3 }}>
       <Typography variant="h5" gutterBottom fontWeight="bold">
@@ -155,12 +178,16 @@ function ShipperHome() {
                         <strong>Trạng thái:</strong>
                       </Typography>
                       <Chip
-                        label={order.status}
+                        label={getOrderStatusLabel(order.status)}
                         color={
                           order.status === "Shipped"
                             ? "success"
-                            : order.status === "CustomerNotAvailable"
+                            : order.status === "CustomerNotAvailable" ||
+                              order.status === "Cancelled" ||
+                              order.status === "Reported"
                             ? "error"
+                            : order.status === "Delivered"
+                            ? "primary"
                             : "default"
                         }
                         size="small"
