@@ -255,9 +255,9 @@ const VoucherCreatePage: React.FC = () => {
       await axios.post("/api/Voucher", payload);
       showSuccess("Tạo voucher thành công")
       navigate(`/store/${storeId}/vouchers`);
-    } catch (error) {
+    } catch (error: any) {
       console.error("Lỗi khi tạo voucher:", error);
-      showError("Tạo voucher thất bại");
+      showError(`Tạo voucher thất bại: ${error.response.data.message}`);
     }
   };
 

@@ -42,6 +42,7 @@ namespace ResiBuy.Server.Application.Commands.CheckoutComands
 
                 if (orderPds.Any(opd => opd.Quantity > pd.Quantity))
                     throw new CustomException(ExceptionErrorCode.ValidationFailed, $"Mặt hàng {pd.Product.Name} chỉ còn {pd.Quantity} sản phẩm.");
+                if(!pd.Product.Store.IsOpen) throw new CustomException(ExceptionErrorCode.ValidationFailed, $"Cửa hàng sản phẩm {pd.Product.Name} đã đóng cửa, hãy thử lại vào khung giờ khác");
             }
             cart.IsCheckingOut = true;
             try

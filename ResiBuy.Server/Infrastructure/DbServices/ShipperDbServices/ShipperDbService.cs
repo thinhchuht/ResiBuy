@@ -202,7 +202,7 @@ namespace ResiBuy.Server.Infrastructure.DbServices.ShipperDbServices
 
                 var isLate = true;
 
-                var timeSheet = new TimeSheet(shipperId, DateTime.Now, isLate);
+                var timeSheet = new TimeSheet(shipperId, shipper.FirstTimeLogin.Value , isLate);
                 await _context.TimeSheets.AddAsync(timeSheet);
 
                 await _context.SaveChangesAsync();

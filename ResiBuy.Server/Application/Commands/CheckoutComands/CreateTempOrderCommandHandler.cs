@@ -36,6 +36,8 @@ namespace ResiBuy.Server.Application.Commands.CheckoutComands
                     if (!productDetail.Product.Category.Status) throw new CustomException(ExceptionErrorCode.ValidationFailed, $"Danh mục sản phẩm {productDetail.Product.Name} đã tạm thời ngừng hoạt động.");
                     if (productDetail.Quantity < ci.Quantity)
                         throw new CustomException(ExceptionErrorCode.ValidationFailed, $"Mặt hàng {productDetail.Product.Name} chỉ còn {productDetail.Quantity} sản phẩm có sẵn");
+                    if (!productDetail.Product.Store.IsOpen)
+                        throw new CustomException(ExceptionErrorCode.ValidationFailed, $"Cửa hàng sản phẩm {productDetail.Product.Name} đã đóng cửa, hãy thử lại vào khung giờ khác");
                     tempProductDetails.Add(new TempProductDetailDto(
                         productDetail.Id,
                         productDetail.Product.Name,
