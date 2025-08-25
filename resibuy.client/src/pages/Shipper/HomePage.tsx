@@ -105,7 +105,7 @@ function ShipperHome() {
       case "Processing":
         return "🔄 Cửa hàng đã xác nhận";
       case "Assigned":
-        return "📦 Đã gán cho shipper";
+        return "📦 Đã gán cho người giao hàng";
       case "Shipped":
         return "🚚 Đang giao hàng";
       case "Delivered":
