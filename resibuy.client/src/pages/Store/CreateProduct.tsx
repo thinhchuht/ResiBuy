@@ -475,9 +475,9 @@ export default function CreateProduct() {
                 showSuccess("Tạo sản phẩm thành công!");
                 navigate(`/store/${storeId}/productPage`);
             }
-        } catch (error) {
+        } catch (error: any) {
             console.error("Error creating product:", error);
-            showError("Lỗi khi tạo sản phẩm. Vui lòng thử lại!");
+            showError(`Lỗi khi tạo sản phẩm: ${error.response.data.message}. Vui lòng thử lại!`);
         } finally {
             setIsLoading(false);
         }
