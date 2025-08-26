@@ -1,6 +1,4 @@
-﻿using System.Threading.Tasks;
-using ResiBuy.Server.Infrastructure.DbServices.StoreDbServices;
-using ResiBuy.Server.Services.MyBackgroundService.CheckoutSessionService;
+﻿using ResiBuy.Server.Services.MyBackgroundService.CheckoutSessionService;
 
 namespace ResiBuy.Server.Services.VNPayServices
 {
@@ -39,7 +37,7 @@ namespace ResiBuy.Server.Services.VNPayServices
         {
             var store = await storeDbService.GetStoreByIdAsync(storeId);
             if (store == null)
-                throw new CustomException(ExceptionErrorCode.NotFound,"Store not found");
+                throw new CustomException(ExceptionErrorCode.NotFound, "Store not found");
 
             if (store.IsPayFee)
                 throw new InvalidOperationException("Store has already paid the fee");
@@ -48,7 +46,8 @@ namespace ResiBuy.Server.Services.VNPayServices
             var orderInfo = $"Thanh toan phi cua hang {store.Name}";
 
             // Tạo payment URL với storeId làm orderId
-            return CreatePaymentUrl(feeAmount, storeId, orderInfo);
+            var paymentId = Guid.NewGuid();
+            return CreatePaymentUrl(feeAmount, paymentId, orderInfo);
         }
 
         public bool ValidatePayment(string responseData)

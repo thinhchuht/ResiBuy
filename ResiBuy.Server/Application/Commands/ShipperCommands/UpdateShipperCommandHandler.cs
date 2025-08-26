@@ -41,6 +41,10 @@ namespace ResiBuy.Server.Application.Commands.ShipperCommands
                 await _notificationService.SendNotificationAsync(Constants.ShipperLocked,
                             new { UserId = shipper.UserId },
                             Constants.AdminHubGroup, [shipper.UserId]);
+            if (shipper.IsLocked == false)
+                await _notificationService.SendNotificationAsync(Constants.ShipperUnlocked,
+                            new { UserId = shipper.UserId },
+                            Constants.AdminHubGroup, [shipper.UserId]);
 
             return ResponseModel.SuccessResponse();
         }

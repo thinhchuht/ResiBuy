@@ -1,11 +1,6 @@
 import { useEffect, useRef } from "react";
 import { useHub } from "../contexts/HubContext";
-import type { 
-  OrderData, 
-  OrderStatusChangedData, 
-  PaymentData, 
-  UserCreatedData, 
-} from "../types/hubData";
+import type { OrderData, OrderStatusChangedData, PaymentData, UserCreatedData } from "../types/hubData";
 import type { Review } from "../types/models";
 import type { ReportCreatedDto } from "../types/hubEventDto";
 
@@ -30,6 +25,8 @@ export enum HubEventType {
   UserLocked = "UserLocked",
   StoreLocked = "StoreLocked",
   ShipperLocked = "ShipperLocked",
+  StoreUnlocked = "StoreUnlocked",
+  ShipperUnlocked = "ShipperUnlocked",
 }
 
 // Payload for lock events (server may send different fields based on target)
@@ -39,14 +36,7 @@ type LockedEventData = {
   StoreName?: string;
 };
 
-export type HubEventData =
-  | UserCreatedData
-  | OrderData
-  | PaymentData
-  | OrderStatusChangedData
-  | Review
-  | ReportCreatedDto
-  | LockedEventData;
+export type HubEventData = UserCreatedData | OrderData | PaymentData | OrderStatusChangedData | Review | ReportCreatedDto | LockedEventData;
 export type HubEventHandler = (data: HubEventData) => void;
 export type HubEventHandlers = Partial<Record<HubEventType, HubEventHandler>>;
 
@@ -70,13 +60,10 @@ class HubEventsManager {
     }, {} as Record<HubEventType, Set<HubEventHandler>>);
 
     // Initialize last event data
-    this.lastEventData = Object.values(HubEventType).reduce(
-      (acc, eventType) => {
-        acc[eventType] = null;
-        return acc;
-      },
-      {} as Record<HubEventType, HubEventData | null>
-    );
+    this.lastEventData = Object.values(HubEventType).reduce((acc, eventType) => {
+      acc[eventType] = null;
+      return acc;
+    }, {} as Record<HubEventType, HubEventData | null>);
 
     // Create event handlers
     this.eventHandlers = {
@@ -175,6 +162,16 @@ class HubEventsManager {
         this.lastEventData[HubEventType.ShipperLocked] = data;
         this.notifyHandlers(HubEventType.ShipperLocked, data);
       },
+      [HubEventType.StoreUnlocked]: (data: HubEventData) => {
+        console.log("StoreUnlocked event received:", data);
+        this.lastEventData[HubEventType.StoreUnlocked] = data;
+        this.notifyHandlers(HubEventType.StoreUnlocked, data);
+      },
+      [HubEventType.ShipperUnlocked]: (data: HubEventData) => {
+        console.log("ShipperUnlocked event received:", data);
+        this.lastEventData[HubEventType.ShipperUnlocked] = data;
+        this.notifyHandlers(HubEventType.ShipperUnlocked, data);
+      },
     };
   }
 
@@ -191,9 +188,7 @@ class HubEventsManager {
 
   setHub(hub: IHub) {
     if (this.hub === null) {
-      console.log(
-        "Setting up hub connection and subscriptions for the first time..."
-      );
+      console.log("Setting up hub connection and subscriptions for the first time...");
       this.hub = hub;
       this.setupSubscriptions();
     }
@@ -217,10 +212,7 @@ class HubEventsManager {
         // Đăng ký handler cho các event này
         const subscribeWildcard = (evt: string) => {
           if (evt.startsWith("OrderStatusChanged-")) {
-            this.hub?.subscribe(
-              evt,
-              this.eventHandlers[HubEventType.OrderStatusChanged]
-            );
+            this.hub?.subscribe(evt, this.eventHandlers[HubEventType.OrderStatusChanged]);
             console.log(`Subscribing to ${evt} event as OrderStatusChanged`);
           }
         };
@@ -277,9 +269,7 @@ class HubEventsManager {
  * const lastUserCreated = useEventHub(HubEventType.UserCreated)
  * ```
  */
-export const useEventHub = (
-  eventTypeOrHandlers: HubEventType | HubEventHandlers
-) => {
+export const useEventHub = (eventTypeOrHandlers: HubEventType | HubEventHandlers) => {
   const { connection } = useHub();
   const manager = HubEventsManager.getInstance();
   const handlersRef = useRef(eventTypeOrHandlers);

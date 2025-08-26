@@ -48,7 +48,9 @@
         public const string ReviewAdded               = "ReviewAdded";
         public const string UserLocked                = "UserLocked";
         public const string StoreLocked               = "StoreLocked";
+        public const string StoreUnlocked = "StoreUnlocked";
         public const string ShipperLocked             = "ShipperLocked";
+        public const string ShipperUnlocked = "ShipperUnlocked";
         //regex pattern
         public const string EmailPattern              = @"^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$";
         public const string PhoneNumberPattern        = @"^(0\d{9}|\+84\d{9})$";
