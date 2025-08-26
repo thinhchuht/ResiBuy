@@ -28,7 +28,7 @@ import {
 } from "@mui/icons-material";
 
 interface ColumnDef<T> {
-  key: keyof T;
+  key: string; // Thay đổi từ keyof T thành string để hỗ trợ cột tính toán như stt
   label: string;
   render?: (item: T) => React.ReactNode;
   sortable?: boolean;
@@ -42,14 +42,14 @@ interface FilterOption {
 
 interface TableProps<T> {
   data: T[];
-    totalCount?: number; // api sẽ trả về tổng số bản ghi, không phải độ dài của mảng data
+  totalCount?: number;
   columns: ColumnDef<T>[];
   onDelete?: (item: T) => void;
   onUpdate?: (item: T) => void;
   onAddItem?: () => void;
   onBulkDelete?: (items: T[]) => void;
   onExport?: () => void;
-  onPageChange?: (pageNumber: number) => void; 
+  onPageChange?: (pageNumber: number) => void;
   headerTitle?: string;
   showSearch?: boolean;
   description?: string;
@@ -57,7 +57,7 @@ interface TableProps<T> {
   onFilterChange?: (filters: { [key: string]: string }) => void;
   showBulkActions?: boolean;
   showExport?: boolean;
-  itemsPerPage?: number; // pageSize mặc định
+  itemsPerPage?: number;
   showImport?: boolean;
   onImport?: () => void;
 }
@@ -85,39 +85,45 @@ const CustomTable = <T extends { id?: number | string }>({
 }: TableProps<T>) => {
   const [searchTerm, setSearchTerm] = useState("");
   const [selectedItems, setSelectedItems] = useState<T[]>([]);
-  const [page, setPage] = useState(1); // pageNumber, bắt đầu từ 1
+  const [page, setPage] = useState(1);
   const [sortConfig, setSortConfig] = useState<{
-    key: keyof T;
+    key: string;
     direction: "asc" | "desc";
   } | null>(null);
   const [showFilters, setShowFilters] = useState(false);
   const [activeFilters, setActiveFilters] = useState<{ [key: string]: string }>({});
 
   // Filter data based on search and filters
-  const filteredData = data.filter((row) => {
-    const matchesSearch = columns.some((col) =>
-      String(row[col.key] ?? "")
-        .toLowerCase()
-        .includes(searchTerm.toLowerCase())
-    );
+  const filteredData = useMemo(() => {
+    return data.filter((row): row is T => {
+      if (!row) return false; // Loại bỏ undefined hoặc null
+      const matchesSearch = columns.some((col) => {
+        if (col.render) return true; // Bỏ qua kiểm tra search cho cột có render (như stt)
+        const value = row[col.key as keyof T];
+        return String(value ?? "")
+          .toLowerCase()
+          .includes(searchTerm.toLowerCase());
+      });
 
-    const matchesFilters = Object.entries(activeFilters).every(
-      ([key, value]) => {
-        if (!value) return true;
-        return String(row[key as keyof T]) === value;
-      }
-    );
+      const matchesFilters = Object.entries(activeFilters).every(
+        ([key, value]) => {
+          if (!value) return true;
+          return String(row[key as keyof T]) === value;
+        }
+      );
 
-    return matchesSearch && matchesFilters;
-  });
+      return matchesSearch && matchesFilters;
+    });
+  }, [data, searchTerm, activeFilters, columns]);
 
   // Sort data
   const sortedData = useMemo(() => {
     if (!sortConfig) return filteredData;
 
     return [...filteredData].sort((a, b) => {
-      const aValue = a[sortConfig.key];
-      const bValue = b[sortConfig.key];
+      if (!a || !b) return 0; // Bỏ qua nếu a hoặc b là undefined
+      const aValue = a[sortConfig.key as keyof T];
+      const bValue = b[sortConfig.key as keyof T];
 
       if (aValue < bValue) return sortConfig.direction === "asc" ? -1 : 1;
       if (aValue > bValue) return sortConfig.direction === "asc" ? 1 : -1;
@@ -126,15 +132,15 @@ const CustomTable = <T extends { id?: number | string }>({
   }, [filteredData, sortConfig]);
 
   // Handle sort
-  const handleSort = (key: keyof T) => {
+  const handleSort = (key: string) => {
     setSortConfig((current) => {
       if (current?.key === key) {
         return { key, direction: current.direction === "asc" ? "desc" : "asc" };
       }
       return { key, direction: "asc" };
     });
-    setPage(1); // Reset to first page on sort
-    onPageChange?.(1); // Notify parent
+    setPage(1);
+    onPageChange?.(1);
   };
 
   // Handle select all
@@ -154,14 +160,14 @@ const CustomTable = <T extends { id?: number | string }>({
     const newFilters = { ...activeFilters, [key]: value };
     setActiveFilters(newFilters);
     onFilterChange?.(newFilters);
-    setPage(1); // Reset to first page
-    onPageChange?.(1); // Notify parent
+    setPage(1);
+    onPageChange?.(1);
   };
 
   // Handle page change
   const handleChangePage = (_event: React.ChangeEvent<unknown>, newPage: number) => {
     setPage(newPage);
-    onPageChange?.(newPage); // Truyền pageNumber (bắt đầu từ 1)
+    onPageChange?.(newPage);
   };
 
   const isAllSelected =
@@ -169,7 +175,6 @@ const CustomTable = <T extends { id?: number | string }>({
   const isIndeterminate =
     selectedItems.length > 0 && selectedItems.length < sortedData.length;
 
-  // Tính tổng số trang từ totalCount và itemsPerPage
   const totalPages = Math.ceil(totalCount / itemsPerPage);
 
   return (
@@ -328,7 +333,6 @@ const CustomTable = <T extends { id?: number | string }>({
           )}
         </Box>
 
-        {/* Filters */}
         {showFilters && Object.keys(filters).length > 0 && (
           <Box
             sx={{
@@ -364,7 +368,6 @@ const CustomTable = <T extends { id?: number | string }>({
         )}
       </Box>
 
-      {/* Table section */}
       <Box sx={{ overflowX: "auto" }}>
         <Table>
           <TableHead sx={{ bgcolor: "background.paper", borderBottom: 1, borderColor: "grey.200" }}>
@@ -380,7 +383,7 @@ const CustomTable = <T extends { id?: number | string }>({
               )}
               {columns.map((col) => (
                 <TableCell
-                  key={String(col.key)}
+                  key={col.key}
                   sx={{
                     px: 3,
                     py: 2.5,
@@ -454,8 +457,8 @@ const CustomTable = <T extends { id?: number | string }>({
                     </TableCell>
                   )}
                   {columns.map((col) => (
-                    <TableCell key={String(col.key)} sx={{ px: 3, py: 2 }}>
-                      {col.render ? col.render(item) : String(item[col.key])}
+                    <TableCell key={col.key} sx={{ px: 3, py: 2 }}>
+                      {col.render ? col.render(item) : String(item[col.key as keyof T] ?? "N/A")}
                     </TableCell>
                   ))}
                   {(onDelete || onUpdate) && (
@@ -510,7 +513,6 @@ const CustomTable = <T extends { id?: number | string }>({
         </Table>
       </Box>
 
-      {/* Pagination */}
       {totalCount > 0 && (
         <Box
           sx={{

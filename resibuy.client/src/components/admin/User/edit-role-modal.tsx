@@ -73,7 +73,7 @@ export function EditRoleModal({ isOpen, onClose, onSubmit, userId }: EditRoleMod
   const [areas, setAreas] = useState<AreaDto[]>([]);
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const  toast  = useToastify();
+  const toast = useToastify();
 
   // Convert float hours to Date for TimePicker
   const floatToDate = (hours: number) => {
@@ -123,17 +123,24 @@ export function EditRoleModal({ isOpen, onClose, onSubmit, userId }: EditRoleMod
       ])
         .then(([userResponse, roomsResponse, areasResponse]) => {
           if (userResponse.code === 0) {
+            console.log("User data:", userResponse.data);
+            console.log("User rooms:", userResponse.data.rooms);
             setUser(userResponse.data);
             setRoles(userResponse.data.roles || []);
             setInitialRoles(userResponse.data.roles || []);
             setCustomerData({
               roomId: userResponse.data.rooms?.[0]?.id || "",
             });
+            // Khởi tạo storeData với roomId hợp lệ
+            const validRoomId = userResponse.data.stores?.[0]?.roomId && 
+              userResponse.data.rooms?.some(room => room.id === userResponse.data.stores[0].roomId)
+                ? userResponse.data.stores[0].roomId
+                : userResponse.data.rooms?.[0]?.id || "";
             setStoreData({
               name: userResponse.data.stores?.[0]?.name || "",
               description: userResponse.data.stores?.[0]?.description || "",
               phoneNumber: userResponse.data.stores?.[0]?.phoneNumber || "",
-              roomId: userResponse.data.stores?.[0]?.roomId || "",
+              roomId: validRoomId,
             });
             setShipperData({
               lastLocationId: userResponse.data.shipper?.lastLocationId || "",
@@ -205,6 +212,10 @@ export function EditRoleModal({ isOpen, onClose, onSubmit, userId }: EditRoleMod
       if (!/^\d{10}$/.test(storeData.phoneNumber)) return "Số điện thoại cửa hàng phải có 10 chữ số";
       if (!/^0[3|5|7|8|9]/.test(storeData.phoneNumber)) return "Số điện thoại phải bắt đầu bằng 03, 05, 07, 08 hoặc 09";
       if (!storeData.roomId) return "Vui lòng chọn phòng cho cửa hàng";
+      // Kiểm tra xem roomId có trong user.rooms
+      if (!user?.rooms?.some(room => room.id === storeData.roomId)) {
+        return "Phòng được chọn không hợp lệ";
+      }
     }
     if (newRoles.includes("CUSTOMER")) {
       if (!customerData.roomId) return "Vui lòng chọn phòng cho khách hàng";
@@ -408,7 +419,6 @@ export function EditRoleModal({ isOpen, onClose, onSubmit, userId }: EditRoleMod
                     size="small"
                     sx={{ bgcolor: "grey.100" }}
                   />
-                 
                 </Box>
               </Box>
 
@@ -441,8 +451,6 @@ export function EditRoleModal({ isOpen, onClose, onSubmit, userId }: EditRoleMod
                   </Typography>
                 )}
               </Box>
-
-             
 
               {/* Reports */}
               <Box sx={{ mb: 3 }}>
@@ -497,46 +505,43 @@ export function EditRoleModal({ isOpen, onClose, onSubmit, userId }: EditRoleMod
               </Box>
 
               {/* Role Selection */}
-             {/* Role Selection */}
-<Box sx={{ mb: 3 }}>
-  <Typography
-    variant="h6"
-    sx={{
-      color: "grey.900",
-      mb: 2,
-      fontWeight: "medium",
-    }}
-  >
-    Vai Trò
-  </Typography>
-  <Box sx={{ display: "flex", flexDirection: "column", gap: 1 }}>
-    {[
-      { value: "CUSTOMER", label: "Khách Hàng", color: "success.main" },
-      { value: "USER", label: "Người Dùng", color: "info.main" },
-      { value: "ADMIN", label: "Quản Trị", color: "error.main" },
-      { value: "SELLER", label: "Người Bán", color: "warning.main" },
-      { value: "SHIPPER", label: "Shipper", color: "primary.main" },
-    ].map((role) => (
-      <FormControlLabel
-        key={role.value}
-        control={
-          <Checkbox
-            checked={roles.includes(role.value)}
-            onChange={() => handleRoleChange(role.value)}
-            disabled={initialRoles.includes(role.value)}
-            sx={{ color: role.color }}
-          />
-        }
-        label={
-          <Typography sx={{ color: role.color }}>
-            {role.label}
-          </Typography>
-        }
-        sx={{ color: "grey.700" }}
-      />
-    ))}
-  </Box>
-</Box>
+              <Box sx={{ mb: 3 }}>
+                <Typography
+                  variant="h6"
+                  sx={{
+                    color: "grey.900",
+                    mb: 2,
+                    fontWeight: "medium",
+                  }}
+                >
+                  Vai Trò
+                </Typography>
+                <Box sx={{ display: "flex", flexDirection: "column", gap: 1 }}>
+                  {[
+                    { value: "CUSTOMER", label: "Khách Hàng", color: "success.main" },
+                    { value: "SELLER", label: "Người Bán", color: "warning.main" },
+                    { value: "SHIPPER", label: "Shipper", color: "primary.main" },
+                  ].map((role) => (
+                    <FormControlLabel
+                      key={role.value}
+                      control={
+                        <Checkbox
+                          checked={roles.includes(role.value)}
+                          onChange={() => handleRoleChange(role.value)}
+                          disabled={initialRoles.includes(role.value)}
+                          sx={{ color: role.color }}
+                        />
+                      }
+                      label={
+                        <Typography sx={{ color: role.color }}>
+                          {role.label}
+                        </Typography>
+                      }
+                      sx={{ color: "grey.700" }}
+                    />
+                  ))}
+                </Box>
+              </Box>
 
               {/* Shipper Data */}
               {roles.includes("SHIPPER") && !initialRoles.includes("SHIPPER") && (
@@ -683,12 +688,12 @@ export function EditRoleModal({ isOpen, onClose, onSubmit, userId }: EditRoleMod
                     >
                       <MenuItem value="">
                         <em>Chọn phòng</em>
-                      </MenuItem>
-                      {rooms.map((room) => (
-                        <MenuItem key={room.id} value={room.id}>
-                          {room.name}
                         </MenuItem>
-                      ))}
+                        {user?.rooms?.map((room) => (
+                          <MenuItem key={room.id} value={room.id}>
+                            {room.name}
+                          </MenuItem>
+                        ))}
                     </Select>
                   </FormControl>
                 </Box>

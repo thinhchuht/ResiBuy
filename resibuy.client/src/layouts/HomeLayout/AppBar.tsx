@@ -127,16 +127,12 @@ function notifiConvert(item: NotificationApiItem, user?: User): Notification {
   if (match) status = match[1];
 
   const getReportTargetLabel = (reportTarget: string) => {
-    console.log("reportTarget", reportTarget);
     switch (reportTarget) {
       case "Customer":
-        console.log("Customer", reportTarget);
         return "Khách hàng";
       case "Store":
-        console.log("Store", reportTarget);
         return "Cửa hàng";
       case "Shipper":
-        console.log("Shipper", reportTarget);
         return "Người giao hàng";
       default:
         return "";
@@ -177,8 +173,7 @@ function notifiConvert(item: NotificationApiItem, user?: User): Notification {
       message = `Đơn hàng #${dataObj.id} đã được tạo`;
       break;
     case item.eventName === "OrderReported": {
-      console.log("dataObj", dataObj);
-      console.log("displayLabel", !displayLabel);
+
       if (dataObj.reportTarget === "Store" && displayLabel) {
         const userStore = user?.stores?.find((store: Store) => store.id === dataObj.targetId);
         displayLabel = userStore ? `[${userStore.name}] ` : "";
@@ -190,16 +185,13 @@ function notifiConvert(item: NotificationApiItem, user?: User): Notification {
       break;
     }
     case item.eventName === "ReportResolved": {
-      let storeLabel = "";
-      displayLabel = getReportTargetLabel(dataObj.reportTarget as string);
-      if (dataObj.reportTarget === "Store") {
+      if (dataObj.reportTarget === "Store" && displayLabel) {
         const userStore = user?.stores?.find((store: Store) => store.id === dataObj.targetId);
-        if (userStore) {
-          displayLabel = `[${userStore.name}] `;
-          storeLabel = displayLabel;
-        }
+        displayLabel = userStore ? `[${userStore.name}] ` : "";
+      } else {
+        displayLabel = getReportTargetLabel(dataObj.reportTarget as string);
       }
-      title = `${storeLabel} Báo cáo đơn hàng #${dataObj.orderId} đã được giải quyết`;
+      title = `[${displayLabel}] Báo cáo đơn hàng #${dataObj.orderId} đã được giải quyết`;
       message = dataObj.isAddReportTarget ? `Báo cáo đã được xử lý. ${displayLabel} sẽ bị tính thêm 1 lần cảnh cáo.` : "Báo cáo đã được đóng.";
       break;
     }
@@ -239,6 +231,26 @@ function notifiConvert(item: NotificationApiItem, user?: User): Notification {
     case item.eventName === "ReceiveOrderNotification":
       title = "[Tài khoản giao hàng] Đơn hàng đã được đẩy cho bạn";
       message = `Đơn hàng #${dataObj.orderId} đã được đẩy cho bạn`;
+      isShipper = true;
+      break;
+    case item.eventName === "StoreLocked" || (item.eventName === "UserLocked" && (dataObj.StoreId || dataObj.storeId)):
+      {
+        const storeIdFromPayload = (dataObj.StoreId || dataObj.storeId) as string | undefined;
+        if (storeIdFromPayload) {
+          storeId = storeIdFromPayload;
+        }
+        let storeName: string | undefined = (dataObj.StoreName || dataObj.storeName) as string | undefined;
+        if (!storeName && storeIdFromPayload) {
+          const userStore = user?.stores?.find((s: Store) => s.id === storeIdFromPayload);
+          storeName = userStore?.name;
+        }
+        title = `${storeName ? `[${storeName}] ` : ""}Tài khoản cửa hàng của bạn đã bị khóa`;
+        message = storeName ? `Cửa hàng ${storeName} đã bị khóa.` : "Tài khoản cửa hàng của bạn đã bị khóa.";
+      }
+      break;
+    case item.eventName === "ShipperLocked":
+      title = "[Tài khoản giao hàng] Tài khoản giao hàng của bạn đã bị khóa";
+      message = "Tài khoản giao hàng của bạn đã bị khóa.";
       isShipper = true;
       break;
     default:
@@ -282,6 +294,9 @@ const AppBar: React.FC = () => {
   const [orderModalOpen, setOrderModalOpen] = useState(false);
   const [selectedOrder, setSelectedOrder] = useState<OrderApiResult | null>(null);
   const [orderLoading, setOrderLoading] = useState(false);
+  // Lock dialog state
+  const [lockDialogOpen, setLockDialogOpen] = useState(false);
+  const [lockDialogMessage, setLockDialogMessage] = useState("");
 
   const fetchItemCount = useCallback(async () => {
     if (user) {
@@ -442,7 +457,6 @@ const AppBar: React.FC = () => {
   );
 
   const getReportTargetLabel = (reportTarget: string) => {
-    console.log("reportTarget", reportTarget);
     switch (reportTarget) {
       case "Customer":
         return "Khách hàng";
@@ -655,6 +669,55 @@ const AppBar: React.FC = () => {
     [fetchUnreadCount]
   );
 
+  const handleStoreLocked = useCallback(
+    (data: { storeId?: string; storeName?: string }) => {
+      if (!user) return;
+      const storesArr = Array.isArray(user.stores) ? user.stores : user.stores ? [user.stores] : [];
+      console.log(storesArr);
+      if (data?.storeId && storesArr.some((s) => s.id === data.storeId)) {
+        const name = data.storeName ? ` ${data.storeName}` : "";
+        toast.error(`Tài khoản cửa hàng${name} của bạn đã bị khóa`);
+        setNotifications((prev) => [
+          {
+            id: Math.random(),
+            title: `${data.storeName ? `[${data.storeName}] ` : ""}Tài khoản cửa hàng của bạn đã bị khóa`,
+            message: data.storeName ? `Cửa hàng ${data.storeName} đã bị khóa.` : "Tài khoản cửa hàng của bạn đã bị khóa.",
+            time: new Date().toLocaleString("vi-VN"),
+            isRead: false,
+            storeId: data.storeId,
+          },
+          ...prev,
+        ]);
+        fetchUnreadCount();
+      }
+    },
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    [user, fetchUnreadCount]
+  );
+
+  const handleShipperLocked = useCallback(
+    (data: { userId?: string }) => {
+      if (user && data?.userId && user.id === data.userId) {
+        // Toast
+        toast.error("Tài khoản giao hàng của bạn đã bị khóa");
+        setNotifications((prev) => [
+          {
+            id: Math.random(),
+            title: "[Tài khoản giao hàng] Tài khoản giao hàng của bạn đã bị khóa",
+            message: "Tài khoản giao hàng của bạn đã bị khóa.",
+            time: new Date().toLocaleString("vi-VN"),
+            isRead: false,
+            isShipper: true,
+          },
+          ...prev,
+        ]);
+        fetchUnreadCount();
+      }
+    },
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    [user, fetchUnreadCount]
+  );
+
   const eventHandlers = useMemo(
     () => ({
       [HubEventType.CartItemAdded]: handleCartItemAdded,
@@ -669,6 +732,8 @@ const AppBar: React.FC = () => {
       [HubEventType.ProductOutOfStock]: handleProductOutOfStock,
       [HubEventType.OrderCreatedFailed]: handleOrderCreatedFailed,
       [HubEventType.ReceiveOrderNotification]: handleReceiveOrderNotification,
+      [HubEventType.StoreLocked]: handleStoreLocked,
+      [HubEventType.ShipperLocked]: handleShipperLocked,
     }),
     [
       handleCartItemAdded,
@@ -683,6 +748,8 @@ const AppBar: React.FC = () => {
       handleProductOutOfStock,
       handleOrderCreatedFailed,
       handleReceiveOrderNotification,
+      handleStoreLocked,
+      handleShipperLocked,
     ]
   );
 
@@ -738,16 +805,21 @@ const AppBar: React.FC = () => {
   };
 
   const handleStoreMenuClick = (event: React.MouseEvent<HTMLElement>) => {
-    if (user?.stores && Array.isArray(user.stores) && user.stores.length > 1) {
-      setStoreMenuAnchorEl(event.currentTarget);
-    } else {
-      const storeId = user?.stores[0]?.id;
-
-      if (storeId) {
-        navigate(`/store/${storeId}`);
-        handleProfileMenuClose();
+    if (!user?.stores || !Array.isArray(user.stores) || user.stores.length === 0) return;
+    // If single store and it's locked, show dialog
+    if (user.stores.length === 1) {
+      const store = user.stores[0];
+      if (store.isLocked) {
+        setLockDialogMessage(`Cửa hàng ${store.name} đang bị khóa, liên hệ với ban quản lý`);
+        setLockDialogOpen(true);
+        return;
       }
+      navigate(`/store/${store.id}`);
+      handleProfileMenuClose();
+      return;
     }
+    // Multiple stores -> open selector
+    setStoreMenuAnchorEl(event.currentTarget);
   };
 
   const handleStoreMenuClose = () => {
@@ -756,9 +828,28 @@ const AppBar: React.FC = () => {
   };
 
   const handleStoreSelect = (storeId: string) => {
+    // If selected store is locked, show dialog and do not navigate
+    const store = user?.stores?.find((s) => s.id === storeId);
+    if (store?.isLocked) {
+      setLockDialogMessage(`Cửa hàng ${store.name} đang bị khóa, liên hệ với ban quản lý`);
+      setLockDialogOpen(true);
+      setStoreMenuAnchorEl(null);
+      handleProfileMenuClose();
+      return;
+    }
     navigate(`/store/${storeId}`);
     setStoreMenuAnchorEl(null);
     handleProfileMenuClose();
+  };
+
+  const handleShipperMenuClick = () => {
+    if (user?.shipperIsLocked) {
+      setLockDialogMessage("Tài khoản giao hàng của bạn đang bị khóa, liên hệ với ban quản lý");
+      setLockDialogOpen(true);
+      handleProfileMenuClose();
+      return;
+    }
+    handleNavigation("/shipper", handleProfileMenuClose);
   };
 
   const handleNotificationClick = async (notification: Notification) => {
@@ -795,11 +886,9 @@ const AppBar: React.FC = () => {
     }
 
     if (orderId) {
-      console.log("Found orderId:", orderId);
       setOrderLoading(true);
       try {
         const orderData = await orderApi.getById(orderId);
-        console.log("Order data:", orderData);
         setSelectedOrder(orderData);
         setOrderModalOpen(true);
       } catch (error) {
@@ -808,11 +897,10 @@ const AppBar: React.FC = () => {
         setOrderLoading(false);
       }
     } else if (notification.storeId && notification.title.match(/^\[.*\]/)) {
-      console.log("Found storeId:", notification.storeId, "for notification:", notification.title);
       handleCloseOrderModal();
       navigate(`/store/${notification.storeId}/orders`);
     } else {
-      console.log("No orderId or storeId found for notification:", notification);
+      // No actionable target found for this notification
     }
   };
 
@@ -1193,7 +1281,7 @@ const AppBar: React.FC = () => {
           )}
           {user?.roles?.includes("SHIPPER") && (
             <MenuItem
-              onClick={() => handleNavigation("/shipper", handleProfileMenuClose)}
+              onClick={handleShipperMenuClick}
               sx={{
                 py: 1.5,
                 px: 2,
@@ -1583,7 +1671,13 @@ const AppBar: React.FC = () => {
                 size="small"
                 onClick={() => {
                   handleCloseOrderModal();
-                  if (selectedOrder?.store?.id && user?.roles?.includes("SELLER") && user?.stores?.some((store) => store.id === selectedOrder?.store?.id)) {
+                  if (
+                    user?.roles?.includes("SHIPPER") &&
+                    selectedOrder?.id &&
+                    (selectedOrder?.shipper?.id === user?.id || selectedOrder?.shipperId === user?.id)
+                  ) {
+                    navigate(`/shipper/order/${selectedOrder.id}`);
+                  } else if (selectedOrder?.store?.id && user?.roles?.includes("SELLER") && user?.stores?.some((store) => store.id === selectedOrder?.store?.id)) {
                     navigate(`/store/${selectedOrder.store.id}/orders`);
                   } else {
                     navigate("/orders");
@@ -1737,6 +1831,22 @@ const AppBar: React.FC = () => {
           </DialogContent>
         </Dialog>
       </Toolbar>
+      {/* Lock info dialog */}
+      <Dialog open={lockDialogOpen} onClose={() => setLockDialogOpen(false)}>
+        <DialogTitle sx={{ pr: 5 }}>
+          Tài khoản bị khóa
+          <MuiIconButton
+            aria-label="close"
+            onClick={() => setLockDialogOpen(false)}
+            sx={{ position: "absolute", right: 8, top: 8 }}
+          >
+            <Close />
+          </MuiIconButton>
+        </DialogTitle>
+        <DialogContent dividers>
+          <Typography variant="body2">{lockDialogMessage}</Typography>
+        </DialogContent>
+      </Dialog>
     </MuiAppBar>
   );
 };

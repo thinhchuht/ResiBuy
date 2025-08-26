@@ -22,6 +22,17 @@ namespace ResiBuy.Server.Infrastructure.DbServices.ProductDetailDbServices
                     $"Sản phẩm {outOfStockProduct.Product.Name} đã hết hàng"
                 );
             }
+            var storeCloseProduct = await _context.ProductDetails.Include(pd => pd.Product).ThenInclude(p => p.Store)
+                .Where(p => ids.Contains(p.Id) && (!p.Product.Store.IsOpen))
+                .FirstOrDefaultAsync();
+
+            if (storeCloseProduct != null)
+            {
+                throw new CustomException(
+                    ExceptionErrorCode.NotFound,
+                    $"Cửa hàng bán sản phẩm {outOfStockProduct.Product.Name} đã đóng cửa, hãy thử lại vào lúc khác"
+                );
+            }
 
             return ResponseModel.SuccessResponse();
         }

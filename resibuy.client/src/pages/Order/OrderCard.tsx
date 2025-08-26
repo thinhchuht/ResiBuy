@@ -586,6 +586,12 @@ const OrderCard = ({
             });
             setReportLoading(false);
             setReportOpen(false);
+            // Cập nhật trạng thái hiển thị ngay lập tức: đơn hàng bị báo cáo
+            if (onStatusChange) {
+                onStatusChange(order.id, OrderStatus.Reported, order.paymentStatus);
+            }
+            // Có thể gọi onUpdate để đồng bộ dữ liệu báo cáo chi tiết (nếu cần)
+            if (onUpdate) onUpdate();
             toast.success("Đã gửi báo cáo thành công!");
         } catch {
             setReportLoading(false);
@@ -600,13 +606,20 @@ const OrderCard = ({
     };
 
     const handleCloseReviewModal = () => {
-        setReviewModalOpen(false);
+        setReviewModalOpen(false); 
         setSelectedProductForReview(null);
     };
 
     const handleReviewSubmitted = () => {
         handleCloseReviewModal();
     };
+
+    const isShipperOfThisOrder = useMemo(() => {
+        if (!user) return false;
+        const isShipperRole = user.roles?.includes("SHIPPER");
+        const assignedToUser = order.shipper?.id === user.id || order.shipperId === user.id;
+        return Boolean(isShipperRole && assignedToUser);
+    }, [user, order.shipper?.id, order.shipperId]);
 
     return (
         <Paper
@@ -869,8 +882,8 @@ const OrderCard = ({
                                     {formatPrice(item.price)}
                                 </Typography>
                             </Box>
-                            {/* Ẩn nút đánh giá cho store */}
-                            {!isStore && order.status === OrderStatus.Delivered && (
+                            {/* Ẩn nút đánh giá cho store và shipper của đơn */}
+                            {!isStore && !isShipperOfThisOrder && order.status === OrderStatus.Delivered && (
                                 <Button
                                     variant="outlined"
                                     size="small"
@@ -1156,7 +1169,7 @@ const OrderCard = ({
                                     Đổi địa chỉ
                                 </Button>
                             )}
-                            {order.status === OrderStatus.Delivered && (
+                            {order.status === OrderStatus.Delivered && !isShipperOfThisOrder && (
                                 <Button
                                     variant="outlined"
                                     onClick={handleBuyAgain}

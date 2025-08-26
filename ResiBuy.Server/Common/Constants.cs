@@ -46,11 +46,13 @@
         public const string OrderReported             = "OrderReported";
         public const string ReportResolved            = "ReportResolved";
         public const string ReviewAdded               = "ReviewAdded";
-
+        public const string UserLocked                = "UserLocked";
+        public const string StoreLocked               = "StoreLocked";
+        public const string ShipperLocked             = "ShipperLocked";
         //regex pattern
-        public const string EmailPattern           = @"^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$";
-        public const string PhoneNumberPattern     = @"^(0\d{9}|\+84\d{9})$";
-        public const string IndentityNumberPattern = @"^\d{12}$";
-        public const string PasswordPattern        = @"^(?=.*[a-z])(?=.*[A-Z])(?=.*\d).{8,}$";
+        public const string EmailPattern              = @"^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$";
+        public const string PhoneNumberPattern        = @"^(0\d{9}|\+84\d{9})$";
+        public const string IndentityNumberPattern    = @"^\d{12}$";
+        public const string PasswordPattern           = @"^(?=.*[a-z])(?=.*[A-Z])(?=.*\d).{8,}$";
     }
 }
