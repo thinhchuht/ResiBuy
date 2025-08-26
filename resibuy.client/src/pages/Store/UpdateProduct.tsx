@@ -841,7 +841,7 @@ export default function UpdateProduct() {
                         Giá (VNĐ)
                       </TableCell>
                       <TableCell sx={{ fontWeight: "bold" }}>
-                        Cân nặng (g)
+                        Cân nặng (kg)
                       </TableCell>
                       <TableCell sx={{ fontWeight: "bold" }}>
                         Số lượng
