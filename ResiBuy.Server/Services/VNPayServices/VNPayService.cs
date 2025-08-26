@@ -43,7 +43,7 @@ namespace ResiBuy.Server.Services.VNPayServices
                 throw new InvalidOperationException("Store has already paid the fee");
 
             var feeAmount = configuration.GetValue<decimal>("StoreFee:Amount", 200000); // Default 200,000 VND
-            var orderInfo = $"Thanh toan phi cua hang {store.Name}";
+            var orderInfo = $"Thanh toan phi cua hang {store.Id}";
 
             // Tạo payment URL với storeId làm orderId
             var paymentId = storeId.ToString()+"-"+ DateTimeOffset.Now.ToUnixTimeSeconds().ToString();
