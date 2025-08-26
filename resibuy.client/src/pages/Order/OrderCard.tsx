@@ -118,13 +118,13 @@ interface OrderCardProps {
         roomId: string
     ) => void;
     onCancel?: (orderId: string) => void;
-    isStore?: boolean; // Prop mới để xác định có phải store không
+    isStore?: boolean;
     onCloseModal?: () => void;
     onStatusChange?: (
         orderId: string,
         newStatus: OrderStatus,
         newPaymentStatus: PaymentStatus
-    ) => void; // Thêm callback mới
+    ) => void;
 }
 
 const OrderCard = ({
@@ -1203,17 +1203,18 @@ const OrderCard = ({
                     )}
 
                     {/* Nút báo cáo - ẩn nếu đã có report */}
-                    {!order.report && (
-                        <Button
-                            variant="outlined"
-                            color="warning"
-                            startIcon={<ReportIcon />}
-                            onClick={handleOpenReport}
-                            sx={{ borderRadius: 2, textTransform: "none", px: 3 }}
-                        >
-                            Báo cáo
-                        </Button>
-                    )}
+                    {!order.report &&
+                        !(isStore && order.status === OrderStatus.Delivered) && (
+                            <Button
+                                variant="outlined"
+                                color="warning"
+                                startIcon={<ReportIcon />}
+                                onClick={handleOpenReport}
+                                sx={{ borderRadius: 2, textTransform: "none", px: 3 }}
+                            >
+                                Báo cáo
+                            </Button>
+                        )}
                 </Box>
             </Box>
 
