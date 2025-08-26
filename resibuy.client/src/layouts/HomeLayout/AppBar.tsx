@@ -19,6 +19,7 @@ import {
   DialogTitle,
   DialogContent,
   IconButton as MuiIconButton,
+  DialogActions,
 } from "@mui/material";
 import {
   Login,
@@ -36,6 +37,8 @@ import {
   LocalShipping,
   Storefront,
   Close,
+  Lock,
+  HelpOutline,
 } from "@mui/icons-material";
 import { Link, useNavigate } from "react-router-dom";
 import { useAuth } from "../../contexts/AuthContext";
@@ -880,7 +883,7 @@ const AppBar: React.FC = () => {
     if (user.stores.length === 1) {
       const store = user.stores[0];
       if (store.isLocked) {
-        setLockDialogMessage(`Cửa hàng ${store.name} đang bị khóa, liên hệ với ban quản lý`);
+        setLockDialogMessage(`Cửa hàng ${store.name} đang bị khóa`);
         setLockDialogOpen(true);
         return;
       }
@@ -914,7 +917,7 @@ const AppBar: React.FC = () => {
 
   const handleShipperMenuClick = () => {
     if (user?.shipperIsLocked) {
-      setLockDialogMessage("Tài khoản giao hàng của bạn đang bị khóa, liên hệ với ban quản lý");
+      setLockDialogMessage("Tài khoản giao hàng của bạn đang bị khóa");
       setLockDialogOpen(true);
       handleProfileMenuClose();
       return;
@@ -1898,16 +1901,78 @@ const AppBar: React.FC = () => {
         </Dialog>
       </Toolbar>
       {/* Lock info dialog */}
-      <Dialog open={lockDialogOpen} onClose={() => setLockDialogOpen(false)}>
-        <DialogTitle sx={{ pr: 5 }}>
+      <Dialog
+        open={lockDialogOpen}
+        onClose={() => setLockDialogOpen(false)}
+        fullWidth
+        maxWidth="xs"
+        PaperProps={{
+          sx: {
+            borderRadius: 3,
+            overflow: "hidden",
+            boxShadow: "0 12px 40px rgba(0,0,0,0.2)",
+          },
+        }}>
+        <DialogTitle sx={{ pr: 6, fontWeight: 800, color: "#ef4444" }}>
           Tài khoản bị khóa
           <MuiIconButton aria-label="close" onClick={() => setLockDialogOpen(false)} sx={{ position: "absolute", right: 8, top: 8 }}>
             <Close />
           </MuiIconButton>
         </DialogTitle>
-        <DialogContent dividers>
-          <Typography variant="body2">{lockDialogMessage}</Typography>
+        <DialogContent dividers sx={{ textAlign: "center", py: 4 }}>
+          <Box
+            sx={{
+              width: 96,
+              height: 96,
+              borderRadius: "50%",
+              mx: "auto",
+              mb: 2,
+              display: "flex",
+              alignItems: "center",
+              justifyContent: "center",
+              background: "linear-gradient(135deg, #ef4444 0%, #f87171 100%)",
+              boxShadow: "0 10px 30px rgba(239,68,68,0.35)",
+              animation: "popIn 320ms ease-out",
+              "@keyframes popIn": {
+                from: { transform: "scale(0.8)", opacity: 0 },
+                to: { transform: "scale(1)", opacity: 1 },
+              },
+            }}>
+            <Lock sx={{ fontSize: 50, color: "#fff" }} />
+          </Box>
+          <Typography variant="subtitle1" sx={{ fontWeight: 700, mb: 1 }}>
+            Tài khoản của bạn đã bị khóa
+          </Typography>
+          <Typography variant="body2" color="text.secondary" sx={{ mb: 2 }}>
+            {lockDialogMessage}
+          </Typography>
+          <Box display="flex" alignItems="flex-start" gap={1} justifyContent="center" sx={{ color: "#6b7280" }}>
+            <HelpOutline sx={{ fontSize: 18, mt: "2px" }} />
+            <Typography variant="caption" color="text.secondary">
+              Nếu bạn cho rằng đây là nhầm lẫn, vui lòng liên hệ ban quản lý để được hỗ trợ.
+            </Typography>
+          </Box>
         </DialogContent>
+        <DialogActions sx={{ px: 3, py: 2 }}>
+          <Button
+            onClick={() => setLockDialogOpen(false)}
+            variant="contained"
+            sx={{
+              ml: "auto",
+              textTransform: "none",
+              fontWeight: 700,
+              borderRadius: 2,
+              px: 2.5,
+              background: "linear-gradient(90deg, #ef4444 0%, #f87171 100%)",
+              boxShadow: "0 6px 18px rgba(239,68,68,0.35)",
+              "&:hover": {
+                background: "linear-gradient(90deg, #dc2626 0%, #ef4444 100%)",
+                boxShadow: "0 8px 24px rgba(239,68,68,0.45)",
+              },
+            }}>
+            Đã hiểu
+          </Button>
+        </DialogActions>
       </Dialog>
     </MuiAppBar>
   );

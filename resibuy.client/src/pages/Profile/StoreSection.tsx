@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { Box, Typography, Tabs, Tab, CircularProgress, Card, Avatar, Badge, useTheme, useMediaQuery, Chip, TextField, IconButton, Button } from "@mui/material";
+import { Box, Typography, Tabs, Tab, CircularProgress, Card, Avatar, Badge, useTheme, useMediaQuery, Chip, TextField, IconButton, Button, Tooltip } from "@mui/material";
 import storeApi from "../../api/storee.api";
 import { useAuth } from "../../contexts/AuthContext";
 import type { Store, RoomResult } from "../../types/models";
@@ -7,6 +7,7 @@ import StorefrontIcon from "@mui/icons-material/Storefront";
 import CheckCircleIcon from "@mui/icons-material/CheckCircle";
 import { Lock } from "@mui/icons-material";
 import WarningAmber from "@mui/icons-material/WarningAmber";
+import ReportProblemOutlined from "@mui/icons-material/ReportProblemOutlined";
 import CalendarMonthIcon from "@mui/icons-material/CalendarMonth";
 import { useNavigate } from "react-router-dom";
 import EditIcon from "@mui/icons-material/Edit";
@@ -79,10 +80,18 @@ const StoreSection = () => {
 
   return (
     <Box sx={{ width: "100%" }}>
-      <Box sx={{ borderBottom: "1px solid #f8bbd0", mb: 3, pb: 1 }}>
+      <Box sx={{ borderBottom: "1px solid #f8bbd0", mb: 3, pb: 1, display: "flex", alignItems: "center", justifyContent: "space-between", gap: 2 }}>
         <Typography variant="h6" fontWeight={700} color="#e91e63" sx={{ textAlign: "left" }}>
           Cửa hàng của bạn
         </Typography>
+        <Tooltip title="Số lần cảnh cáo 3 lần sẽ bị khóa tài khoản" arrow>
+          <Chip
+            icon={<ReportProblemOutlined sx={{ color: (user?.reportCount ?? 0) > 0 ? "#fb8c00" : "#9e9e9e" }} />}
+            label={`Số lần bị tố cáo: ${user?.reportCount ?? 0}`}
+            color={(user?.reportCount ?? 0) >= 3 ? "error" : (user?.reportCount ?? 0) > 0 ? "warning" : "default"}
+            sx={{ fontWeight: 700 }}
+          />
+        </Tooltip>
       </Box>
       <Tabs value={tabIndex} onChange={(_, idx) => setTabIndex(idx)} variant="scrollable" scrollButtons="auto" sx={{ mb: 3, borderBottom: 1, borderColor: "divider" }}>
         {stores.map((store) => (
@@ -138,6 +147,23 @@ const StoreSection = () => {
                 <Typography variant="body2" color="text.secondary" mt={2}>
                   Liên hệ với ban quản lí để biết thêm chi tiết
                 </Typography>
+                <Box mt={3}>
+                  <button
+                    disabled
+                    style={{
+                      background: "#f5f5f5",
+                      color: "#9e9e9e",
+                      border: "none",
+                      borderRadius: 8,
+                      padding: "10px 32px",
+                      fontWeight: 600,
+                      fontSize: 16,
+                      cursor: "not-allowed",
+                      boxShadow: "0 2px 8px rgba(233,30,99,0.08)",
+                    }}>
+                    Tài khoản Cửa hàng đang bị khóa
+                  </button>
+                </Box>
               </Box>
             ) : (
               <>
@@ -225,7 +251,7 @@ const StoreSection = () => {
                               if (user && user.stores) {
                                 const storeList = Array.isArray(user.stores) ? user.stores : [user.stores];
                                 const updatedStores = storeList.map((s) => (s.id === selectedStore.id ? { ...s, name: nameValue } : s));
-                                setUser({ ...user, stores: Array.isArray(user.stores) ? updatedStores : updatedStores[0] });
+                                setUser({ ...user, stores: updatedStores });
                               }
                               setEditingName(false);
                             } catch {
@@ -262,7 +288,7 @@ const StoreSection = () => {
                       Số điện thoại
                     </Typography>
                     <Typography variant="body1" fontWeight={600} color="#e91e63">
-                      {selectedStore.phoneNumber || <span style={{ color: '#bdbdbd' }}>Chưa cập nhật</span>}
+                      {selectedStore.phoneNumber || <span style={{ color: "#bdbdbd" }}>Chưa cập nhật</span>}
                     </Typography>
                   </Box>
                   {/* Mô tả */}
