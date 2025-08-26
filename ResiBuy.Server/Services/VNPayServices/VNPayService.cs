@@ -4,7 +4,7 @@ namespace ResiBuy.Server.Services.VNPayServices
 {
     public class VNPayService(IConfiguration configuration, ICheckoutSessionService checkoutSessionService, IStoreDbService storeDbService) : IVNPayService
     {
-        public string CreatePaymentUrl(decimal amount, Guid orderId, string orderInfo)
+        public string CreatePaymentUrl(decimal amount, string orderId, string orderInfo)
         {
             var vnpay = new SortedList<string, string>(new VnPayCompare());
             vnpay.Add("vnp_Amount", ((long)(amount * 100)).ToString());
@@ -46,7 +46,7 @@ namespace ResiBuy.Server.Services.VNPayServices
             var orderInfo = $"Thanh toan phi cua hang {store.Name}";
 
             // Tạo payment URL với storeId làm orderId
-            var paymentId = Guid.NewGuid();
+            var paymentId = storeId.ToString()+"-"+ DateTimeOffset.Now.ToUnixTimeSeconds().ToString();
             return CreatePaymentUrl(feeAmount, paymentId, orderInfo);
         }
 

@@ -38,7 +38,7 @@ namespace ResiBuy.Server.Services.MyBackgroundService
                             {
                                 var areaId = orderGroup.Key;
                                 var ordersInArea = orderGroup.ToList();
-                                var shippers = (await shipperDbService.GetShippersInAreaAsync(areaId)).Where(s => s.IsOnline == true && s.IsShipping == false)
+                                var shippers = (await shipperDbService.GetShippersInAreaAsync(areaId)).Where(s => s.IsOnline == true && s.IsShipping == false && s.IsLocked == false)
                                                .OrderBy(s => s.LastDelivered ?? DateTimeOffset.MinValue)
                                                .ToList();
 
