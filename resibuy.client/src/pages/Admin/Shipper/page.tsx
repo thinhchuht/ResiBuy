@@ -487,7 +487,7 @@ export default function ShippersPage() {
               value={searchInput}
               onChange={(e) => setSearchInput(e.target.value)}
               size="small"
-              sx={{ maxWidth: 300, flex: 1 }}
+              sx={{ maxWidth: 400, flex: 1 }}
               InputProps={{
                 startAdornment: (
                   <InputAdornment position="start">
@@ -497,7 +497,7 @@ export default function ShippersPage() {
               }}
             />
             <Box sx={{ display: "flex", gap: 2, flexWrap: "wrap" }}>
-              <FormControl size="small" sx={{ minWidth: 120 }}>
+              <FormControl size="small" sx={{ minWidth: 190 }}>
                 <InputLabel>Trạng thái hoạt động</InputLabel>
                 <Select
                   value={localFilters.isOnline ?? ""}
@@ -512,7 +512,7 @@ export default function ShippersPage() {
                   ))}
                 </Select>
               </FormControl>
-              <FormControl size="small" sx={{ minWidth: 120 }}>
+              <FormControl size="small" sx={{ minWidth: 185 }}>
                 <InputLabel>Khóa</InputLabel>
                 <Select
                   value={localFilters.isLocked ?? ""}
