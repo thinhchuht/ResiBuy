@@ -31,6 +31,9 @@
                 if(command.IsLocked) await _notificationService.SendNotificationAsync(Constants.StoreLocked,
                             new { StoreId = store.Id, StoreName = store.Name },
                             Constants.AdminHubGroup, [store.OwnerId]);
+                if(command.IsLocked == false) await _notificationService.SendNotificationAsync(Constants.StoreUnlocked,
+                            new { StoreId = store.Id, StoreName = store.Name },
+                            Constants.AdminHubGroup, [store.OwnerId]);
                 return ResponseModel.SuccessResponse();
             }
             catch (Exception ex)
