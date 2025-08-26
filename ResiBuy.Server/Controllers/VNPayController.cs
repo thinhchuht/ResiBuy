@@ -34,7 +34,7 @@ namespace ResiBuy.Server.Controllers
             dbContext.SaveChanges();
             var paymentId = Guid.NewGuid();
             checkoutSessionService.StoreCheckoutSession(paymentId, checkoutData);
-            var paymentUrl = vnPayService.CreatePaymentUrl(checkoutData.GrandTotal, paymentId, $"ResiBuy");
+            var paymentUrl = vnPayService.CreatePaymentUrl(checkoutData.GrandTotal, paymentId.ToString(), $"ResiBuy");
             return Ok(new { paymentUrl });
         }
 
@@ -54,7 +54,7 @@ namespace ResiBuy.Server.Controllers
                 var sessionId = callback.vnp_TxnRef;
                 if (callback.vnp_OrderInfo.Contains("Thanh toan phi cua hang"))
                 {
-                    var storeId = callback.vnp_TxnRef;
+                    var storeId = callback.vnp_TxnRef[..callback.vnp_TxnRef.LastIndexOf('-')];
 
                     var isStorePaymentSuccess = await vnPayService.ProcessStorePaymentCallback(responseData);
 

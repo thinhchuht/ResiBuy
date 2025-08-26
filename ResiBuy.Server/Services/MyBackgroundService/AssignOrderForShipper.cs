@@ -29,6 +29,7 @@ namespace ResiBuy.Server.Services.MyBackgroundService
 
                     try
                     {
+                        var now = ConvertTimeToFloat(DateTime.Now);
                         var orders = await orderDbService.getOrdersByStatus(OrderStatus.Processing);
                         if (orders.Any())
                         {
@@ -38,9 +39,10 @@ namespace ResiBuy.Server.Services.MyBackgroundService
                             {
                                 var areaId = orderGroup.Key;
                                 var ordersInArea = orderGroup.ToList();
-                                var shippers = (await shipperDbService.GetShippersInAreaAsync(areaId)).Where(s => s.IsOnline == true && s.IsShipping == false)
-                                               .OrderBy(s => s.LastDelivered ?? DateTimeOffset.MinValue)
-                                               .ToList();
+                                var shippers = (await shipperDbService.GetShippersInAreaAsync(areaId))
+                                    .Where(s => s.IsOnline == true && s.IsShipping == false && s.IsLocked == false && s.StartWorkTime <= now && s.EndWorkTime >= now)
+                                    .OrderBy(s => s.LastDelivered ?? DateTimeOffset.MinValue)
+                                    .ToList();
 
                                 if (!shippers.Any())
                                 {
@@ -93,6 +95,10 @@ namespace ResiBuy.Server.Services.MyBackgroundService
             }
 
             _logger.LogInformation("AssignOrderForShipper is stopping.");
+        }
+        public static double ConvertTimeToFloat(DateTime dateTime)
+        {
+            return dateTime.Hour + dateTime.Minute / 60.0;
         }
     }
 }
