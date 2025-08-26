@@ -19,8 +19,6 @@
                 throw new CustomException(ExceptionErrorCode.ValidationFailed, "Thời gian bắt đầu không được lớn hơn thời gian kết thúc");
 
             var result = await _storeDbService.TopSaleProduct(query.StoreId, query.StartDate, query.EndDate);
-            if (result == null || !result.Any())
-                throw new CustomException(ExceptionErrorCode.NotFound, "Không tìm thấy sản phẩm bán chạy trong khoảng thời gian này");
 
             return ResponseModel.SuccessResponse(result);
         }
