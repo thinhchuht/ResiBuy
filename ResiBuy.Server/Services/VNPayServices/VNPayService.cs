@@ -101,7 +101,7 @@ namespace ResiBuy.Server.Services.VNPayServices
                     return false;
 
                 if (!responseParams.ContainsKey("vnp_TxnRef") ||
-                    !Guid.TryParse(responseParams["vnp_TxnRef"], out var storeId))
+                    !Guid.TryParse(responseParams["vnp_TxnRef"][..responseParams["vnp_TxnRef"].LastIndexOf('-')], out var storeId))
                     return false;
 
                 var store = await storeDbService.GetStoreByIdAsync(storeId);
