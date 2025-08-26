@@ -2,7 +2,7 @@
 {
     public record LockOrUnlockUserCommand(string Id) : IRequest<ResponseModel>;
     public class LockOrUnlockUserCommandHandler(
-        IUserDbService userDbService) : IRequestHandler<LockOrUnlockUserCommand, ResponseModel>
+        IUserDbService userDbService, INotificationService notificationService) : IRequestHandler<LockOrUnlockUserCommand, ResponseModel>
     {
         public async Task<ResponseModel> Handle(LockOrUnlockUserCommand command, CancellationToken cancellationToken)
         {
@@ -18,6 +18,8 @@
 
             existingUser.UpdateIsLock();
             var updatedUser = await userDbService.UpdateAsync(existingUser);
+            if(updatedUser.IsLocked) await notificationService.SendNotificationAsync(Constants.UserLocked,
+                new { userId = updatedUser.Id }, Constants.AdminHubGroup, [updatedUser.Id], false);
             return ResponseModel.SuccessResponse(updatedUser);
         }
     }

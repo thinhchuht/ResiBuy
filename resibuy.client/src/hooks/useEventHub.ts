@@ -27,9 +27,26 @@ export enum HubEventType {
   ProductOutOfStock = "ProductOutOfStock",
   ReceiveOrderNotification = "ReceiveOrderNotification",
   ReviewAdded = "ReviewAdded",
+  UserLocked = "UserLocked",
+  StoreLocked = "StoreLocked",
+  ShipperLocked = "ShipperLocked",
 }
 
-export type HubEventData = UserCreatedData | OrderData | PaymentData | OrderStatusChangedData | Review | ReportCreatedDto;
+// Payload for lock events (server may send different fields based on target)
+type LockedEventData = {
+  UserId?: string;
+  StoreId?: string;
+  StoreName?: string;
+};
+
+export type HubEventData =
+  | UserCreatedData
+  | OrderData
+  | PaymentData
+  | OrderStatusChangedData
+  | Review
+  | ReportCreatedDto
+  | LockedEventData;
 export type HubEventHandler = (data: HubEventData) => void;
 export type HubEventHandlers = Partial<Record<HubEventType, HubEventHandler>>;
 
@@ -142,6 +159,21 @@ class HubEventsManager {
         console.log("OrderAssignedToShipper event received:", data);
         this.lastEventData[HubEventType.ReceiveOrderNotification] = data;
         this.notifyHandlers(HubEventType.ReceiveOrderNotification, data);
+      },
+      [HubEventType.StoreLocked]: (data: HubEventData) => {
+        console.log("StoreLocked event received:", data);
+        this.lastEventData[HubEventType.StoreLocked] = data;
+        this.notifyHandlers(HubEventType.StoreLocked, data);
+      },
+      [HubEventType.UserLocked]: (data: HubEventData) => {
+        console.log("UserLocked event received:", data);
+        this.lastEventData[HubEventType.UserLocked] = data;
+        this.notifyHandlers(HubEventType.UserLocked, data);
+      },
+      [HubEventType.ShipperLocked]: (data: HubEventData) => {
+        console.log("ShipperLocked event received:", data);
+        this.lastEventData[HubEventType.ShipperLocked] = data;
+        this.notifyHandlers(HubEventType.ShipperLocked, data);
       },
     };
   }

@@ -52,6 +52,7 @@ export interface User {
   phoneNumber: string;
   dateOfBirth: string;
   identityNumber: string;
+  isLocked : boolean;
   cartId: string;
   roles: string[];
   rooms: RoomResult[];
@@ -62,6 +63,7 @@ export interface User {
   userRooms: UserRoom[];
   createdAt: string;
   updatedAt: string;
+  shipperIsLocked?: boolean;
 }
 
 export interface RoomResult {

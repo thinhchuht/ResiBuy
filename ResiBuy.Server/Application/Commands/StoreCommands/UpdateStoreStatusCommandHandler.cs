@@ -9,10 +9,11 @@
     public class UpdateStoreStatusCommandHandler : IRequestHandler<UpdateStoreStatusCommand, ResponseModel>
     {
         private readonly IStoreDbService _storeDbService;
-
-        public UpdateStoreStatusCommandHandler(IStoreDbService storeDbService)
+        private readonly INotificationService _notificationService;
+        public UpdateStoreStatusCommandHandler(IStoreDbService storeDbService, INotificationService notificationService)
         {
             _storeDbService = storeDbService;
+            _notificationService = notificationService;
         }
         public async Task<ResponseModel> Handle(UpdateStoreStatusCommand command, CancellationToken cancellationToken)
         {
@@ -27,6 +28,9 @@
             try
             {
                 await _storeDbService.UpdateStoreStatusAsync(command.StoreId, command.IsLocked, command.IsOpen);
+                if(command.IsLocked) await _notificationService.SendNotificationAsync(Constants.StoreLocked,
+                            new { StoreId = store.Id, StoreName = store.Name },
+                            Constants.AdminHubGroup, [store.OwnerId]);
                 return ResponseModel.SuccessResponse();
             }
             catch (Exception ex)
