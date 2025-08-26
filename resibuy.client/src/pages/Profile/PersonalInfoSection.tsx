@@ -1,5 +1,5 @@
-import { Avatar, Box, Button, Typography, CircularProgress } from "@mui/material";
-import { Person } from "@mui/icons-material";
+import { Avatar, Box, Button, Typography, CircularProgress, Chip, Tooltip } from "@mui/material";
+import { ReportProblemOutlined, Person } from "@mui/icons-material";
 import { useState } from "react";
 import userApi from "../../api/user.api";
 import { useAuth } from "../../contexts/AuthContext";
@@ -76,10 +76,19 @@ const PersonalInfoSection = ({ isAdmin, formatDate, maskMiddle }: PersonalInfoSe
 
   return (
     <Box>
-      <Box sx={{ borderBottom: "1px solid #f8bbd0", mb: 3, pb: 1 }}>
+      <Box sx={{ borderBottom: "1px solid #f8bbd0", mb: 3, pb: 1, display: "flex", alignItems: "center", justifyContent: "space-between", gap: 2 }}>
         <Typography variant="h6" fontWeight={700} color="#e91e63" sx={{ textAlign: "left" }}>
           Thông tin cá nhân
         </Typography>
+        <Tooltip title="Số lần cảnh cáo 3 lần sẽ bị khóa tài khoản" arrow>
+          <Chip
+            icon={<ReportProblemOutlined sx={{ color: (user?.reportCount ?? 0) > 0 ? "inherit" : "#9e9e9e" }} />}
+            label={`Số lần bị tố cáo: ${user?.reportCount ?? 0}`}
+            variant="filled"
+            color={(user?.reportCount ?? 0) >= 3 ? "error" : (user?.reportCount ?? 0) > 0 ? "warning" : "default"}
+            sx={{ fontWeight: 700 }}
+          />
+        </Tooltip>
       </Box>
       <Box sx={{ display: { xs: "block", md: "flex" }, gap: 4 }}>
         <Box sx={{ flex: 1, minWidth: 0 }}>
@@ -159,6 +168,7 @@ const PersonalInfoSection = ({ isAdmin, formatDate, maskMiddle }: PersonalInfoSe
                     {formatDate(user?.updatedAt)}
                   </Typography>
                 </Box>
+                
                 <Button
                   onClick={handleSubmit}
                   variant="contained"

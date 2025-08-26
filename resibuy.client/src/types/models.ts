@@ -64,6 +64,7 @@ export interface User {
   createdAt: string;
   updatedAt: string;
   shipperIsLocked?: boolean;
+  reportCount?: number;
 }
 
 export interface RoomResult {
