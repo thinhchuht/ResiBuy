@@ -217,8 +217,8 @@ namespace ResiBuy.Server.Infrastructure.DbServices.StoreDbServices
         {
             var salesAnalysis = new SalesAnalysisDto();
             var store = await _context.Stores.Include(s => s.Products).Include(s => s.Vouchers).Include(s => s.Orders).ThenInclude(o => o.Items).FirstOrDefaultAsync(s => s.Id == storeId);
-            var orderSuccess = store.Orders.Where(o => o.Status == OrderStatus.Delivered && o.CreateAt >= startDate && o.CreateAt <= endDate.AddDays(1));
-            var orderCanceled = store.Orders.Where(o => o.Status == OrderStatus.Cancelled && o.CreateAt >= startDate && o.CreateAt <= endDate.AddDays(1));
+            var orderSuccess = store.Orders.Where(o => o.Status == OrderStatus.Delivered && o.UpdateAt >= startDate && o.UpdateAt <= endDate.AddDays(1));
+            var orderCanceled = store.Orders.Where(o => o.Status == OrderStatus.Cancelled && o.UpdateAt >= startDate && o.UpdateAt <= endDate.AddDays(1));
             decimal sales = 0;
             int productQuantity = 0;
             foreach (var order in orderSuccess)
