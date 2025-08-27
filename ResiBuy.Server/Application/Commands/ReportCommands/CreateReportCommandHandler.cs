@@ -25,8 +25,12 @@ namespace ResiBuy.Server.Application.Commands.ReportCommands
             if(order.Shipper != null)
             {
                 var shipper = await shipperDbService.GetShipperByIdAsync(order.ShipperId.Value);
-                if (shipper.IsShipping && shipper.Orders.Any(o => o.Id != order.Id && (o.Status != OrderStatus.Delivered || o.Status != OrderStatus.Reported || o.Status != OrderStatus.Cancelled)))
-                { 
+                if (shipper.IsShipping && shipper.Orders.Where(o => o.Id != order.Id)
+                    .All(o => o.Status == OrderStatus.Delivered ||
+                              o.Status == OrderStatus.Cancelled ||
+                              o.Status == OrderStatus.Reported))
+                {
+                    shipper.IsShipping = false;
                 }
             }
             //order.PaymentStatus = PaymentStatus.Failed;
