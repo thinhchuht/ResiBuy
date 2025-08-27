@@ -57,8 +57,11 @@ namespace ResiBuy.Server.Application.Commands.ReportCommands
                     shipper.ReportCount += 1;
                     if (shipper.ReportCount == Constants.MaxReportCount)
                     {
+                        if (shipper.IsShipping)
+                            throw new CustomException(ExceptionErrorCode.ValidationFailed, "Không thể khóa tài khoản khi đang trong quá trình giao hàng, thử lại sau.");
                         shipper.IsLocked = true;
                         await shipperDbService.UpdateAsync(shipper);
+
                         await notificationService.SendNotificationAsync(Constants.ShipperLocked,
                             new { UserId = shipper.User.Id },
                             Constants.NoHubGroup, [shipper.User.Id]);
