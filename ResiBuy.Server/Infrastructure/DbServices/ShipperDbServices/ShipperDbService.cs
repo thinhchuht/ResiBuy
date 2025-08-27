@@ -199,6 +199,10 @@ namespace ResiBuy.Server.Infrastructure.DbServices.ShipperDbServices
                 var shipper = await _context.Shippers.FindAsync(shipperId);
                 if (shipper == null)
                     throw new CustomException(ExceptionErrorCode.NotFound, "Shipper không tồn tại");
+                if (shipper.IsShipping)
+                {
+                    throw new CustomException(ExceptionErrorCode.Forbidden, "Bạn đang giao hàng, không thể checkout");
+                }
 
                 var isLate = true;
 
