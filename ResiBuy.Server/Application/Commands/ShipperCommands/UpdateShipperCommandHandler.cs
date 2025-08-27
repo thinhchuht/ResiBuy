@@ -34,6 +34,8 @@ namespace ResiBuy.Server.Application.Commands.ShipperCommands
             // 2. Cập nhật thời gian làm việc
             shipper.StartWorkTime = command.StartWorkTime ?? shipper.StartWorkTime;
             shipper.EndWorkTime = command.EndWorkTime ?? shipper.EndWorkTime;
+            if(command.IsLocked.HasValue && command.IsLocked.Value && shipper.IsShipping)
+                throw new CustomException(ExceptionErrorCode.ValidationFailed, "Không thể khóa tài khoản khi đang trong quá trình giao hàng, thử lại sau.");
             shipper.IsLocked = command.IsLocked ?? shipper.IsLocked;
             if(!shipper.IsLocked && shipper.ReportCount == 3) shipper.ReportCount = 0;
             // 3. Lưu thay đổi

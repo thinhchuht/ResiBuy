@@ -36,6 +36,8 @@ import CustomTable from "../../../components/CustomTable";
 import { formatOrderStatus } from "../Store/seg/utlis";
 import { getOrderStatusColor } from "../Store/seg/utlis";
 import CustomTableV2 from "../../CustomTableV2";
+import { formatPaymentStatus,formatPaymentMethod } from "../Store/seg/utlis";
+ 
 interface UserDetailModalProps {
   isOpen: boolean;
   onClose: () => void;
@@ -129,17 +131,17 @@ const OrderDetailDialog: React.FC<OrderDetailDialogProps> = ({ open, onClose, or
             </Typography>
             <Typography sx={{ color: "grey.900" }}>{formatOrderStatus(order.status)}</Typography>
           </Box>
-          <Box>
+         <Box>
             <Typography variant="body2" sx={{ color: "grey.500", fontWeight: "medium" }}>
               Trạng Thái Thanh Toán
             </Typography>
-            <Typography sx={{ color: "grey.900" }}>{order.paymentStatus}</Typography>
+            <Typography sx={{ color: "grey.900" }}>{formatPaymentStatus(order.paymentStatus)}</Typography>
           </Box>
           <Box>
             <Typography variant="body2" sx={{ color: "grey.500", fontWeight: "medium" }}>
               Phương Thức Thanh Toán
             </Typography>
-            <Typography sx={{ color: "grey.900" }}>{order.paymentMethod}</Typography>
+            <Typography sx={{ color: "grey.900" }}>{formatPaymentMethod(order.paymentMethod)}</Typography>
           </Box>
           <Box>
             <Typography variant="body2" sx={{ color: "grey.500", fontWeight: "medium" }}>
@@ -820,7 +822,8 @@ export function UserDetailModal({ isOpen, onClose, user, onEdit, onToggleLock }:
                     Báo Cáo
                   </Typography>
                   <Typography sx={{ color: "grey.900" }}>
-                    {user.reports?.length > 0 ? `${user.reports.length} báo cáo` : "Không có báo cáo"}
+                    {/* {user.reports?.length > 0 ? `${user.reports.length} báo cáo` : "Không có báo cáo"} */}
+                        {user.reportCount || "Không có báo cáo"}
                   </Typography>
                 </Box>
               </Box>

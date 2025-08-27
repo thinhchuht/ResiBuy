@@ -116,12 +116,12 @@ namespace ResiBuy.Server.Infrastructure.DbServices.StoreDbServices
             }
         }
 
-        public async Task<bool> CheckRoomIsAvailable(Guid roomId)
+        public async Task<bool> CheckRoomIsAvailable(Guid roomId, Guid? excludeId = null)
         {
             try
             {
                 return await _context.Stores
-                    .AnyAsync(s => s.RoomId == roomId && !s.IsLocked);
+                    .AnyAsync(s => s.RoomId == roomId && !s.IsLocked && (!excludeId.HasValue || s.Id != excludeId.Value));
             }
             catch (Exception ex)
             {
