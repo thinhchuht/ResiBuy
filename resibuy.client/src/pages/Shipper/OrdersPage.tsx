@@ -303,15 +303,15 @@ const ShipperOrderHistory: React.FC = () => {
                     <strong>Phí giao hàng:</strong>{" "}
                     {order.shippingFee?.toLocaleString()}đ
                   </Typography>
-                  <Typography variant="h6" color="error" mt={1}>
+                  <Typography>
                     <strong>Tổng tiền hàng:</strong>{" "}
                     {(
                       order.totalPrice - (order.shippingFee || 0)
                     ).toLocaleString()}
                     đ
                   </Typography>
-                  <Typography>
-                    <strong>Tổng tiền hàng:</strong>{" "}
+                  <Typography variant="h6" color="error" mt={1}>
+                    <strong>Tổng tiền:</strong>{" "}
                     {order.totalPrice.toLocaleString()}đ
                   </Typography>
                 </Stack>
