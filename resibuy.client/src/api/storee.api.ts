@@ -24,11 +24,23 @@ const storeApi = {
     return response.data;
   },
 
-  update: async (id: string, data: Partial<Store>) => {
-    const response = await axiosClient.put(`${storeUrl}/${id}`, data);
+update: async (id: string, data: Partial<Store>) => {
+    // Đảm bảo payload chỉ chứa các trường cần thiết
+    const payload = {
+      id,
+      name: data.name,
+      phoneNumber: data.phoneNumber,
+      description: data.description,
+      roomId: data.roomId || null, // Chuyển chuỗi rỗng thành null
+    };
+    console.log("Update store payload:", payload); // Log để gỡ lỗi
+    const response = await axiosClient.put(`${storeUrl}/${id}`, payload, {
+      headers: {
+        "Content-Type": "application/json",
+      },
+    });
     return response.data;
   },
-
   updateStatus: async (id: string, isLocked: boolean, isOpen?: boolean ) => {
     const response = await axiosClient.put(`${storeUrl}/${id}/status`, { isLocked, isOpen });
     return response.data;

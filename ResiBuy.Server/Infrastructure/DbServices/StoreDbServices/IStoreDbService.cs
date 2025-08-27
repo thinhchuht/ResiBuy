@@ -12,8 +12,8 @@ namespace ResiBuy.Server.Infrastructure.DbServices.StoreDbServices
         Task<PagedResult<Store>> GetAllStoresAsync(int pageNumber = 1, int pageSize = 5);
         Task<Store> GetStoreByIdAsync(Guid id);
         Task<PagedResult<Store>> GetStoreByOwnerIdAsync(string ownerId, int pageNumber = 1, int pageSize = 5);
-        Task<Store> UpdateStoreStatusAsync(Guid storeId, bool? isLocked, bool isOpen);
-        Task<bool> CheckRoomIsAvailable(Guid roomId);
+        Task<Store> UpdateStoreStatusAsync(Guid storeId, bool isLocked, bool isOpen);
+        Task<bool> CheckRoomIsAvailable(Guid roomId, Guid? excludeId = null);
         Task<bool> CheckStoreIsAvailable(string name);
         Task<bool> CheckStorePhoneIsAvailable(string phone);
         Task<int> CountAllStoresAsync();
