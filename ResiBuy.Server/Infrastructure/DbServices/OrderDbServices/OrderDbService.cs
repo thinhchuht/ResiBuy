@@ -370,7 +370,10 @@ public class OrderDbService : BaseDbService<Order>, IOrderDbService
     }
     public async Task<StatisticResponse> GetOrderStatisticsAsync(DateTime startTime, DateTime endTime)
     {
-        var firstOrderDate = await _context.Orders.Where(o => o.Status == OrderStatus.Delivered || o.Status == OrderStatus.Reported).OrderBy(o => o.CreateAt)
+        var firstOrderDate = await _context.Orders.Where(o => o.Status == OrderStatus.Delivered 
+        //|| o.Status == OrderStatus.Reported
+        )
+            .OrderBy(o => o.CreateAt)
             .Select(o => o.CreateAt.Date)
             .FirstOrDefaultAsync();
 
