@@ -55,8 +55,8 @@ namespace ResiBuy.Server.Application.Commands.ProductCommands
                     if (detailDto.Quantity < 0)
                         throw new CustomException(ExceptionErrorCode.ValidationFailed, "Số lượng không hợp lệ.");
 
-                    if (detailDto.IsOutOfStock && detailDto.Quantity > 0)
-                        throw new CustomException(ExceptionErrorCode.ValidationFailed, "Sản phẩm đã hết hàng thì số lượng phải bằng 0.");
+                    //if (detailDto.IsOutOfStock && detailDto.Quantity > 0)
+                    //    throw new CustomException(ExceptionErrorCode.ValidationFailed, "Sản phẩm đã hết hàng thì số lượng phải bằng 0.");
 
                     var currentSet = new HashSet<string>();
 
