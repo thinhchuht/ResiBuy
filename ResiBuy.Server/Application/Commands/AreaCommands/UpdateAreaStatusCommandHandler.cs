@@ -5,6 +5,7 @@ namespace ResiBuy.Server.Application.Commands.AreaCommands
     public record UpdateAreaStatusCommand(Guid Id) : IRequest<ResponseModel>;
 
     public class UpdateAreaStatusCommandHandler(
+        ResiBuyContext context,
         IAreaDbService areaDbService,
         IKafkaProducerService kafkaProducerService,
         IConfiguration configuration)
@@ -24,6 +25,29 @@ namespace ResiBuy.Server.Application.Commands.AreaCommands
                 existingArea.IsActive = !existingArea.IsActive;
 
                 var updatedArea = await areaDbService.UpdateAsync(existingArea);
+                if (!existingArea.IsActive && existingArea.Buildings.Count() > 0)
+                {
+                    foreach (var building in existingArea.Buildings)
+                    {
+                        building.IsActive = false;
+                        if (building.Rooms.Count() > 0)
+                        {
+                            foreach (var room in building.Rooms)
+                            {
+                                room.IsActive = false;
+                                if (room.Stores.Count() > 0)
+                                {
+                                    foreach(var store in room.Stores)
+                                    {
+                                        store.IsLocked = true;
+                                        store.IsOpen = false;
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+                context.SaveChanges();
 
                 return ResponseModel.SuccessResponse(new
                 {
