@@ -594,54 +594,61 @@ export function AddStoreModal({ isOpen, onClose, onSubmit, editStore }) {
                     >
                       Trạng Thái
                     </Typography>
-                    <FormControlLabel
-                      control={
-                        <Checkbox
-                          checked={formData.isOpen}
-                          onChange={(e) =>
-                            handleInputChange("isOpen", e.target.checked)
-                          }
-                          sx={{
-                            color: "grey.300",
-                            "&.Mui-checked": {
-                              color: "primary.main",
-                            },
-                            "&.Mui-focused": {
-                              boxShadow: "0 0 0 2px rgba(59, 130, 246, 0.5)",
-                            },
-                          }}
-                        />
-                      }
-                      label={
-                        <Typography variant="body2" sx={{ color: "grey.700" }}>
-                          Cửa hàng đang mở
-                        </Typography>
-                      }
-                    />
-                    <FormControlLabel
-                      control={
-                        <Checkbox
-                          checked={formData.isLocked}
-                          onChange={(e) =>
-                            handleInputChange("isLocked", e.target.checked)
-                          }
-                          sx={{
-                            color: "grey.300",
-                            "&.Mui-checked": {
-                              color: "error.main",
-                            },
-                            "&.Mui-focused": {
-                              boxShadow: "0 0 0 2px rgba(239, 68, 68, 0.5)",
-                            },
-                          }}
-                        />
-                      }
-                      label={
-                        <Typography variant="body2" sx={{ color: "grey.700" }}>
-                          Cửa hàng bị khóa
-                        </Typography>
-                      }
-                    />
+                  <FormControlLabel
+  control={
+    <Checkbox
+      checked={formData.isOpen}
+      onChange={(e) =>
+        handleInputChange("isOpen", e.target.checked)
+      }
+      disabled={formData.isLocked} // Add this line
+      sx={{
+        color: "grey.300",
+        "&.Mui-checked": {
+          color: "primary.main",
+        },
+        "&.Mui-focused": {
+          boxShadow: "0 0 0 2px rgba(59, 130, 246, 0.5)",
+        },
+      }}
+    />
+  }
+  label={
+    <Typography variant="body2" sx={{ color: "grey.700" }}>
+      Cửa hàng đang mở
+    </Typography>
+  }
+/>
+
+
+
+<FormControlLabel
+  control={
+    <Checkbox
+      checked={formData.isLocked}
+      onChange={(e) => {
+        handleInputChange("isLocked", e.target.checked);
+        if (e.target.checked) {
+          handleInputChange("isOpen", false); // Auto-close when locked
+        }
+      }}
+      sx={{
+        color: "grey.300",
+        "&.Mui-checked": {
+          color: "error.main",
+        },
+        "&.Mui-focused": {
+          boxShadow: "0 0 0 2px rgba(239, 68, 68, 0.5)",
+        },
+      }}
+    />
+  }
+  label={
+    <Typography variant="body2" sx={{ color: "grey.700" }}>
+      Cửa hàng bị khóa
+    </Typography>
+  }
+/>
                     <Typography
                       variant="caption"
                       sx={{ color: "grey.500", mt: 0.5 }}
