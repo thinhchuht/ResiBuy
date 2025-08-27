@@ -201,7 +201,7 @@ namespace ResiBuy.Server.Infrastructure.DbServices.ShipperDbServices
                     throw new CustomException(ExceptionErrorCode.NotFound, "Shipper không tồn tại");
                 if (shipper.IsShipping)
                 {
-                    throw new CustomException(ExceptionErrorCode.Forbidden, "Shipper đang giao hàng, không thể checkout");
+                    throw new CustomException(ExceptionErrorCode.Forbidden, "Bạn đang giao hàng, không thể checkout");
                 }
 
                 var isLate = true;
