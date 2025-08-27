@@ -197,16 +197,24 @@ export default function ShippersPage() {
         pageSize
       );
     }
-  }, [pageNumber]);
+  }, [pageNumber,searchParams]);
 
   const handleSearch = () => {
-    setSearchParams({
-      keyWord: searchInput || undefined,
-      isOnline: localFilters.isOnline,
-      isLocked: localFilters.isLocked,
-    });
-    handlePageChange(1);
-  };
+  setSearchParams({
+    keyWord: searchInput || undefined,
+    isOnline: localFilters.isOnline,
+    isLocked: localFilters.isLocked,
+  });
+  setPageNumber(1); // Reset về trang 1
+  // Gọi trực tiếp fetchShippersWithFilters
+  fetchShippersWithFilters(
+    searchInput || undefined,
+    localFilters.isOnline,
+    localFilters.isLocked,
+    1, // Trang 1
+    pageSize
+  );
+};
 
   const handleFilterChange = (key: string, value: string | boolean | undefined) => {
     setLocalFilters((prev) => ({
@@ -523,7 +531,7 @@ export default function ShippersPage() {
                 </Select>
               </FormControl>
               <FormControl size="small" sx={{ minWidth: 185 }}>
-                <InputLabel>Tất cả</InputLabel>
+                <InputLabel>Trạng thái khóa</InputLabel>
                 <Select
                   value={localFilters.isLocked ?? ""}
                   onChange={(e) => handleFilterChange("isLocked", e.target.value)}
