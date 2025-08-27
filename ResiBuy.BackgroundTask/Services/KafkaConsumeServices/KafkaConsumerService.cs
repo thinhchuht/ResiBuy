@@ -80,6 +80,9 @@ public class KafkaConsumerService : IKafkaConsumerService, IDisposable
                 case "checkout-topic":
                     await ProcessCheckoutMessageAsync(consumeResult.Message.Value, checkoutService);
                     break;
+                case "process-topic":
+                    await ProcessMessageAsync(consumeResult.Message.Value, checkoutService);
+                    break;
 
                 default:
                     _logger.LogWarning("Unknown topic: {Topic}", consumeResult.Topic);
@@ -120,7 +123,34 @@ public class KafkaConsumerService : IKafkaConsumerService, IDisposable
             _logger.LogError(ex, "Error processing checkout message");
         }
     }
+    private async Task ProcessMessageAsync(string message, IProcessService processService)
+    {
+        try
+        {
+            _logger.LogInformation("Processing process message: {Message}", message);
 
+            var processData = JsonSerializer.Deserialize<UpdateOrderStatusDto>(message);
+
+            if (processData != null)
+            {
+                _logger.LogInformation("Processing process for user");
+                await processService.Process(processData);
+                await Task.Delay(100);
+            }
+            else
+            {
+                _logger.LogWarning("Failed to deserialize process message");
+            }
+        }
+        catch (JsonException ex)
+        {
+            _logger.LogError(ex, "Error deserializing process message");
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Error processing process message");
+        }
+    }
 
     public async Task StopConsumingAsync()
     {

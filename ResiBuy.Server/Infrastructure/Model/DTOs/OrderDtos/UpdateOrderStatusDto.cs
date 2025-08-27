@@ -8,4 +8,5 @@
         public string Reason { get; set; }
         public Guid? ShipperId { get; set; }
     }
+
 }
