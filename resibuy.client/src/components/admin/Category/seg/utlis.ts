@@ -8,7 +8,7 @@ export interface Category {
   id: string;
   name: string;
   status: boolean;
-  image: CategoryImage & { categoryId?: string };
+  image?: CategoryImage & { categoryId?: string };
 }
 
 export interface CategoryFormData {
@@ -33,7 +33,7 @@ export function useCategoriesLogic() {
       if (response?.code === 0 && Array.isArray(response.data)) {
         const updatedCategories = response.data.map((category: Category) => ({
           ...category,
-          image: category.image
+          image: category && category.image
             ? {
                 ...category.image,
                 thumbUrl: category.image.thumbUrl
@@ -43,7 +43,7 @@ export function useCategoriesLogic() {
                   ? `${category.image.url}?t=${Date.now()}`
                   : category.image.url,
               }
-            : category.image,
+            : { id: "", url: "", thumbUrl: "", name: "" },
         }));
         setCategories(updatedCategories);
       } else {
@@ -72,7 +72,7 @@ export function useCategoriesLogic() {
       if (response?.code === 0 && response.data?.id) {
         const updatedCategory = {
           ...response.data,
-          image: response.data.image
+          image: response.data && response.data.image
             ? {
                 ...response.data.image,
                 thumbUrl: response.data.image.thumbUrl
@@ -82,7 +82,7 @@ export function useCategoriesLogic() {
                   ? `${response.data.image.url}?t=${Date.now()}`
                   : response.data.image.url,
               }
-            : response.data.image,
+            : { id: "", url: "", thumbUrl: "", name: "" },
         };
         setSelectedCategory(updatedCategory);
         setIsDetailModalOpen(true);
@@ -110,7 +110,7 @@ export function useCategoriesLogic() {
   const handleEditCategory = (category: Category) => {
     setEditingCategory({
       ...category,
-      image: category.image
+      image: category && category.image
         ? {
             ...category.image,
             thumbUrl: category.image.thumbUrl
@@ -120,7 +120,7 @@ export function useCategoriesLogic() {
               ? `${category.image.url}?t=${Date.now()}`
               : category.image.url,
           }
-        : category.image,
+        : { id: "", url: "", thumbUrl: "", name: "" },
     });
     setIsAddModalOpen(true);
   };
@@ -141,7 +141,10 @@ export function useCategoriesLogic() {
         };
         console.log("Calling categoryApi.update with:", updateData);
         const response = await categoryApi.update(updateData);
-        console.log("Update successful, response:", response);
+        console.log("Update response:", response);
+        if (response?.code !== 0) {
+          throw new Error(response?.message || "Lỗi khi cập nhật danh mục");
+        }
         // Cập nhật trực tiếp categories để phản ánh thay đổi ngay lập tức
         setCategories((prev) =>
           prev.map((cat) =>
@@ -184,8 +187,7 @@ export function useCategoriesLogic() {
               : updateData.image,
           });
         }
-        // Gọi fetchCategories để đảm bảo đồng bộ với server
-        await fetchCategories();
+        toast.success("Cập nhật danh mục thành công!");
       } else {
         const createData: CreateCategoryDto = {
           name: categoryData.name,
@@ -194,13 +196,16 @@ export function useCategoriesLogic() {
         };
         console.log("Calling categoryApi.create with:", createData);
         const response = await categoryApi.create(createData);
-        console.log("Create successful, response:", response);
+        console.log("Create response:", response);
+        if (response?.code !== 0) {
+          throw new Error(response?.message || "Lỗi khi tạo danh mục");
+        }
         // Thêm danh mục mới vào categories
         setCategories((prev) => [
           ...prev,
           {
             ...response.data,
-            image: response.data.image
+            image: response.data && response.data.image
               ? {
                   ...response.data.image,
                   thumbUrl: response.data.image.thumbUrl
@@ -210,11 +215,12 @@ export function useCategoriesLogic() {
                     ? `${response.data.image.url}?t=${Date.now()}`
                     : response.data.image.url,
                 }
-              : response.data.image,
+              : { id: "", url: "", thumbUrl: "", name: "" },
           },
         ]);
-        await fetchCategories();
+        toast.success("Thêm danh mục mới thành công!");
       }
+      await fetchCategories();
       setIsAddModalOpen(false);
       setEditingCategory(null);
     } catch (err: any) {
@@ -239,8 +245,8 @@ export function useCategoriesLogic() {
         )),
       ].join("\n");
 
-         const BOM = "\uFEFF"; 
-const blob = new Blob([BOM + csvContent], { type: "text/csv;charset=utf-8;" });
+      const BOM = "\uFEFF";
+      const blob = new Blob([BOM + csvContent], { type: "text/csv;charset=utf-8;" });
       const url = window.URL.createObjectURL(blob);
       const a = document.createElement("a");
       a.href = url;
@@ -402,7 +408,6 @@ export const useCategoryForm = (editCategory?: Category | null) => {
 
     try {
       await onSubmit(formData);
-      toast.success(editCategory ? "Cập nhật danh mục thành công!" : "Thêm danh mục mới thành công!");
       setFormData({
         name: "",
         status: true,
@@ -411,7 +416,7 @@ export const useCategoryForm = (editCategory?: Category | null) => {
       setErrors({});
     } catch (error: any) {
       console.error("Submit form error:", error);
-      toast.error("Lỗi khi submit danh mục");
+      toast.error(error.message || "Lỗi khi submit danh mục");
     } finally {
       setIsSubmitting(false);
     }
@@ -466,16 +471,16 @@ export const formatCurrency = (amount: number) => {
 export const formatDate = (dateString: string) => {
   return new Date(dateString).toLocaleDateString("vi-VN", {
     year: "numeric",
-    month: "short",
-    day: "numeric",
+    month: "2-digit",
+    day: "2-digit",
   });
 };
 
 export const formatDateTime = (dateString: string) => {
   return new Date(dateString).toLocaleDateString("vi-VN", {
     year: "numeric",
-    month: "short",
-    day: "numeric",
+    month: "2-digit",
+    day: "2-digit",
     hour: "2-digit",
     minute: "2-digit",
   });

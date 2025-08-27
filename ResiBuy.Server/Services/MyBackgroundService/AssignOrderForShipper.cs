@@ -29,23 +29,27 @@ namespace ResiBuy.Server.Services.MyBackgroundService
 
                     try
                     {
+                        var now = ConvertTimeToFloat(DateTime.Now);
                         var orders = await orderDbService.getOrdersByStatus(OrderStatus.Processing);
                         if (orders.Any())
                         {
                             var validOrders = orders.Where(o => o?.Store?.Room?.Building?.AreaId != null).ToList();
+                            Func<Shipper, bool> isAvailable = s =>s.IsOnline && !s.IsShipping &&
+                                                                !s.IsLocked && s.StartWorkTime <= now && s.EndWorkTime >= now;
 
                             foreach (var orderGroup in validOrders.GroupBy(o => o.Store.Room.Building.AreaId))
                             {
                                 var areaId = orderGroup.Key;
                                 var ordersInArea = orderGroup.ToList();
-                                var shippers = (await shipperDbService.GetShippersInAreaAsync(areaId)).Where(s => s.IsOnline == true && s.IsShipping == false)
-                                               .OrderBy(s => s.LastDelivered ?? DateTimeOffset.MinValue)
-                                               .ToList();
+                                var shippers = (await shipperDbService.GetShippersInAreaAsync(areaId))
+                                    .Where(isAvailable)
+                                    .OrderBy(s => s.LastDelivered ?? DateTimeOffset.MinValue)
+                                    .ToList();
 
                                 if (!shippers.Any())
                                 {
                                     var nearestArea = await areaDBService.NearestAreaHasShipper(areaId);
-                                    if (nearestArea?.Shippers != null && nearestArea.Shippers.Any())
+                                    if (nearestArea?.Shippers.Where(isAvailable) != null && nearestArea.Shippers.Any())
                                     {
                                         shippers.AddRange(nearestArea.Shippers);
                                     }
@@ -93,6 +97,10 @@ namespace ResiBuy.Server.Services.MyBackgroundService
             }
 
             _logger.LogInformation("AssignOrderForShipper is stopping.");
+        }
+        public static double ConvertTimeToFloat(DateTime dateTime)
+        {
+            return dateTime.Hour + dateTime.Minute / 60.0;
         }
     }
 }

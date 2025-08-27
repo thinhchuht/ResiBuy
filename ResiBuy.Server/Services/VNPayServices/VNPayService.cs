@@ -1,12 +1,10 @@
-﻿using System.Threading.Tasks;
-using ResiBuy.Server.Infrastructure.DbServices.StoreDbServices;
-using ResiBuy.Server.Services.MyBackgroundService.CheckoutSessionService;
+﻿using ResiBuy.Server.Services.MyBackgroundService.CheckoutSessionService;
 
 namespace ResiBuy.Server.Services.VNPayServices
 {
     public class VNPayService(IConfiguration configuration, ICheckoutSessionService checkoutSessionService, IStoreDbService storeDbService) : IVNPayService
     {
-        public string CreatePaymentUrl(decimal amount, Guid orderId, string orderInfo)
+        public string CreatePaymentUrl(decimal amount, string orderId, string orderInfo)
         {
             var vnpay = new SortedList<string, string>(new VnPayCompare());
             vnpay.Add("vnp_Amount", ((long)(amount * 100)).ToString());
@@ -39,16 +37,17 @@ namespace ResiBuy.Server.Services.VNPayServices
         {
             var store = await storeDbService.GetStoreByIdAsync(storeId);
             if (store == null)
-                throw new CustomException(ExceptionErrorCode.NotFound,"Store not found");
+                throw new CustomException(ExceptionErrorCode.NotFound, "Store not found");
 
             if (store.IsPayFee)
                 throw new InvalidOperationException("Store has already paid the fee");
 
             var feeAmount = configuration.GetValue<decimal>("StoreFee:Amount", 200000); // Default 200,000 VND
-            var orderInfo = $"Thanh toan phi cua hang {store.Name}";
+            var orderInfo = $"Thanh toan phi cua hang {store.Id}";
 
             // Tạo payment URL với storeId làm orderId
-            return CreatePaymentUrl(feeAmount, storeId, orderInfo);
+            var paymentId = storeId.ToString()+"-"+ DateTimeOffset.Now.ToUnixTimeSeconds().ToString();
+            return CreatePaymentUrl(feeAmount, paymentId, orderInfo);
         }
 
         public bool ValidatePayment(string responseData)
@@ -102,7 +101,7 @@ namespace ResiBuy.Server.Services.VNPayServices
                     return false;
 
                 if (!responseParams.ContainsKey("vnp_TxnRef") ||
-                    !Guid.TryParse(responseParams["vnp_TxnRef"], out var storeId))
+                    !Guid.TryParse(responseParams["vnp_TxnRef"][..responseParams["vnp_TxnRef"].LastIndexOf('-')], out var storeId))
                     return false;
 
                 var store = await storeDbService.GetStoreByIdAsync(storeId);
@@ -112,6 +111,7 @@ namespace ResiBuy.Server.Services.VNPayServices
                 await storeDbService.UpdateAsync(store);
 
                 return true;
+
             }
             catch (Exception ex)
             {

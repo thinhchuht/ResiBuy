@@ -4,7 +4,7 @@
     {
         //User query result
         public record UserQueryResult(string Id, string IdentityNumber, string Email, string PhoneNumber, DateTime DateOfBirth, bool IsLocked, IEnumerable<string> Roles,
-            string FullName, DateTime CreatedAt, DateTime UpdatedAt, Guid? CartId, AvatarQueryResult? Avatar, IEnumerable<RoomQueryResult>? Rooms, IEnumerable<Guid> VoucherIds, IEnumerable<object> Reports, IEnumerable<object>? Stores, int ReportCount);
+            string FullName, DateTime CreatedAt, DateTime UpdatedAt, Guid? CartId, AvatarQueryResult? Avatar, IEnumerable<RoomQueryResult>? Rooms, IEnumerable<Guid> VoucherIds, IEnumerable<object> Reports, IEnumerable<object>? Stores, int ReportCount, bool? ShipperIsLocked = null);
         public record NotificationQueryResult(Guid Id, string EventName, DateTime CreatedAt,bool IsRead, string Data);
 
         public record AvatarQueryResult(string Id, string Name, string Url, string ThumbUrl);

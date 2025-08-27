@@ -63,28 +63,18 @@ const buildingApi = {
 
   // Tạo mới
   create: async (data: CreateBuildingDto): Promise<{ code: number; message: string; data: BuildingDto }> => {
-    try {
+
       const response = await axiosClient.post(`${buildingUrl}/create`, data);
-      if (response.data.code !== 0) {
-        throw new Error(response.data.message || "Lỗi khi tạo tòa nhà");
-      }
+   
       return response.data;
-    } catch (error: any) {
-      throw new Error(error.message || "Lỗi khi gọi API tạo tòa nhà");
-    }
+    
   },
 
   // Cập nhật thông tin building
   update: async (data: BuildingDto): Promise<{ code: number; message: string; data: BuildingDto }> => {
-    try {
       const response = await axiosClient.put(buildingUrl, data);
-      if (response.data.code !== 0) {
-        throw new Error(response.data.message || "Lỗi khi cập nhật tòa nhà");
-      }
       return response.data;
-    } catch (error: any) {
-      throw new Error(error.message || "Lỗi khi gọi API cập nhật tòa nhà");
-    }
+   
   },
 
   // Cập nhật trạng thái isActive

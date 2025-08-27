@@ -33,22 +33,33 @@ import { StatsCard } from "../../../layouts/AdminLayout/components/StatsCard";
 import { ConfirmModal } from "../../../components/ConfirmModal"; // Thêm import ConfirmModal
 import type { Shipper } from "../../../types/models";
 
-function ShipperStatsCards() {
-  const [stats, setStats] = useState({
-    totalShippers: 0,
-    totalOnline: 0,
-    totalShipping: 0,
-    totalReported: 0,
-  });
+function ShipperStatsCards({
+  stats,
+  setStats,
+}: {
+  stats: { totalShippers: number; totalOnline: number; totalShipping: number; totalReported: number };
+  setStats: (stats: { totalShippers: number; totalOnline: number; totalShipping: number; totalReported: number }) => void;
+}) {
+  const [localStats, setLocalStats] = useState(stats);
 
+  // Đồng bộ localStats với stats từ props
   useEffect(() => {
-    calculateShipperStats().then(setStats);
+    setLocalStats(stats);
+  }, [stats]);
+
+  // Khởi tạo stats khi component mount
+  useEffect(() => {
+    calculateShipperStats().then((newStats) => {
+      console.log("Initial stats in ShipperStatsCards:", newStats); // Debug log
+      setLocalStats(newStats);
+      setStats(newStats);
+    });
   }, []);
 
   const cards = [
     {
       title: "Tổng Shipper",
-      value: stats.totalShippers.toString(),
+      value: localStats.totalShippers.toString(),
       icon: ShipperIcon,
       iconColor: "#1976d2",
       iconBgColor: "#e3f2fd",
@@ -56,7 +67,7 @@ function ShipperStatsCards() {
     },
     {
       title: "Shipper Đang Hoạt Động",
-      value: stats.totalOnline.toString(),
+      value: localStats.totalOnline.toString(),
       icon: ShipperIcon,
       iconColor: "#d81b60",
       iconBgColor: "#fce4ec",
@@ -64,7 +75,7 @@ function ShipperStatsCards() {
     },
     {
       title: "Shipper Đang Giao Hàng",
-      value: stats.totalShipping.toString(),
+      value: localStats.totalShipping.toString(),
       icon: ShipperIcon,
       iconColor: "#2e7d32",
       iconBgColor: "#e8f5e9",
@@ -72,7 +83,7 @@ function ShipperStatsCards() {
     },
     {
       title: "Shipper Bị Khóa",
-      value: stats.totalReported.toString(),
+      value: localStats.totalReported.toString(),
       icon: ShipperIcon,
       iconColor: "#ef4444",
       iconBgColor: "#fee2e2",
@@ -117,6 +128,13 @@ function ShipperStatsCards() {
 }
 
 export default function ShippersPage() {
+  const [stats, setStats] = useState({
+    totalShippers: 0,
+    totalOnline: 0,
+    totalShipping: 0,
+    totalReported: 0,
+  });
+
   const {
     shippers,
     totalCount,
@@ -141,7 +159,8 @@ export default function ShippersPage() {
     isShipperAvailable,
     fetchShippers,
     fetchShippersWithFilters,
-  } = useShippersLogic();
+  } = useShippersLogic(setStats);
+
 
   const [searchInput, setSearchInput] = useState("");
   const [localFilters, setLocalFilters] = useState<{
@@ -452,7 +471,8 @@ export default function ShippersPage() {
             </Typography>
           </Box>
 
-          <ShipperStatsCards />
+         <ShipperStatsCards stats={stats} setStats={setStats} /> {/* Truyền stats vào ShipperStatsCards */}
+
 
           <Box
             sx={{
@@ -467,7 +487,7 @@ export default function ShippersPage() {
               value={searchInput}
               onChange={(e) => setSearchInput(e.target.value)}
               size="small"
-              sx={{ maxWidth: 300, flex: 1 }}
+              sx={{ maxWidth: 400, flex: 1 }}
               InputProps={{
                 startAdornment: (
                   <InputAdornment position="start">
@@ -477,7 +497,7 @@ export default function ShippersPage() {
               }}
             />
             <Box sx={{ display: "flex", gap: 2, flexWrap: "wrap" }}>
-              <FormControl size="small" sx={{ minWidth: 120 }}>
+              <FormControl size="small" sx={{ minWidth: 190 }}>
                 <InputLabel>Trạng thái hoạt động</InputLabel>
                 <Select
                   value={localFilters.isOnline ?? ""}
@@ -492,7 +512,7 @@ export default function ShippersPage() {
                   ))}
                 </Select>
               </FormControl>
-              <FormControl size="small" sx={{ minWidth: 120 }}>
+              <FormControl size="small" sx={{ minWidth: 185 }}>
                 <InputLabel>Khóa</InputLabel>
                 <Select
                   value={localFilters.isLocked ?? ""}

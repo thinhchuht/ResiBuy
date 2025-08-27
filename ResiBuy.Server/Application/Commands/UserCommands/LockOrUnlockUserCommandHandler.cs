@@ -2,7 +2,7 @@
 {
     public record LockOrUnlockUserCommand(string Id) : IRequest<ResponseModel>;
     public class LockOrUnlockUserCommandHandler(
-        IUserDbService userDbService) : IRequestHandler<LockOrUnlockUserCommand, ResponseModel>
+        IUserDbService userDbService, INotificationService notificationService) : IRequestHandler<LockOrUnlockUserCommand, ResponseModel>
     {
         public async Task<ResponseModel> Handle(LockOrUnlockUserCommand command, CancellationToken cancellationToken)
         {
@@ -15,9 +15,12 @@
 
             if (existingUser.Roles.Contains(Constants.AdminRole))
                 throw new CustomException(ExceptionErrorCode.ValidationFailed, "Không thể khóa tài khoản quản trị viên");
-
+           
             existingUser.UpdateIsLock();
+            if (existingUser.ReportCount == 3) existingUser.ReportCount = 0;
             var updatedUser = await userDbService.UpdateAsync(existingUser);
+            if(updatedUser.IsLocked) await notificationService.SendNotificationAsync(Constants.UserLocked,
+                new { userId = updatedUser.Id }, Constants.AdminHubGroup, [updatedUser.Id], false);
             return ResponseModel.SuccessResponse(updatedUser);
         }
     }

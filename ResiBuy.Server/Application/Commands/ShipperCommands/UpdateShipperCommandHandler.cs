@@ -1,9 +1,3 @@
-using ResiBuy.Server.Exceptions;
-using ResiBuy.Server.Infrastructure.DbServices.ShipperDbServices;
-using System;
-using System.Threading;
-using System.Threading.Tasks;
-
 namespace ResiBuy.Server.Application.Commands.ShipperCommands
 {
     public record UpdateShipperCommand(
@@ -16,10 +10,11 @@ namespace ResiBuy.Server.Application.Commands.ShipperCommands
     public class UpdateShipperCommandHandler : IRequestHandler<UpdateShipperCommand, ResponseModel>
     {
         private readonly IShipperDbService _shipperDbService;
-
-        public UpdateShipperCommandHandler(IShipperDbService shipperDbService)
+        private readonly INotificationService _notificationService;
+        public UpdateShipperCommandHandler(IShipperDbService shipperDbService , INotificationService notificationService)
         {
             _shipperDbService = shipperDbService;
+            _notificationService = notificationService;
         }
 
         public async Task<ResponseModel> Handle(UpdateShipperCommand command, CancellationToken cancellationToken)
@@ -40,8 +35,17 @@ namespace ResiBuy.Server.Application.Commands.ShipperCommands
             shipper.StartWorkTime = command.StartWorkTime ?? shipper.StartWorkTime;
             shipper.EndWorkTime = command.EndWorkTime ?? shipper.EndWorkTime;
             shipper.IsLocked = command.IsLocked ?? shipper.IsLocked;
+            if(!shipper.IsLocked && shipper.ReportCount == 3) shipper.ReportCount = 0;
             // 3. Lưu thay đổi
             await _shipperDbService.UpdateAsync(shipper);
+            if (shipper.IsLocked)
+                await _notificationService.SendNotificationAsync(Constants.ShipperLocked,
+                            new { UserId = shipper.UserId },
+                            Constants.AdminHubGroup, [shipper.UserId]);
+            if (shipper.IsLocked == false)
+                await _notificationService.SendNotificationAsync(Constants.ShipperUnlocked,
+                            new { UserId = shipper.UserId },
+                            Constants.AdminHubGroup, [shipper.UserId]);
 
             return ResponseModel.SuccessResponse();
         }

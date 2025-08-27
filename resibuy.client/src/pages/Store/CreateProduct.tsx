@@ -817,7 +817,7 @@ export default function CreateProduct() {
                                         <TableRow sx={{ bgcolor: "grey.50" }}>
                                             <TableCell sx={{ fontWeight: "bold" }}>Phân loại</TableCell>
                                             <TableCell sx={{ fontWeight: "bold" }}>Giá (VNĐ)</TableCell>
-                                            <TableCell sx={{ fontWeight: "bold" }}>Cân nặng (g)</TableCell>
+                                            <TableCell sx={{ fontWeight: "bold" }}>Cân nặng (kg)</TableCell>
                                             <TableCell sx={{ fontWeight: "bold" }}>Số lượng</TableCell>
                                             <TableCell sx={{ fontWeight: "bold" }}>Hết hàng</TableCell>
                                             <TableCell sx={{ fontWeight: "bold" }}>Ảnh sản phẩm</TableCell>

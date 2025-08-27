@@ -90,15 +90,18 @@ namespace ResiBuy.Server.Infrastructure.DbServices.StoreDbServices
             }
         }
 
-        public async Task<Store> UpdateStoreStatusAsync(Guid storeId, bool isLocked, bool isOpen)
+        public async Task<Store> UpdateStoreStatusAsync(Guid storeId, bool? isLocked, bool isOpen)
         {
             try
             {
                 var store = await _context.Stores.FindAsync(storeId);
                 if (store == null)
                     throw new CustomException(ExceptionErrorCode.NotFound, "Cửa hàng không tồn tại");
-
-                store.IsLocked = isLocked;
+                if(isLocked.HasValue)
+                {
+                    if(!isLocked.Value && store.ReportCount == 3) store.ReportCount = 0;
+                    store.IsLocked = isLocked.Value;
+                }
                 store.IsOpen = isOpen;
                 await _context.SaveChangesAsync();
                 return store;
@@ -214,8 +217,8 @@ namespace ResiBuy.Server.Infrastructure.DbServices.StoreDbServices
         {
             var salesAnalysis = new SalesAnalysisDto();
             var store = await _context.Stores.Include(s => s.Products).Include(s => s.Vouchers).Include(s => s.Orders).ThenInclude(o => o.Items).FirstOrDefaultAsync(s => s.Id == storeId);
-            var orderSuccess = store.Orders.Where(o => o.Status == OrderStatus.Delivered && o.CreateAt >= startDate && o.CreateAt <= endDate);
-            var orderCanceled = store.Orders.Where(o => o.Status == OrderStatus.Cancelled && o.CreateAt >= startDate && o.CreateAt <= endDate);
+            var orderSuccess = store.Orders.Where(o => o.Status == OrderStatus.Delivered && o.CreateAt >= startDate && o.CreateAt <= endDate.AddDays(1));
+            var orderCanceled = store.Orders.Where(o => o.Status == OrderStatus.Cancelled && o.CreateAt >= startDate && o.CreateAt <= endDate.AddDays(1));
             decimal sales = 0;
             int productQuantity = 0;
             foreach (var order in orderSuccess)
@@ -238,7 +241,7 @@ namespace ResiBuy.Server.Infrastructure.DbServices.StoreDbServices
             var store = await _context.Stores.Include(s => s.Orders).ThenInclude(o => o.Items).ThenInclude(i => i.ProductDetail).ThenInclude(p => p.Product)
                 .ThenInclude(p => p.ProductDetails).ThenInclude(pd => pd.Image).FirstOrDefaultAsync(s => s.Id == storeId);
             Dictionary<int, ProductAndSale> productAndSales = new Dictionary<int, ProductAndSale>();
-            var successedOrder = store.Orders.Where(o => o.Status == OrderStatus.Delivered && o.UpdateAt >= startDate && o.UpdateAt <= endDate);
+            var successedOrder = store.Orders.Where(o => o.Status == OrderStatus.Delivered && o.UpdateAt >= startDate && o.UpdateAt <= endDate.AddDays(1));
             foreach (var order in successedOrder)
             {
                 foreach (var item in order.Items)
@@ -409,6 +412,46 @@ namespace ResiBuy.Server.Infrastructure.DbServices.StoreDbServices
             {
                 throw new CustomException(ExceptionErrorCode.RepositoryError, ex.Message);
             }
+
         }
+        public async Task<bool> CheckStorePhoneIsAvailable(string phone, string ownerId)
+        {
+            try
+            {
+                return await _context.Stores
+                    .AnyAsync(s => s.PhoneNumber == phone && s.OwnerId != ownerId);
+            }
+            catch (Exception ex)
+            {
+                throw new CustomException(ExceptionErrorCode.RepositoryError, ex.Message);
+            }
+        }
+
+        public async Task<bool> CheckStorePhoneWithIdAsync(string phone, Guid excludeId, string ownerId)
+        {
+            try
+            {
+                return await _context.Stores
+                    .AnyAsync(s => s.PhoneNumber == phone && s.Id != excludeId && s.OwnerId != ownerId);
+            }
+            catch (Exception ex)
+            {
+                throw new CustomException(ExceptionErrorCode.RepositoryError, ex.Message);
+            }
+        }
+
+        public async Task<bool> CheckStoreNameWithIdAsync(string name, Guid excludeId)
+        {
+            try
+            {
+                return await _context.Stores
+                    .AnyAsync(s => s.Name == name && s.Id != excludeId);
+            }
+            catch (Exception ex)
+            {
+                throw new CustomException(ExceptionErrorCode.RepositoryError, ex.Message);
+            }
+        }
+
     }
 }

@@ -206,7 +206,7 @@ export const useUserForm = (editingUser?: UserDto | null) => {
     setIsSubmitting(true);
     try {
       await onSubmit(formData, rooms);
-      toast.success(editingUser ? "Cập nhật phòng thành công!" : "Đang kiểm tra");
+    
     } catch (error: any) {
       console.error("Submit user error:", error);
       toast.error(error.message || "Lỗi khi lưu người dùng");
