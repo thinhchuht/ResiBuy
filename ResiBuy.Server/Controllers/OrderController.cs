@@ -46,6 +46,13 @@ namespace ResiBuy.Server.Controllers
             return Ok(result);
         }
 
+        [HttpPut("process")]
+        public async Task<IActionResult> ProcessOrders([FromBody] UpdateOrderStatusDto dto)
+        {
+            var result = await mediator.Send(new UpdateOrderStatusCommand(dto));
+            return Ok(result);
+        }
+
         [HttpGet("count")]
         public async Task<IActionResult> CountOrders( Guid? shipperId,  Guid? storeId,  string? userId,  OrderStatus? status)
         {

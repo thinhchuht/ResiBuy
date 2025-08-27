@@ -1,10 +1,12 @@
 ﻿using ResiBuy.Server.Infrastructure.DbServices.RoomDbServices;
+using ResiBuy.Server.Infrastructure.Model;
 
 namespace ResiBuy.Server.Application.Commands.BuildingCommands
 {
     public record UpdateBuildingStatusCommand(Guid BuildingId) : IRequest<ResponseModel>;
 
     public class UpdateBuildingStatusCommandHandler(
+        ResiBuyContext context,
         IBuildingDbService buildingDbService,
         IUserDbService userDbService,
         IAreaDbService areaDbService,
@@ -20,10 +22,29 @@ namespace ResiBuy.Server.Application.Commands.BuildingCommands
 
                 if (room == null)
                     throw new CustomException(ExceptionErrorCode.NotFound, $"Không tìm thấy phòng với Id: {command.BuildingId}");
-
+                if (!room.Area.IsActive)
+                {
+                    throw new CustomException(ExceptionErrorCode.UpdateFailed, "Area không hoạt động");
+                }
                 room.UpdateStatus();
 
                 var updatedRoom = await buildingDbService.UpdateAsync(room);
+                if (room.Rooms.Count() > 0 && room.IsActive == false)
+                {
+                    foreach (var rom in room.Rooms)
+                    {
+                        rom.IsActive = false;
+                        if (rom.Stores.Count() > 0)
+                        {
+                            foreach (var store in rom.Stores)
+                            {
+                                store.IsLocked = true;
+                                store.IsOpen = false;
+                            }
+                        }
+                    }
+                }
+                context.SaveChanges();
 
                 return ResponseModel.SuccessResponse(new
                 {

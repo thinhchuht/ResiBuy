@@ -6,13 +6,15 @@ public class KafkaConsumerService : IKafkaConsumerService, IDisposable
     private readonly ILogger<KafkaConsumerService> _logger;
     private readonly KafkaSettings _kafkaSettings;
     private readonly ICheckoutService _checkoutService;
+    private readonly IProcessService _processService;
     private bool _disposed = false;
 
-    public KafkaConsumerService(IOptions<KafkaSettings> kafkaSettings, ILogger<KafkaConsumerService> logger, ICheckoutService checkoutService)
+    public KafkaConsumerService(IOptions<KafkaSettings> kafkaSettings, ILogger<KafkaConsumerService> logger, IProcessService processService, ICheckoutService checkoutService)
     {
         _kafkaSettings = kafkaSettings.Value;
         _logger = logger;
         _checkoutService = checkoutService;
+        _processService = processService;
 
         var config = new ConsumerConfig
         {
@@ -44,7 +46,7 @@ public class KafkaConsumerService : IKafkaConsumerService, IDisposable
                         continue;
                     }
 
-                    await ProcessMessageAsync(consumeResult, _checkoutService);
+                    await ProcessMessageAsync(consumeResult, _checkoutService, _processService);
                     _consumer.Commit(consumeResult);
                 }
                 catch (ConsumeException ex)
@@ -69,7 +71,7 @@ public class KafkaConsumerService : IKafkaConsumerService, IDisposable
         }
     }
 
-    private async Task ProcessMessageAsync(ConsumeResult<string, string> consumeResult, ICheckoutService checkoutService)
+    private async Task ProcessMessageAsync(ConsumeResult<string, string> consumeResult, ICheckoutService checkoutService, IProcessService processService)
     {
         try
         {
@@ -79,6 +81,9 @@ public class KafkaConsumerService : IKafkaConsumerService, IDisposable
             {
                 case "checkout-topic":
                     await ProcessCheckoutMessageAsync(consumeResult.Message.Value, checkoutService);
+                    break;
+                case "process-topic":
+                    await ProcessMessageAsync(consumeResult.Message.Value, processService);
                     break;
 
                 default:
@@ -120,7 +125,34 @@ public class KafkaConsumerService : IKafkaConsumerService, IDisposable
             _logger.LogError(ex, "Error processing checkout message");
         }
     }
+    private async Task ProcessMessageAsync(string message, IProcessService processService)
+    {
+        try
+        {
+            _logger.LogInformation("Processing process message: {Message}", message);
 
+            var processData = JsonSerializer.Deserialize<UpdateOrderStatusDto>(message);
+
+            if (processData != null)
+            {
+                _logger.LogInformation("Processing process for user");
+                await processService.Process(processData);
+                await Task.Delay(100);
+            }
+            else
+            {
+                _logger.LogWarning("Failed to deserialize process message");
+            }
+        }
+        catch (JsonException ex)
+        {
+            _logger.LogError(ex, "Error deserializing process message");
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Error processing process message");
+        }
+    }
 
     public async Task StopConsumingAsync()
     {

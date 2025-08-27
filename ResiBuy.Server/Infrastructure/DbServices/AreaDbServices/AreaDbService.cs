@@ -37,6 +37,8 @@ namespace ResiBuy.Server.Infrastructure.DbServices.AreaDbServices
             {
                 var area = await _context.Areas
                     .Include(a => a.Buildings)
+                    .ThenInclude(b => b.Rooms)
+                    .ThenInclude(r => r.Stores)
                     .Include(a => a.Shippers)
                     .FirstOrDefaultAsync(a => a.Id == id);
                 if (area == null)

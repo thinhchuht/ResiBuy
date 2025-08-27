@@ -7,7 +7,7 @@ using ResiBuy.Server.Infrastructure.Model.EventDataDto;
 namespace ResiBuy.Server.Application.Commands.OrderCommands
 {
     public record UpdateOrderStatusCommand(UpdateOrderStatusDto Dto) : IRequest<ResponseModel>;
-    public class UpdateOrderStatusCommandHandler(IOrderDbService orderDbService, IStoreDbService storeDbService, IShipperDbService shipperDbService, IProductDetailDbService productDetailDbService, INotificationService notificationService, IUserDbService userDbService, IRoomDbService roomDbService, IMailBaseService mailBaseService) : IRequestHandler<UpdateOrderStatusCommand, ResponseModel>
+    public class UpdateOrderStatusCommandHandler(IKafkaProducerService producer, IOrderDbService orderDbService, IStoreDbService storeDbService, IShipperDbService shipperDbService, IProductDetailDbService productDetailDbService, INotificationService notificationService, IUserDbService userDbService, IRoomDbService roomDbService, IMailBaseService mailBaseService) : IRequestHandler<UpdateOrderStatusCommand, ResponseModel>
     {
         public async Task<ResponseModel> Handle(UpdateOrderStatusCommand request, CancellationToken cancellationToken)
         {
@@ -23,7 +23,7 @@ namespace ResiBuy.Server.Application.Commands.OrderCommands
             {
                 transaction = await orderDbService.BeginTransactionAsync();
                 order.UpdateAt = DateTime.Now;
-                var notiProductDetails = new List<ProductDetail>();
+                //var notiProductDetails = new List<ProductDetail>();
                 if (dto.OrderStatus.HasValue)
                 {
                     if (dto.OrderStatus == OrderStatus.None)
@@ -53,28 +53,31 @@ namespace ResiBuy.Server.Application.Commands.OrderCommands
 
                     if (dto.OrderStatus == OrderStatus.Processing)
                     {
-                        var items = order.Items;
-                        var productDetailIds = items.Select(i => i.ProductDetailId).ToList();
-                        var productDetails = await productDetailDbService.GetBatchAsync(productDetailIds);
-                        foreach (var item in items)
-                        {
-                            var productDetail = productDetails.First(pd => pd.Id == item.ProductDetailId);
-                            productDetail.Quantity -= item.Quantity;
-                            productDetail.Sold += item.Quantity;
-                            if (productDetail.Quantity == 0)
-                            {
-                                productDetail.IsOutOfStock = true;
-                                //productDetail.Sold = productDetail.Sold + totalOrderedQuantity;
-                                notiProductDetails.Add(productDetail);
-                                var allDetails = await productDetailDbService.GetByProductIdAsync(productDetail.ProductId);
-                                if (allDetails.All(pd => pd.IsOutOfStock || pd.Quantity == 0))
-                                {
-                                    productDetail.Product.IsOutOfStock = true;
-                                }
-                            }
-                        }
-                        await productDetailDbService.UpdateTransactionBatch(productDetails);
-
+                        //var items = order.Items;
+                        //var productDetailIds = items.Select(i => i.ProductDetailId).ToList();
+                        //var productDetails = await productDetailDbService.GetBatchAsync(productDetailIds);
+                        //foreach (var item in items)
+                        //{
+                        //    var productDetail = productDetails.First(pd => pd.Id == item.ProductDetailId);
+                        //    if (productDetail.Product.IsOutOfStock || productDetail.IsOutOfStock || productDetail.Quantity <= 0) throw new CustomException(ExceptionErrorCode.ValidationFailed, $"Sản phẩm {productDetail.Product.Name} đã hết hàng");
+                        //    if (productDetail.Quantity < item.Quantity)
+                        //        throw new CustomException(ExceptionErrorCode.CreateFailed,
+                        //            $"Mặt hàng {productDetail.Product.Name} chỉ còn {productDetail.Quantity} sản phẩm");
+                        //    productDetail.Quantity -= item.Quantity;
+                        //    if (productDetail.Quantity == 0)
+                        //    {
+                        //        productDetail.IsOutOfStock = true;
+                        //        notiProductDetails.Add(productDetail);
+                        //        var allDetails = await productDetailDbService.GetByProductIdAsync(productDetail.ProductId);
+                        //        if (allDetails.All(pd => pd.IsOutOfStock || pd.Quantity == 0))
+                        //        {
+                        //            productDetail.Product.IsOutOfStock = true;
+                        //        }
+                        //    }
+                        //}
+                        //await productDetailDbService.UpdateTransactionBatch(productDetails);
+                        var message = JsonSerializer.Serialize(dto);
+                        producer.ProduceMessageAsync("process", message, "process-topic");
                     }
                     if (dto.OrderStatus == OrderStatus.Delivered)
                     {
@@ -85,6 +88,7 @@ namespace ResiBuy.Server.Application.Commands.OrderCommands
                         foreach (var item in items)
                         {
                             var productDetail = productDetails.First(pd => pd.Id == item.ProductDetailId);
+                            productDetail.Sold += item.Quantity;
                         }
                         await productDetailDbService.UpdateTransactionBatch(productDetails);
 
@@ -133,18 +137,19 @@ namespace ResiBuy.Server.Application.Commands.OrderCommands
                 await orderDbService.SaveChangesAsync();
                 await transaction.CommitAsync();
                 var userIds = new List<string>();
-                if (dto.OrderStatus == OrderStatus.Processing) userIds.Add(order.UserId);
+                //if (dto.OrderStatus == OrderStatus.Processing) userIds.Add(order.UserId);
                 if (dto.OrderStatus == OrderStatus.Assigned)
                     userIds.AddRange([order.UserId, store.OwnerId.ToString()]);
                 if (dto.OrderStatus == OrderStatus.Shipped) userIds.AddRange([order.UserId, store.OwnerId.ToString()]);
                 if (dto.OrderStatus == OrderStatus.Delivered) userIds.AddRange([order.UserId, store.OwnerId.ToString()]);
                 if (dto.OrderStatus == OrderStatus.CustomerNotAvailable) userIds.AddRange([order.UserId, store.OwnerId.ToString()]);
                 if (dto.OrderStatus == OrderStatus.Cancelled) userIds.AddRange([order.UserId, store.OwnerId.ToString()]);
+                if(dto.OrderStatus != OrderStatus.Processing)
                 await notificationService.SendNotificationAsync($"{Constants.OrderStatusChanged}-{order.Status}", new OrderStatusChangedDto(order.Id, order.StoreId, store.Name, order.Status, oldStatus, order.PaymentStatus, order.CreateAt, order.UpdateAt), "", userIds);
-                foreach (var productDetail in notiProductDetails)
-                {
-                    await notificationService.SendNotificationAsync(Constants.ProductOutOfStock, new ProductOutOfStockDto(productDetail.Id, productDetail.Product.Name, productDetail.Product.Store.Name, productDetail.Product.StoreId), Constants.NoHubGroup, [productDetail.Product.Store.OwnerId.ToString()]);
-                }
+                //foreach (var productDetail in notiProductDetails)
+                //{
+                //    await notificationService.SendNotificationAsync(Constants.ProductOutOfStock, new ProductOutOfStockDto(productDetail.Id, productDetail.Product.Name, productDetail.Product.Store.Name, productDetail.Product.StoreId), Constants.NoHubGroup, [productDetail.Product.Store.OwnerId.ToString()]);
+                //}
                 if (dto.OrderStatus == OrderStatus.Delivered)
                 {
                     var user = await userDbService.GetUserById(order.UserId);

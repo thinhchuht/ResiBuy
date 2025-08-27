@@ -28,10 +28,10 @@ const ProductCard = ({ product, productActions, onResetState }: ProductCardProps
   const thumbUrl = defaultProductDetail.image?.thumbUrl;
   const averageRate = typeof product.avarageRate === "number" ? product.avarageRate : 0;
 
-  const handleActionClick = (e: React.MouseEvent, action: ProductCardProps["productActions"][0]) => {
-    e.preventDefault();
-    action.onClick(product);
-  };
+  // const handleActionClick = (e: React.MouseEvent, action: ProductCardProps["productActions"][0]) => {
+  //   e.preventDefault();
+  //   action.onClick(product);
+  // };
 
   return (
     <Card
@@ -105,7 +105,7 @@ const ProductCard = ({ product, productActions, onResetState }: ProductCardProps
               transition: "transform 0.4s ease",
             }}
           />
-          <Box
+          {/* <Box
             className="product-actions"
             sx={{
               position: "absolute",
@@ -143,7 +143,7 @@ const ProductCard = ({ product, productActions, onResetState }: ProductCardProps
                 {action.icon}
               </Box>
             ))}
-          </Box>
+          </Box> */}
         </Box>
       </Link>
       <Box sx={{ display: "flex", alignItems: "center", justifyContent: "center", gap: 0.4, mb: 0.2 }}>
@@ -189,7 +189,7 @@ const ProductCard = ({ product, productActions, onResetState }: ProductCardProps
           fontWeight: 500,
           zIndex: 2,
         }}>
-        Lượt mua: {product.sold}
+        Đã bán: {product.sold}
       </Box>
       <Box sx={{ display: "flex", alignItems: "center", gap: 0.8, justifyContent: "center", mb: 0.2 }}>
         <Typography sx={{ color: "#FF6B6B", fontWeight: 600, fontSize: "1.05rem" }}>{formatPrice(discountedPrice)}</Typography>
