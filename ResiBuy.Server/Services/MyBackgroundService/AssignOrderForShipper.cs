@@ -51,7 +51,7 @@ namespace ResiBuy.Server.Services.MyBackgroundService
                                     var nearestArea = await areaDBService.NearestAreaHasShipper(areaId);
                                     if (nearestArea?.Shippers.Where(isAvailable) != null && nearestArea.Shippers.Any())
                                     {
-                                        shippers.AddRange(nearestArea.Shippers);
+                                        shippers.AddRange(nearestArea.Shippers.Where(isAvailable));
                                     }
                                 }
 
