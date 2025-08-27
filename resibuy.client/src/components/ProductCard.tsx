@@ -16,21 +16,17 @@ interface ProductCardProps {
 
 const ProductCard = ({ product, productActions, onResetState }: ProductCardProps) => {
   // Get productDetail with minimum price
-  const defaultProductDetail = (
+  const defaultProductDetail =
     product.productDetails && product.productDetails.length > 0
-      ? product.productDetails.reduce((min, current) =>
-          current.price < min.price ? current : min,
-          product.productDetails[0]
-        )
-      : undefined
-  );
+      ? product.productDetails.reduce((min, current) => (current.price < min.price ? current : min), product.productDetails[0])
+      : undefined;
 
   if (!defaultProductDetail) return null;
 
   const basePrice = defaultProductDetail.price;
   const discountedPrice = basePrice * (1 - product.discount / 100);
-  // Get first image's thumbUrl from the default product detail
   const thumbUrl = defaultProductDetail.image?.thumbUrl;
+  const averageRate = typeof product.avarageRate === "number" ? product.avarageRate : 0;
 
   const handleActionClick = (e: React.MouseEvent, action: ProductCardProps["productActions"][0]) => {
     e.preventDefault();
@@ -150,10 +146,22 @@ const ProductCard = ({ product, productActions, onResetState }: ProductCardProps
           </Box>
         </Box>
       </Link>
-      <Box sx={{ display: "flex", justifyContent: "center", mb: 0.2 }}>
-        {[...Array(5)].map((_, i) => (
-          <Star key={i} sx={{ color: "#FFD93D", fontSize: 18, mx: 0.05 }} />
-        ))}
+      <Box sx={{ display: "flex", alignItems: "center", justifyContent: "center", gap: 0.4, mb: 0.2 }}>
+        <Box sx={{ display: "flex" }}>
+          {[...Array(5)].map((_, i) => (
+            <Star
+              key={i}
+              sx={{
+                color: i < Math.round(averageRate) ? "#FFD93D" : "#E0E0E0",
+                fontSize: 18,
+                mx: 0.05,
+              }}
+            />
+          ))}
+        </Box>
+        <Typography variant="body2" sx={{ color: "#6b7280", fontWeight: 500 }}>
+          {averageRate.toFixed(1)}
+        </Typography>
       </Box>
       <Typography
         variant="subtitle1"

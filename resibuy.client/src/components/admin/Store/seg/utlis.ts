@@ -196,12 +196,18 @@ export function useStoresLogic() {
   const handleSubmitStore = async (storeData) => {
     try {
       if (editingStore) {
-        const updateResponse = await storeApi.update(editingStore.id, {
+        const updatePayload = {
           id: editingStore.id,
           name: storeData.name,
           description: storeData.description,
           phoneNumber: storeData.phoneNumber,
-        });
+        };
+        // Chỉ thêm roomId vào payload nếu nó được cung cấp và khác với giá trị ban đầu
+        if (storeData.roomId !== undefined && storeData.roomId !== editingStore.roomId) {
+          updatePayload.roomId = storeData.roomId || null;
+        }
+
+        const updateResponse = await storeApi.update(editingStore.id, updatePayload);
         if (updateResponse.code !== 0) {
           throw new Error(updateResponse.message || "Lỗi khi cập nhật cửa hàng");
         }
@@ -226,9 +232,10 @@ export function useStoresLogic() {
             ...selectedStore,
             name: storeData.name,
             description: storeData.description,
+            phoneNumber: storeData.phoneNumber,
+            roomId: storeData.roomId !== undefined ? storeData.roomId : selectedStore.roomId,
             isLocked: storeData.isLocked,
             isOpen: storeData.isOpen,
-            phoneNumber: storeData.phoneNumber,
           });
         }
         toast.success("Cập nhật cửa hàng thành công!");
@@ -237,14 +244,14 @@ export function useStoresLogic() {
           name: storeData.name,
           description: storeData.description,
           ownerId: storeData.ownerId,
-          roomId: storeData.roomId,
+          roomId: storeData.roomId || null,
           phoneNumber: storeData.phoneNumber,
         });
         if (response.code === 0) {
           await fetchStores(pageNumber, pageSize);
           toast.success("Thêm cửa hàng mới thành công!");
         } else {
-          throw new Error(response.message || "Lỗi khi thêm cửa hàng");
+          // throw new Error(response.message || "Lỗi khi thêm cửa hàng");
         }
       }
       setIsAddModalOpen(false);
@@ -255,39 +262,38 @@ export function useStoresLogic() {
   };
 
   const handleToggleStoreStatus = (storeId, callback) => {
-  const store = stores.find((s) => s.id === storeId);
-  if (!store) {
-    toast.error("Cửa hàng không tồn tại");
-    return;
-  }
-  const newStatus = !store.isLocked;
-  callback({
-    open: true,
-    title: newStatus ? "Khóa cửa hàng" : "Mở khóa cửa hàng",
-    message: `Bạn có chắc chắn muốn ${newStatus ? "khóa" : "mở khóa"} cửa hàng ${store.name}?`,
-    onConfirm: async () => {
-      try {
-        const response = await storeApi.updateStatus(storeId, newStatus);
-        if (response.code === 0) {
-          await fetchStores(pageNumber, pageSize);
-          if (selectedStore && selectedStore.id === storeId) {
-            const updatedStore = await storeApi.getById(storeId);
-            if (updatedStore.code === 0) {
-              setSelectedStore(updatedStore.data);
+    const store = stores.find((s) => s.id === storeId);
+    if (!store) {
+      toast.error("Cửa hàng không tồn tại");
+      return;
+    }
+    const newStatus = !store.isLocked;
+    callback({
+      open: true,
+      title: newStatus ? "Khóa cửa hàng" : "Mở khóa cửa hàng",
+      message: `Bạn có chắc chắn muốn ${newStatus ? "khóa" : "mở khóa"} cửa hàng ${store.name}?`,
+      onConfirm: async () => {
+        try {
+          const response = await storeApi.updateStatus(storeId, newStatus);
+          if (response.code === 0) {
+            await fetchStores(pageNumber, pageSize);
+            if (selectedStore && selectedStore.id === storeId) {
+              const updatedStore = await storeApi.getById(storeId);
+              if (updatedStore.code === 0) {
+                setSelectedStore(updatedStore.data);
+              }
             }
+            const updatedStats = await calculateStoreStats();
+            toast.info(`Cửa hàng đã được ${newStatus ? "khóa" : "mở khóa"}.`);
+          } else {
+            throw new Error(response.message || "Lỗi khi cập nhật trạng thái");
           }
-          // Fetch lại thống kê
-          const updatedStats = await calculateStoreStats();
-          toast.info(`Cửa hàng đã được ${newStatus ? "khóa" : "mở khóa"}.`);
-        } else {
-          throw new Error(response.message || "Lỗi khi cập nhật trạng thái");
+        } catch (err) {
+          toast.error(err.message || "Lỗi khi cập nhật trạng thái cửa hàng");
         }
-      } catch (err) {
-        toast.error(err.message || "Lỗi khi cập nhật trạng thái cửa hàng");
-      }
-    },
-  });
-};
+      },
+    });
+  };
 
   const handleExportStores = async () => {
     try {
@@ -317,7 +323,7 @@ export function useStoresLogic() {
             `"${store.description || ""}"`,
             `"${store.phoneNumber || ""}"`,
             store.isLocked ? "Khóa" : "Không khóa",
-            store.isOpen ? "Mở cửa" : "ĐÓng cưae",
+            store.isOpen ? "Mở cửa" : "Đóng cửa",
             new Date(store.createdAt).toLocaleDateString(),
             `"${store.room?.name || "N/A"}"`,
             `"${store.room?.buildingName || "N/A"}"`,
@@ -399,9 +405,10 @@ export function useStoresLogic() {
     handleViewOrderDetails,
     fetchStores,
     fetchStoresWithFilters,
+    formatPaymentMethod,
+    formatPaymentStatus
   };
 };
-
 
 export const useStoreForm = (editStore) => {
   const initialFormData = {
@@ -418,6 +425,7 @@ export const useStoreForm = (editStore) => {
   const [errors, setErrors] = useState({});
   const [isSubmitting, setIsSubmitting] = useState(false);
   const toast = useToastify();
+
   useEffect(() => {
     if (editStore) {
       setFormData({
@@ -442,7 +450,7 @@ export const useStoreForm = (editStore) => {
     }
   }, [editStore]);
 
-   const handleInputChange = (field, value) => {
+  const handleInputChange = (field, value) => {
     setFormData((prev) => ({ ...prev, [field]: value }));
     if (errors[field]) {
       setErrors((prev) => ({ ...prev, [field]: "" }));
@@ -485,16 +493,30 @@ export const useStoreForm = (editStore) => {
     }
 
     const storeData = {
-      ...formData,
+      name: formData.name,
+      description: formData.description,
+      phoneNumber: formData.phoneNumber,
       id: editStore?.id || `STORE-${Math.floor(Math.random() * 10000).toString().padStart(3, "0")}`,
       createdAt: editStore?.createdAt || new Date().toISOString(),
       reportCount: editStore?.reportCount || 0,
     };
 
+    if (!editStore) {
+      storeData.ownerId = formData.ownerId;
+      storeData.roomId = formData.roomId || null;
+    } else if (formData.roomId !== editStore.roomId) {
+      storeData.roomId = formData.roomId || null;
+    }
+
+    if (editStore) {
+      storeData.isLocked = formData.isLocked;
+      storeData.isOpen = formData.isOpen;
+    }
+
     try {
       await onSubmit(storeData);
       if (!editStore) {
-        setFormData(initialFormData); // Reset form after successful submission for new store
+        setFormData(initialFormData);
       }
     } catch (error) {
       console.error("Lỗi khi gửi dữ liệu cửa hàng:", error);
@@ -512,7 +534,6 @@ export const useStoreForm = (editStore) => {
     handleSubmit,
   };
 };
-
 export const getStatusColor = (isOpen, isLocked) => {
   if (isLocked) {
     return {
@@ -530,10 +551,10 @@ export const getStatusColor = (isOpen, isLocked) => {
         color: "warning.dark",
       };
 };
-export const formatShippingAddress = (order: Order): string => {
-  const { roomQueryResult } = order;
-  if (!roomQueryResult) return "Không có thông tin địa chỉ";
-  const { name, buildingName, areaName } = roomQueryResult;
+export const formatShippingAddress = (data: any): string => {
+  const room = data.roomQueryResult || data.room;
+  if (!room) return "Không có thông tin địa chỉ";
+  const { name, buildingName, areaName } = room;
   return `${name}, ${buildingName}, ${areaName}`;
 };
 export const formatCurrency = (value) => {
@@ -543,7 +564,33 @@ export const formatCurrency = (value) => {
     currency: "VND",
   }).format(value);
 };
+export const formatPaymentStatus = (status: string): string => {
+  switch (status) {
+    case "Paid":
+      return "Đã Thanh Toán";
+    case "Failed":
+      return "Thanh Toán Thất Bại";
+    case "Pending":
+      return "Đang Chờ Thanh Toán";
+        case "Refunded":
+      return "Đã hoàn tiền";
+    default:
+      return status || "Không xác định";
+  }
+};
 
+export const formatPaymentMethod = (method: string): string => {
+  switch (method) {
+    case "BankTransfer":
+      return "Chuyển Khoản Ngân Hàng";
+    case "COD":
+      return "COD";
+    case "CreditCard":
+      return "Thẻ Tín Dụng";
+    default:
+      return method || "Không xác định";
+  }
+};
 export const formatOrderStatus = (status: OrderStatus): string => {
   switch (status) {
     case OrderStatus.Pending:

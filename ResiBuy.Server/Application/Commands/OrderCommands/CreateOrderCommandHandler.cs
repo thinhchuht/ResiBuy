@@ -63,6 +63,7 @@ namespace ResiBuy.Server.Application.Commands.OrderCommands
                     if(!productDetail.Product.Category.Status) throw new CustomException(ExceptionErrorCode.ValidationFailed, $"Danh mục sản phẩm {productDetail.Product.Name} đã tạm thời ngừng hoạt động");
                     if(!dto.IsInstance && !cart.CartItems.Any(ci => ci.ProductDetailId == productDetail.Id)) throw new CustomException(ExceptionErrorCode.ValidationFailed, $"Không tồn tài sản phẩm trong giỏ hàng");
                     if (productDetail.Product.IsOutOfStock || productDetail.IsOutOfStock || productDetail.Quantity <= 0) throw new CustomException(ExceptionErrorCode.ValidationFailed, $"Sản phẩm {productDetail.Product.Name} đã hết hàng");
+                    if (!productDetail.Product.Store.IsOpen && productDetail.Product.Store.IsLocked) throw new CustomException(ExceptionErrorCode.ValidationFailed, $"Cửa hàng sản phẩm {productDetail.Product.Name} đã đóng cửa, hãy thử lại vào khung giờ khác");
                     var totalOrderedQuantity = orders
                         .SelectMany(o => o.Items)
                         .Where(oi => oi.ProductDetailId == productDetail.Id)
@@ -71,18 +72,18 @@ namespace ResiBuy.Server.Application.Commands.OrderCommands
                         throw new CustomException(ExceptionErrorCode.CreateFailed,
                             $"Số lượng tồn kho không đủ cho sản phẩm  {productDetail.Product.Name}");
 
-                    productDetail.Quantity -= totalOrderedQuantity;
-                    if (productDetail.Quantity == 0)
-                    { 
-                        productDetail.IsOutOfStock = true;
-                        productDetail.Sold = productDetail.Sold + totalOrderedQuantity;
-                        notiProductDetails.Add(productDetail);
-                        var allDetails = await productDetailDbService.GetByProductIdAsync(productDetail.ProductId);
-                        if (allDetails.All(pd => pd.IsOutOfStock || pd.Quantity == 0))
-                        {
-                            productDetail.Product.IsOutOfStock = true;
-                        }
-                    }
+                    //productDetail.Quantity -= totalOrderedQuantity;
+                    //if (productDetail.Quantity == 0)
+                    //{ 
+                    //    productDetail.IsOutOfStock = true;
+                    //    //productDetail.Sold = productDetail.Sold + totalOrderedQuantity;
+                    //    notiProductDetails.Add(productDetail);
+                    //    var allDetails = await productDetailDbService.GetByProductIdAsync(productDetail.ProductId);
+                    //    if (allDetails.All(pd => pd.IsOutOfStock || pd.Quantity == 0))
+                    //    {
+                    //        productDetail.Product.IsOutOfStock = true;
+                    //    }
+                    //}
                 }
                 if (createdOrders == null || !createdOrders.Any()) throw new CustomException(ExceptionErrorCode.CreateFailed, "Không tồn tại đơn hàng");
                 if (!dto.IsInstance)
@@ -95,10 +96,10 @@ namespace ResiBuy.Server.Application.Commands.OrderCommands
                     var notiUserIds = new List<string> { store.OwnerId, user.Id };
                     await notificationService.SendNotificationAsync(Constants.OrderCreated, new OrderStatusChangedDto(order.Id, order.StoreId, store.Name, order.Status, order.Status, order.PaymentStatus, order.CreateAt, order.UpdateAt), Constants.NoHubGroup, notiUserIds);
                 }
-                foreach (var productDetail in notiProductDetails)
-                {
-                    await notificationService.SendNotificationAsync(Constants.ProductOutOfStock, new ProductOutOfStockDto(productDetail.Id, productDetail.Product.Name, productDetail.Product.Store.Name, productDetail.Product.StoreId), Constants.NoHubGroup, [productDetail.Product.Store.OwnerId.ToString()]);
-                }
+                //foreach (var productDetail in notiProductDetails)
+                //{
+                //    await notificationService.SendNotificationAsync(Constants.ProductOutOfStock, new ProductOutOfStockDto(productDetail.Id, productDetail.Product.Name, productDetail.Product.Store.Name, productDetail.Product.StoreId), Constants.NoHubGroup, [productDetail.Product.Store.OwnerId.ToString()]);
+                //}
 
                 return ResponseModel.SuccessResponse();
             }

@@ -10,11 +10,14 @@
 
         public IQueryable<Product> GetAllProductsQuery()
         {
-            try {    
+            try
+            {
                 return _context.Products
                     .Include(p => p.Store)
                     .Include(p => p.ProductDetails)
                         .ThenInclude(pd => pd.Image)
+                    .Include(p => p.ProductDetails)
+                        .ThenInclude(pd => pd.Reviews)
                     .Include(p => p.ProductDetails)
                         .ThenInclude(pd => pd.AdditionalData)
                     .AsQueryable();
@@ -39,7 +42,7 @@
                      .Include(p => p.Category)
                     .FirstOrDefaultAsync(p => p.Id == id);
 
-                return product; 
+                return product;
             }
             catch (Exception ex)
             {

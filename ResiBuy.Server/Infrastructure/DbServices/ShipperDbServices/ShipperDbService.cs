@@ -1,12 +1,5 @@
-using DocumentFormat.OpenXml.Office2021.Excel.RichDataWebImage;
-using Microsoft.EntityFrameworkCore;
 using ResiBuy.Server.Application.Queries.ShipperQueries.DTOs;
-using ResiBuy.Server.Exceptions;
-using ResiBuy.Server.Infrastructure.DbServices.BaseDbServices;
-using ResiBuy.Server.Infrastructure.Filter;
 using ResiBuy.Server.Services.MapBoxService;
-using ResiBuy.Server.Services.OpenRouteService;
-using ResiBuy.Server.Services.ShippingCost;
 
 namespace ResiBuy.Server.Infrastructure.DbServices.ShipperDbServices
 {
@@ -72,6 +65,7 @@ namespace ResiBuy.Server.Infrastructure.DbServices.ShipperDbServices
             {
                 var shipper = await _context.Shippers
                     .Include(s => s.User)
+                    .Include(s => s.Orders)
                     .Include(s => s.LastLocation)
                     .FirstOrDefaultAsync(s => s.Id == id);
                 return shipper;
@@ -199,6 +193,10 @@ namespace ResiBuy.Server.Infrastructure.DbServices.ShipperDbServices
                 var shipper = await _context.Shippers.FindAsync(shipperId);
                 if (shipper == null)
                     throw new CustomException(ExceptionErrorCode.NotFound, "Shipper không tồn tại");
+                if (shipper.IsShipping)
+                {
+                    throw new CustomException(ExceptionErrorCode.Forbidden, "Bạn đang giao hàng, không thể checkout");
+                }
 
                 var isLate = true;
 

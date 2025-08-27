@@ -7,7 +7,7 @@ namespace ResiBuy.Server.Application.Commands.ReportCommands
 {
     public record CreateReportCommand(CreateReportDto Dto) : IRequest<ResponseModel>;
     public class CreateReportCommandHandler(IReportDbService reportDbService, IOrderDbService orderDbService,
-        IStoreDbService storeDbService,
+        IStoreDbService storeDbService, IShipperDbService shipperDbService,
         IUserDbService userDbService, INotificationService notificationService, IMailBaseService mailService) : IRequestHandler<CreateReportCommand, ResponseModel>
     {
         public async Task<ResponseModel> Handle(CreateReportCommand command, CancellationToken cancellationToken)
@@ -22,6 +22,17 @@ namespace ResiBuy.Server.Application.Commands.ReportCommands
             var report = new Report(command.Dto.Title, command.Dto.Description, command.Dto.UserId, command.Dto.ReportTarget, command.Dto.TargetId.ToString(), command.Dto.OrderId);
             var createdReport = await reportDbService.CreateAsync(report);
             order.Status = OrderStatus.Reported;
+            if(order.Shipper != null)
+            {
+                var shipper = await shipperDbService.GetShipperByIdAsync(order.ShipperId.Value);
+                if (shipper.IsShipping && shipper.Orders.Where(o => o.Id != order.Id)
+                    .All(o => o.Status == OrderStatus.Delivered ||
+                              o.Status == OrderStatus.Cancelled ||
+                              o.Status == OrderStatus.Reported))
+                {
+                    shipper.IsShipping = false;
+                }
+            }
             //order.PaymentStatus = PaymentStatus.Failed;
             await orderDbService.UpdateAsync(order);
             List<string> notiUser = new() { command.Dto.UserId };

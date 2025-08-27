@@ -24,7 +24,6 @@ import {
 } from "@mui/icons-material";
 import { useStoreForm, useStoresLogic } from "./seg/utlis";
 import userApi from "../../../api/user.api";
-import roomApi from "../../../api/room.api";
 import storeApi from "../../../api/storee.api";
 import { useToastify } from "../../../hooks/useToastify";
 
@@ -50,31 +49,42 @@ export function AddStoreModal({ isOpen, onClose, onSubmit, editStore }) {
     setLoading(true);
     const fetchData = async () => {
       try {
+        const userRes = await userApi.getAllUser(1, 100000000);
+        if (userRes.code === 0) {
+          setUsers(userRes.data.items || []);
+        } else {
+          toast.error("Lỗi khi lấy danh sách người dùng");
+        }
+
         if (editStore) {
           const [storeRes, userRes] = await Promise.all([
             storeApi.getById(editStore.id),
             getUserById(editStore.ownerId),
           ]);
 
-          if (storeRes.code === 0) {
-            setSelectedRoom(storeRes.data.room || { id: editStore.roomId, name: editStore.roomId });
+          if (storeRes.code === 0 && storeRes.data.room) {
+            setSelectedRoom({
+              id: storeRes.data.room.id || editStore.roomId || "",
+              name: storeRes.data.room.name || "Không xác định",
+              buildingName: storeRes.data.room.buildingName || "Không xác định",
+              areaName: storeRes.data.room.areaName || "Không xác định",
+            });
           } else {
-            toast.error("Lỗi khi lấy thông tin cửa hàng");
-            setSelectedRoom({ id: editStore.roomId, name: editStore.roomId });
+            setSelectedRoom({ id: "", name: "Không có phòng", buildingName: "Không xác định", areaName: "Không xác định" });
           }
 
           if (userRes) {
             setSelectedUser(userRes);
+            const userRoomsRes = await userApi.getById(editStore.ownerId);
+            if (userRoomsRes.code === 0) {
+              setRooms(userRoomsRes.data.rooms || []);
+            } else {
+              toast.error("Lỗi khi lấy danh sách phòng");
+              setRooms([]);
+            }
           } else {
             toast.error("Không thể lấy thông tin chủ sở hữu");
             setSelectedUser({ id: editStore.ownerId, fullName: "", email: editStore.ownerId });
-          }
-        } else {
-          const res = await userApi.getAllUser(1, 100000000);
-          if (res.code === 0) {
-            setUsers(res.data.items || []);
-          } else {
-            toast.error("Lỗi khi lấy danh sách người dùng");
           }
         }
       } catch (err) {
@@ -82,7 +92,7 @@ export function AddStoreModal({ isOpen, onClose, onSubmit, editStore }) {
         toast.error("Lỗi khi tải dữ liệu");
         if (editStore) {
           setSelectedUser({ id: editStore.ownerId, fullName: "", email: editStore.ownerId });
-          setSelectedRoom({ id: editStore.roomId, name: editStore.roomId });
+          setSelectedRoom({ id: "", name: "Không có phòng", buildingName: "Không xác định", areaName: "Không xác định" });
         }
       } finally {
         setLoading(false);
@@ -90,14 +100,48 @@ export function AddStoreModal({ isOpen, onClose, onSubmit, editStore }) {
     };
 
     fetchData();
-  }, [isOpen, editStore,]);
+  }, [isOpen, editStore]);
 
   useEffect(() => {
-    if (isOpen && !editStore && formData.ownerId) {
+    if (isOpen && formData.ownerId) {
       setLoading(true);
-      roomApi.getByUserId(formData.ownerId)
+      userApi.getById(formData.ownerId)
         .then((res) => {
-          setRooms(res || []);
+          const roomList = (res.data.rooms || []).map(room => ({
+            id: room.id,
+            name: room.name || "Không xác định",
+            buildingName: room.buildingName || "Không xác định",
+            areaName: room.areaName || "Không xác định",
+          }));
+          setRooms(roomList);
+          if (editStore && formData.roomId) {
+            const room = roomList.find((r) => r.id === formData.roomId);
+            if (room) {
+              // Nếu phòng được tìm thấy trong roomList, kiểm tra xem selectedRoom hiện tại có buildingName và areaName hợp lệ
+              if (
+                selectedRoom &&
+                selectedRoom.id === formData.roomId &&
+                selectedRoom.buildingName !== "Không xác định" &&
+                selectedRoom.areaName !== "Không xác định"
+              ) {
+                // Giữ thông tin từ storeApi.getById
+                setSelectedRoom(selectedRoom);
+              } else {
+                // Sử dụng thông tin từ roomList
+                setSelectedRoom(room);
+              }
+            } else {
+              setSelectedRoom({
+                id: formData.roomId || "",
+                name: selectedRoom?.name || "Không có phòng",
+                buildingName: selectedRoom?.buildingName || "Không xác định",
+                areaName: selectedRoom?.areaName || "Không xác định",
+              });
+            }
+          } else if (!editStore && roomList.length > 0) {
+            setSelectedRoom(roomList[0]);
+            handleInputChange("roomId", roomList[0].id);
+          }
         })
         .catch((err) => {
           console.error("Lỗi khi lấy phòng:", err);
@@ -109,6 +153,7 @@ export function AddStoreModal({ isOpen, onClose, onSubmit, editStore }) {
         });
     } else {
       setRooms([]);
+      setSelectedRoom(null);
     }
   }, [isOpen, editStore, formData.ownerId]);
 
@@ -191,10 +236,12 @@ export function AddStoreModal({ isOpen, onClose, onSubmit, editStore }) {
       <DialogContent
         sx={{
           p: 3,
+          pb: 0,
           overflowY: "auto",
           display: "flex",
           flexDirection: "column",
           gap: 3,
+          maxHeight: "calc(100vh - 128px - 72px)",
         }}
       >
         {loading ? (
@@ -334,78 +381,53 @@ export function AddStoreModal({ isOpen, onClose, onSubmit, editStore }) {
                     <Person sx={{ fontSize: 16 }} />
                     Chủ Sở Hữu *
                   </Typography>
-                  {editStore ? (
-                    <TextField
-                      fullWidth
-                      value={
-                        selectedUser && (selectedUser.fullName || selectedUser.email || selectedUser.identityNumber)
-                          ? `${selectedUser.fullName || "N/A"} - ${selectedUser.email || selectedUser.id} - ${selectedUser.identityNumber}`
-                          : formData.ownerId
+                  <FormControl fullWidth size="small" error={!!errors.ownerId}>
+                    <Autocomplete
+                      options={users}
+                      getOptionLabel={(user) =>
+                        user.fullName || user.email
+                          ? `${user.fullName || "N/A"} - ${user.email || user.id} - ${user.identityNumber}`
+                          : user.id
                       }
-                      disabled
-                      size="small"
-                      error={!!errors.ownerId}
-                      sx={{
-                        bgcolor: "background.paper",
-                        "& .MuiOutlinedInput-root": {
-                          borderRadius: 2,
-                          "& fieldset": {
-                            borderColor: errors.ownerId ? "error.main" : "grey.300",
-                          },
-                        },
-                        "& .MuiInputBase-input": {
-                          color: "grey.700",
-                          px: 1.5,
-                          py: 1,
-                        },
+                      value={users.find((user) => user.id === formData.ownerId) || null}
+                      onChange={(event, newValue) => {
+                        handleInputChange("ownerId", newValue ? newValue.id : "");
+                        handleInputChange("roomId", "");
+                        setSelectedUser(newValue);
+                        setSelectedRoom(null);
                       }}
+                      disabled={!!editStore}
+                      renderInput={(params) => (
+                        <TextField
+                          {...params}
+                          label="Chọn chủ sở hữu"
+                          placeholder="Nhập tên, CCCD hoặc email để tìm kiếm"
+                          error={!!errors.ownerId}
+                          sx={{
+                            bgcolor: "background.paper",
+                            "& .MuiOutlinedInput-root": {
+                              borderRadius: 2,
+                              "& fieldset": {
+                                borderColor: errors.ownerId ? "error.main" : "grey.300",
+                              },
+                              "&:hover fieldset": {
+                                borderColor: errors.ownerId ? "error.main" : "grey.500",
+                              },
+                              "&.Mui-focused fieldset": {
+                                borderColor: "primary.main",
+                                boxShadow: "0 0 0 2px rgba(59, 130, 246, 0.5)",
+                              },
+                            },
+                            "& .MuiInputBase-input": {
+                              color: "grey.700",
+                              px: 1.5,
+                              py: 1,
+                            },
+                          }}
+                        />
+                      )}
                     />
-                  ) : (
-                    <FormControl fullWidth size="small" error={!!errors.ownerId}>
-                      <Autocomplete
-                        options={users}
-                        getOptionLabel={(user) =>
-                          user.fullName || user.email
-                            ? `${user.fullName || "N/A"} - ${user.email || user.id} - ${user.identityNumber}`
-                            : user.id
-                        }
-                        value={users.find((user) => user.id === formData.ownerId) || null}
-                        onChange={(event, newValue) => {
-                          handleInputChange("ownerId", newValue ? newValue.id : "");
-                          setSelectedUser(newValue);
-                        }}
-                        renderInput={(params) => (
-                          <TextField
-                            {...params}
-                            label="Chọn chủ sở hữu"
-                            placeholder="Nhập tên, CCCD hoặc email để tìm kiếm"
-                            error={!!errors.ownerId}
-                            sx={{
-                              bgcolor: "background.paper",
-                              "& .MuiOutlinedInput-root": {
-                                borderRadius: 2,
-                                "& fieldset": {
-                                  borderColor: errors.ownerId ? "error.main" : "grey.300",
-                                },
-                                "&:hover fieldset": {
-                                  borderColor: errors.ownerId ? "error.main" : "grey.500",
-                                },
-                                "&.Mui-focused fieldset": {
-                                  borderColor: "primary.main",
-                                  boxShadow: "0 0 0 2px rgba(59, 130, 246, 0.5)",
-                                },
-                              },
-                              "& .MuiInputBase-input": {
-                                color: "grey.700",
-                                px: 1.5,
-                                py: 1,
-                              },
-                            }}
-                          />
-                        )}
-                      />
-                    </FormControl>
-                  )}
+                  </FormControl>
                   {errors.ownerId && (
                     <Typography
                       variant="caption"
@@ -431,71 +453,54 @@ export function AddStoreModal({ isOpen, onClose, onSubmit, editStore }) {
                     <MeetingRoom sx={{ fontSize: 16 }} />
                     Phòng *
                   </Typography>
-                  {editStore ? (
-                    <TextField
-                      fullWidth
-                      value={selectedRoom ? (selectedRoom.name || selectedRoom.id) : formData.roomId}
-                      disabled
-                      size="small"
-                      error={!!errors.roomId}
-                      sx={{
-                        bgcolor: "background.paper",
-                        "& .MuiOutlinedInput-root": {
-                          borderRadius: 2,
-                          "& fieldset": {
-                            borderColor: errors.roomId ? "error.main" : "grey.300",
-                          },
-                        },
-                        "& .MuiInputBase-input": {
-                          color: "grey.700",
-                          px: 1.5,
-                          py: 1,
-                        },
+                  <FormControl fullWidth size="small" error={!!errors.roomId}>
+                    <Autocomplete
+                      options={rooms}
+                      getOptionLabel={(room) =>
+                        `${room.name || room.id} (${room.buildingName || "Không xác định"}, ${room.areaName || "Không xác định"})`
+                      }
+                      value={selectedRoom}
+                      onChange={(event, newValue) => {
+                        handleInputChange("roomId", newValue ? newValue.id : "");
+                        setSelectedRoom(newValue);
                       }}
+                      disabled={!formData.ownerId}
+                      renderInput={(params) => (
+                        <TextField
+                          {...params}
+                          label="Chọn phòng"
+                          placeholder="Nhập tên phòng để tìm kiếm"
+                          error={!!errors.roomId}
+                          sx={{
+                            bgcolor: "background.paper",
+                            "& .MuiOutlinedInput-root": {
+                              borderRadius: 2,
+                              "& fieldset": {
+                                borderColor: errors.roomId ? "error.main" : "grey.300",
+                              },
+                              "&:hover fieldset": {
+                                borderColor: errors.roomId ? "error.main" : "grey.500",
+                              },
+                              "&.Mui-focused fieldset": {
+                                borderColor: "primary.main",
+                                boxShadow: "0 0 0 2px rgba(59, 130, 246, 0.5)",
+                              },
+                            },
+                            "& .MuiInputBase-input": {
+                              color: "grey.700",
+                              px: 1.5,
+                              py: 1,
+                            },
+                          }}
+                        />
+                      )}
+                      renderOption={(props, room) => (
+                        <li {...props}>
+                          {`${room.name || room.id} (${room.buildingName || "Không xác định"}, ${room.areaName || "Không xác định"})`}
+                        </li>
+                      )}
                     />
-                  ) : (
-                    <FormControl fullWidth size="small" error={!!errors.roomId}>
-                      <Autocomplete
-                        options={rooms}
-                        getOptionLabel={(room) => room.name || room.id}
-                        value={rooms.find((room) => room.id === formData.roomId) || null}
-                        onChange={(event, newValue) => {
-                          handleInputChange("roomId", newValue ? newValue.id : "");
-                          setSelectedRoom(newValue);
-                        }}
-                        disabled={!formData.ownerId}
-                        renderInput={(params) => (
-                          <TextField
-                            {...params}
-                            label="Chọn phòng"
-                            placeholder="Nhập tên phòng để tìm kiếm"
-                            error={!!errors.roomId}
-                            sx={{
-                              bgcolor: "background.paper",
-                              "& .MuiOutlinedInput-root": {
-                                borderRadius: 2,
-                                "& fieldset": {
-                                  borderColor: errors.roomId ? "error.main" : "grey.300",
-                                },
-                                "&:hover fieldset": {
-                                  borderColor: errors.roomId ? "error.main" : "grey.500",
-                                },
-                                "&.Mui-focused fieldset": {
-                                  borderColor: "primary.main",
-                                  boxShadow: "0 0 0 2px rgba(59, 130, 246, 0.5)",
-                                },
-                              },
-                              "& .MuiInputBase-input": {
-                                color: "grey.700",
-                                px: 1.5,
-                                py: 1,
-                              },
-                            }}
-                          />
-                        )}
-                      />
-                    </FormControl>
-                  )}
+                  </FormControl>
                   {errors.roomId && (
                     <Typography
                       variant="caption"
@@ -589,54 +594,61 @@ export function AddStoreModal({ isOpen, onClose, onSubmit, editStore }) {
                     >
                       Trạng Thái
                     </Typography>
-                    <FormControlLabel
-                      control={
-                        <Checkbox
-                          checked={formData.isOpen}
-                          onChange={(e) =>
-                            handleInputChange("isOpen", e.target.checked)
-                          }
-                          sx={{
-                            color: "grey.300",
-                            "&.Mui-checked": {
-                              color: "primary.main",
-                            },
-                            "&.Mui-focused": {
-                              boxShadow: "0 0 0 2px rgba(59, 130, 246, 0.5)",
-                            },
-                          }}
-                        />
-                      }
-                      label={
-                        <Typography variant="body2" sx={{ color: "grey.700" }}>
-                          Cửa hàng đang mở
-                        </Typography>
-                      }
-                    />
-                    <FormControlLabel
-                      control={
-                        <Checkbox
-                          checked={formData.isLocked}
-                          onChange={(e) =>
-                            handleInputChange("isLocked", e.target.checked)
-                          }
-                          sx={{
-                            color: "grey.300",
-                            "&.Mui-checked": {
-                              color: "error.main",
-                            },
-                            "&.Mui-focused": {
-                              boxShadow: "0 0 0 2px rgba(239, 68, 68, 0.5)",
-                            },
-                          }}
-                        />
-                      }
-                      label={
-                        <Typography variant="body2" sx={{ color: "grey.700" }}>
-                          Cửa hàng bị khóa
-                        </Typography>
-                      }
-                    />
+                  <FormControlLabel
+  control={
+    <Checkbox
+      checked={formData.isOpen}
+      onChange={(e) =>
+        handleInputChange("isOpen", e.target.checked)
+      }
+      disabled={formData.isLocked} // Add this line
+      sx={{
+        color: "grey.300",
+        "&.Mui-checked": {
+          color: "primary.main",
+        },
+        "&.Mui-focused": {
+          boxShadow: "0 0 0 2px rgba(59, 130, 246, 0.5)",
+        },
+      }}
+    />
+  }
+  label={
+    <Typography variant="body2" sx={{ color: "grey.700" }}>
+      Cửa hàng đang mở
+    </Typography>
+  }
+/>
+
+
+
+<FormControlLabel
+  control={
+    <Checkbox
+      checked={formData.isLocked}
+      onChange={(e) => {
+        handleInputChange("isLocked", e.target.checked);
+        if (e.target.checked) {
+          handleInputChange("isOpen", false); // Auto-close when locked
+        }
+      }}
+      sx={{
+        color: "grey.300",
+        "&.Mui-checked": {
+          color: "error.main",
+        },
+        "&.Mui-focused": {
+          boxShadow: "0 0 0 2px rgba(239, 68, 68, 0.5)",
+        },
+      }}
+    />
+  }
+  label={
+    <Typography variant="body2" sx={{ color: "grey.700" }}>
+      Cửa hàng bị khóa
+    </Typography>
+  }
+/>
                     <Typography
                       variant="caption"
                       sx={{ color: "grey.500", mt: 0.5 }}
@@ -654,11 +666,13 @@ export function AddStoreModal({ isOpen, onClose, onSubmit, editStore }) {
       <DialogActions
         sx={{
           p: 3,
+          pt: 0,
           borderTop: 1,
           borderColor: "grey.200",
           bgcolor: "background.paper",
           position: "sticky",
           bottom: 0,
+          zIndex: 10,
           display: "flex",
           justifyContent: "flex-end",
           gap: 1,

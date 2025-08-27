@@ -31,7 +31,8 @@ namespace ResiBuy.Server.Application.Queries.ShipperQueries
                     Email = s.User?.Email,
                     PhoneNumber = s.User?.PhoneNumber,
                     FullName = s.User?.FullName,
-                    LastLocationName = s.LastLocation?.Name
+                    LastLocationName = s.LastLocation?.Name,
+                    ReportCount= s.ReportCount
                 }),
                 shippers.TotalCount,
                 shippers.PageNumber,

@@ -31,6 +31,8 @@ import {
   getOrderStatusColor,
   formatShippingAddress, // Add this import
   useStoresLogic,
+   formatPaymentStatus, // Thêm import
+  formatPaymentMethod,
 } from "../../../components/admin/Store/seg/utlis";
 import orderApi from "../../../api/order.api";
 import type { Store, Order } from "../../../types/models";
@@ -126,17 +128,17 @@ const OrderDetailDialog: React.FC<OrderDetailDialogProps> = ({ open, onClose, or
               }}
             />
           </Box>
-          <Box>
+         <Box>
             <Typography variant="body2" sx={{ color: "grey.500", fontWeight: "medium" }}>
               Trạng Thái Thanh Toán
             </Typography>
-            <Typography sx={{ color: "grey.900" }}>{order.paymentStatus}</Typography>
+            <Typography sx={{ color: "grey.900" }}>{formatPaymentStatus(order.paymentStatus)}</Typography>
           </Box>
           <Box>
             <Typography variant="body2" sx={{ color: "grey.500", fontWeight: "medium" }}>
               Phương Thức Thanh Toán
             </Typography>
-            <Typography sx={{ color: "grey.900" }}>{order.paymentMethod}</Typography>
+            <Typography sx={{ color: "grey.900" }}>{formatPaymentMethod(order.paymentMethod)}</Typography>
           </Box>
           <Box>
             <Typography variant="body2" sx={{ color: "grey.500", fontWeight: "medium" }}>
@@ -818,7 +820,7 @@ export function StoreDetailModal({
                   {totalProducts}
                 </Typography>
                 <Typography variant="caption" sx={{ color: "grey.500" }}>
-                  Tổng Sản Phẩm
+                  Tổng Sản Phẩm Đang Bán
                 </Typography>
               </Box>
               <Box>
@@ -900,53 +902,61 @@ export function StoreDetailModal({
             gap: 3,
           }}
         >
-          {activeTab === "overview" && (
-            <Box>
-              <Typography variant="h6" sx={{ color: "grey.900", mb: 2 }}>
-                Thông Tin Cửa Hàng
-              </Typography>
-              <Box
-                sx={{
-                  display: "grid",
-                  gridTemplateColumns: { xs: "1fr", md: "1fr 1fr" },
-                  gap: 3,
-                }}
-              >
-                <Box>
-                  <Typography variant="body2" sx={{ color: "grey.500", fontWeight: "medium" }}>
-                    Mô Tả
-                  </Typography>
-                  <Typography sx={{ color: "grey.900" }}>
-                    {store.description || "Không có mô tả"}
-                  </Typography>
-                </Box>
-                <Box>
-                  <Typography variant="body2" sx={{ color: "grey.500", fontWeight: "medium" }}>
-                    Số Điện Thoại
-                  </Typography>
-                  <Typography sx={{ color: "grey.900" }}>
-                    {store.phoneNumber || "N/A"}
-                  </Typography>
-                </Box>
-                <Box>
-                  <Typography variant="body2" sx={{ color: "grey.500", fontWeight: "medium" }}>
-                    Trạng Thái Hoạt Động
-                  </Typography>
-                  <Typography sx={{ color: "grey.900" }}>
-                    {store.isLocked ? "Khóa" : "Hoạt Động"}
-                  </Typography>
-                </Box>
-                <Box>
-                  <Typography variant="body2" sx={{ color: "grey.500", fontWeight: "medium" }}>
-                    Giá Trị Đơn Hàng Trung Bình
-                  </Typography>
-                  <Typography sx={{ color: "grey.900" }}>
-                    {totalOrders > 0 ? formatCurrency(totalRevenue / totalOrders) : "0 ₫"}
-                  </Typography>
-                </Box>
-              </Box>
-            </Box>
-          )}
+         {activeTab === "overview" && (
+  <Box>
+    <Typography variant="h6" sx={{ color: "grey.900", mb: 2 }}>
+      Thông Tin Cửa Hàng
+    </Typography>
+    <Box
+      sx={{
+        display: "grid",
+        gridTemplateColumns: { xs: "1fr", md: "1fr 1fr" },
+        gap: 3,
+      }}
+    >
+      <Box>
+        <Typography variant="body2" sx={{ color: "grey.500", fontWeight: "medium" }}>
+          Mô Tả
+        </Typography>
+        <Typography sx={{ color: "grey.900" }}>
+          {store.description || "Không có mô tả"}
+        </Typography>
+      </Box>
+      <Box>
+        <Typography variant="body2" sx={{ color: "grey.500", fontWeight: "medium" }}>
+          Số Điện Thoại
+        </Typography>
+        <Typography sx={{ color: "grey.900" }}>
+          {store.phoneNumber || "N/A"}
+        </Typography>
+      </Box>
+      <Box>
+        <Typography variant="body2" sx={{ color: "grey.500", fontWeight: "medium" }}>
+          Trạng Thái Hoạt Động
+        </Typography>
+        <Typography sx={{ color: "grey.900" }}>
+          {store.isLocked ? "Khóa" : "Hoạt Động"}
+        </Typography>
+      </Box>
+      <Box>
+        <Typography variant="body2" sx={{ color: "grey.500", fontWeight: "medium" }}>
+          Giá Trị Đơn Hàng Trung Bình
+        </Typography>
+        <Typography sx={{ color: "grey.900" }}>
+          {totalOrders > 0 ? formatCurrency(totalRevenue / totalOrders) : "0 ₫"}
+        </Typography>
+      </Box>
+      <Box>
+        <Typography variant="body2" sx={{ color: "grey.500", fontWeight: "medium" }}>
+          Phòng
+        </Typography>
+        <Typography sx={{ color: "grey.900" }}>
+          {store.room ? formatShippingAddress(store) : "Không có phòng"}
+        </Typography>
+      </Box>
+    </Box>
+  </Box>
+)}
 
        {activeTab === "products" && (
   <Box>
