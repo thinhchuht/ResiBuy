@@ -40,6 +40,7 @@ import { startOfDay, endOfDay, startOfWeek, endOfWeek, startOfMonth, endOfMonth,
 import type { Shipper, Order } from "../../../types/models";
 import CustomTableV2 from "../../../components/CustomTableV2"; // Thay CustomTable bằng CustomTableV2
 import { CalendarToday as TimesheetIcon } from "@mui/icons-material";import shipperApi from "../../../api/ship.api";
+import { formatPaymentStatus,formatPaymentMethod } from "../Store/seg/utlis";
 interface ShipperDetailModalProps {
   isOpen: boolean;
   onClose: () => void;
@@ -132,17 +133,17 @@ const OrderDetailDialog: React.FC<OrderDetailDialogProps> = ({ open, onClose, or
               }}
             />
           </Box>
-          <Box>
+<Box>
             <Typography variant="body2" sx={{ color: "grey.500", fontWeight: "medium" }}>
               Trạng Thái Thanh Toán
             </Typography>
-            <Typography sx={{ color: "grey.900" }}>{order.paymentStatus}</Typography>
+            <Typography sx={{ color: "grey.900" }}>{formatPaymentStatus(order.paymentStatus)}</Typography>
           </Box>
           <Box>
             <Typography variant="body2" sx={{ color: "grey.500", fontWeight: "medium" }}>
               Phương Thức Thanh Toán
             </Typography>
-            <Typography sx={{ color: "grey.900" }}>{order.paymentMethod}</Typography>
+            <Typography sx={{ color: "grey.900" }}>{formatPaymentMethod(order.paymentMethod)}</Typography>
           </Box>
           <Box>
             <Typography variant="body2" sx={{ color: "grey.500", fontWeight: "medium" }}>
