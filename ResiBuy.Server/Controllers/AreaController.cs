@@ -6,6 +6,7 @@ namespace ResiBuy.Server.Controllers
     [ApiController]
     public class AreaController(IMediator mediator) : ControllerBase
     {
+        [Authorize]
         [HttpGet]
         public async Task<IActionResult> GetAllAsync(bool getActive = true)
         {

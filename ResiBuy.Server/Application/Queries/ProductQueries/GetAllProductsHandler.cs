@@ -1,4 +1,5 @@
-﻿using ResiBuy.Server.Application.Queries.ProductQueries.DTOs;
+using ResiBuy.Server.Application.Queries.ProductQueries.DTOs;
+using ResiBuy.Server.Infrastructure.DbServices.ReviewDbServices;
 
 namespace ResiBuy.Server.Application.Queries.ProductQueries
 {
@@ -7,10 +8,12 @@ namespace ResiBuy.Server.Application.Queries.ProductQueries
     public class GetAllProductsHandler : IRequestHandler<GetAllProductsQuery, PagedResult<ProductQueriesDto>>
     {
         private readonly IProductDbService _productDbService;
+        private readonly IReviewDbService _reviewDbService;
 
-        public GetAllProductsHandler(IProductDbService productDbService)
+        public GetAllProductsHandler(IProductDbService productDbService, IReviewDbService reviewDbService)
         {
             _productDbService = productDbService;
+            _reviewDbService = reviewDbService;
         }
 
         public async Task<PagedResult<ProductQueriesDto>> Handle(GetAllProductsQuery request, CancellationToken cancellationToken)
@@ -56,6 +59,12 @@ namespace ResiBuy.Server.Application.Queries.ProductQueries
                     Name = p.Category.Name,
                     Status = p.Category.Status
                 },
+                AvarageRate = (float)(
+                    p.ProductDetails
+                        .SelectMany(d => d.Reviews)
+                        .Select(r => (double?)r.Rate)
+                        .Average() ?? 0
+                ),
                 Sold = p.ProductDetails.Sum(d => d.Sold),
                 ProductDetails = p.ProductDetails.Select(d => new ProductDetailQueriesDto
                 {
