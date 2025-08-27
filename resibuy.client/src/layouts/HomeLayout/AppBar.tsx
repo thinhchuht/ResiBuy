@@ -57,6 +57,7 @@ import type {
   MonthlyPaymentSettlFailedDto,
   MonthlyPaymentSettledDto,
   ReceiveOrderNotificationDto,
+  OrderProcessFailedDto,
 } from "../../types/hubEventDto";
 import { type User, type Store, OrderStatus, PaymentStatus } from "../../types/models";
 import { useToastify } from "../../hooks/useToastify";
@@ -243,7 +244,7 @@ function notifiConvert(item: NotificationApiItem, user?: User): Notification {
         }
         let storeName: string | undefined = (dataObj.StoreName || dataObj.storeName) as string | undefined;
         if (!storeName && storeIdFromPayload) {
-          const userStore = user?.stores?.find((s: Store) => s.id === storeIdFromPayload);
+          const userStore = user?.stores?.find((store: Store) => store.id === storeIdFromPayload);
           storeName = userStore?.name;
         }
         title = `${storeName ? `[${storeName}] ` : ""}Tài khoản cửa hàng của bạn đã bị khóa`;
@@ -457,7 +458,7 @@ const AppBar: React.FC = () => {
         message:
           `Đơn hàng #${data.id} ` +
           (status === "Processing"
-            ? "đã được xử lý"
+            ? `đã được xử lý`
             : status === "Assigned"
             ? "đã tìm được người giao"
             : status === "Shipped"
@@ -477,6 +478,20 @@ const AppBar: React.FC = () => {
     // eslint-disable-next-line react-hooks/exhaustive-deps
     [fetchUnreadCount]
   );
+
+  const handleOrderProcessFailed = useCallback(
+    (data: OrderProcessFailedDto) => {
+      const message = data?.errorMessage || "Có lỗi khi xử lý đơn hàng. Vui lòng thử lại sau.";
+      toast.error(message);
+    },
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    []
+  );
+
+  const handleOrderProcessed = useCallback(() => {
+    toast.success("Xử lý đơn hàng thành công");
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   const getReportTargetLabel = (reportTarget: string) => {
     switch (reportTarget) {
@@ -800,6 +815,8 @@ const AppBar: React.FC = () => {
       [HubEventType.MonthlyPaymentSettlFailed]: handleMonthlyPaymentSettlFailed,
       [HubEventType.ProductOutOfStock]: handleProductOutOfStock,
       [HubEventType.OrderCreatedFailed]: handleOrderCreatedFailed,
+      [HubEventType.OrderProcessFailed]: handleOrderProcessFailed,
+      [HubEventType.OrderProcessed]: handleOrderProcessed,
       [HubEventType.ReceiveOrderNotification]: handleReceiveOrderNotification,
       [HubEventType.StoreLocked]: handleStoreLocked,
       [HubEventType.ShipperLocked]: handleShipperLocked,
@@ -818,6 +835,8 @@ const AppBar: React.FC = () => {
       handleMonthlyPaymentSettlFailed,
       handleProductOutOfStock,
       handleOrderCreatedFailed,
+      handleOrderProcessFailed,
+      handleOrderProcessed,
       handleReceiveOrderNotification,
       handleStoreLocked,
       handleShipperLocked,

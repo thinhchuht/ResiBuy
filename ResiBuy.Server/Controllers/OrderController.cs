@@ -9,20 +9,20 @@ namespace ResiBuy.Server.Controllers
     [ApiController]
     public class OrderController(IMediator mediator) : ControllerBase
     {
+        //[Authorize]
         [HttpGet]
         public async Task<IActionResult> GetAll(string keyword, OrderStatus orderStatus, PaymentMethod paymentMethod, PaymentStatus paymentStatus,Guid storeId, Guid shipperId, string userId = null, int pageNumber = 1, int pageSize = 10, DateTime? startDate = null, DateTime? endDate = null)
         {
             var result = await mediator.Send(new GetAllOrdersQuery(keyword, orderStatus, paymentMethod, paymentStatus, storeId, shipperId, userId, pageNumber, pageSize, startDate, endDate));
             return Ok(result);
         }
-
+        //[Authorize]
         [HttpGet("{id}")]
         public async Task<IActionResult> GetById(Guid id, [FromQuery] string userId)
         {
             var result = await mediator.Send(new GetByIdOrdersQuery(id, userId));
             return Ok(result);
         }
-
         [HttpPost]
         public async Task<IActionResult> CreateOrder([FromBody] CheckoutDto checkoutDto)
         {
@@ -31,14 +31,14 @@ namespace ResiBuy.Server.Controllers
             return Ok(result);
 
         }
-
+        //[Authorize]
         [HttpPut]
         public async Task<IActionResult> UpdateOrder([FromBody] UpdateOrderDto dto)
         {
             var result = await mediator.Send(new UpdateOrderCommand(dto));
             return Ok(result);
         }
-
+        //[Authorize]
         [HttpPut("order-status")]
         public async Task<IActionResult> UpdateOrderStatus([FromBody] UpdateOrderStatusDto dto)
         {
@@ -46,13 +46,13 @@ namespace ResiBuy.Server.Controllers
             return Ok(result);
         }
 
-        [HttpPut("process")]
+        [HttpPost("process")]
         public async Task<IActionResult> ProcessOrders([FromBody] UpdateOrderStatusDto dto)
         {
-            var result = await mediator.Send(new UpdateOrderStatusCommand(dto));
+            var result = await mediator.Send(new ProcessOrderCommand(dto));
             return Ok(result);
         }
-
+        //[Authorize]
         [HttpGet("count")]
         public async Task<IActionResult> CountOrders( Guid? shipperId,  Guid? storeId,  string? userId,  OrderStatus? status)
         {
@@ -61,7 +61,7 @@ namespace ResiBuy.Server.Controllers
             return Ok(result);
         }
 
-       
+        //[Authorize]
         [HttpGet("total-shipping-fee")]
         public async Task<IActionResult> GetTotalShippingFee(Guid shipperId,  DateTime? startDate,  DateTime? endDate)
         {
@@ -69,14 +69,14 @@ namespace ResiBuy.Server.Controllers
             var result = await mediator.Send(query);
             return Ok(result);
         }
-
+        //[Authorize]
         [HttpGet("total-amount")]
         public async Task<IActionResult> GetTotalOrderAmount([FromQuery] string userId, [FromQuery] Guid storeId)
         {
             var result = await mediator.Send(new GetTotalOrderAmountQuery(userId, storeId));
             return Ok(result);
         }
-
+        //[Authorize]
         [HttpGet("overview-stats")]
         public async Task<IActionResult> GetOverViewStats([FromQuery] DateTime? startDate, [FromQuery] DateTime? endDate)
         {

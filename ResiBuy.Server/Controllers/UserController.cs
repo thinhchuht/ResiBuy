@@ -2,6 +2,8 @@ namespace ResiBuy.Server.Controllers
 {
     [Route("api/[controller]")]
     [ApiController]
+    //[Authorize]
+
     public class UserController(IMediator mediator,ICodeGeneratorSerivce codeGeneratorSerivce) : ControllerBase
     {
         [HttpGet("{id}")]

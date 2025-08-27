@@ -182,7 +182,7 @@ namespace ResiBuy.Server.Controllers
 
             var key = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(configuration["Jwt:Key"]));
             var creds = new SigningCredentials(key, SecurityAlgorithms.HmacSha256);
-            var expires = DateTime.Now.AddSeconds(Convert.ToDouble(configuration["Jwt:ExpireMinutes"]));
+            var expires = DateTime.Now.AddMinutes(Convert.ToDouble(configuration["Jwt:ExpireMinutes"]));
 
             var token = new JwtSecurityToken(
                 configuration["Jwt:Issuer"],

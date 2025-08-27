@@ -7,23 +7,23 @@ namespace ResiBuy.Server.Controllers
 {
     [Route("api/[controller]")]
     [ApiController]
+    
     public class ProductController(IMediator mediator) : ControllerBase
     {
+        //[Authorize]
         [HttpPost]
         public async Task<IActionResult> CreateAsync([FromBody] CreateProductDto dto)
         {
                 var result = await mediator.Send(new CreateProductCommand(dto));
                 return Ok(result);
         }
-
+        //[Authorize]
         [HttpPut]
         public async Task<IActionResult> UpdateAsync([FromBody] UpdateProductDto dto)
         {
                 var result = await mediator.Send(new UpdateProductCommand(dto));
                 return Ok(result);
         }
-
-
 
         [HttpGet("{id}")]
         public async Task<IActionResult> GetProductById(int id)
@@ -38,6 +38,7 @@ namespace ResiBuy.Server.Controllers
                 var result = await mediator.Send(new GetAllProductsQuery(filter));
                 return Ok(result);
         }
+        //[Authorize]
 
         [HttpPatch("{id}/status")]
         public async Task<IActionResult> UpdateStatusProduct(int id, [FromBody] bool status)

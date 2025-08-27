@@ -5,6 +5,7 @@
     public class RemoveUserRoomCommandHandler(
         IUserDbService userDbService,
         IRoomDbService roomDbService,
+        INotificationService notificationService,   
         IUserRoomDbService userRoomDbService)
         : IRequestHandler<RemoveUserRoomCommand, ResponseModel>
     {
@@ -50,7 +51,7 @@
                 {
                     message += $" Người dùng không ở trong phòng: {string.Join(", ", notInRooms.Select(r => r.Name))}.";
                 }
-
+                await notificationService.SendNotificationAsync("UserUpdated", user.Id, Constants.AdminHubGroup, [user.Id], false);
                 return ResponseModel.SuccessResponse(message.Trim());
             }
             catch (Exception ex)

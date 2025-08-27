@@ -4,6 +4,8 @@ namespace ResiBuy.Server.Controllers
 {
     [Route("api/[controller]")]
     [ApiController]
+    //[Authorize]
+
     public class ProductDetailController(IMediator mediator) : ControllerBase
     {
         [HttpPatch("{id}/status")]

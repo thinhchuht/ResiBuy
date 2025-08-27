@@ -44,6 +44,7 @@ namespace ResiBuy.Server.Controllers
         }
 
 
+        //[Authorize]
 
         [HttpPost("create")]
         public async Task<IActionResult> CreateAsync([FromBody] CreateRoomCommand command)
@@ -58,6 +59,8 @@ namespace ResiBuy.Server.Controllers
                 throw new CustomException(ExceptionErrorCode.RepositoryError, ex.Message);
             }
         }
+        //[Authorize]
+
         [HttpGet("detail/{id}")]
         public async Task<IActionResult> GetById(Guid id)
         {
@@ -71,6 +74,8 @@ namespace ResiBuy.Server.Controllers
                 throw new CustomException(ExceptionErrorCode.RepositoryError, ex.Message);
             }
         }
+        //[Authorize]
+
         [HttpPut]
         public async Task<IActionResult> UpdateAsync([FromBody] UpdateRoomDto dto)
         {
@@ -84,6 +89,8 @@ namespace ResiBuy.Server.Controllers
                 throw new CustomException(ExceptionErrorCode.RepositoryError, ex.Message);
             }
         }
+        //[Authorize]
+
         [HttpPut("updateStatus")]
         public async Task<IActionResult> UpdateRoomStatusAsync([FromBody] UpdateRoomStatusCommand command)
         {
@@ -97,6 +104,8 @@ namespace ResiBuy.Server.Controllers
                 throw new CustomException(ExceptionErrorCode.RepositoryError, ex.Message);
             }
         }
+        //[Authorize]
+
         [HttpGet("count")]
         public async Task<IActionResult> CountRoomsAsync()
         {
@@ -110,6 +119,7 @@ namespace ResiBuy.Server.Controllers
                 throw new CustomException(ExceptionErrorCode.RepositoryError, ex.Message);
             }
         }
+        //[Authorize]
 
         [HttpGet("countroom/building/{buildingId}")]
         public async Task<IActionResult> CountRoomsByBuildingIdAsync(Guid buildingId)
@@ -124,6 +134,7 @@ namespace ResiBuy.Server.Controllers
                 throw new CustomException(ExceptionErrorCode.RepositoryError, ex.Message);
             }
         }
+
         [HttpGet("search")]
         public async Task<IActionResult> SearchRoomsByName([FromQuery] string keyword, [FromQuery] int pageNumber = 1, [FromQuery] int pageSize = 10)
         {

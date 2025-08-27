@@ -13,6 +13,8 @@ export enum HubEventType {
   CartItemDeleted = "CartItemDeleted",
   OrderCreated = "OrderCreated",
   OrderCreatedFailed = "OrderCreatedFailed",
+  OrderProcessed = "OrderProcessed",
+  OrderProcessFailed = "OrderProcessFailed",
   OrderReported = "OrderReported",
   ReportResolved = "ReportResolved",
   Refunded = "Refunded",
@@ -27,6 +29,8 @@ export enum HubEventType {
   ShipperLocked = "ShipperLocked",
   StoreUnlocked = "StoreUnlocked",
   ShipperUnlocked = "ShipperUnlocked",
+  UserUpdated = "UserUpdated",
+  StoreUpdated = "StoreUpdated",
 }
 
 // Payload for lock events (server may send different fields based on target)
@@ -72,6 +76,16 @@ class HubEventsManager {
         this.lastEventData[HubEventType.UserCreated] = data;
         this.notifyHandlers(HubEventType.UserCreated, data);
       },
+      [HubEventType.UserUpdated]: (data: HubEventData) => {
+        console.log("UserUpdated event received:", data);
+        this.lastEventData[HubEventType.UserUpdated] = data;
+        this.notifyHandlers(HubEventType.UserUpdated, data);
+      },
+      [HubEventType.StoreUpdated]: (data: HubEventData) => {
+        console.log("StoreUpdated event received:", data);
+        this.lastEventData[HubEventType.StoreUpdated] = data;
+        this.notifyHandlers(HubEventType.StoreUpdated, data);
+      },
       [HubEventType.OrderStatusChanged]: (data: HubEventData) => {
         console.log("OrderStatusChanged event received:", data);
         this.lastEventData[HubEventType.OrderStatusChanged] = data;
@@ -101,6 +115,11 @@ class HubEventsManager {
         console.log("OrderCreatedFailed event received:", data);
         this.lastEventData[HubEventType.OrderCreatedFailed] = data;
         this.notifyHandlers(HubEventType.OrderCreatedFailed, data);
+      },
+      [HubEventType.OrderProcessFailed]: (data: HubEventData) => {
+        console.log("OrderProcessFailed event received:", data);
+        this.lastEventData[HubEventType.OrderProcessFailed] = data;
+        this.notifyHandlers(HubEventType.OrderProcessFailed, data);
       },
       [HubEventType.OrderReported]: (data: HubEventData) => {
         console.log("OrderReported event received:", data);
@@ -171,6 +190,11 @@ class HubEventsManager {
         console.log("ShipperUnlocked event received:", data);
         this.lastEventData[HubEventType.ShipperUnlocked] = data;
         this.notifyHandlers(HubEventType.ShipperUnlocked, data);
+      },
+      [HubEventType.OrderProcessed]: (data: HubEventData) => {
+        console.log("OrderProcessed event received:", data);
+        this.lastEventData[HubEventType.OrderProcessed] = data;
+        this.notifyHandlers(HubEventType.OrderProcessed, data);
       },
     };
   }

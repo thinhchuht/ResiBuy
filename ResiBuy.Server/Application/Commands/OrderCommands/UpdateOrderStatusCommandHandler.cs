@@ -17,7 +17,6 @@ namespace ResiBuy.Server.Application.Commands.OrderCommands
             var oldStatus = order.Status;
             if (order.UserId != order.UserId && order.UserId != store.OwnerId.ToString() && dto.UserId != order.ShipperId.ToString())
                 throw new CustomException(ExceptionErrorCode.ValidationFailed, "Người dùng không có quyền sửa đơn hàng này.");
-
             IDbContextTransaction? transaction = null;
             try
             {
@@ -53,31 +52,11 @@ namespace ResiBuy.Server.Application.Commands.OrderCommands
 
                     if (dto.OrderStatus == OrderStatus.Processing)
                     {
-                        //var items = order.Items;
-                        //var productDetailIds = items.Select(i => i.ProductDetailId).ToList();
-                        //var productDetails = await productDetailDbService.GetBatchAsync(productDetailIds);
-                        //foreach (var item in items)
-                        //{
-                        //    var productDetail = productDetails.First(pd => pd.Id == item.ProductDetailId);
-                        //    if (productDetail.Product.IsOutOfStock || productDetail.IsOutOfStock || productDetail.Quantity <= 0) throw new CustomException(ExceptionErrorCode.ValidationFailed, $"Sản phẩm {productDetail.Product.Name} đã hết hàng");
-                        //    if (productDetail.Quantity < item.Quantity)
-                        //        throw new CustomException(ExceptionErrorCode.CreateFailed,
-                        //            $"Mặt hàng {productDetail.Product.Name} chỉ còn {productDetail.Quantity} sản phẩm");
-                        //    productDetail.Quantity -= item.Quantity;
-                        //    if (productDetail.Quantity == 0)
-                        //    {
-                        //        productDetail.IsOutOfStock = true;
-                        //        notiProductDetails.Add(productDetail);
-                        //        var allDetails = await productDetailDbService.GetByProductIdAsync(productDetail.ProductId);
-                        //        if (allDetails.All(pd => pd.IsOutOfStock || pd.Quantity == 0))
-                        //        {
-                        //            productDetail.Product.IsOutOfStock = true;
-                        //        }
-                        //    }
-                        //}
-                        //await productDetailDbService.UpdateTransactionBatch(productDetails);
                         var message = JsonSerializer.Serialize(dto);
                         producer.ProduceMessageAsync("process", message, "process-topic");
+                        // Only send message when moving to Processing. Skip subsequent steps.
+                        await transaction.CommitAsync();
+                        return ResponseModel.SuccessResponse();
                     }
                     if (dto.OrderStatus == OrderStatus.Delivered)
                     {

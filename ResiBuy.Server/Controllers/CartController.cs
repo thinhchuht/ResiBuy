@@ -6,6 +6,7 @@ namespace ResiBuy.Server.Controllers
 {
     [Route("api/[controller]")]
     [ApiController]
+    //[Authorize]
     public class CartController(IMediator mediator) : Controller
     {
         [HttpGet("{id}")]
@@ -21,7 +22,6 @@ namespace ResiBuy.Server.Controllers
                 return BadRequest(ResponseModel.ExceptionResponse(ex.ToString()));
             }
         }
-
         [HttpGet("{id}/status")]
         public async Task<IActionResult> GetStatusById(Guid id)
         {
@@ -35,7 +35,6 @@ namespace ResiBuy.Server.Controllers
                 return BadRequest(ResponseModel.ExceptionResponse(ex.ToString()));
             }
         }
-
         [HttpGet("checking-out")]
         public async Task<IActionResult> GetCheckingOutCarts()
         {
@@ -49,7 +48,6 @@ namespace ResiBuy.Server.Controllers
                 return BadRequest(ResponseModel.ExceptionResponse(ex.ToString()));
             }
         }
-
         [HttpPost("{id}/items")]
         public async Task<IActionResult> AddToCart(Guid id, [FromBody] AddToCartDto addToCartDto)
         {
@@ -63,7 +61,6 @@ namespace ResiBuy.Server.Controllers
                 return BadRequest(ResponseModel.ExceptionResponse(ex.ToString()));
             }
         }
-
         [HttpPost("reset-status")]
         public async Task<IActionResult> ResetStatus( [FromBody] List<Guid> ids)
         {
@@ -77,7 +74,6 @@ namespace ResiBuy.Server.Controllers
                 return BadRequest(ResponseModel.ExceptionResponse(ex.ToString()));
             }
         }
-
         [HttpDelete("items")]
         public async Task<IActionResult> DeleteCartItems([FromBody] DeleteCartItemsDto deleteCartItemsDto)
         {
@@ -91,7 +87,6 @@ namespace ResiBuy.Server.Controllers
                 return BadRequest(ResponseModel.ExceptionResponse(ex.ToString()));
             }
         }
-
         [HttpGet("{cartId}/items/count")]
         public async Task<IActionResult> CountCartItems(Guid cartId)
         {

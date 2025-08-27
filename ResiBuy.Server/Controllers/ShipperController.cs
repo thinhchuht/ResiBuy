@@ -1,13 +1,9 @@
-using MediatR;
-using Microsoft.AspNetCore.Components.Forms;
-using Microsoft.AspNetCore.Mvc;
-using ResiBuy.Server.Application.Commands.ShipperCommands;
-using ResiBuy.Server.Application.Queries.ShipperQueries;
-
 namespace ResiBuy.Server.Controllers
 {
     [ApiController]
     [Route("api/[controller]")]
+    //[Authorize]
+
     public class ShipperController : ControllerBase
     {
         private readonly IMediator _mediator;

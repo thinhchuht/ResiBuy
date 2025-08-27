@@ -19,7 +19,7 @@
             if (updateUserDto.Email != null)
             {
                 await userDbService.CheckUniqueField(existingUser.Id, null, updateUserDto.Email);
-                if(!Regex.IsMatch(updateUserDto.Email, Constants.EmailPattern)) throw new CustomException(ExceptionErrorCode.ValidationFailed, "Email không hợp lệ");
+                if (!Regex.IsMatch(updateUserDto.Email, Constants.EmailPattern)) throw new CustomException(ExceptionErrorCode.ValidationFailed, "Email không hợp lệ");
                 existingUser.Email = updateUserDto.Email;
                 //await mailService.SendEmailAsync(updateUserDto.Email, "Thêm Mail vào tài khoản", "<a>Click vào link để hoàn tất thêm mail vào tài khoản Resibuy </a>", true);
             }
@@ -29,11 +29,11 @@
                 var uploadResult = updateUserDto.Avatar;
                 imgResult = new Image
                 {
-                    Id       = uploadResult.Id,
-                    Url       = uploadResult.Url,
+                    Id = uploadResult.Id,
+                    Url = uploadResult.Url,
                     ThumbUrl = uploadResult.ThumbUrl,
-                    Name     = uploadResult.Name,
-                    UserId   = existingUser.Id
+                    Name = uploadResult.Name,
+                    UserId = existingUser.Id
                 };
                 var existingImg = await imageDbService.GetImageByIdAsync(imgResult.Id);
                 if (existingImg == null)
@@ -73,7 +73,7 @@
                 updatedUser.ReportCount
             );
 
-            await notificationService.SendNotificationAsync("UserUpdated", updatedUser, Constants.AdminHubGroup, [updatedUser.Id]);
+            await notificationService.SendNotificationAsync("UserUpdated", updatedUser.Id, Constants.AdminHubGroup, [updatedUser.Id], false);
             return ResponseModel.SuccessResponse(userResult);
         }
     }

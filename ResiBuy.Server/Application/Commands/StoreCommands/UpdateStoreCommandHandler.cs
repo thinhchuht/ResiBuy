@@ -11,10 +11,11 @@ namespace ResiBuy.Server.Application.Commands.StoreCommands
     public class UpdateStoreCommandHandler : IRequestHandler<UpdateStoreCommand, ResponseModel>
     {
         private readonly IStoreDbService _storeDbService;
-
-        public UpdateStoreCommandHandler(IStoreDbService storeDbService)
+        private readonly INotificationService _notificationService;
+        public UpdateStoreCommandHandler(IStoreDbService storeDbService, INotificationService notificationService)
         {
             _storeDbService = storeDbService;
+            _notificationService = notificationService;
         }
 
         public async Task<ResponseModel> Handle(UpdateStoreCommand command, CancellationToken cancellationToken)
@@ -64,7 +65,7 @@ namespace ResiBuy.Server.Application.Commands.StoreCommands
                 store.RoomId = command.RoomId ?? store.RoomId; // Giữ RoomId hiện tại nếu command.RoomId là null
 
                 await _storeDbService.UpdateAsync(store);
-
+                await _notificationService.SendNotificationAsync("StoreUpdated", store.Id, Constants.AdminHubGroup, [store.OwnerId], false);
                 return ResponseModel.SuccessResponse();
             }
             catch (Exception ex)

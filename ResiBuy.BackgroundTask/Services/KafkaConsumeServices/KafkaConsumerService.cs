@@ -125,23 +125,31 @@ public class KafkaConsumerService : IKafkaConsumerService, IDisposable
             _logger.LogError(ex, "Error processing checkout message");
         }
     }
+
     private async Task ProcessMessageAsync(string message, IProcessService processService)
     {
         try
         {
             _logger.LogInformation("Processing process message: {Message}", message);
 
+            if (string.IsNullOrWhiteSpace(message))
+            {
+                _logger.LogWarning("Received empty message");
+                return;
+            }
+
             var processData = JsonSerializer.Deserialize<UpdateOrderStatusDto>(message);
 
             if (processData != null)
             {
-                _logger.LogInformation("Processing process for user");
+                _logger.LogInformation("Processing process for order {OrderId} with status {OrderStatus}",
+                    processData.OrderId, processData.OrderStatus?.ToString() ?? "null");
                 await processService.Process(processData);
                 await Task.Delay(100);
             }
             else
             {
-                _logger.LogWarning("Failed to deserialize process message");
+                _logger.LogWarning("Failed to deserialize process message: {Message}", message);
             }
         }
         catch (JsonException ex)

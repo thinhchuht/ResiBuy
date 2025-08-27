@@ -5,6 +5,7 @@ namespace ResiBuy.Server.Controllers
 {
     [Route("api/[controller]")]
     [ApiController]
+    //[Authorize]
     public class NotificationController(IMediator mediator) : ControllerBase
     {
         [HttpGet("user/{id}")]

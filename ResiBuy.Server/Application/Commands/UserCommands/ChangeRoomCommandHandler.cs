@@ -4,6 +4,7 @@
     public class ChangeRoomCommandHandler(
         IUserDbService userDbService,
         IRoomDbService roomDbService,
+        INotificationService notificationService,
         IUserRoomDbService userRoomDbService) : IRequestHandler<ChangeRoomCommand, ResponseModel>
     {
         public async Task<ResponseModel> Handle(ChangeRoomCommand command, CancellationToken cancellationToken)
@@ -17,7 +18,7 @@
                 }
 
                 var newRooms = await roomDbService.GetBatchAsync(command.NewRoomIds);
-                if (newRooms.Any( r => r == null))
+                if (newRooms.Any(r => r == null))
                 {
                     throw new CustomException(ExceptionErrorCode.NotFound, "Một hoặc nhiều phòng không tồn tại");
                 }
@@ -57,8 +58,9 @@
                     user.UserRooms.Select(ur => new RoomQueryResult(ur.Room.Id, ur.Room.Name, ur.Room.Building.Name, ur.Room.Building.Area.Name, ur.Room.Building.Area.Id)),
                     [],
                     [],
-                    [],
+                [],
                     user.ReportCount);
+                await notificationService.SendNotificationAsync("UserUpdated", userResult.Id, Constants.AdminHubGroup, [userResult.Id], false);
                 return ResponseModel.SuccessResponse(userResult);
             }
             catch (Exception ex)
