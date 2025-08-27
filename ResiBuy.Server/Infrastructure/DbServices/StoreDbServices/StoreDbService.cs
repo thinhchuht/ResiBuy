@@ -97,9 +97,9 @@ namespace ResiBuy.Server.Infrastructure.DbServices.StoreDbServices
                 var store = await _context.Stores.FindAsync(storeId);
                 if (store == null)
                     throw new CustomException(ExceptionErrorCode.NotFound, "Cửa hàng không tồn tại");
-                if(isLocked.HasValue)
+                if (isLocked.HasValue)
                 {
-                    if(!isLocked.Value && store.ReportCount == 3) store.ReportCount = 0;
+                    if (!isLocked.Value && store.ReportCount == 3) store.ReportCount = 0;
                     store.IsLocked = isLocked.Value;
                 }
                 store.IsOpen = isOpen;
@@ -116,12 +116,12 @@ namespace ResiBuy.Server.Infrastructure.DbServices.StoreDbServices
             }
         }
 
-        public async Task<bool> CheckRoomIsAvailable(Guid roomId)
+        public async Task<bool> CheckRoomIsAvailable(Guid roomId, Guid? excludeId = null)
         {
             try
             {
                 return await _context.Stores
-                    .AnyAsync(s => s.RoomId == roomId && !s.IsLocked);
+                    .AnyAsync(s => s.RoomId == roomId && !s.IsLocked && (!excludeId.HasValue || s.Id != excludeId.Value));
             }
             catch (Exception ex)
             {
