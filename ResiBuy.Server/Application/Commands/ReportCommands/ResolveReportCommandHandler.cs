@@ -31,7 +31,7 @@ namespace ResiBuy.Server.Application.Commands.ReportCommands
                         await userDbService.UpdateAsync(user);
                         await notificationService.SendNotificationAsync(Constants.UserLocked,
                             new {UserId = user.Id},
-                            Constants.AdminHubGroup, [user.Id], false);
+                            Constants.NoHubGroup, [user.Id], false);
                         lockedUsers.Add(user.Id);
                         lockedUserMails.Add(user.Email);
                     }
@@ -46,7 +46,7 @@ namespace ResiBuy.Server.Application.Commands.ReportCommands
                         await storeDbService.UpdateAsync(store);
                         await notificationService.SendNotificationAsync(Constants.UserLocked,
                             new { StoreId = store.Id, StoreName = store.Name },
-                            Constants.AdminHubGroup, [store.OwnerId]);
+                            Constants.NoHubGroup, [store.OwnerId]);
                         lockedUsers.Add(store.OwnerId);
                         lockedUserMails.Add(store.Owner.Email);
                     }
@@ -61,7 +61,7 @@ namespace ResiBuy.Server.Application.Commands.ReportCommands
                         await shipperDbService.UpdateAsync(shipper);
                         await notificationService.SendNotificationAsync(Constants.ShipperLocked,
                             new { UserId = shipper.User.Id },
-                            Constants.AdminHubGroup, [shipper.User.Id]);
+                            Constants.NoHubGroup, [shipper.User.Id]);
                         lockedUsers.Add(shipper.User.Id);
                         lockedUserMails.Add(shipper.User.Email);
                     }

@@ -90,15 +90,18 @@ namespace ResiBuy.Server.Infrastructure.DbServices.StoreDbServices
             }
         }
 
-        public async Task<Store> UpdateStoreStatusAsync(Guid storeId, bool isLocked, bool isOpen)
+        public async Task<Store> UpdateStoreStatusAsync(Guid storeId, bool? isLocked, bool isOpen)
         {
             try
             {
                 var store = await _context.Stores.FindAsync(storeId);
                 if (store == null)
                     throw new CustomException(ExceptionErrorCode.NotFound, "Cửa hàng không tồn tại");
-
-                store.IsLocked = isLocked;
+                if(isLocked.HasValue)
+                {
+                    if(!isLocked.Value && store.ReportCount == 3) store.ReportCount = 0;
+                    store.IsLocked = isLocked.Value;
+                }
                 store.IsOpen = isOpen;
                 await _context.SaveChangesAsync();
                 return store;

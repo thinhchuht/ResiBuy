@@ -35,6 +35,7 @@ namespace ResiBuy.Server.Application.Commands.ShipperCommands
             shipper.StartWorkTime = command.StartWorkTime ?? shipper.StartWorkTime;
             shipper.EndWorkTime = command.EndWorkTime ?? shipper.EndWorkTime;
             shipper.IsLocked = command.IsLocked ?? shipper.IsLocked;
+            if(!shipper.IsLocked && shipper.ReportCount == 3) shipper.ReportCount = 0;
             // 3. Lưu thay đổi
             await _shipperDbService.UpdateAsync(shipper);
             if (shipper.IsLocked)
