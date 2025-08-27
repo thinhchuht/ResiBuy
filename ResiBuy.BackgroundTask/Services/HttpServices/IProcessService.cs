@@ -1,6 +1,6 @@
-﻿namespace ResiBuy.BackgroundTask.Services.HttpServices
+namespace ResiBuy.BackgroundTask.Services.HttpServices
 {
-    internal interface IProcessService
+    public interface IProcessService
     {
         Task<ResponseModel> Process(UpdateOrderStatusDto processData);
     }
