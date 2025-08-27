@@ -85,7 +85,7 @@ namespace ResiBuy.Server.Infrastructure.DbServices.BuildingDbServices
         {
             try
             {
-                return await context.Buildings.Include(a => a.Rooms).ThenInclude(r=>r.Stores).FirstOrDefaultAsync(b => b.Id == id);
+                return await context.Buildings.Include(b =>b.Area).Include(a => a.Rooms).ThenInclude(r=>r.Stores).FirstOrDefaultAsync(b => b.Id == id);
             }
             catch (Exception ex)
             {

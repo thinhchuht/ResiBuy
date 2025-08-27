@@ -25,6 +25,10 @@
             if (store == null)
                 throw new CustomException(ExceptionErrorCode.NotFound, "Cửa hàng không tồn tại.");
             // 2. Cập nhật trạng thái cửa hàng
+            if (!store.Room.IsActive)
+            {
+                throw new CustomException(ExceptionErrorCode.UpdateFailed, "Room đang bị khóa");
+            }
             try
             {
                 await _storeDbService.UpdateStoreStatusAsync(command.StoreId, command.IsLocked, command.IsOpen);

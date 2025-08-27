@@ -12,7 +12,10 @@
 
                 if (room == null)
                     throw new CustomException(ExceptionErrorCode.NotFound, $"Không tìm thấy phòng với Id: {command.RoomId}");
-
+                if (!room.Building.IsActive)
+                {
+                    throw new CustomException(ExceptionErrorCode.UpdateFailed, "Buiding không hoạt động");
+                }
                 room.UpdateStatus();
 
                 var updatedRoom = await roomDbService.UpdateAsync(room);
