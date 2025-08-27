@@ -34,20 +34,22 @@ namespace ResiBuy.Server.Services.MyBackgroundService
                         if (orders.Any())
                         {
                             var validOrders = orders.Where(o => o?.Store?.Room?.Building?.AreaId != null).ToList();
+                            Func<Shipper, bool> isAvailable = s =>s.IsOnline && !s.IsShipping &&
+                                                                !s.IsLocked && s.StartWorkTime <= now && s.EndWorkTime >= now;
 
                             foreach (var orderGroup in validOrders.GroupBy(o => o.Store.Room.Building.AreaId))
                             {
                                 var areaId = orderGroup.Key;
                                 var ordersInArea = orderGroup.ToList();
                                 var shippers = (await shipperDbService.GetShippersInAreaAsync(areaId))
-                                    .Where(s => s.IsOnline == true && s.IsShipping == false && s.IsLocked == false && s.StartWorkTime <= now && s.EndWorkTime >= now)
+                                    .Where(isAvailable)
                                     .OrderBy(s => s.LastDelivered ?? DateTimeOffset.MinValue)
                                     .ToList();
 
                                 if (!shippers.Any())
                                 {
                                     var nearestArea = await areaDBService.NearestAreaHasShipper(areaId);
-                                    if (nearestArea?.Shippers != null && nearestArea.Shippers.Any())
+                                    if (nearestArea?.Shippers.Where(isAvailable) != null && nearestArea.Shippers.Any())
                                     {
                                         shippers.AddRange(nearestArea.Shippers);
                                     }
