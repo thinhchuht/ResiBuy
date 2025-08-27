@@ -31,12 +31,7 @@ import {
   DialogActions,
   DialogContentText,
 } from "@mui/material";
-import {
-  Edit as EditIcon,
-  Refresh as RefreshIcon,
-  FilterAlt as FilterIcon,
-  Clear as ClearIcon,
-} from "@mui/icons-material";
+import { Edit as EditIcon, Refresh as RefreshIcon, FilterAlt as FilterIcon, Clear as ClearIcon } from "@mui/icons-material";
 import React from "react";
 import { useParams, useNavigate } from "react-router-dom";
 
@@ -172,15 +167,7 @@ const VoucherPage: React.FC = () => {
     } finally {
       setLoading(false);
     }
-  }, [
-    storeId,
-    page,
-    rowsPerPage,
-    voucherType,
-    minOrderPrice,
-    startDate,
-    endDate,
-  ]);
+  }, [storeId, page, rowsPerPage, voucherType, minOrderPrice, startDate, endDate]);
 
   const handleToggleStatus = async (voucher: Voucher) => {
     try {
@@ -189,9 +176,7 @@ const VoucherPage: React.FC = () => {
         id: voucher.id,
         storeId: storeId,
       });
-      setSuccess(
-        `Đã ${voucher.isActive ? "tạm dừng" : "kích hoạt"} voucher thành công`
-      );
+      setSuccess(`Đã ${voucher.isActive ? "tạm dừng" : "kích hoạt"} voucher thành công`);
       await fetchVouchers();
     } catch (error: any) {
       console.error("Failed to toggle voucher status", error);
@@ -257,9 +242,7 @@ const VoucherPage: React.FC = () => {
     setPage(newPage);
   };
 
-  const handleChangeRowsPerPage = (
-    event: React.ChangeEvent<HTMLInputElement>
-  ) => {
+  const handleChangeRowsPerPage = (event: React.ChangeEvent<HTMLInputElement>) => {
     setRowsPerPage(parseInt(event.target.value, 10));
     setPage(0);
   };
@@ -273,12 +256,7 @@ const VoucherPage: React.FC = () => {
               <Typography variant="h5" color="primary">
                 Quản lý voucher
               </Typography>
-              <Chip
-                label={`${totalCount} voucher`}
-                size="small"
-                color="primary"
-                variant="outlined"
-              />
+              <Chip label={`${totalCount} voucher`} size="small" color="primary" variant="outlined" />
             </Stack>
           }
           action={
@@ -288,12 +266,7 @@ const VoucherPage: React.FC = () => {
                   <RefreshIcon />
                 </IconButton>
               </Tooltip>
-              <Button
-                variant="contained"
-                color="primary"
-                onClick={handleCreate}
-                size="large"
-              >
+              <Button variant="contained" color="primary" onClick={handleCreate} size="large">
                 Thêm voucher
               </Button>
             </Stack>
@@ -308,25 +281,11 @@ const VoucherPage: React.FC = () => {
                 <Typography variant="h6" color="text.secondary">
                   Bộ lọc
                 </Typography>
-                {hasActiveFilters && (
-                  <Chip
-                    label="Đã áp dụng"
-                    size="small"
-                    color="primary"
-                    variant="filled"
-                  />
-                )}
+                {hasActiveFilters && <Chip label="Đã áp dụng" size="small" color="primary" variant="filled" />}
               </Stack>
 
               <Stack spacing={2} direction="row" flexWrap="wrap">
-                <TextField
-                  label="Loại voucher"
-                  select
-                  value={voucherType}
-                  onChange={(e) => setVoucherType(e.target.value)}
-                  sx={{ minWidth: 180 }}
-                  size="small"
-                >
+                <TextField label="Loại voucher" select value={voucherType} onChange={(e) => setVoucherType(e.target.value)} sx={{ minWidth: 180 }} size="small">
                   <MenuItem value="">Tất cả</MenuItem>
                   <MenuItem value="Amount">Giảm số tiền</MenuItem>
                   <MenuItem value="Percentage">Giảm phần trăm</MenuItem>
@@ -343,40 +302,17 @@ const VoucherPage: React.FC = () => {
                   }}
                 />
 
-                <TextField
-                  label="Từ ngày"
-                  type="date"
-                  value={startDate}
-                  onChange={(e) => setStartDate(e.target.value)}
-                  InputLabelProps={{ shrink: true }}
-                  size="small"
-                />
+                <TextField label="Từ ngày" type="date" value={startDate} onChange={(e) => setStartDate(e.target.value)} InputLabelProps={{ shrink: true }} size="small" />
 
-                <TextField
-                  label="Đến ngày"
-                  type="date"
-                  value={endDate}
-                  onChange={(e) => setEndDate(e.target.value)}
-                  InputLabelProps={{ shrink: true }}
-                  size="small"
-                />
+                <TextField label="Đến ngày" type="date" value={endDate} onChange={(e) => setEndDate(e.target.value)} InputLabelProps={{ shrink: true }} size="small" />
               </Stack>
 
               <Stack direction="row" spacing={1} mt={2}>
-                <Button
-                  variant="contained"
-                  onClick={fetchVouchers}
-                  disabled={loading}
-                  startIcon={<FilterIcon />}
-                >
+                <Button variant="contained" onClick={fetchVouchers} disabled={loading} startIcon={<FilterIcon />}>
                   Áp dụng bộ lọc
                 </Button>
                 {hasActiveFilters && (
-                  <Button
-                    variant="outlined"
-                    onClick={handleClearFilters}
-                    startIcon={<ClearIcon />}
-                  >
+                  <Button variant="outlined" onClick={handleClearFilters} startIcon={<ClearIcon />}>
                     Xóa bộ lọc
                   </Button>
                 )}
@@ -386,11 +322,7 @@ const VoucherPage: React.FC = () => {
 
           {/* Hiển thị lỗi */}
           {error && (
-            <Alert
-              severity="error"
-              sx={{ mb: 2 }}
-              onClose={() => setError(null)}
-            >
+            <Alert severity="error" sx={{ mb: 2 }} onClose={() => setError(null)}>
               {error}
             </Alert>
           )}
@@ -445,9 +377,7 @@ const VoucherPage: React.FC = () => {
                   <TableRow>
                     <TableCell colSpan={10} align="center">
                       <Typography color="text.secondary" sx={{ py: 4 }}>
-                        {hasActiveFilters
-                          ? "Không tìm thấy voucher nào phù hợp với bộ lọc"
-                          : "Chưa có voucher nào. Hãy tạo voucher đầu tiên!"}
+                        {hasActiveFilters ? "Không tìm thấy voucher nào phù hợp với bộ lọc" : "Chưa có voucher nào. Hãy tạo voucher đầu tiên!"}
                       </Typography>
                     </TableCell>
                   </TableRow>
@@ -462,42 +392,26 @@ const VoucherPage: React.FC = () => {
                           </Typography>
                         </TableCell>
                         <TableCell>
-                          <Typography variant="body2">
-                            {voucher.name || "Voucher giảm giá"}
-                          </Typography>
+                          <Typography variant="body2">{voucher.name || "Voucher giảm giá"}</Typography>
                         </TableCell>
                         <TableCell>
                           <Chip
-                            label={
-                              voucher.type === "Amount"
-                                ? "Số tiền"
-                                : "Phần trăm"
-                            }
+                            label={voucher.type === "Amount" ? "Số tiền" : "Phần trăm"}
                             size="small"
-                            color={
-                              voucher.type === "Amount"
-                                ? "primary"
-                                : "secondary"
-                            }
+                            color={voucher.type === "Amount" ? "primary" : "secondary"}
                             variant="outlined"
                           />
                         </TableCell>
                         <TableCell>
                           <Typography variant="body2" fontWeight="medium">
-                            {voucher.type === "Amount"
-                              ? formatCurrency(voucher.discountAmount)
-                              : `${voucher.discountAmount}%`}
+                            {voucher.type === "Amount" ? formatCurrency(voucher.discountAmount) : `${voucher.discountAmount}%`}
                           </Typography>
                         </TableCell>
                         <TableCell>
-                          <Typography variant="body2">
-                            {formatCurrency(voucher.minOrderPrice)}
-                          </Typography>
+                          <Typography variant="body2">{formatCurrency(voucher.minOrderPrice)}</Typography>
                         </TableCell>
                         <TableCell>
-                          <Typography variant="body2">
-                            {formatCurrency(voucher.maxDiscountPrice)}
-                          </Typography>
+                          <Typography variant="body2">{voucher.type === "Amount" ? "N/A" : formatCurrency(voucher.maxDiscountPrice)}</Typography>
                         </TableCell>
                         <TableCell>
                           <Stack direction="column" spacing={0.5}>
@@ -510,15 +424,10 @@ const VoucherPage: React.FC = () => {
                                 height: 4,
                                 bgcolor: "grey.200",
                                 borderRadius: 1,
-                              }}
-                            >
+                              }}>
                               <Box
                                 sx={{
-                                  width: `${
-                                    ((voucher.usedQuantity || 0) /
-                                      voucher.quantity) *
-                                    100
-                                  }%`,
+                                  width: `${((voucher.usedQuantity || 0) / voucher.quantity) * 100}%`,
                                   height: "100%",
                                   bgcolor: "primary.main",
                                   borderRadius: 1,
@@ -529,61 +438,29 @@ const VoucherPage: React.FC = () => {
                         </TableCell>
                         <TableCell>
                           <Stack spacing={0.5}>
-                            <Typography
-                              variant="caption"
-                              color="text.secondary"
-                            >
+                            <Typography variant="caption" color="text.secondary">
                               {formatDate(voucher.startDate)}
                             </Typography>
-                            <Typography
-                              variant="caption"
-                              color="text.secondary"
-                            >
+                            <Typography variant="caption" color="text.secondary">
                               {formatDate(voucher.endDate)}
                             </Typography>
                           </Stack>
                         </TableCell>
                         <TableCell>
                           <Stack spacing={1} alignItems="flex-start">
-                            <Chip
-                              label={getStatusLabel(status)}
-                              size="small"
-                              color={getStatusColor(status)}
-                              variant="filled"
-                            />
-                            <Switch
-                              checked={voucher.isActive}
-                              onChange={() => handleToggleStatus(voucher)}
-                              color="primary"
-                              size="small"
-                            />
+                            <Chip label={getStatusLabel(status)} size="small" color={getStatusColor(status)} variant="filled" />
+                            <Switch checked={voucher.isActive} onChange={() => handleToggleStatus(voucher)} color="primary" size="small" />
                           </Stack>
                         </TableCell>
                         <TableCell align="center">
-                          <Stack
-                            direction="row"
-                            spacing={0.5}
-                            justifyContent="center"
-                          >
+                          <Stack direction="row" spacing={0.5} justifyContent="center">
                             <Tooltip title="Chỉnh sửa">
-                              <IconButton
-                                size="small"
-                                onClick={() => handleUpdate(voucher.id)}
-                                color="primary"
-                              >
+                              <IconButton size="small" onClick={() => handleUpdate(voucher.id)} color="primary">
                                 <EditIcon fontSize="small" />
                               </IconButton>
                             </Tooltip>
                             <Tooltip title="Xóa">
-                              <IconButton
-                                size="small"
-                                onClick={() =>
-                                  setDeleteDialog({ open: true, voucher })
-                                }
-                                color="error"
-                                disabled={status === "active"}
-                              >
-                              </IconButton>
+                              <IconButton size="small" onClick={() => setDeleteDialog({ open: true, voucher })} color="error" disabled={status === "active"}></IconButton>
                             </Tooltip>
                           </Stack>
                         </TableCell>
@@ -603,57 +480,32 @@ const VoucherPage: React.FC = () => {
               onRowsPerPageChange={handleChangeRowsPerPage}
               rowsPerPageOptions={[5, 10, 20, 50]}
               labelRowsPerPage="Số hàng mỗi trang:"
-              labelDisplayedRows={({ from, to, count }) =>
-                `${from}–${to} của ${count !== -1 ? count : `hơn ${to}`}`
-              }
+              labelDisplayedRows={({ from, to, count }) => `${from}–${to} của ${count !== -1 ? count : `hơn ${to}`}`}
             />
           </TableContainer>
         </CardContent>
       </Card>
 
       {/* Dialog xác nhận xóa */}
-      <Dialog
-        open={deleteDialog.open}
-        onClose={() => setDeleteDialog({ open: false, voucher: null })}
-        maxWidth="sm"
-        fullWidth
-      >
+      <Dialog open={deleteDialog.open} onClose={() => setDeleteDialog({ open: false, voucher: null })} maxWidth="sm" fullWidth>
         <DialogTitle>Xác nhận xóa voucher</DialogTitle>
         <DialogContent>
           <DialogContentText>
-            Bạn có chắc chắn muốn xóa voucher{" "}
-            <strong>
-              {deleteDialog.voucher?.code ||
-                deleteDialog.voucher?.id.slice(0, 8)}
-            </strong>
-            ? Hành động này không thể hoàn tác.
+            Bạn có chắc chắn muốn xóa voucher <strong>{deleteDialog.voucher?.code || deleteDialog.voucher?.id.slice(0, 8)}</strong>? Hành động này không thể hoàn tác.
           </DialogContentText>
         </DialogContent>
         <DialogActions>
-          <Button
-            onClick={() => setDeleteDialog({ open: false, voucher: null })}
-            color="inherit"
-          >
+          <Button onClick={() => setDeleteDialog({ open: false, voucher: null })} color="inherit">
             Hủy
           </Button>
-          <Button
-            onClick={() =>
-              deleteDialog.voucher && handleDelete(deleteDialog.voucher)
-            }
-            color="error"
-            variant="contained"
-          >
+          <Button onClick={() => deleteDialog.voucher && handleDelete(deleteDialog.voucher)} color="error" variant="contained">
             Xóa
           </Button>
         </DialogActions>
       </Dialog>
 
       {/* Snackbar thông báo thành công */}
-      <Snackbar
-        open={!!success}
-        autoHideDuration={4000}
-        onClose={() => setSuccess(null)}
-      >
+      <Snackbar open={!!success} autoHideDuration={4000} onClose={() => setSuccess(null)}>
         <Alert severity="success" onClose={() => setSuccess(null)}>
           {success}
         </Alert>

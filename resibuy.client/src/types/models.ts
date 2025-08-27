@@ -88,6 +88,7 @@ export interface Product {
   store: Store;
   category: Category;
   productDetails: ProductDetail[];
+  avarageRate : number
 }
 
 export interface ProductDetail {

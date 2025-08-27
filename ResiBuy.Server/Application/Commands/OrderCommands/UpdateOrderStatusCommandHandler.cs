@@ -23,7 +23,7 @@ namespace ResiBuy.Server.Application.Commands.OrderCommands
             {
                 transaction = await orderDbService.BeginTransactionAsync();
                 order.UpdateAt = DateTime.Now;
-
+                var notiProductDetails = new List<ProductDetail>();
                 if (dto.OrderStatus.HasValue)
                 {
                     if (dto.OrderStatus == OrderStatus.None)
@@ -50,6 +50,32 @@ namespace ResiBuy.Server.Application.Commands.OrderCommands
                     if (oldStatus == OrderStatus.Pending && dto.OrderStatus != OrderStatus.Cancelled && dto.OrderStatus != OrderStatus.Processing)
                         throw new CustomException(ExceptionErrorCode.ValidationFailed, "Đơn hàng chưa xử lý chỉ được xử lý hoặc hủy.");
                     if (dto.OrderStatus != order.Status + 1 && dto.OrderStatus != OrderStatus.Delivered && dto.OrderStatus != OrderStatus.Cancelled && dto.OrderStatus != OrderStatus.CustomerNotAvailable) throw new CustomException(ExceptionErrorCode.ValidationFailed, "Có vẻ bạn đã bỏ quả bước nào đó trong quá trình đổi trạng thái đơn hàng.");
+
+                    if (dto.OrderStatus == OrderStatus.Processing)
+                    {
+                        var items = order.Items;
+                        var productDetailIds = items.Select(i => i.ProductDetailId).ToList();
+                        var productDetails = await productDetailDbService.GetBatchAsync(productDetailIds);
+                        foreach (var item in items)
+                        {
+                            var productDetail = productDetails.First(pd => pd.Id == item.ProductDetailId);
+                            productDetail.Quantity -= item.Quantity;
+                            productDetail.Sold += item.Quantity;
+                            if (productDetail.Quantity == 0)
+                            {
+                                productDetail.IsOutOfStock = true;
+                                //productDetail.Sold = productDetail.Sold + totalOrderedQuantity;
+                                notiProductDetails.Add(productDetail);
+                                var allDetails = await productDetailDbService.GetByProductIdAsync(productDetail.ProductId);
+                                if (allDetails.All(pd => pd.IsOutOfStock || pd.Quantity == 0))
+                                {
+                                    productDetail.Product.IsOutOfStock = true;
+                                }
+                            }
+                        }
+                        await productDetailDbService.UpdateTransactionBatch(productDetails);
+
+                    }
                     if (dto.OrderStatus == OrderStatus.Delivered)
                     {
                         var items = order.Items;
@@ -59,7 +85,6 @@ namespace ResiBuy.Server.Application.Commands.OrderCommands
                         foreach (var item in items)
                         {
                             var productDetail = productDetails.First(pd => pd.Id == item.ProductDetailId);
-                            productDetail.Sold += item.Quantity;
                         }
                         await productDetailDbService.UpdateTransactionBatch(productDetails);
 
@@ -116,6 +141,10 @@ namespace ResiBuy.Server.Application.Commands.OrderCommands
                 if (dto.OrderStatus == OrderStatus.CustomerNotAvailable) userIds.AddRange([order.UserId, store.OwnerId.ToString()]);
                 if (dto.OrderStatus == OrderStatus.Cancelled) userIds.AddRange([order.UserId, store.OwnerId.ToString()]);
                 await notificationService.SendNotificationAsync($"{Constants.OrderStatusChanged}-{order.Status}", new OrderStatusChangedDto(order.Id, order.StoreId, store.Name, order.Status, oldStatus, order.PaymentStatus, order.CreateAt, order.UpdateAt), "", userIds);
+                foreach (var productDetail in notiProductDetails)
+                {
+                    await notificationService.SendNotificationAsync(Constants.ProductOutOfStock, new ProductOutOfStockDto(productDetail.Id, productDetail.Product.Name, productDetail.Product.Store.Name, productDetail.Product.StoreId), Constants.NoHubGroup, [productDetail.Product.Store.OwnerId.ToString()]);
+                }
                 if (dto.OrderStatus == OrderStatus.Delivered)
                 {
                     var user = await userDbService.GetUserById(order.UserId);

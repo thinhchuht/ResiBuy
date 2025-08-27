@@ -197,16 +197,24 @@ export default function ShippersPage() {
         pageSize
       );
     }
-  }, [pageNumber]);
+  }, [pageNumber,searchParams]);
 
   const handleSearch = () => {
-    setSearchParams({
-      keyWord: searchInput || undefined,
-      isOnline: localFilters.isOnline,
-      isLocked: localFilters.isLocked,
-    });
-    handlePageChange(1);
-  };
+  setSearchParams({
+    keyWord: searchInput || undefined,
+    isOnline: localFilters.isOnline,
+    isLocked: localFilters.isLocked,
+  });
+  setPageNumber(1); // Reset về trang 1
+  // Gọi trực tiếp fetchShippersWithFilters
+  fetchShippersWithFilters(
+    searchInput || undefined,
+    localFilters.isOnline,
+    localFilters.isLocked,
+    1, // Trang 1
+    pageSize
+  );
+};
 
   const handleFilterChange = (key: string, value: string | boolean | undefined) => {
     setLocalFilters((prev) => ({
@@ -300,6 +308,16 @@ export default function ShippersPage() {
       render: (shipper: Shipper) => (
         <Typography variant="body2" sx={{ color: "grey.900" }}>
           {shipper.phoneNumber || "N/A"}
+        </Typography>
+      ),
+    },
+     {
+      key: "reportCount" as keyof Shipper,
+      label: "Số báo cáo",
+      sortable: true,
+      render: (shipper: Shipper) => (
+        <Typography variant="body2" sx={{ color: "grey.900" }}>
+          {shipper.reportCount || 0}
         </Typography>
       ),
     },
@@ -403,8 +421,8 @@ export default function ShippersPage() {
       { label: "Offline", value: "false" },
     ],
     isLocked: [
-      { label: "Hoạt động", value: "false" },
-      { label: "Khóa", value: "true" },
+      { label: "Không khóa", value: "false" },
+      { label: "Đã khóa", value: "true" },
     ],
   };
 
@@ -513,7 +531,7 @@ export default function ShippersPage() {
                 </Select>
               </FormControl>
               <FormControl size="small" sx={{ minWidth: 185 }}>
-                <InputLabel>Khóa</InputLabel>
+                <InputLabel>Trạng thái khóa</InputLabel>
                 <Select
                   value={localFilters.isLocked ?? ""}
                   onChange={(e) => handleFilterChange("isLocked", e.target.value)}

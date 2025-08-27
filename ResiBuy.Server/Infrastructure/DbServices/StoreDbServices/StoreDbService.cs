@@ -217,7 +217,7 @@ namespace ResiBuy.Server.Infrastructure.DbServices.StoreDbServices
         {
             var salesAnalysis = new SalesAnalysisDto();
             var store = await _context.Stores.Include(s => s.Products).Include(s => s.Vouchers).Include(s => s.Orders).ThenInclude(o => o.Items).FirstOrDefaultAsync(s => s.Id == storeId);
-            var orderSuccess = store.Orders.Where(o => o.Status == OrderStatus.Delivered && o.CreateAt >= startDate && o.CreateAt <= endDate.AddDays(1));
+            var orderSuccess = store.Orders.Where(o => o.Status != OrderStatus.Pending && o.CreateAt >= startDate && o.CreateAt <= endDate.AddDays(1));
             var orderCanceled = store.Orders.Where(o => o.Status == OrderStatus.Cancelled && o.CreateAt >= startDate && o.CreateAt <= endDate.AddDays(1));
             decimal sales = 0;
             int productQuantity = 0;
@@ -241,7 +241,7 @@ namespace ResiBuy.Server.Infrastructure.DbServices.StoreDbServices
             var store = await _context.Stores.Include(s => s.Orders).ThenInclude(o => o.Items).ThenInclude(i => i.ProductDetail).ThenInclude(p => p.Product)
                 .ThenInclude(p => p.ProductDetails).ThenInclude(pd => pd.Image).FirstOrDefaultAsync(s => s.Id == storeId);
             Dictionary<int, ProductAndSale> productAndSales = new Dictionary<int, ProductAndSale>();
-            var successedOrder = store.Orders.Where(o => o.Status == OrderStatus.Delivered && o.UpdateAt >= startDate && o.UpdateAt <= endDate.AddDays(1));
+            var successedOrder = store.Orders.Where(o => o.Status != OrderStatus.Pending && o.UpdateAt >= startDate && o.UpdateAt <= endDate.AddDays(1));
             foreach (var order in successedOrder)
             {
                 foreach (var item in order.Items)

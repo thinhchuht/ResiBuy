@@ -11,6 +11,7 @@
         public Guid StoreId { get; set; }
         public Guid CategoryId { get; set; }    
         public object Category { get; set; }
+        public float AvarageRate { get; set; }
         public List<ProductDetailQueriesDto> ProductDetails { get; set; }
     }
 }
