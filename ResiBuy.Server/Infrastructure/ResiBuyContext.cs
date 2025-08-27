@@ -1,4 +1,6 @@
-﻿namespace ResiBuy.Server.Infrastructure
+﻿using ResiBuy.Server.Infrastructure.Seeds;
+
+namespace ResiBuy.Server.Infrastructure
 {
     public class ResiBuyContext : DbContext
     {
@@ -52,6 +54,9 @@
             modelBuilder.ApplyConfiguration(new OrderItemConfig());
 
             modelBuilder.ApplyConfiguration(new RoomConfig());
+
+            CategorySeed.Seed(modelBuilder);
+
             // default admin
             var admin = new User
             {

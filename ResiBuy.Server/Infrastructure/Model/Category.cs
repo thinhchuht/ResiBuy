@@ -8,7 +8,7 @@
         public Image                Image    { get; set; }
         public IEnumerable<Product> Products { get; set; }
 
-
+        public Category() { }
         public Category(string name, bool status)
         {
             Name = name;
