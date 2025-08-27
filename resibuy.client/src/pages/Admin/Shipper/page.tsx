@@ -303,6 +303,16 @@ export default function ShippersPage() {
         </Typography>
       ),
     },
+     {
+      key: "reportCount" as keyof Shipper,
+      label: "Số báo cáo",
+      sortable: true,
+      render: (shipper: Shipper) => (
+        <Typography variant="body2" sx={{ color: "grey.900" }}>
+          {shipper.reportCount || 0}
+        </Typography>
+      ),
+    },
     {
       key: "isLocked" as keyof Shipper,
       label: "Trạng Thái Khóa",
@@ -403,8 +413,8 @@ export default function ShippersPage() {
       { label: "Offline", value: "false" },
     ],
     isLocked: [
-      { label: "Hoạt động", value: "false" },
-      { label: "Khóa", value: "true" },
+      { label: "Không khóa", value: "false" },
+      { label: "Đã khóa", value: "true" },
     ],
   };
 
@@ -513,7 +523,7 @@ export default function ShippersPage() {
                 </Select>
               </FormControl>
               <FormControl size="small" sx={{ minWidth: 185 }}>
-                <InputLabel>Khóa</InputLabel>
+                <InputLabel>Tất cả</InputLabel>
                 <Select
                   value={localFilters.isLocked ?? ""}
                   onChange={(e) => handleFilterChange("isLocked", e.target.value)}
