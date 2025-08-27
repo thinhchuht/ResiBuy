@@ -40,7 +40,7 @@ namespace ResiBuy.Server.Application.Queries.ProductQueries
             if (filter.IsNotGetOutOfStock.HasValue)
                 query = query.Where(p => !p.IsOutOfStock);
 
-            if (filter.IsGetStoreOpen.HasValue)
+            if (filter.IsGetStoreOpen.HasValue && filter.StoreId == Guid.Empty)
                 query = query.Where(p => p.Store.IsOpen);
 
             // Project to DTO
