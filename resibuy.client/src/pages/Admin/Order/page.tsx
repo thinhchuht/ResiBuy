@@ -879,9 +879,6 @@ export default function OrderPage() {
                               <Typography variant="body2" color="text.secondary">
                                 {selectedOrder.user?.phoneNumber || "Không có số điện thoại"}
                               </Typography>
-                              <Typography variant="body2" color="text.secondary">
-                                {selectedOrder.user?.email || "Không có email"}
-                              </Typography>
                             </Box>
                             <Box sx={{ flex: 1, minWidth: 250, p: 2, bgcolor: "grey.100", borderRadius: 2 }}>
                               <Box sx={{ display: "flex", alignItems: "center", gap: 1, mb: 1 }}>
@@ -895,9 +892,6 @@ export default function OrderPage() {
                               </Typography>
                               <Typography variant="body2" color="text.secondary">
                                 {selectedOrder.store?.phoneNumber || "Không có số điện thoại"}
-                              </Typography>
-                              <Typography variant="body2" color="text.secondary">
-                                {selectedOrder.store?.description || "Không có mô tả"}
                               </Typography>
                             </Box>
                             {selectedOrder.shipper?.id && (
