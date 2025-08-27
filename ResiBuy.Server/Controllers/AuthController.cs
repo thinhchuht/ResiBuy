@@ -1,4 +1,4 @@
-﻿namespace ResiBuy.Server.Controllers
+namespace ResiBuy.Server.Controllers
 {
     [ApiController]
     [Route("api/[controller]")]
@@ -57,6 +57,7 @@
                     roles = roles,
                     phoneNumber = user.PhoneNumber,
                     avatar = user.Avatar,
+                    isLocked = user.IsLocked,
                     rooms = user.UserRooms.Select(ur => new
                     {
                         roomId = ur.RoomId,

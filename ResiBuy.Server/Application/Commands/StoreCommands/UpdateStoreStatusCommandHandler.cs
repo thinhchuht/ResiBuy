@@ -2,17 +2,18 @@
 {
     public record UpdateStoreStatusCommand(
         Guid StoreId,
-        bool IsLocked,
+        bool? IsLocked,
         bool IsOpen
     ) : IRequest<ResponseModel>;
 
     public class UpdateStoreStatusCommandHandler : IRequestHandler<UpdateStoreStatusCommand, ResponseModel>
     {
         private readonly IStoreDbService _storeDbService;
-
-        public UpdateStoreStatusCommandHandler(IStoreDbService storeDbService)
+        private readonly INotificationService _notificationService;
+        public UpdateStoreStatusCommandHandler(IStoreDbService storeDbService, INotificationService notificationService)
         {
             _storeDbService = storeDbService;
+            _notificationService = notificationService;
         }
         public async Task<ResponseModel> Handle(UpdateStoreStatusCommand command, CancellationToken cancellationToken)
         {
@@ -27,6 +28,16 @@
             try
             {
                 await _storeDbService.UpdateStoreStatusAsync(command.StoreId, command.IsLocked, command.IsOpen);
+                if (command.IsLocked.HasValue)
+                {
+                    if (command.IsLocked.Value) await _notificationService.SendNotificationAsync(Constants.StoreLocked,
+                        new { StoreId = store.Id, StoreName = store.Name },
+                        Constants.NoHubGroup, [store.OwnerId]);
+                    if (command.IsLocked.Value == false) await _notificationService.SendNotificationAsync(Constants.StoreUnlocked,
+                        new { StoreId = store.Id, StoreName = store.Name },
+                        Constants.NoHubGroup, [store.OwnerId]);
+                }
+
                 return ResponseModel.SuccessResponse();
             }
             catch (Exception ex)
