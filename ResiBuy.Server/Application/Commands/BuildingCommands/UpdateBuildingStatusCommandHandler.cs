@@ -22,7 +22,10 @@ namespace ResiBuy.Server.Application.Commands.BuildingCommands
 
                 if (room == null)
                     throw new CustomException(ExceptionErrorCode.NotFound, $"Không tìm thấy phòng với Id: {command.BuildingId}");
-
+                if (!room.Area.IsActive)
+                {
+                    throw new CustomException(ExceptionErrorCode.UpdateFailed, "Area không hoạt động");
+                }
                 room.UpdateStatus();
 
                 var updatedRoom = await buildingDbService.UpdateAsync(room);
