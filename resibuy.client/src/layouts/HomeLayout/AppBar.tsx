@@ -183,7 +183,7 @@ function notifiConvert(item: NotificationApiItem, user?: User): Notification {
       } else {
         displayLabel = getReportTargetLabel(dataObj.reportTarget as string);
       }
-      title = `[${displayLabel}] Đơn hàng #${dataObj.orderId} bị báo cáo`;
+      title = `${displayLabel} Đơn hàng #${dataObj.orderId} bị báo cáo`;
       message = dataObj.title ? `Lý do: ${dataObj.description}` : `Đơn hàng ${dataObj.orderId} đã bị báo cáo.`;
       break;
     }
@@ -194,7 +194,7 @@ function notifiConvert(item: NotificationApiItem, user?: User): Notification {
       } else {
         displayLabel = getReportTargetLabel(dataObj.reportTarget as string);
       }
-      title = `[${displayLabel}] Báo cáo đơn hàng #${dataObj.orderId} đã được giải quyết`;
+      title = `${displayLabel} Báo cáo đơn hàng #${dataObj.orderId} đã được giải quyết`;
       message = dataObj.isAddReportTarget ? `Báo cáo đã được xử lý. ${displayLabel} sẽ bị tính thêm 1 lần cảnh cáo.` : "Báo cáo đã được đóng.";
       break;
     }
@@ -517,7 +517,7 @@ const AppBar: React.FC = () => {
       setNotifications((prev) => [
         {
           id: data.id,
-          title: `[${targetLabel}] Đơn hàng #${data.orderId} bị báo cáo`,
+          title: `${targetLabel} Đơn hàng #${data.orderId} bị báo cáo`,
           message: data.title ? `Lý do: ${data.description}` : `Đơn hàng ${data.orderId} đã bị báo cáo.`,
           time: `${formattedTime} ${formattedDate}`,
           isRead: false,

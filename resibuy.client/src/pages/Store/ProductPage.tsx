@@ -28,6 +28,10 @@ import {
   Collapse,
   Divider,
   Alert,
+  Dialog,
+  DialogActions,
+  DialogContent,
+  DialogTitle,
 } from "@mui/material";
 import {
   Search as SearchIcon,
@@ -48,6 +52,7 @@ import {
 } from "@mui/icons-material";
 import axios from "../../api/base.api";
 import { useNavigate, useParams } from "react-router-dom";
+import { useToastify } from "../../hooks/useToastify";
 
 interface ProductDetail {
   id: number;
@@ -97,15 +102,16 @@ const ProductPage: React.FC = () => {
   const [categories, setCategories] = useState<Category[]>([]);
   const [loading, setLoading] = useState<boolean>(true);
   const [showFilters, setShowFilters] = useState<boolean>(false);
-
+  const toast = useToastify();
   const [searchInput, setSearchInput] = useState<string>("");
   const [selectedCategory, setSelectedCategory] = useState<string>("");
   const [minPriceInput, setMinPriceInput] = useState<string>("");
   const [maxPriceInput, setMaxPriceInput] = useState<string>("");
-
-  // Validation states
   const [minPriceError, setMinPriceError] = useState<string>("");
   const [maxPriceError, setMaxPriceError] = useState<string>("");
+
+  const [openConfirmDialog, setOpenConfirmDialog] = useState(false);
+  const [currentProduct, setCurrentProduct] = useState<Product | null>(null);
 
   const { storeId } = useParams<{ storeId: string }>();
   const navigate = useNavigate();
@@ -236,18 +242,31 @@ const ProductPage: React.FC = () => {
     navigate(`/store/${storeId}/product-detail/${id}`);
   };
 
-  const handleToggleStatus = async (product: Product) => {
-    const newStatus = !product.isOutOfStock;
-    const confirmMsg = newStatus ? "Bạn có chắc muốn dừng bán sản phẩm này?" : "Bạn có chắc muốn mở bán lại sản phẩm này?";
-    if (!window.confirm(confirmMsg)) return;
+  const handleOpenConfirmDialog = (product: Product) => {
+    setCurrentProduct(product);
+    setOpenConfirmDialog(true);
+  };
+
+  const handleCloseConfirmDialog = () => {
+    setOpenConfirmDialog(false);
+    setCurrentProduct(null);
+  };
+
+  const handleConfirmStatusChange = async () => {
+    if (!currentProduct) return;
+
+    const newStatus = !currentProduct.isOutOfStock;
+    const action = newStatus ? "dừng bán" : "mở bán lại";
 
     try {
-      await axios.patch(`/api/Product/${product.id}/status`, newStatus, {
+      await axios.patch(`/api/Product/${currentProduct.id}/status`, newStatus, {
         headers: {
           "Content-Type": "application/json",
         },
       });
-      setProducts((prev) => prev.map((p) => (p.id === product.id ? { ...p, isOutOfStock: newStatus } : p)));
+      setProducts((prev) => prev.map((p) => (p.id === currentProduct.id ? { ...p, isOutOfStock: newStatus } : p)));
+      handleCloseConfirmDialog();
+      toast.success(`Đã ${action} sản phẩm "${currentProduct.name}"`);
     } catch (error) {
       console.error("Lỗi khi cập nhật trạng thái sản phẩm:", error);
     }
@@ -287,6 +306,99 @@ const ProductPage: React.FC = () => {
 
   return (
     <Box sx={{ p: 3, backgroundColor: "#f8fafc", minHeight: "100vh" }}>
+      {/* Enhanced Confirmation Dialog */}
+      <Dialog
+        open={openConfirmDialog}
+        onClose={handleCloseConfirmDialog}
+        PaperProps={{
+          sx: {
+            borderRadius: 3,
+            boxShadow: "0 10px 30px rgba(0,0,0,0.15)",
+            minWidth: "400px",
+            maxWidth: "450px",
+            width: "100%",
+            overflow: "hidden",
+            border: "1px solid rgba(0,0,0,0.1)",
+          },
+        }}>
+        <Box sx={{ p: 3, textAlign: "center" }}>
+          <Box
+            sx={{
+              width: 60,
+              height: 60,
+              borderRadius: "50%",
+              bgcolor: currentProduct?.isOutOfStock ? "#e8f5e9" : "#ffebee",
+              display: "flex",
+              alignItems: "center",
+              justifyContent: "center",
+              mx: "auto",
+              mb: 2,
+            }}>
+            {currentProduct?.isOutOfStock ? <CheckCircleIcon sx={{ color: "#4caf50", fontSize: 36 }} /> : <WarningIcon sx={{ color: "#f44336", fontSize: 36 }} />}
+          </Box>
+
+          <DialogTitle
+            sx={{
+              fontWeight: 700,
+              fontSize: "1.5rem",
+              p: 0,
+              mb: 1,
+            }}>
+            {currentProduct?.isOutOfStock ? "Mở bán sản phẩm" : "Dừng bán sản phẩm"}
+          </DialogTitle>
+
+          <DialogContent sx={{ p: 0, mb: 2 }}>
+            <Typography variant="body1" color="text.secondary">
+              {currentProduct?.isOutOfStock ? `Bạn đang mở bán lại sản phẩm:` : `Bạn đang dừng bán sản phẩm:`}
+            </Typography>
+            <Typography variant="h6" sx={{ mt: 1, fontWeight: 600, color: "primary.main" }}>
+              {currentProduct?.name}
+            </Typography>
+            {!currentProduct?.isOutOfStock && (
+              <Alert severity="warning" sx={{ mt: 2, textAlign: "left", borderRadius: 2 }}>
+                <Typography variant="body2">Sản phẩm sẽ bị ẩn khỏi cửa hàng và không thể đặt mua.</Typography>
+              </Alert>
+            )}
+          </DialogContent>
+
+          <DialogActions sx={{ justifyContent: "center", gap: 2, p: 0, mt: 2 }}>
+            <Button
+              onClick={handleCloseConfirmDialog}
+              variant="outlined"
+              sx={{
+                px: 3,
+                py: 1,
+                borderRadius: 2,
+                borderColor: "#e0e0e0",
+                color: "text.primary",
+                textTransform: "none",
+                "&:hover": {
+                  borderColor: "#bdbdbd",
+                  bgcolor: "rgba(0,0,0,0.02)",
+                },
+              }}>
+              Hủy bỏ
+            </Button>
+            <Button
+              onClick={handleConfirmStatusChange}
+              variant="contained"
+              autoFocus
+              sx={{
+                px: 3,
+                py: 1,
+                borderRadius: 2,
+                bgcolor: currentProduct?.isOutOfStock ? "#4caf50" : "#f44336",
+                color: "white",
+                textTransform: "none",
+                "&:hover": {
+                  bgcolor: currentProduct?.isOutOfStock ? "#43a047" : "#e53935",
+                },
+              }}>
+              {currentProduct?.isOutOfStock ? "Xác nhận mở bán" : "Xác nhận dừng bán"}
+            </Button>
+          </DialogActions>
+        </Box>
+      </Dialog>
       {/* Header Section */}
       <Paper
         elevation={0}
@@ -633,9 +745,46 @@ const ProductPage: React.FC = () => {
           </Button>
         </Card>
       ) : (
-        <Card sx={{ borderRadius: 2, border: "1px solid #e2e8f0" }}>
+        <Card
+          sx={{
+            borderRadius: 3,
+            border: "1px solid #e2e8f0",
+            boxShadow: "0 4px 6px -1px rgba(0, 0, 0, 0.05), 0 2px 4px -1px rgba(0, 0, 0, 0.03)",
+            overflow: "hidden",
+          }}>
           <TableContainer>
-            <Table>
+            <Table
+              sx={{
+                "& .MuiTableCell-root": {
+                  borderBottom: "1px solid #f0f2f5",
+                  padding: "16px",
+                },
+                "& .MuiTableHead-root": {
+                  "& .MuiTableCell-root": {
+                    backgroundColor: "#f8fafc",
+                    color: "#4a5568",
+                    fontWeight: 600,
+                    fontSize: "0.75rem",
+                    textTransform: "uppercase",
+                    letterSpacing: "0.05em",
+                    borderBottom: "2px solid #e2e8f0",
+                  },
+                },
+                "& .MuiTableBody-root": {
+                  "& .MuiTableRow-root": {
+                    backgroundColor: "#ffffff",
+                    transition: "all 0.2s ease-in-out",
+                    "&:nth-of-type(odd)": {
+                      backgroundColor: "#f9fafb",
+                    },
+                    "&:hover": {
+                      backgroundColor: "#f0f7ff",
+                      transform: "translateY(-1px)",
+                      boxShadow: "0 2px 8px rgba(0, 0, 0, 0.05)",
+                    },
+                  },
+                },
+              }}>
               <TableHead>
                 <TableRow sx={{ backgroundColor: "#f8fafc" }}>
                   <TableCell sx={{ fontWeight: 600, fontSize: "0.875rem" }}>Sản phẩm</TableCell>
@@ -739,7 +888,30 @@ const ProductPage: React.FC = () => {
                       </TableCell>
 
                       <TableCell>
-                        <Chip label={!product.isOutOfStock ? "Đang bán" : "Tạm hết"} size="small" color={!product.isOutOfStock ? "success" : "default"} sx={{ fontWeight: 600 }} />
+                        <Chip
+                          label={!product.isOutOfStock ? "Đang bán" : "Tạm hết"}
+                          size="small"
+                          color={!product.isOutOfStock ? "success" : "default"}
+                          sx={{
+                            fontWeight: 600,
+                            borderRadius: 1,
+                            minWidth: 90,
+                            "&.MuiChip-colorSuccess": {
+                              backgroundColor: "#e6f7ee",
+                              color: "#10b981",
+                              "&:hover": {
+                                backgroundColor: "#d1f5e3",
+                              },
+                            },
+                            "&.MuiChip-colorDefault": {
+                              backgroundColor: "#fef3c7",
+                              color: "#d97706",
+                              "&:hover": {
+                                backgroundColor: "#fde68a",
+                              },
+                            },
+                          }}
+                        />
                       </TableCell>
 
                       <TableCell align="center">
@@ -749,7 +921,12 @@ const ProductPage: React.FC = () => {
                               onClick={() => handleEdit(product.id)}
                               sx={{
                                 color: "primary.main",
-                                "&:hover": { backgroundColor: "primary.50" },
+                                backgroundColor: "rgba(59, 130, 246, 0.08)",
+                                transition: "all 0.2s",
+                                "&:hover": {
+                                  backgroundColor: "rgba(59, 130, 246, 0.15)",
+                                  transform: "scale(1.1)",
+                                },
                               }}>
                               <EditIcon />
                             </IconButton>
@@ -757,13 +934,18 @@ const ProductPage: React.FC = () => {
 
                           <Tooltip title={product.isOutOfStock ? "Mở bán" : "Dừng bán"}>
                             <IconButton
-                              onClick={() => handleToggleStatus(product)}
+                              onClick={() => handleOpenConfirmDialog(product)}
+                              color={product.isOutOfStock ? "success" : "error"}
+                              size="small"
                               sx={{
-                                color: product.isOutOfStock ? "success.main" : "error.main",
+                                backgroundColor: product.isOutOfStock ? "rgba(16, 185, 129, 0.08)" : "rgba(239, 68, 68, 0.08)",
+                                transition: "all 0.2s",
                                 "&:hover": {
-                                  backgroundColor: product.isOutOfStock ? "success.50" : "error.50",
+                                  backgroundColor: product.isOutOfStock ? "rgba(16, 185, 129, 0.15)" : "rgba(239, 68, 68, 0.15)",
+                                  transform: "scale(1.1)",
                                 },
-                              }}>
+                              }}
+                              title={product.isOutOfStock ? "Mở bán" : "Dừng bán"}>
                               {product.isOutOfStock ? <VisibilityIcon /> : <VisibilityOffIcon />}
                             </IconButton>
                           </Tooltip>

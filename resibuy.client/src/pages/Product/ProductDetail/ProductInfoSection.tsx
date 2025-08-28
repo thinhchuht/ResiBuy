@@ -83,13 +83,14 @@ const ProductInfoSection: React.FC<ProductInfoSectionProps> = ({ product, quanti
 
   const handleAddToCart = () => {
     if (!selectedDetail || !user) return;
-    cartApi.addToCart(user?.cartId, selectedDetail.id, quantity)
-      .then(response => {
-        if(response.data.code !== -1) {
+    cartApi
+      .addToCart(user?.cartId, selectedDetail.id, quantity)
+      .then((response) => {
+        if (response.data.code !== -1) {
           toast.success(`Đã thêm sản phẩm vào giỏ hàng!`);
         }
       })
-      .catch(error => {
+      .catch((error) => {
         console.error(error);
       });
   };
@@ -134,7 +135,7 @@ const ProductInfoSection: React.FC<ProductInfoSectionProps> = ({ product, quanti
   return (
     <Box sx={{ width: { xs: "100%", md: "50%" } }}>
       <Box sx={{ height: "100%", display: "flex", flexDirection: "column", marginTop: 6 }}>
-        <Typography variant="h4" gutterBottom fontWeight="bold" mb ={3}>
+        <Typography variant="h4" gutterBottom fontWeight="bold" mb={3}>
           {product.name}
         </Typography>
 
@@ -159,7 +160,7 @@ const ProductInfoSection: React.FC<ProductInfoSectionProps> = ({ product, quanti
         {/* Stock progress bar below price */}
         <Box mb={2}>
           <Typography variant="body2" color="text.secondary">
-            {product.isOutOfStock || (selectedDetail && selectedDetail.quantity)  === 0 ? "Hết hàng" : "Số lượng có hạn"}
+            {product.isOutOfStock || (selectedDetail && selectedDetail.quantity) === 0 ? "Hết hàng" : "Số lượng có hạn"}
           </Typography>
           <Slider
             value={selectedDetail ? (selectedDetail.quantity > 100 ? 100 : selectedDetail.quantity) : 0}
@@ -346,7 +347,7 @@ const ProductInfoSection: React.FC<ProductInfoSectionProps> = ({ product, quanti
               </Typography>
             </AccordionSummary>
             <AccordionDetails>
-            <Typography variant="body1" color="text.secondary" paragraph>
+              <Typography variant="body1" color="text.secondary" paragraph>
                 Danh mục : {product.category.name}
               </Typography>
               <Typography variant="body1" color="text.secondary" paragraph>
@@ -376,8 +377,8 @@ const ProductInfoSection: React.FC<ProductInfoSectionProps> = ({ product, quanti
             </AccordionSummary>
             <AccordionDetails>
               <Typography variant="body1" color="text.secondary">
-                Lorem ipsum dolor sit amet, consectetur adipiscing elit. Sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud
-                exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat.
+                Chúng tôi cam kết bảo vệ thông tin cá nhân của khách hàng. Mọi thông tin thanh toán và giao hàng đều được mã hóa an toàn. Chúng tôi không chia sẻ thông tin khách
+                hàng cho bên thứ ba mà không có sự đồng ý. Mọi giao dịch đều được bảo mật theo tiêu chuẩn quốc tế.
               </Typography>
             </AccordionDetails>
           </Accordion>
