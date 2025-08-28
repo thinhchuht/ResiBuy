@@ -122,7 +122,7 @@ export default function CreateProduct() {
         };
 
         loadCategories();
-    }, [showError]);
+    },[]);
 
     // Classification management functions
     const addClassifies = () => {
