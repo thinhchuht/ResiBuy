@@ -21,6 +21,10 @@ import {
   Stack,
   Button,
   CircularProgress,
+  Dialog,
+  DialogActions,
+  DialogContent,
+  DialogTitle,
 } from "@mui/material";
 import {
   Store as StoreIcon,
@@ -37,7 +41,9 @@ import {
 } from "@mui/icons-material";
 import { useNavigate, useParams, useLocation } from "react-router-dom";
 import axios from "../../api/base.api";
-import vnPayApi from "../../api/vnpay.api"; // Import VNPay API
+import vnPayApi from "../../api/vnpay.api";
+import WarningIcon from "@mui/icons-material/Warning";
+import CheckCircleIcon from "@mui/icons-material/CheckCircle";
 
 interface Store {
   id: string;
@@ -101,6 +107,7 @@ const Sidebar: React.FC<SidebarProps> = ({ open = true, onClose, variant = "perm
   const [paymentLoading, setPaymentLoading] = useState(false); // ✅ Loading cho payment
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState<string | null>(null);
+  const [openStatusDialog, setOpenStatusDialog] = useState(false);
 
   // Fetch store information
   const fetchStoreInfo = useCallback(async () => {
@@ -110,9 +117,9 @@ const Sidebar: React.FC<SidebarProps> = ({ open = true, onClose, variant = "perm
       setLoading(true);
       setError(null);
 
-      const response = await axios.get(`/api/Store/${storeId}`);
-      setStore(response.data.data || response.data);
-    } catch (error: any) {
+      const response = await axios.get<Store | { data: Store }>(`/api/Store/${storeId}`);
+      setStore("data" in response.data ? response.data.data : response.data);
+    } catch (error: unknown) {
       console.error("Failed to fetch store info:", error);
       setError("Không thể tải thông tin cửa hàng");
     } finally {
@@ -120,7 +127,7 @@ const Sidebar: React.FC<SidebarProps> = ({ open = true, onClose, variant = "perm
     }
   }, [storeId]);
 
-  // ✅ Handle store payment
+  // Handle store payment
   const handleStorePayment = async () => {
     if (!storeId) return;
 
@@ -130,19 +137,29 @@ const Sidebar: React.FC<SidebarProps> = ({ open = true, onClose, variant = "perm
 
       const result = await vnPayApi.getStorePaymentUrl(storeId);
 
-      if (result.success) {
-        // Redirect đến VNPay để thanh toán
+      if (result.success && result.data?.paymentUrl?.result) {
+        // Redirect to VNPay for payment
         window.location.href = result.data.paymentUrl.result;
       } else {
         const errorMessage = result.error?.response?.data?.message || "Không thể tạo thanh toán";
         setError(errorMessage);
       }
-    } catch (error: any) {
+    } catch (error: unknown) {
       console.error("Payment creation failed:", error);
       setError("Có lỗi xảy ra khi tạo thanh toán");
     } finally {
       setPaymentLoading(false);
     }
+  };
+
+  // Open status confirmation dialog
+  const handleOpenStatusDialog = () => {
+    setOpenStatusDialog(true);
+  };
+
+  // Close status confirmation dialog
+  const handleCloseStatusDialog = () => {
+    setOpenStatusDialog(false);
   };
 
   // Toggle store status
@@ -155,14 +172,13 @@ const Sidebar: React.FC<SidebarProps> = ({ open = true, onClose, variant = "perm
 
       await axios.put(`/api/Store/${storeId}/status`, {
         storeId: storeId,
-        // isLocked: store.isOpen,
         isOpen: !store.isOpen,
       });
 
       setStore((prev) => (prev ? { ...prev, isOpen: !prev.isOpen } : null));
-
       setSuccess(store.isOpen ? "Đã đóng cửa hàng thành công" : "Đã mở cửa hàng thành công");
-    } catch (error: any) {
+      setOpenStatusDialog(false);
+    } catch (error: unknown) {
       console.error("Failed to toggle store status:", error);
       setError("Không thể thay đổi trạng thái cửa hàng. Vui lòng thử lại.");
     } finally {
@@ -182,7 +198,6 @@ const Sidebar: React.FC<SidebarProps> = ({ open = true, onClose, variant = "perm
   // Check if current path is active
   const isActive = (path: string) => {
     const currentPath = location.pathname;
-    const targetPath = path ? `/store/${storeId}/${path}` : `/store/${storeId}`;
 
     if (!path) {
       return currentPath === `/store/${storeId}` || currentPath === `/store/${storeId}/`;
@@ -338,7 +353,7 @@ const Sidebar: React.FC<SidebarProps> = ({ open = true, onClose, variant = "perm
 
               <Stack direction="row" alignItems="center" spacing={1}>
                 <Chip label={store.isOpen ? "Đang mở" : "Đã đóng"} size="small" color={store.isOpen ? "success" : "error"} variant="filled" />
-                <Switch checked={store.isOpen} onChange={handleToggleStoreStatus} disabled={statusLoading} color="success" size="small" />
+                <Switch checked={store.isOpen} onChange={handleOpenStatusDialog} color="success" disabled={statusLoading} inputProps={{ "aria-label": "controlled" }} />
               </Stack>
             </Stack>
 
@@ -353,6 +368,129 @@ const Sidebar: React.FC<SidebarProps> = ({ open = true, onClose, variant = "perm
       </Card>
     );
   };
+
+  // Render status dialog
+  const renderStatusDialog = () => (
+    <Dialog
+      open={openStatusDialog}
+      onClose={handleCloseStatusDialog}
+      PaperProps={{
+        sx: {
+          borderRadius: 3,
+          boxShadow: "0 10px 30px rgba(0,0,0,0.15)",
+          minWidth: "400px",
+          maxWidth: "450px",
+          width: "100%",
+          overflow: "hidden",
+          border: "1px solid rgba(0,0,0,0.1)",
+        },
+      }}>
+      <Box sx={{ p: 3, textAlign: "center" }}>
+        <Box
+          sx={{
+            width: 60,
+            height: 60,
+            borderRadius: "50%",
+            bgcolor: store?.isOpen ? "#ffebee" : "#e8f5e9",
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "center",
+            mx: "auto",
+            mb: 2,
+          }}>
+          {store?.isOpen ? <WarningIcon sx={{ color: "#f44336", fontSize: 36 }} /> : <CheckCircleIcon sx={{ color: "#4caf50", fontSize: 36 }} />}
+        </Box>
+
+        <DialogTitle
+          sx={{
+            fontWeight: 700,
+            fontSize: "1.5rem",
+            p: 0,
+            mb: 1,
+          }}>
+          {store?.isOpen ? "Đóng cửa hàng" : "Mở cửa hàng"}
+        </DialogTitle>
+
+        <DialogContent sx={{ p: 0, mb: 2 }}>
+          <Typography variant="body1" color="text.secondary">
+            {store?.isOpen ? `Bạn có chắc muốn đóng cửa hàng?` : `Bạn có chắc muốn mở cửa hàng?`}
+          </Typography>
+
+          <Box
+            sx={{
+              mt: 3,
+              p: 2,
+              bgcolor: "rgba(0,0,0,0.02)",
+              borderRadius: 2,
+              textAlign: "left",
+              border: "1px dashed rgba(0,0,0,0.1)",
+            }}>
+            <Typography variant="body2" color="text.secondary" sx={{ display: "flex", alignItems: "center", mb: 1 }}>
+              <StoreIcon sx={{ fontSize: 16, mr: 1, opacity: 0.7 }} />
+              <span>
+                Tên cửa hàng: <strong>{store?.name}</strong>
+              </span>
+            </Typography>
+            <Typography variant="body2" color="text.secondary" sx={{ display: "flex", alignItems: "center" }}>
+              {store?.isOpen ? <OpenIcon sx={{ fontSize: 16, mr: 1, color: "#4caf50" }} /> : <ClosedIcon sx={{ fontSize: 16, mr: 1, color: "#f44336" }} />}
+              <span>
+                Trạng thái hiện tại: <strong>{store?.isOpen ? "Đang mở" : "Đã đóng"}</strong>
+              </span>
+            </Typography>
+          </Box>
+
+          {store?.isOpen && (
+            <Alert severity="warning" sx={{ mt: 2, textAlign: "left", borderRadius: 2 }}>
+              <Typography variant="body2">Khi đóng cửa hàng, khách hàng sẽ không thể xem hoặc đặt hàng từ cửa hàng của bạn.</Typography>
+            </Alert>
+          )}
+        </DialogContent>
+
+        <DialogActions sx={{ justifyContent: "center", gap: 2, p: 0, mt: 2 }}>
+          <Button
+            onClick={handleCloseStatusDialog}
+            variant="outlined"
+            disabled={statusLoading}
+            sx={{
+              px: 3,
+              py: 1,
+              borderRadius: 2,
+              borderColor: "#e0e0e0",
+              color: "text.primary",
+              textTransform: "none",
+              "&:hover": {
+                borderColor: "#bdbdbd",
+                bgcolor: "rgba(0,0,0,0.02)",
+              },
+            }}>
+            Hủy bỏ
+          </Button>
+          <Button
+            onClick={handleToggleStoreStatus}
+            variant="contained"
+            disabled={statusLoading}
+            startIcon={statusLoading ? <CircularProgress size={20} color="inherit" /> : null}
+            sx={{
+              px: 3,
+              py: 1,
+              borderRadius: 2,
+              bgcolor: store?.isOpen ? "#f44336" : "#4caf50",
+              color: "white",
+              textTransform: "none",
+              "&:hover": {
+                bgcolor: store?.isOpen ? "#e53935" : "#43a047",
+              },
+              "&.Mui-disabled": {
+                bgcolor: "rgba(0, 0, 0, 0.12)",
+                color: "rgba(0, 0, 0, 0.26)",
+              },
+            }}>
+            {statusLoading ? "Đang xử lý..." : store?.isOpen ? "Xác nhận đóng cửa" : "Xác nhận mở cửa"}
+          </Button>
+        </DialogActions>
+      </Box>
+    </Dialog>
+  );
 
   // Drawer content
   const drawerContent = (
@@ -381,44 +519,15 @@ const Sidebar: React.FC<SidebarProps> = ({ open = true, onClose, variant = "perm
       {/* Navigation menu */}
       <Box sx={{ flex: 1, overflow: "auto" }}>
         <List sx={{ py: 1 }}>
-          {menuItems.map((item) => (
-            <ListItem key={item.id} disablePadding>
-              <ListItemButton
-                onClick={() => handleNavigation(item.path)}
-                selected={isActive(item.path)}
-                sx={{
-                  mx: 1,
-                  borderRadius: 1,
-                  "&.Mui-selected": {
-                    backgroundColor: "primary.light",
-                    color: "primary.contrastText",
-                    "& .MuiListItemIcon-root": {
-                      color: "primary.contrastText",
-                    },
-                  },
-                  "&:hover": {
-                    backgroundColor: "action.hover",
-                  },
-                }}>
-                <ListItemIcon sx={{ minWidth: 40 }}>{item.icon}</ListItemIcon>
-                <ListItemText
-                  primary={item.label}
-                  primaryTypographyProps={{
-                    fontSize: "0.9rem",
-                    fontWeight: isActive(item.path) ? "medium" : "normal",
-                  }}
-                />
+          {menuItems.map((menuItem) => (
+            <ListItem key={menuItem.id} disablePadding>
+              <ListItemButton selected={isActive(menuItem.path)} onClick={() => handleNavigation(menuItem.path)}>
+                <ListItemIcon>{menuItem.icon}</ListItemIcon>
+                <ListItemText primary={menuItem.label} />
               </ListItemButton>
             </ListItem>
           ))}
         </List>
-      </Box>
-
-      {/* Footer */}
-      <Box sx={{ p: 2, borderTop: 1, borderColor: "divider" }}>
-        <Typography variant="caption" color="text.secondary" align="center" display="block">
-          Store Management v1.0
-        </Typography>
       </Box>
     </Box>
   );
@@ -431,26 +540,28 @@ const Sidebar: React.FC<SidebarProps> = ({ open = true, onClose, variant = "perm
         onClose={onClose}
         sx={{
           width: width,
-          flexShrink: 0,
+          boxSizing: "border-box",
+          backgroundColor: "background.paper",
           "& .MuiDrawer-paper": {
             width: width,
             boxSizing: "border-box",
-            backgroundColor: "background.paper",
           },
         }}>
         {drawerContent}
       </Drawer>
 
+      {renderStatusDialog()}
+
       {/* Error Snackbar */}
       <Snackbar open={!!error} autoHideDuration={6000} onClose={() => setError(null)} anchorOrigin={{ vertical: "top", horizontal: "right" }}>
-        <Alert severity="error" onClose={() => setError(null)}>
+        <Alert onClose={() => setError(null)} severity="error" sx={{ width: "100%" }}>
           {error}
         </Alert>
       </Snackbar>
 
       {/* Success Snackbar */}
       <Snackbar open={!!success} autoHideDuration={4000} onClose={() => setSuccess(null)} anchorOrigin={{ vertical: "top", horizontal: "right" }}>
-        <Alert severity="success" onClose={() => setSuccess(null)}>
+        <Alert onClose={() => setSuccess(null)} severity="success" sx={{ width: "100%" }}>
           {success}
         </Alert>
       </Snackbar>

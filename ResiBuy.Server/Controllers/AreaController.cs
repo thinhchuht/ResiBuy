@@ -4,9 +4,9 @@ namespace ResiBuy.Server.Controllers
 {
     [Route("api/[controller]")]
     [ApiController]
+    //[Authorize]
     public class AreaController(IMediator mediator) : ControllerBase
     {
-        //[Authorize]
         [HttpGet]
         public async Task<IActionResult> GetAllAsync(bool getActive = true)
         {
@@ -33,7 +33,6 @@ namespace ResiBuy.Server.Controllers
                 throw new CustomException(ExceptionErrorCode.RepositoryError, ex.Message);
             }
         }
-
 
         [HttpPost("create")]
         public async Task<IActionResult> CreateAsync([FromBody] CommanAreaDto command)

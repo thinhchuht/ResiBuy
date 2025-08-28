@@ -4,6 +4,7 @@ namespace ResiBuy.Server.Controllers
 {
     [Route("api/[controller]")]
     [ApiController]
+    //[Authorize]
     public class BuildingController(IMediator mediator) : ControllerBase
     {
         [HttpGet]
@@ -19,7 +20,6 @@ namespace ResiBuy.Server.Controllers
                 throw new CustomException(ExceptionErrorCode.RepositoryError, ex.Message);
             }
         }
-
         [HttpGet("area/{id}")]
         public async Task<IActionResult> GetByAreaIdAsync(Guid id, bool getActive)
         {
@@ -47,7 +47,6 @@ namespace ResiBuy.Server.Controllers
             }
         }
 
-
         [HttpPost("create")]
         public async Task<IActionResult> CreateAsync([FromBody] CreateBuildingCommand command)
         {
@@ -66,7 +65,7 @@ namespace ResiBuy.Server.Controllers
         {
             try
             {
-                var result = await mediator.Send(new UpdateBuildingCommand(dto)); // 👈 Sửa ở đây
+                var result = await mediator.Send(new UpdateBuildingCommand(dto)); 
                 return Ok(result);
             }
             catch (Exception ex)

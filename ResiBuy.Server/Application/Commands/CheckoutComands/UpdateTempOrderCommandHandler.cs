@@ -28,7 +28,7 @@ namespace ResiBuy.Server.Application.Commands.CheckoutComands
                 var room = await roomDbService.GetByIdAsync(request.Dto.AddressId.Value);
                 if (!room.IsActive) throw new CustomException(ExceptionErrorCode.ValidationFailed, $"Phòng {room.Name} hiện đang không hoạt động, hãy chọn địa chỉ khác");
                 if (!room.Building.IsActive) throw new CustomException(ExceptionErrorCode.ValidationFailed, $"Tòa nhà {room.Building.Name} hiện đang không hoạt động, hãy chọn địa chỉ khác");
-                if (!room.Building.IsActive) throw new CustomException(ExceptionErrorCode.ValidationFailed, $"Tòa nhà {room.Building.Area.Name} hiện đang không hoạt động, hãy chọn địa chỉ khác");
+                if (!room.Building.Area.IsActive) throw new CustomException(ExceptionErrorCode.ValidationFailed, $"Tòa nhà {room.Building.Area.Name} hiện đang không hoạt động, hãy chọn địa chỉ khác");
                 checkoutData.AddressId = request.Dto.AddressId;
             }
             checkoutData.PaymentMethod = request.Dto.PaymentMethod;

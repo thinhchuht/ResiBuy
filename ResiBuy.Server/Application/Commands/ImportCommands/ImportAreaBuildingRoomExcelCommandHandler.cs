@@ -88,12 +88,13 @@ public class ImportAreaBuildingRoomExcelCommandHandler : IRequestHandler<ImportA
                 latitudeStr = existingArea.Latitude.ToString();
                 longitudeStr = existingArea.Longitude.ToString();
             }
-            if (!Regex.IsMatch(latitudeStr ?? "", @"^-?\d*\.?\d+$") || !Regex.IsMatch(longitudeStr ?? "", @"^-?\d*\.?\d+$"))
+            if (!Regex.IsMatch(latitudeStr ?? "", @"^-?\d*[.,]?\d+$") || !Regex.IsMatch(longitudeStr ?? "", @"^-?\d*[.,]?\d+$"))
             {
                 _logger.LogWarning("Bỏ qua định dạng không hợp lệ tại dòng {RowNumber}: Latitude={Latitude}, Longitude={Longitude}", row.RowNumber(), latitudeStr, longitudeStr);
                 messages.Add($"Lỗi: Định dạng tọa độ không hợp lệ tại dòng {row.RowNumber()} (Latitude={latitudeStr}, Longitude={longitudeStr})");
                 continue;
             }
+
 
             if (!double.TryParse(latitudeStr, out var latitude) || !double.TryParse(longitudeStr, out var longitude))
             {

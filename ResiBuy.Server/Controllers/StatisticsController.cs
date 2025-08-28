@@ -1,11 +1,12 @@
-﻿using Microsoft.AspNetCore.Mvc;
-using ResiBuy.Server.Application.Queries.StatisticsAdminQueries;
+﻿using ResiBuy.Server.Application.Queries.StatisticsAdminQueries;
 
 
 namespace ResiBuy.Server.Controllers
 {
     [ApiController]
     [Route("api/[controller]")]
+    //[Authorize]
+
     public class StatisticsController : Controller
     {
         private readonly IMediator _mediator;

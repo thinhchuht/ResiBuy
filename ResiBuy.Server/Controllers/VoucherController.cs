@@ -6,6 +6,7 @@ namespace ResiBuy.Server.Controllers
 {
     [Route("api/[controller]")]
     [ApiController]
+
     public class VoucherController(IMediator mediator) : ControllerBase
     {
         [HttpGet]
@@ -14,6 +15,7 @@ namespace ResiBuy.Server.Controllers
             var result = await mediator.Send(new GetAllVouchersQuery(dto));
             return Ok(result);
         }
+        //[Authorize]
 
         [HttpGet("{id}")]
         public async Task<IActionResult> GetByIdAsync(Guid id)
@@ -21,6 +23,7 @@ namespace ResiBuy.Server.Controllers
             var result = await mediator.Send(new GetVoucherByIdQuery(id));
             return Ok(result);
         }
+        //[Authorize]
 
         [HttpPost]
         public async Task<IActionResult> CreateAsync([FromBody] CreateVoucherDto dto)
@@ -28,6 +31,7 @@ namespace ResiBuy.Server.Controllers
             var result = await mediator.Send(new CreateVoucherCommand(dto));
             return Ok(result);
         }
+        //[Authorize]
 
         [HttpPut()]
         public async Task<IActionResult> UpdateQuantityAsync([FromBody] UpdateVoucherDto dto)
@@ -35,6 +39,7 @@ namespace ResiBuy.Server.Controllers
             var result = await mediator.Send(new UpdateVoucherCommand(dto));
             return Ok(result);
         }
+        //[Authorize]
 
         [HttpPut("deactive")]
         public async Task<IActionResult> DeactiveAsync([FromBody] DeactivateVoucherDto dto)
@@ -43,6 +48,7 @@ namespace ResiBuy.Server.Controllers
             return Ok(result);
         }
 
+        //[Authorize]
 
         [HttpGet("batch/deactive")]
         public async Task<IActionResult> DeactiveBatchAsync()

@@ -4,7 +4,7 @@
 
     public class AddUsersToRoomCommandHandler(
         IUserDbService userDbService,
-                                         IRoomDbService roomDbService,
+                                         IRoomDbService roomDbService, INotificationService notificationService,
         IUserRoomDbService userRoomDbService): IRequestHandler<AddUsersToRoomCommand, ResponseModel>
     {
         public async Task<ResponseModel> Handle(AddUsersToRoomCommand command, CancellationToken cancellationToken)
@@ -69,6 +69,8 @@
 
                     resultMessages.Add(message.Trim());
                 }
+                var ids = users.Select(u => u.Id).ToList();
+                await notificationService.SendNotificationAsync("UserUpdated", ids, Constants.AdminHubGroup, ids, false);
 
                 return ResponseModel.SuccessResponse(string.Join("", resultMessages));
             }

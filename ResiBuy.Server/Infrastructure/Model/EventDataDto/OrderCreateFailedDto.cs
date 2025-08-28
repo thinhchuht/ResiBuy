@@ -11,4 +11,15 @@
         public IEnumerable<Guid> OrderIds { get; set; }
         public string ErrorMessage { get; set; }
     }
+    public class OrderProcessFailedDto
+    {
+        public OrderProcessFailedDto(Guid orderId, string errorMessage)
+        {
+            OrderId = orderId;
+            ErrorMessage = errorMessage;
+        }
+
+        public Guid OrderId { get; set; }
+        public string ErrorMessage { get; set; }
+    }
 }

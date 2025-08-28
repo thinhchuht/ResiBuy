@@ -133,7 +133,6 @@ namespace ResiBuy.Server.Application.Commands.UserCommands
                 await userDbService.UpdateTransactionAsync(existingUser);
                 await userDbService.SaveChangesAsync();
                 await transaction.CommitAsync();
-
                 return ResponseModel.SuccessResponse(existingUser);
             }
             catch (Exception)

@@ -1,10 +1,11 @@
 using ResiBuy.Server.Application.Queriestore.StoreQueries;
-using ResiBuy.Server.Infrastructure.Model;
 
 namespace ResiBuy.Server.Controllers
 {
     [ApiController]
     [Route("api/[controller]")]
+    //[Authorize]
+
     public class StoreController : ControllerBase
     {
         private readonly IMediator _mediator;

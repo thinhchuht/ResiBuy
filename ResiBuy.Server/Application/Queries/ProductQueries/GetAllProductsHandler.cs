@@ -37,10 +37,10 @@ namespace ResiBuy.Server.Application.Queries.ProductQueries
 
             if (filter.MaxPrice.HasValue)
                 query = query.Where(p => p.ProductDetails.Any(d => d.Price <= filter.MaxPrice.Value));
-            if (filter.IsNotGetOutOfStock.HasValue)
+            if (filter.IsNotGetOutOfStock.HasValue && filter.IsNotGetOutOfStock.Value)
                 query = query.Where(p => !p.IsOutOfStock);
 
-            if (filter.IsGetStoreOpen.HasValue && filter.StoreId == Guid.Empty)
+            if (filter.IsGetStoreOpen.HasValue && filter.IsGetStoreOpen.Value && filter.StoreId == Guid.Empty)
                 query = query.Where(p => p.Store.IsOpen);
 
             // Project to DTO

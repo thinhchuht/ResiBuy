@@ -38,6 +38,8 @@
         public const string OrderCreatedFailed        = "OrderCreatedFailed";
         public const string CartItemDeleted           = "CartItemDeleted";
         public const string OrderStatusChanged        = "OrderStatusChanged";
+        public const string OrderProcessFailed        = "OrderProcessFailed";
+        public const string OrderProcessed = "OrderProcessed";
         public const string Refunded                  = "Refunded";
         public const string RefundFailed              = "RefundFailed";
         public const string MonthlyPaymentSettled     = "MonthlyPaymentSettled";

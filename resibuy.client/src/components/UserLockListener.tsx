@@ -13,6 +13,7 @@ const UserLockListener: React.FC = () => {
 
   const refreshUser = async () => {
     try {
+      console.log("hehehieh");
       const id = user?.id || localStorage.getItem("userId");
       if (!id) return;
       const res = await userApi.getById(id);
@@ -54,6 +55,12 @@ const UserLockListener: React.FC = () => {
       void refreshUser();
     },
     [HubEventType.StoreUnlocked]: () => {
+      void refreshUser();
+    },
+    [HubEventType.UserUpdated]: () => {
+      void refreshUser();
+    },
+    [HubEventType.StoreUpdated]: () => {
       void refreshUser();
     },
   });

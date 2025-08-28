@@ -8,6 +8,8 @@ namespace ResiBuy.Server.Controllers
     [ApiController]
     public class ReviewController(IMediator mediator) : ControllerBase
     {
+        //[Authorize]
+
         [HttpGet]
         public async Task<IActionResult> GetAllReviews([FromQuery] GetAllReviewDto dto)
         {
@@ -15,6 +17,7 @@ namespace ResiBuy.Server.Controllers
             return Ok(result);
 
         }
+        //[Authorize]
 
         [HttpGet("{id}")]
         public async Task<IActionResult> GetAllReviews(Guid id)
@@ -23,6 +26,7 @@ namespace ResiBuy.Server.Controllers
             return Ok(result);
 
         }
+        //[Authorize]
 
         [HttpGet("product/{id}/avg-rate")]
         public async Task<IActionResult> GetProductAvarageRate(int id)
@@ -31,6 +35,7 @@ namespace ResiBuy.Server.Controllers
             return Ok(result);
 
         }
+        //[Authorize]
 
         [HttpPost]
         public async Task<IActionResult> CreateReview([FromBody] CreateReviewDto dto)

@@ -8,6 +8,8 @@ namespace ResiBuy.Server.Controllers
 {
     [Route("api/[controller]")]
     [ApiController]
+    //[Authorize]
+
     public class CategoryController(IMediator mediator, ResiBuyContext context) : ControllerBase
     {
 

@@ -6,6 +6,7 @@ namespace ResiBuy.Server.Controllers
 {
     [Route("api/[controller]")]
     [ApiController]
+    //[Authorize]
     public class CheckoutController(IMediator mediator) : ControllerBase
     {
 

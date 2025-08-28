@@ -1,10 +1,10 @@
 ﻿using ResiBuy.Server.Application.Commands.ImportCommands;
-using ResiBuy.Server.Application.Commands.ImportCommands.DTOs;
 
 namespace ResiBuy.Server.Controllers
 {
     [Route("api/[controller]")]
     [ApiController]
+    //[Authorize]
     public class ImportController : ControllerBase
     {
         private readonly IMediator _mediator;
