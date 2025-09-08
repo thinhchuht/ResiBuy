@@ -39,32 +39,22 @@ namespace ResiBuy.Server.Services.MyBackgroundService
 
                             foreach (var orderGroup in validOrders.GroupBy(o => o.Store.Room.Building.AreaId))
                             {
-                                var areaId = orderGroup.Key;
-                                var ordersInArea = orderGroup.ToList();
-                                var shippers = (await shipperDbService.GetShippersInAreaAsync(areaId))
+                                var pagedResult = await shipperDbService.GetAllShippersAsync(1, 100);
+                                var shippers = pagedResult.Items
                                     .Where(isAvailable)
                                     .OrderBy(s => s.LastDelivered ?? DateTimeOffset.MinValue)
                                     .ToList();
-
+                                var areaId = orderGroup.Key;
+                                var ordersInArea = orderGroup.ToList();
                                 if (!shippers.Any())
                                 {
-                                    var nearestArea = await areaDBService.NearestAreaHasShipper(areaId);
-                                    if (nearestArea?.Shippers.Where(isAvailable) != null && nearestArea.Shippers.Any())
-                                    {
-                                        shippers.AddRange(nearestArea.Shippers.Where(isAvailable));
-                                    }
-                                }
-
-                                if (!shippers.Any())
-                                {
-                                    _logger.LogWarning($"Không có shipper nào trong hoặc gần khu vực {areaId}. Bỏ qua đơn hàng.");
+                                    _logger.LogWarning($"Không có shipper nào. Bỏ qua đơn hàng.");
                                     continue; // Bỏ qua nhóm đơn hàng này
                                 }
 
-                                int shipperIndex = 0;
+                                var shipper = shippers.First();
                                 foreach (var order in ordersInArea)
                                 {
-                                    var shipper = shippers[shipperIndex];
 
                                     await notificationService.SendNotificationAsync("ReceiveOrderNotification", new
                                     {
@@ -80,9 +70,11 @@ namespace ResiBuy.Server.Services.MyBackgroundService
                                     order.UpdateAt = DateTime.Now;
                                     await orderDbService.UpdateAsync(order);
                                     _logger.LogInformation($"Gửi đơn hàng {order.Id} đến shipper {shipper.Id}");
+                                    // Cập nhật shipper sau khi gán đơn
                                     shipper.IsShipping = true;
+                                    shipper.LastDelivered = DateTime.Now;
                                     await shipperDbService.UpdateAsync(shipper);
-                                    shipperIndex = (shipperIndex + 1) % shippers.Count;
+                                    await shipperDbService.UpdateAsync(shipper);
                                 }
                             }
                         }

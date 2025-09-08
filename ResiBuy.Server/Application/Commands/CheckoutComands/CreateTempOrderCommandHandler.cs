@@ -43,7 +43,7 @@ namespace ResiBuy.Server.Application.Commands.CheckoutComands
                         productDetail.Product.Name,
                         productDetail.IsOutOfStock,
                         productDetail.Weight,
-                        productDetail.Price * (100 - productDetail.Product.Discount) / 100,
+                        productDetail.Price * (100 - productDetail.Product.Promotion.Discount) / 100,
                         ci.Quantity,
                         new Image { Id = productDetail.Image.Id, Name = productDetail.Image.Name, ThumbUrl = productDetail.Image.ThumbUrl, Url = productDetail.Image.Url, ProductDetailId = productDetail.Id },
                         productDetail.AdditionalData.Select(ad => { ad.ProductDetail = null; return ad; }).ToList()

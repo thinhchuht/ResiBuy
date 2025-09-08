@@ -6,7 +6,7 @@
         public string                 Name         { get; set; }
         public string                 Describe     { get; set; }
         public bool                   IsOutOfStock { get; set; }
-        public int                    Discount     { get; set; }
+        public int                    PromotionId     { get; set; }
         public DateTime               CreatedAt    { get; set; }
         public DateTime               UpdatedAt    { get; set; }
         public Guid                   StoreId      { get; set; }
@@ -14,11 +14,12 @@
         public Store                  Store        { get; set; }
         public Category               Category     { get; set; }
         public List<ProductDetail> ProductDetails { get; set; }
+        public Promotion Promotion { get; set; }
 
         public Product(
            string name,
            string describe,
-           int discount,
+           int promotionId,
            Guid storeId,
            Guid categoryId,
            bool isOutOfStock = false)
@@ -26,7 +27,7 @@
         {
             Name = name;
             Describe = describe;
-            Discount = discount;
+            PromotionId = promotionId;
             StoreId = storeId;
             CategoryId = categoryId;
             IsOutOfStock = isOutOfStock;
@@ -39,13 +40,13 @@
         public void UpdateProduct(
               string name,
               string describe,
-              int discount,
+              int promotionId,
               Guid categoryId,
               bool isOutOfStock)
         {
             Name = name;
             Describe = describe;
-            Discount = discount;
+            PromotionId = promotionId;
             CategoryId = categoryId;
             IsOutOfStock = isOutOfStock;
             UpdatedAt = DateTime.UtcNow;

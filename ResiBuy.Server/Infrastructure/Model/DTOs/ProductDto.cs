@@ -29,7 +29,7 @@
             Name = product.Name;
             Describe = product.Describe;
             IsOutOfStock = product.IsOutOfStock;
-            Discount = product.Discount;
+            Discount = product.Promotion.Discount;
             CreatedAt = product.CreatedAt;
             UpdatedAt = product.UpdatedAt;
             StoreId = product.StoreId;

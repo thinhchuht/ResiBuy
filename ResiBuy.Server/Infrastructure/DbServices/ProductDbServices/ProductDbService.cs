@@ -14,6 +14,7 @@
             {
                 return _context.Products
                     .Include(p => p.Store)
+                    .Include(p => p.Promotion)
                     .Include(p => p.ProductDetails)
                         .ThenInclude(pd => pd.Image)
                     .Include(p => p.ProductDetails)

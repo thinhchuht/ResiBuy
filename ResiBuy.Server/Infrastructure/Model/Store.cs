@@ -8,7 +8,6 @@
         public string               PhoneNumber { get; set; }
         public bool                 IsLocked    { get; set; }
         public bool                 IsOpen      { get; set; }
-        public int                  ReportCount { get; set; }
         public DateTime             CreatedAt   { get; set; }
         public string               OwnerId     { get; set; }
         public Guid                 RoomId      { get; set; }

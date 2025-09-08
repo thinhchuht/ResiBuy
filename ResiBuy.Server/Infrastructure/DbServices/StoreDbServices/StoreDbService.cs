@@ -99,7 +99,6 @@ namespace ResiBuy.Server.Infrastructure.DbServices.StoreDbServices
                     throw new CustomException(ExceptionErrorCode.NotFound, "Cửa hàng không tồn tại");
                 if (isLocked.HasValue)
                 {
-                    if (!isLocked.Value && store.ReportCount == 3) store.ReportCount = 0;
                     store.IsLocked = isLocked.Value;
                 }
                 store.IsOpen = isOpen;
@@ -204,7 +203,6 @@ namespace ResiBuy.Server.Infrastructure.DbServices.StoreDbServices
                 statistical.ProductQuantity = store.Products.Count();
                 statistical.OutOfStockProductQuantity = store.Products.Where(p => p.IsOutOfStock == true).Count();
                 statistical.VoucherQuantity = store.Vouchers.Count();
-                statistical.ReportCount = store.ReportCount;
                 return statistical;
             }
             catch (Exception ex)
