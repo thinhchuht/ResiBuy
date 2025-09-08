@@ -31,7 +31,6 @@
                 s.Description,
                 s.IsLocked,
                 s.IsOpen,
-                s.ReportCount,
                 s.CreatedAt,
                 s.OwnerId,
                 s.PhoneNumber,

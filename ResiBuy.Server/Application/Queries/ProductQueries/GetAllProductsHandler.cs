@@ -1,4 +1,5 @@
 using ResiBuy.Server.Application.Queries.ProductQueries.DTOs;
+using ResiBuy.Server.Infrastructure.DbServices.PromotionDbService;
 using ResiBuy.Server.Infrastructure.DbServices.ReviewDbServices;
 
 namespace ResiBuy.Server.Application.Queries.ProductQueries
@@ -9,11 +10,13 @@ namespace ResiBuy.Server.Application.Queries.ProductQueries
     {
         private readonly IProductDbService _productDbService;
         private readonly IReviewDbService _reviewDbService;
+        private readonly IPromotionDbService _promotionDbService;
 
-        public GetAllProductsHandler(IProductDbService productDbService, IReviewDbService reviewDbService)
+        public GetAllProductsHandler(IProductDbService productDbService, IReviewDbService reviewDbService, IPromotionDbService promotionDbService)
         {
             _productDbService = productDbService;
             _reviewDbService = reviewDbService;
+            _promotionDbService = promotionDbService;
         }
 
         public async Task<PagedResult<ProductQueriesDto>> Handle(GetAllProductsQuery request, CancellationToken cancellationToken)
@@ -22,6 +25,7 @@ namespace ResiBuy.Server.Application.Queries.ProductQueries
 
             var query = _productDbService.GetAllProductsQuery();
 
+            // filter
             if (!string.IsNullOrWhiteSpace(filter.Search))
                 query = query.Where(p => p.Name.Contains(filter.Search));
 
@@ -30,27 +34,33 @@ namespace ResiBuy.Server.Application.Queries.ProductQueries
 
             if (filter.CategoryId.HasValue)
                 query = query.Where(p => p.CategoryId == filter.CategoryId.Value);
-            if (filter.IsGettingCategory.HasValue && filter.IsGettingCategory.Value)
+
+            if (filter.IsGettingCategory == true)
                 query = query.Where(p => p.Category.Status == true);
+
             if (filter.MinPrice.HasValue)
                 query = query.Where(p => p.ProductDetails.Any(d => d.Price >= filter.MinPrice.Value));
 
             if (filter.MaxPrice.HasValue)
                 query = query.Where(p => p.ProductDetails.Any(d => d.Price <= filter.MaxPrice.Value));
-            if (filter.IsNotGetOutOfStock.HasValue && filter.IsNotGetOutOfStock.Value)
+
+            if (filter.IsNotGetOutOfStock == true)
                 query = query.Where(p => !p.IsOutOfStock);
 
-            if (filter.IsGetStoreOpen.HasValue && filter.IsGetStoreOpen.Value && filter.StoreId == Guid.Empty)
+            if (filter.IsGetStoreOpen == true && filter.StoreId == Guid.Empty)
                 query = query.Where(p => p.Store.IsOpen);
 
-            // Project to DTO
+            // Project to DTO (Discount l?y t? Promotion)
             var productDtosQuery = query.Select(p => new ProductQueriesDto
             {
                 Id = p.Id,
                 Name = p.Name,
                 Describe = p.Describe,
                 IsOutOfStock = p.IsOutOfStock,
-                Discount = p.Discount,
+
+                // n?u Product có Promotion -> l?y Discount t? Promotion, n?u không thì 0
+                Discount = p.Promotion != null ? p.Promotion.Discount : 0,
+
                 StoreId = p.StoreId,
                 CategoryId = p.CategoryId,
                 Category = new
@@ -90,6 +100,7 @@ namespace ResiBuy.Server.Application.Queries.ProductQueries
                 }).ToList()
             });
 
+            // sort
             productDtosQuery = (filter.SortBy?.ToLower(), filter.SortDirection?.ToLower()) switch
             {
                 ("price", "asc") => productDtosQuery.OrderBy(p => p.ProductDetails.Min(d => d.Price)),
@@ -98,9 +109,8 @@ namespace ResiBuy.Server.Application.Queries.ProductQueries
                 ("sold", "asc") => productDtosQuery.OrderBy(p => p.ProductDetails.Sum(d => d.Sold)),
                 ("sold", "desc") => productDtosQuery.OrderByDescending(p => p.ProductDetails.Sum(d => d.Sold)),
 
-                _ => productDtosQuery.OrderByDescending(p => p.Id) 
+                _ => productDtosQuery.OrderByDescending(p => p.Id)
             };
-
 
             var totalCount = await productDtosQuery.CountAsync(cancellationToken);
 
@@ -109,9 +119,7 @@ namespace ResiBuy.Server.Application.Queries.ProductQueries
                 .Take(filter.PageSize)
                 .ToListAsync(cancellationToken);
 
-                return new PagedResult<ProductQueriesDto>(pagedItems, totalCount, filter.PageNumber, filter.PageSize);
+            return new PagedResult<ProductQueriesDto>(pagedItems, totalCount, filter.PageNumber, filter.PageSize);
         }
     }
-
-
 }

@@ -61,7 +61,6 @@ namespace ResiBuy.Server.Application.Commands.StoreCommands
                 PhoneNumber = command.PhoneNumber,
                 IsLocked = false,
                 IsOpen = true,
-                ReportCount = 0,
                 CreatedAt = DateTime.Now,
                 OwnerId = command.OwnerId,
                 RoomId = command.RoomId

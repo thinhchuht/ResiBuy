@@ -18,7 +18,7 @@ namespace ResiBuy.Server.Application.Commands.ReportCommands
             var order = await orderDbService.GetById(report.OrderId);
             var lockedUsers = new List<string>();
             var lockedUserMails = new List<string>();
-            //order.Status = OrderStatus.Cancelled;
+            order.IsReport = true;
             if (command.IsAddReportTarget)
             {
                 if (report.ReportTarget == ReportTarget.Customer)
@@ -34,21 +34,6 @@ namespace ResiBuy.Server.Application.Commands.ReportCommands
                             Constants.NoHubGroup, [user.Id], false);
                         lockedUsers.Add(user.Id);
                         lockedUserMails.Add(user.Email);
-                    }
-                }
-                if (report.ReportTarget == ReportTarget.Store)
-                {
-                    var store = await storeDbService.GetStoreByIdAsync(Guid.Parse(report.TargetId)) ?? throw new CustomException(ExceptionErrorCode.ValidationFailed, "Không tìm thấy cửa hàng");
-                    store.ReportCount += 1;
-                    if (store.ReportCount == Constants.MaxReportCount)
-                    {
-                        store.IsLocked = true;
-                        await storeDbService.UpdateAsync(store);
-                        await notificationService.SendNotificationAsync(Constants.UserLocked,
-                            new { StoreId = store.Id, StoreName = store.Name },
-                            Constants.NoHubGroup, [store.OwnerId]);
-                        lockedUsers.Add(store.OwnerId);
-                        lockedUserMails.Add(store.Owner.Email);
                     }
                 }
                 if (report.ReportTarget == ReportTarget.Shipper)
@@ -76,11 +61,6 @@ namespace ResiBuy.Server.Application.Commands.ReportCommands
             if (report.ReportTarget == ReportTarget.Customer || report.ReportTarget == ReportTarget.Shipper)
             {
                 notiUser.Add(report.TargetId);
-            }
-            else if (report.ReportTarget == ReportTarget.Store)
-            {
-                notiUser.Add(order.Store.OwnerId);
-                storeName = order.Store.Name;
             }
             await notificationService.SendNotificationAsync(Constants.ReportResolved,
                 new ResolveReportDto(report.Id, report.OrderId, report.TargetId, command.IsAddReportTarget, report.ReportTarget, storeName),

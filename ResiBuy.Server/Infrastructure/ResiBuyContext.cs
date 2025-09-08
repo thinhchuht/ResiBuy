@@ -31,6 +31,7 @@ namespace ResiBuy.Server.Infrastructure
         public DbSet<Image> Images { get; set; }
         public DbSet<Review> Reviews { get; set; }
         public DbSet<TimeSheet> TimeSheets { get; set; }
+        public DbSet<Promotion> Promotions { get; set; }
 
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {
@@ -73,6 +74,52 @@ namespace ResiBuy.Server.Infrastructure
                 UpdatedAt = DateTime.Now
             };
             modelBuilder.Entity<User>().HasData(admin);
+            var defaultAreaId = Guid.Parse("11111111-1111-1111-1111-111111111111");
+            var defaultBuildingId = Guid.Parse("22222222-2222-2222-2222-222222222222");
+            var defaultRoomId = Guid.Parse("33333333-3333-3333-3333-333333333333");
+            var defaultStoreId = Guid.Parse("44444444-4444-4444-4444-444444444444");
+
+            var area = new Area
+            {
+                Id = defaultAreaId,
+                Name = "Default Area",
+                Latitude = 21.0227,
+                Longitude = 105.8363,
+                IsActive = true
+            };
+
+            var building = new Building
+            {
+                Id = defaultBuildingId,
+                Name = "Default Building",
+                AreaId = defaultAreaId,
+                IsActive = true
+            };
+
+            var room = new Room("Default Room", defaultBuildingId)
+            {
+                Id = defaultRoomId,
+                IsActive = true
+            };
+
+            var store = new Store
+            {
+                Id = defaultStoreId,
+                Name = "ResiBuy",
+                Description = "Default store for ResiBuy system",
+                PhoneNumber = "0123456789",
+                IsLocked = false,
+                IsOpen = true,
+                CreatedAt = DateTime.Now,
+                OwnerId = Constants.DefaultAdmidId, // gán admin làm owner
+                RoomId = defaultRoomId,
+                IsPayFee = false
+            };
+
+            modelBuilder.Entity<Area>().HasData(area);
+            modelBuilder.Entity<Building>().HasData(building);
+            modelBuilder.Entity<Room>().HasData(room);
+            modelBuilder.Entity<Store>().HasData(store);
         }
     }
 }

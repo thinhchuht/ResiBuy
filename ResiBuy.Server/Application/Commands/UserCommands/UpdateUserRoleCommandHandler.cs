@@ -103,7 +103,6 @@ namespace ResiBuy.Server.Application.Commands.UserCommands
                         Description = dto.Store.Description,
                         IsLocked = false,
                         IsOpen = true,
-                        ReportCount = 0,
                         CreatedAt = DateTime.Now,
                         OwnerId = existingUser.Id,
                         RoomId = dto.Store.RoomId

@@ -41,6 +41,7 @@
         public Guid? VoucherId { get; set; }
         public decimal? ShippingFee { get; set; } = 0;
         public string CancelReason { get; set; }
+        public bool IsReport { get; set; } = false;
         public Room ShippingAddress { get; set; }
         public User User { get; set; }
         public Store Store { get; set; }
