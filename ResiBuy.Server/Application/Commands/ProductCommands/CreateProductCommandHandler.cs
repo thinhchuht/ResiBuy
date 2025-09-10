@@ -13,7 +13,7 @@ namespace ResiBuy.Server.Application.Commands.ProductCommands
             {
                 var dto = command.ProductDto;
 
-                var product = new Product( dto.Name, dto.Describe, dto.Discount, dto.StoreId, dto.CategoryId);
+                var product = new Product( dto.Name, dto.Describe, dto.PromotionId, dto.StoreId, dto.CategoryId);
 
                 if (string.IsNullOrWhiteSpace(dto.Name))
                     throw new CustomException(ExceptionErrorCode.ValidationFailed, "Tên sản phẩm không được để trống.");
@@ -28,9 +28,9 @@ namespace ResiBuy.Server.Application.Commands.ProductCommands
                     throw new CustomException(ExceptionErrorCode.ValidationFailed, "StoreId không hợp lệ.");
                 if (dto.CategoryId == Guid.Empty)
                     throw new CustomException(ExceptionErrorCode.ValidationFailed, "CategoryId không hợp lệ.");
-                if (dto.Discount < 0)
+                if (dto.PromotionId <= 0)
                 {
-                    throw new CustomException(ExceptionErrorCode.ValidationFailed, "Giảm giá không được nhỏ hơn 0.");
+                    throw new CustomException(ExceptionErrorCode.ValidationFailed, "Mã giảm giá không được nhỏ hơn 0.");
                 }
 
                 var detailDataSets = new List<HashSet<string>>();
