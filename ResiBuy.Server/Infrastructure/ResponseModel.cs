@@ -13,7 +13,7 @@
             new ResponseModel { Code = 0, Message = "Thành công", Data = data };
 
         public static ResponseModel FailureResponse(string message, object data = null) =>
-            new ResponseModel { Code = 1, Message = message };
+            new ResponseModel { Code = 1, Message = message, Data = data };
 
         public static ResponseModel ExceptionResponse(string error = null) =>
             new ResponseModel { Code = -1, Message = error ?? "Đã có lỗi xảy ra, thử lại sau" };

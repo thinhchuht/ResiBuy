@@ -6,5 +6,7 @@
         Task<Product?> GetByNameAsync(Guid storeId, string name);
         Task<bool> ExistsByNameAsync(Guid storeId, string name, int excludeProductId);
         IQueryable<Product> GetAllProductsQuery();
+
+        Task<ImportResult> ImportProductsFromExcel(Stream fileStream);
     }
 }
