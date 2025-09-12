@@ -65,9 +65,9 @@ const { formData, errors, isSubmitting, setIsSubmitting, handleInputChange, hand
   const [buildings, setBuildings] = useState<BuildingDto[]>([]);
   const [areaId, setAreaId] = useState<string>("");
   const [buildingId, setBuildingId] = useState<string>("");
-  const [confirmCodeModalOpen, setConfirmCodeModalOpen] = useState(false);
-  const [confirmCode, setConfirmCode] = useState("");
-  const [isSubmittingCode, setIsSubmittingCode] = useState(false);
+  // const [confirmCodeModalOpen, setConfirmCodeModalOpen] = useState(false);
+  // const [confirmCode, setConfirmCode] = useState("");
+  // const [isSubmittingCode, setIsSubmittingCode] = useState(false);
   const  toast  = useToastify();
 
   useEffect(() => {
@@ -316,15 +316,46 @@ const handleConfirmCodeSubmit = async () => {
     setIsSubmittingCode(false);
   }
 };
-  const handleFormSubmit = (e: React.FormEvent<HTMLFormElement>) => {
-    console.log("handleFormSubmit called");
-    e.preventDefault();
-    if (editingUser) {
-      handleSubmit(e, (user) => onSubmit(user, selectedRooms));
-    } else {
-      handleSendCode();
-    }
-  };
+  // const handleFormSubmit = (e: React.FormEvent<HTMLFormElement>) => {
+  //   console.log("handleFormSubmit called");
+  //   e.preventDefault();
+  //   if (editingUser) {
+  //     handleSubmit(e, (user) => onSubmit(user, selectedRooms));
+  //   } else {
+  //     handleSendCode();
+  //   }
+  // };
+const handleFormSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
+  console.log("handleFormSubmit called");
+  e.preventDefault();
+  if (!validateForm()) {
+    toast.error("Vui lòng nhập đầy đủ thông tin hợp lệ!");
+    return;
+  }
+  setIsSubmitting(true);
+  try {
+    const payload = {
+      email: formData.email,
+      fullName: formData.fullName,
+      phoneNumber: formData.phoneNumber,
+      dateOfBirth: new Date(formData.dateOfBirth),
+      identityNumber: formData.identityNumber,
+      password: formData.password,
+      roomIds: formData.roomIds,
+    };
+    console.log("Submitting user with payload:", payload);
+    await onSubmit(payload, selectedRooms);
+    resetForm(); // Reset form
+    setSelectedRooms([]); // Reset danh sách phòng đã chọn
+    onClose(); // Đóng modal
+
+  } catch (error: any) {
+    console.error("Submit user error:", error);
+    toast.error(error.message || "Lỗi khi lưu người dùng");
+  } finally {
+    setIsSubmitting(false);
+  }
+};
 
   if (!isOpen) return null;
 
@@ -1092,7 +1123,7 @@ const handleConfirmCodeSubmit = async () => {
         </DialogActions>
       </Dialog>
 
-      <ConfirmCodeModal
+      {/* <ConfirmCodeModal
         open={confirmCodeModalOpen}
         onClose={() => {
           setConfirmCodeModalOpen(false);
@@ -1102,7 +1133,7 @@ const handleConfirmCodeSubmit = async () => {
         isSubmitting={isSubmittingCode}
         code={confirmCode}
         setCode={setConfirmCode}
-      />
+      /> */}
     </LocalizationProvider>
   );
 }
