@@ -1,4 +1,6 @@
-﻿namespace ResiBuy.Server.Infrastructure.Model
+﻿using DocumentFormat.OpenXml.Office2010.PowerPoint;
+
+namespace ResiBuy.Server.Infrastructure.Model
 {
     public class Cart
     {
@@ -12,6 +14,12 @@
         public Cart()
         {
             
+        }
+
+        public Cart(Guid id)
+        {
+            Id = id;
+            IsCheckingOut = false;
         }
 
         public Cart(string userId)

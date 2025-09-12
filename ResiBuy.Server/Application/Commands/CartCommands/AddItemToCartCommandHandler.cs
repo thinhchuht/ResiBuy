@@ -20,7 +20,12 @@ namespace ResiBuy.Server.Application.Commands.CartCommands
                 var productDetail = await baseProductDbService.GetByIdAsync(command.AddToCartDto.ProductDetailId) ?? throw new CustomException(ExceptionErrorCode.NotFound, "Sản phẩm không tồn tại");
                 if (!productDetail.Product.Category.Status) throw new CustomException(ExceptionErrorCode.ValidationFailed, "Danh mục sản phẩm đã tạm thời ngừng hoạt động.");
                 if (productDetail.Product.IsOutOfStock || productDetail.IsOutOfStock || productDetail.Quantity <= 0 || productDetail.Quantity < command.AddToCartDto.Quantity) throw new CustomException(ExceptionErrorCode.ValidationFailed, $"Mặt hàng {productDetail.Product.Name} chỉ còn {productDetail.Quantity} sản phẩm");
-                var cart = await cartDbService.GetByIdBaseAsync(command.Id) ?? throw new CustomException(ExceptionErrorCode.NotFound, "Giỏ hàng không tồn tại");
+                var cart = await cartDbService.GetByIdBaseAsync(command.Id);
+                if (cart == null)
+                {
+                    cart = new Cart(command.Id);
+                    await cartDbService.CreateAsync(cart);
+                }
                 if (cart.UserId == productDetail.Product.Store.OwnerId) throw new CustomException(ExceptionErrorCode.ValidationFailed, "Không thể mua hàng từ chính cửa hàng của mình");
                 var existingItems = (await cartItemDbService.GetMatchingCartItemsAsync(command.Id, [command.AddToCartDto.ProductDetailId]));
                 if (existingItems.Any())
