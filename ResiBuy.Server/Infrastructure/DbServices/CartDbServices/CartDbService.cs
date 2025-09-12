@@ -1,4 +1,5 @@
 ﻿
+
 namespace ResiBuy.Server.Infrastructure.DbServices.CartDbService
 {
     public class CartDbService : BaseDbService<Cart>, ICartDbService
@@ -13,6 +14,15 @@ namespace ResiBuy.Server.Infrastructure.DbServices.CartDbService
         {
             return await _context.Carts.Include(c => c.CartItems).FirstOrDefaultAsync(c => c.Id == id);
         }
+
+        public async Task<IEnumerable<Cart>> GetCartsInShoppingAsync()
+        {
+            return await _context.Carts
+                .Include(c => c.CartItems)
+                .Where(c => !c.IsCheckingOut && c.UserId == null)
+                .ToListAsync();
+        }
+
 
         public async Task<List<Cart>> GetCheckingOutCartsAsync()
          {

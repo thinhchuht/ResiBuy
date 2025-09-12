@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import {
   AppBar,
   Toolbar,
@@ -20,65 +20,171 @@ import {
   Grid,
   Divider,
   Paper,
+  CircularProgress,
 } from "@mui/material";
 import { Search, Close, Add } from "@mui/icons-material";
+import productApi from "../../api/product.api";
+import cartApi from "../../api/cart.api";
+import type { ProductDto } from "../../types/product";
 
-type Product = {
-  id: number;
+type CartTab = {
+  id: string;
   name: string;
-  sku: string;
-  price: number;
-  stock: number;
 };
 
 type OrderItem = {
-  product: Product;
+  id: string; // id của cartItem (từ API)
+  productDetailId: number;
   quantity: number;
+  price: number;
   discount: number;
+  product: {
+    id: number;
+    name: string;
+    stock: number;
+    image?: string;
+  };
 };
 
-
-
-const sampleProducts: Product[] = [
-  {
-    id: 1,
-    name: "kem duong tay-m",
-    sku: "kemdt-m_2",
-    price: 95000,
-    stock: 500,
-  },
-  {
-    id: 2,
-    name: "kem duong tay-s",
-    sku: "kemdt-s_0",
-    price: 96000,
-    stock: 300,
-  },
-  { id: 3, name: "bun rieu Ngu-Vua", sku: "brnv", price: 25000, stock: 256 },
-  { id: 4, name: "bun rieu Nho", sku: "brn", price: 25000, stock: 98 },
-];
-
 const PosPage: React.FC = () => {
-  const [tab, setTab] = useState(0);
+  const [tabs, setTabs] = useState<CartTab[]>([]);
+  const [currentTab, setCurrentTab] = useState(0);
   const [items, setItems] = useState<OrderItem[]>([]);
+  const [products, setProducts] = useState<ProductDto[]>([]);
+  const [loading, setLoading] = useState(false);
 
-  const handleAddProduct = (product: Product) => {
-    const index = items.findIndex((i) => i.product.id === product.id);
-    if (index >= 0) {
-      const newItems = [...items];
-      newItems[index].quantity += 1;
-      setItems(newItems);
-    } else {
-      setItems([...items, { product, quantity: 1, discount: 0 }]);
+  // --- load danh sách cart khi mở trang ---
+  useEffect(() => {
+    const fetchCarts = async () => {
+      try {
+        const res = await cartApi.getAllCartInShop();
+        console.log("API carts:", res.data);
+
+        const cartsFromApi: CartTab[] =
+          res.data?.data?.map((cart: { id: string }, index: number) => ({
+            id: cart.id,
+            name: `Đơn hàng ${index + 1}`,
+          })) || [];
+
+        setTabs(cartsFromApi);
+
+        if (cartsFromApi.length > 0) {
+          setCurrentTab(0);
+          loadCart(cartsFromApi[0].id);
+        }
+      } catch (err) {
+        console.error("Lỗi load carts:", err);
+      }
+    };
+
+    fetchCarts();
+  }, []);
+
+  // --- load sản phẩm gợi ý ---
+  useEffect(() => {
+    const fetchProducts = async () => {
+      try {
+        setLoading(true);
+        const res = await productApi.getAll({ pageNumber: 1, pageSize: 20 });
+        setProducts(res.items);
+      } catch (err) {
+        console.error("Lỗi khi tải sản phẩm:", err);
+      } finally {
+        setLoading(false);
+      }
+    };
+    fetchProducts();
+  }, []);
+
+  // --- load cart theo id khi đổi tab ---
+  useEffect(() => {
+    if (tabs[currentTab]) {
+      loadCart(tabs[currentTab].id);
+    }
+  }, [currentTab, tabs]);
+
+  const loadCart = async (cartId: string) => {
+    try {
+      const res = await cartApi.getCartById(cartId, 1, 50);
+      const loadedItems: OrderItem[] =
+        res.data.data?.items?.map((it: any) => ({
+          id: it.id, // cartItem id
+          quantity: it.quantity,
+          price: it.productDetail.price,
+          discount: 0, // API chưa có discount thì gán mặc định
+          productDetailId: it.productDetail.id,
+          product: {
+            id: it.productDetail.product.id,
+            name: it.productDetail.product.name,
+            stock: it.productDetail.quantity,
+            image: it.productDetail.image?.url,
+          },
+        })) || [];
+      setItems(loadedItems);
+    } catch (err) {
+      console.error("Lỗi load cart:", err);
     }
   };
 
-  const handleRemoveItem = (id: number) => {
-    setItems(items.filter((i) => i.product.id !== id));
+  const handleChangeTab = (e: React.SyntheticEvent, newValue: number) => {
+    setCurrentTab(newValue);
+    const selectedCart = tabs[newValue];
+    if (selectedCart) {
+      loadCart(selectedCart.id);
+    }
+  };
+
+  const handleAddTab = async () => {
+    try {
+      const res = await cartApi.createCart();
+      const newTab: CartTab = {
+        id: res.data.id,
+        name: `Đơn hàng ${tabs.length + 1}`,
+      };
+      setTabs((prev) => [...prev, newTab]);
+      setCurrentTab(tabs.length);
+    } catch (err) {
+      console.error("Lỗi tạo cart mới:", err);
+    }
+  };
+
+  const handleCloseTab = (index: number) => {
+    const newTabs = [...tabs];
+    newTabs.splice(index, 1);
+    setTabs(newTabs);
+    if (newTabs.length > 0) {
+      setCurrentTab(0);
+      loadCart(newTabs[0].id);
+    } else {
+      setCurrentTab(0);
+      setItems([]);
+    }
+  };
+
+  const handleAddProduct = async (productDetailId: number) => {
+    try {
+      const cartId = tabs[currentTab]?.id;
+      if (!cartId) return;
+      await cartApi.addItemToCart(cartId, productDetailId, 1, true);
+      loadCart(cartId);
+    } catch (err) {
+      console.error("Lỗi thêm sản phẩm:", err);
+    }
+  };
+
+  const handleRemoveItem = async (productDetailId: number) => {
+    try {
+      const cartId = tabs[currentTab]?.id;
+      if (!cartId) return;
+      await cartApi.addItemToCart(cartId, productDetailId, 1, false);
+      loadCart(cartId);
+    } catch (err) {
+      console.error("Lỗi xoá sản phẩm:", err);
+    }
   };
 
   const total = items.reduce(
-    (sum, i) => sum + i.product.price * i.quantity * (1 - i.discount / 100),
+    (sum, i) => sum + i.price * i.quantity * (1 - i.discount / 100),
     0
   );
 
@@ -93,7 +199,7 @@ const PosPage: React.FC = () => {
               Bán tại quầy
             </Typography>
             <TextField
-              placeholder="Tìm tên/SKU/mã sản phẩm"
+              placeholder="Tìm tên sản phẩm"
               size="small"
               InputProps={{
                 startAdornment: (
@@ -104,24 +210,41 @@ const PosPage: React.FC = () => {
               }}
               sx={{ mr: 2, width: 300 }}
             />
+            <Button
+              variant="outlined"
+              onClick={handleAddTab}
+              startIcon={<Add />}
+            >
+              Tạo đơn hàng mới
+            </Button>
           </Toolbar>
         </AppBar>
 
         {/* Tabs */}
         <Tabs
-          value={tab}
-          onChange={(e, v) => setTab(v)}
+          value={currentTab}
+          onChange={handleChangeTab}
           sx={{ borderBottom: 1, borderColor: "divider" }}
         >
-          <Tab label="Đơn hàng 1" />
-          <Tab label="Đơn hàng 2" />
-          <Tab label="Đơn hàng 3" />
-          <IconButton>
-            <Add />
-          </IconButton>
-          <IconButton>
-            <Close />
-          </IconButton>
+          {tabs.map((tab, i) => (
+            <Tab
+              key={tab.id}
+              label={
+                <Box display="flex" alignItems="center">
+                  {tab.name}
+                  <IconButton
+                    size="small"
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      handleCloseTab(i);
+                    }}
+                  >
+                    <Close fontSize="small" />
+                  </IconButton>
+                </Box>
+              }
+            />
+          ))}
         </Tabs>
 
         {/* Order table */}
@@ -129,7 +252,8 @@ const PosPage: React.FC = () => {
           <Table>
             <TableHead>
               <TableRow>
-                <TableCell>Tên/MSP</TableCell>
+                <TableCell>Ảnh</TableCell>
+                <TableCell>Tên sản phẩm</TableCell>
                 <TableCell>Số lượng</TableCell>
                 <TableCell>Đơn giá (VND)</TableCell>
                 <TableCell>Giảm giá</TableCell>
@@ -139,23 +263,35 @@ const PosPage: React.FC = () => {
             </TableHead>
             <TableBody>
               {items.map((item) => (
-                <TableRow key={item.product.id}>
+                <TableRow key={item.id}>
+                  <TableCell>
+                    <Box
+                      component="img"
+                      src={item.product.image || "/no-image.png"}
+                      alt={item.product.name}
+                      sx={{ width: 50, height: 50, objectFit: "cover" }}
+                    />
+                  </TableCell>
                   <TableCell>
                     {item.product.name}
                     <br />
                     <Typography variant="caption">
-                      SKU: {item.product.sku}
+                      SL tồn: {item.product.stock}
                     </Typography>
                   </TableCell>
                   <TableCell>{item.quantity}</TableCell>
-                  <TableCell>{item.product.price.toLocaleString()}</TableCell>
+                  <TableCell>{item.price.toLocaleString()}</TableCell>
                   <TableCell>{item.discount}%</TableCell>
                   <TableCell>
-                    {(item.product.price * item.quantity).toLocaleString()}
+                    {(
+                      item.price *
+                      item.quantity *
+                      (1 - item.discount / 100)
+                    ).toLocaleString()}
                   </TableCell>
                   <TableCell>
                     <IconButton
-                      onClick={() => handleRemoveItem(item.product.id)}
+                      onClick={() => handleRemoveItem(item.productDetailId)}
                     >
                       <Close />
                     </IconButton>
@@ -171,32 +307,45 @@ const PosPage: React.FC = () => {
           <Typography variant="subtitle1" gutterBottom>
             Chọn nhanh sản phẩm
           </Typography>
-          <Grid container spacing={2}>
-            {sampleProducts.map((p) => (
-              <Grid item xs={2} key={p.id}>
-                <Card
-                  onClick={() => handleAddProduct(p)}
-                  sx={{ cursor: "pointer", textAlign: "center" }}
-                >
-                  <CardContent>
-                    <Box
-                      sx={{
-                        width: "100%",
-                        height: 60,
-                        bgcolor: "#f5f5f5",
-                        mb: 1,
-                      }}
-                    />
-                    <Typography variant="body2" fontWeight="bold">
-                      {p.price.toLocaleString()} đ
-                    </Typography>
-                    <Typography variant="body2">{p.name}</Typography>
-                    <Typography variant="caption">SL: {p.stock}</Typography>
-                  </CardContent>
-                </Card>
-              </Grid>
-            ))}
-          </Grid>
+
+          {loading ? (
+            <CircularProgress />
+          ) : (
+            <Grid container spacing={2}>
+              {products.map((p) => {
+                const detail = p.productDetails?.[0];
+                return (
+                  <Grid item xs={2} key={p.id}>
+                    <Card
+                      onClick={() => handleAddProduct(detail?.id!)}
+                      sx={{ cursor: "pointer", textAlign: "center" }}
+                    >
+                      <CardContent>
+                        <Box
+                          component="img"
+                          src={detail?.image?.url || "/no-image.png"}
+                          alt={p.name}
+                          sx={{
+                            width: "100%",
+                            height: 60,
+                            objectFit: "cover",
+                            mb: 1,
+                          }}
+                        />
+                        <Typography variant="body2" fontWeight="bold">
+                          {detail?.price?.toLocaleString()} đ
+                        </Typography>
+                        <Typography variant="body2">{p.name}</Typography>
+                        <Typography variant="caption">
+                          SL: {detail?.quantity ?? 0}
+                        </Typography>
+                      </CardContent>
+                    </Card>
+                  </Grid>
+                );
+              })}
+            </Grid>
+          )}
         </Box>
       </Box>
 
@@ -205,9 +354,7 @@ const PosPage: React.FC = () => {
         <Typography variant="h6">Khách lẻ</Typography>
         <Divider sx={{ my: 1 }} />
 
-        <Typography>
-          Tiền hàng (2 sản phẩm): {total.toLocaleString()} đ
-        </Typography>
+        <Typography>Tiền hàng: {total.toLocaleString()} đ</Typography>
         <Typography>Giảm tiền đơn hàng: 0 đ</Typography>
         <Typography variant="h6" sx={{ mt: 2 }}>
           Khách phải trả: {total.toLocaleString()} đ
@@ -216,7 +363,6 @@ const PosPage: React.FC = () => {
         <Divider sx={{ my: 2 }} />
 
         <Typography variant="subtitle1">Chọn phương thức thanh toán</Typography>
-        
         <Box display="flex" gap={1} my={1}>
           <Button variant="outlined">Chuyển khoản</Button>
           <Button variant="outlined">Tiền mặt</Button>
@@ -234,7 +380,7 @@ const PosPage: React.FC = () => {
           sx={{ mt: 3 }}
           onClick={() => alert("Thanh toán thành công!")}
         >
-          Xác nhận thanh toán
+          Xác nhận thanh toán (F9)
         </Button>
       </Box>
     </Box>

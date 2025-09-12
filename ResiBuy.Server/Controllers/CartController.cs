@@ -22,6 +22,21 @@ namespace ResiBuy.Server.Controllers
                 return BadRequest(ResponseModel.ExceptionResponse(ex.ToString()));
             }
         }
+
+        [HttpGet]
+        public async Task<IActionResult> GetAllCartInShop()
+        {
+            try
+            {
+                var result = await mediator.Send(new GetCartInShopQuery());
+                return Ok(result);
+            }
+            catch (Exception ex)
+            {
+                return BadRequest(ResponseModel.ExceptionResponse(ex.ToString()));
+            }
+        }
+
         [HttpGet("{id}/status")]
         public async Task<IActionResult> GetStatusById(Guid id)
         {
@@ -63,15 +78,12 @@ namespace ResiBuy.Server.Controllers
         }
 
         [HttpPost("{id}")]
-        public async Task<IActionResult> AddItemToCart(Guid id, [FromBody] AddToCartDto? addToCartDto)
+        public async Task<IActionResult> AddItemToCart(Guid? id, [FromBody] AddToCartDto? addToCartDto)
         {
             try
             {
-                if(id == Guid.Empty)
-                {
-                    id = Guid.NewGuid();
-                }
-                var result = await mediator.Send(new AddItemToCartCommand(id, addToCartDto));
+                var cartId = id ?? Guid.NewGuid(); // n?u không có id thì t?o m?i
+                var result = await mediator.Send(new AddItemToCartCommand(cartId, addToCartDto));
                 return Ok(result);
             }
             catch (Exception ex)

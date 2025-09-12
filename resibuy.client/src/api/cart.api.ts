@@ -8,6 +8,17 @@ const cartApi = {
     );
   },
 
+  getAllCartInShop: () => {
+    return axiosClient.get(`${cartUrl}`);
+  },
+
+  createCart: () => {
+    return axiosClient.post(
+      `${cartUrl}/00000000-0000-0000-0000-000000000000`,
+      null
+    );
+  },
+
   addToCart: (
     id: string,
     productDetailId: number,
