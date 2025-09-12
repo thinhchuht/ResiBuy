@@ -62,12 +62,15 @@ namespace ResiBuy.Server.Controllers
             }
         }
 
-        [HttpPost]
-        public async Task<IActionResult> AddItemToCart( [FromBody] AddToCartDto addToCartDto)
+        [HttpPost("{id}")]
+        public async Task<IActionResult> AddItemToCart(Guid id, [FromBody] AddToCartDto? addToCartDto)
         {
             try
             {
-                Guid id = Guid.NewGuid();
+                if(id == Guid.Empty)
+                {
+                    id = Guid.NewGuid();
+                }
                 var result = await mediator.Send(new AddItemToCartCommand(id, addToCartDto));
                 return Ok(result);
             }

@@ -70,6 +70,12 @@ const menuItems = [
     path: "",
   },
   {
+    id: "sell",
+    label: "Bán hàng tại quầy",
+    icon: <OrdersIcon />,
+    path: "sell",
+  },
+  {
     id: "products",
     label: "Sản phẩm",
     icon: <InventoryIcon />,
@@ -95,7 +101,12 @@ const menuItems = [
   },
 ];
 
-const Sidebar: React.FC<SidebarProps> = ({ open = true, onClose, variant = "permanent", width = 280 }) => {
+const Sidebar: React.FC<SidebarProps> = ({
+  open = true,
+  onClose,
+  variant = "permanent",
+  width = 280,
+}) => {
   const navigate = useNavigate();
   const location = useLocation();
   const { storeId } = useParams<{ storeId: string }>();
@@ -117,7 +128,9 @@ const Sidebar: React.FC<SidebarProps> = ({ open = true, onClose, variant = "perm
       setLoading(true);
       setError(null);
 
-      const response = await axios.get<Store | { data: Store }>(`/api/Store/${storeId}`);
+      const response = await axios.get<Store | { data: Store }>(
+        `/api/Store/${storeId}`
+      );
       setStore("data" in response.data ? response.data.data : response.data);
     } catch (error: unknown) {
       console.error("Failed to fetch store info:", error);
@@ -141,7 +154,8 @@ const Sidebar: React.FC<SidebarProps> = ({ open = true, onClose, variant = "perm
         // Redirect to VNPay for payment
         window.location.href = result.data.paymentUrl.result;
       } else {
-        const errorMessage = result.error?.response?.data?.message || "Không thể tạo thanh toán";
+        const errorMessage =
+          result.error?.response?.data?.message || "Không thể tạo thanh toán";
         setError(errorMessage);
       }
     } catch (error: unknown) {
@@ -176,7 +190,11 @@ const Sidebar: React.FC<SidebarProps> = ({ open = true, onClose, variant = "perm
       });
 
       setStore((prev) => (prev ? { ...prev, isOpen: !prev.isOpen } : null));
-      setSuccess(store.isOpen ? "Đã đóng cửa hàng thành công" : "Đã mở cửa hàng thành công");
+      setSuccess(
+        store.isOpen
+          ? "Đã đóng cửa hàng thành công"
+          : "Đã mở cửa hàng thành công"
+      );
       setOpenStatusDialog(false);
     } catch (error: unknown) {
       console.error("Failed to toggle store status:", error);
@@ -200,15 +218,26 @@ const Sidebar: React.FC<SidebarProps> = ({ open = true, onClose, variant = "perm
     const currentPath = location.pathname;
 
     if (!path) {
-      return currentPath === `/store/${storeId}` || currentPath === `/store/${storeId}/`;
+      return (
+        currentPath === `/store/${storeId}` ||
+        currentPath === `/store/${storeId}/`
+      );
     }
 
     if (path === "productPage") {
-      return currentPath.includes("/productPage") || currentPath.includes("/product-create") || currentPath.includes("/product-update");
+      return (
+        currentPath.includes("/productPage") ||
+        currentPath.includes("/product-create") ||
+        currentPath.includes("/product-update")
+      );
     }
 
     if (path === "vouchers") {
-      return currentPath.includes("/vouchers") || currentPath.includes("/voucher-create") || currentPath.includes("/voucher-update");
+      return (
+        currentPath.includes("/vouchers") ||
+        currentPath.includes("/voucher-create") ||
+        currentPath.includes("/voucher-update")
+      );
     }
 
     return currentPath.includes(`/${path}`);
@@ -267,7 +296,8 @@ const Sidebar: React.FC<SidebarProps> = ({ open = true, onClose, variant = "perm
                 color: "success.main",
                 borderColor: "success.light",
               },
-            }}>
+            }}
+          >
             Đã thanh toán phí
           </Button>
         ) : (
@@ -276,7 +306,13 @@ const Sidebar: React.FC<SidebarProps> = ({ open = true, onClose, variant = "perm
             fullWidth
             variant="contained"
             color="warning"
-            startIcon={paymentLoading ? <CircularProgress size={18} color="inherit" /> : <PaymentIcon />}
+            startIcon={
+              paymentLoading ? (
+                <CircularProgress size={18} color="inherit" />
+              ) : (
+                <PaymentIcon />
+              )
+            }
             onClick={handleStorePayment}
             disabled={paymentLoading}
             sx={{
@@ -284,7 +320,8 @@ const Sidebar: React.FC<SidebarProps> = ({ open = true, onClose, variant = "perm
               "&:hover": {
                 backgroundColor: "warning.dark",
               },
-            }}>
+            }}
+          >
             {paymentLoading ? "Đang xử lý..." : "Thanh toán phí cửa hàng"}
           </Button>
         )}
@@ -326,7 +363,11 @@ const Sidebar: React.FC<SidebarProps> = ({ open = true, onClose, variant = "perm
                 {store.name}
               </Typography>
               <Tooltip title="Làm mới">
-                <IconButton size="small" onClick={fetchStoreInfo} disabled={loading}>
+                <IconButton
+                  size="small"
+                  onClick={fetchStoreInfo}
+                  disabled={loading}
+                >
                   <RefreshIcon fontSize="small" />
                 </IconButton>
               </Tooltip>
@@ -345,15 +386,34 @@ const Sidebar: React.FC<SidebarProps> = ({ open = true, onClose, variant = "perm
             </Stack>
 
             {/* Store status toggle */}
-            <Stack direction="row" alignItems="center" justifyContent="space-between">
+            <Stack
+              direction="row"
+              alignItems="center"
+              justifyContent="space-between"
+            >
               <Stack direction="row" alignItems="center" spacing={1}>
-                {store.isOpen ? <OpenIcon color="success" fontSize="small" /> : <ClosedIcon color="error" fontSize="small" />}
+                {store.isOpen ? (
+                  <OpenIcon color="success" fontSize="small" />
+                ) : (
+                  <ClosedIcon color="error" fontSize="small" />
+                )}
                 <Typography variant="body2">Trạng thái cửa hàng</Typography>
               </Stack>
 
               <Stack direction="row" alignItems="center" spacing={1}>
-                <Chip label={store.isOpen ? "Đang mở" : "Đã đóng"} size="small" color={store.isOpen ? "success" : "error"} variant="filled" />
-                <Switch checked={store.isOpen} onChange={handleOpenStatusDialog} color="success" disabled={statusLoading} inputProps={{ "aria-label": "controlled" }} />
+                <Chip
+                  label={store.isOpen ? "Đang mở" : "Đã đóng"}
+                  size="small"
+                  color={store.isOpen ? "success" : "error"}
+                  variant="filled"
+                />
+                <Switch
+                  checked={store.isOpen}
+                  onChange={handleOpenStatusDialog}
+                  color="success"
+                  disabled={statusLoading}
+                  inputProps={{ "aria-label": "controlled" }}
+                />
               </Stack>
             </Stack>
 
@@ -384,7 +444,8 @@ const Sidebar: React.FC<SidebarProps> = ({ open = true, onClose, variant = "perm
           overflow: "hidden",
           border: "1px solid rgba(0,0,0,0.1)",
         },
-      }}>
+      }}
+    >
       <Box sx={{ p: 3, textAlign: "center" }}>
         <Box
           sx={{
@@ -397,8 +458,13 @@ const Sidebar: React.FC<SidebarProps> = ({ open = true, onClose, variant = "perm
             justifyContent: "center",
             mx: "auto",
             mb: 2,
-          }}>
-          {store?.isOpen ? <WarningIcon sx={{ color: "#f44336", fontSize: 36 }} /> : <CheckCircleIcon sx={{ color: "#4caf50", fontSize: 36 }} />}
+          }}
+        >
+          {store?.isOpen ? (
+            <WarningIcon sx={{ color: "#f44336", fontSize: 36 }} />
+          ) : (
+            <CheckCircleIcon sx={{ color: "#4caf50", fontSize: 36 }} />
+          )}
         </Box>
 
         <DialogTitle
@@ -407,13 +473,16 @@ const Sidebar: React.FC<SidebarProps> = ({ open = true, onClose, variant = "perm
             fontSize: "1.5rem",
             p: 0,
             mb: 1,
-          }}>
+          }}
+        >
           {store?.isOpen ? "Đóng cửa hàng" : "Mở cửa hàng"}
         </DialogTitle>
 
         <DialogContent sx={{ p: 0, mb: 2 }}>
           <Typography variant="body1" color="text.secondary">
-            {store?.isOpen ? `Bạn có chắc muốn đóng cửa hàng?` : `Bạn có chắc muốn mở cửa hàng?`}
+            {store?.isOpen
+              ? `Bạn có chắc muốn đóng cửa hàng?`
+              : `Bạn có chắc muốn mở cửa hàng?`}
           </Typography>
 
           <Box
@@ -424,24 +493,44 @@ const Sidebar: React.FC<SidebarProps> = ({ open = true, onClose, variant = "perm
               borderRadius: 2,
               textAlign: "left",
               border: "1px dashed rgba(0,0,0,0.1)",
-            }}>
-            <Typography variant="body2" color="text.secondary" sx={{ display: "flex", alignItems: "center", mb: 1 }}>
+            }}
+          >
+            <Typography
+              variant="body2"
+              color="text.secondary"
+              sx={{ display: "flex", alignItems: "center", mb: 1 }}
+            >
               <StoreIcon sx={{ fontSize: 16, mr: 1, opacity: 0.7 }} />
               <span>
                 Tên cửa hàng: <strong>{store?.name}</strong>
               </span>
             </Typography>
-            <Typography variant="body2" color="text.secondary" sx={{ display: "flex", alignItems: "center" }}>
-              {store?.isOpen ? <OpenIcon sx={{ fontSize: 16, mr: 1, color: "#4caf50" }} /> : <ClosedIcon sx={{ fontSize: 16, mr: 1, color: "#f44336" }} />}
+            <Typography
+              variant="body2"
+              color="text.secondary"
+              sx={{ display: "flex", alignItems: "center" }}
+            >
+              {store?.isOpen ? (
+                <OpenIcon sx={{ fontSize: 16, mr: 1, color: "#4caf50" }} />
+              ) : (
+                <ClosedIcon sx={{ fontSize: 16, mr: 1, color: "#f44336" }} />
+              )}
               <span>
-                Trạng thái hiện tại: <strong>{store?.isOpen ? "Đang mở" : "Đã đóng"}</strong>
+                Trạng thái hiện tại:{" "}
+                <strong>{store?.isOpen ? "Đang mở" : "Đã đóng"}</strong>
               </span>
             </Typography>
           </Box>
 
           {store?.isOpen && (
-            <Alert severity="warning" sx={{ mt: 2, textAlign: "left", borderRadius: 2 }}>
-              <Typography variant="body2">Khi đóng cửa hàng, khách hàng sẽ không thể xem hoặc đặt hàng từ cửa hàng của bạn.</Typography>
+            <Alert
+              severity="warning"
+              sx={{ mt: 2, textAlign: "left", borderRadius: 2 }}
+            >
+              <Typography variant="body2">
+                Khi đóng cửa hàng, khách hàng sẽ không thể xem hoặc đặt hàng từ
+                cửa hàng của bạn.
+              </Typography>
             </Alert>
           )}
         </DialogContent>
@@ -462,14 +551,19 @@ const Sidebar: React.FC<SidebarProps> = ({ open = true, onClose, variant = "perm
                 borderColor: "#bdbdbd",
                 bgcolor: "rgba(0,0,0,0.02)",
               },
-            }}>
+            }}
+          >
             Hủy bỏ
           </Button>
           <Button
             onClick={handleToggleStoreStatus}
             variant="contained"
             disabled={statusLoading}
-            startIcon={statusLoading ? <CircularProgress size={20} color="inherit" /> : null}
+            startIcon={
+              statusLoading ? (
+                <CircularProgress size={20} color="inherit" />
+              ) : null
+            }
             sx={{
               px: 3,
               py: 1,
@@ -484,8 +578,13 @@ const Sidebar: React.FC<SidebarProps> = ({ open = true, onClose, variant = "perm
                 bgcolor: "rgba(0, 0, 0, 0.12)",
                 color: "rgba(0, 0, 0, 0.26)",
               },
-            }}>
-            {statusLoading ? "Đang xử lý..." : store?.isOpen ? "Xác nhận đóng cửa" : "Xác nhận mở cửa"}
+            }}
+          >
+            {statusLoading
+              ? "Đang xử lý..."
+              : store?.isOpen
+              ? "Xác nhận đóng cửa"
+              : "Xác nhận mở cửa"}
           </Button>
         </DialogActions>
       </Box>
@@ -500,7 +599,8 @@ const Sidebar: React.FC<SidebarProps> = ({ open = true, onClose, variant = "perm
         height: "100%",
         display: "flex",
         flexDirection: "column",
-      }}>
+      }}
+    >
       {/* Header */}
       <Box sx={{ p: 2, borderBottom: 1, borderColor: "divider" }}>
         <Typography variant="h6" color="primary" fontWeight="bold">
@@ -521,7 +621,10 @@ const Sidebar: React.FC<SidebarProps> = ({ open = true, onClose, variant = "perm
         <List sx={{ py: 1 }}>
           {menuItems.map((menuItem) => (
             <ListItem key={menuItem.id} disablePadding>
-              <ListItemButton selected={isActive(menuItem.path)} onClick={() => handleNavigation(menuItem.path)}>
+              <ListItemButton
+                selected={isActive(menuItem.path)}
+                onClick={() => handleNavigation(menuItem.path)}
+              >
                 <ListItemIcon>{menuItem.icon}</ListItemIcon>
                 <ListItemText primary={menuItem.label} />
               </ListItemButton>
@@ -546,22 +649,41 @@ const Sidebar: React.FC<SidebarProps> = ({ open = true, onClose, variant = "perm
             width: width,
             boxSizing: "border-box",
           },
-        }}>
+        }}
+      >
         {drawerContent}
       </Drawer>
 
       {renderStatusDialog()}
 
       {/* Error Snackbar */}
-      <Snackbar open={!!error} autoHideDuration={6000} onClose={() => setError(null)} anchorOrigin={{ vertical: "top", horizontal: "right" }}>
-        <Alert onClose={() => setError(null)} severity="error" sx={{ width: "100%" }}>
+      <Snackbar
+        open={!!error}
+        autoHideDuration={6000}
+        onClose={() => setError(null)}
+        anchorOrigin={{ vertical: "top", horizontal: "right" }}
+      >
+        <Alert
+          onClose={() => setError(null)}
+          severity="error"
+          sx={{ width: "100%" }}
+        >
           {error}
         </Alert>
       </Snackbar>
 
       {/* Success Snackbar */}
-      <Snackbar open={!!success} autoHideDuration={4000} onClose={() => setSuccess(null)} anchorOrigin={{ vertical: "top", horizontal: "right" }}>
-        <Alert onClose={() => setSuccess(null)} severity="success" sx={{ width: "100%" }}>
+      <Snackbar
+        open={!!success}
+        autoHideDuration={4000}
+        onClose={() => setSuccess(null)}
+        anchorOrigin={{ vertical: "top", horizontal: "right" }}
+      >
+        <Alert
+          onClose={() => setSuccess(null)}
+          severity="success"
+          sx={{ width: "100%" }}
+        >
           {success}
         </Alert>
       </Snackbar>

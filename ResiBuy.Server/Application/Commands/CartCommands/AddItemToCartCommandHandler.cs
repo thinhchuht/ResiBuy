@@ -15,6 +15,16 @@ namespace ResiBuy.Server.Application.Commands.CartCommands
         {
             try
             {
+                if (command.AddToCartDto == null)
+                {
+                    var newCart = await cartDbService.GetByIdBaseAsync(command.Id);
+                    if (newCart == null)
+                    {
+                        newCart = new Cart(command.Id);
+                        await cartDbService.CreateAsync(newCart);
+                    }
+                    return ResponseModel.SuccessResponse(newCart);
+                }
                 if (command.AddToCartDto.Quantity <= 0) throw new CustomException(ExceptionErrorCode.ValidationFailed, "Số lượng phải là lớn hơn 0");
                 if (command.AddToCartDto.ProductDetailId == 0) throw new CustomException(ExceptionErrorCode.ValidationFailed, "Thiếu mã sản phẩm");
                 var productDetail = await baseProductDbService.GetByIdAsync(command.AddToCartDto.ProductDetailId) ?? throw new CustomException(ExceptionErrorCode.NotFound, "Sản phẩm không tồn tại");
