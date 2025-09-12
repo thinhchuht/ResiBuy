@@ -61,6 +61,23 @@ namespace ResiBuy.Server.Controllers
                 return BadRequest(ResponseModel.ExceptionResponse(ex.ToString()));
             }
         }
+
+        [HttpPost]
+        public async Task<IActionResult> AddItemToCart( [FromBody] AddToCartDto addToCartDto)
+        {
+            try
+            {
+                Guid id = Guid.NewGuid();
+                var result = await mediator.Send(new AddItemToCartCommand(id, addToCartDto));
+                return Ok(result);
+            }
+            catch (Exception ex)
+            {
+                return BadRequest(ResponseModel.ExceptionResponse(ex.ToString()));
+            }
+        }
+
+
         [HttpPost("reset-status")]
         public async Task<IActionResult> ResetStatus( [FromBody] List<Guid> ids)
         {
