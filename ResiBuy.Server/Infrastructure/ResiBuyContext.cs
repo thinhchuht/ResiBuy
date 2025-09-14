@@ -32,6 +32,7 @@ namespace ResiBuy.Server.Infrastructure
         public DbSet<Review> Reviews { get; set; }
         public DbSet<TimeSheet> TimeSheets { get; set; }
         public DbSet<Promotion> Promotions { get; set; }
+        public DbSet<Barcode> Barcodes { get; set; }
 
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {
