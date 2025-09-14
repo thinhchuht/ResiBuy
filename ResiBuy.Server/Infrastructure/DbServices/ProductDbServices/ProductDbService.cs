@@ -167,7 +167,8 @@ namespace ResiBuy.Server.Infrastructure.DbServices.ProductDbServices
                     }
                     else if (invalidPromotionIds.Contains(promotionId))
                     {
-                        result.Errors.Add($"Lỗi tại dòng {row}: StoreId không tồn tại trong hệ thống");
+                        result.Errors.Add($"Lỗi tại dòng {row}: PromotionId không tồn tại trong hệ thống");
+                        rowIsValid = false;
                     }
 
                     if (!Guid.TryParse(sheet.Cells[row, 4].Text, out Guid storeId))
@@ -216,6 +217,44 @@ namespace ResiBuy.Server.Infrastructure.DbServices.ProductDbServices
                         rowIsValid = false;
                     }
 
+                    // ExpiryDate
+                    DateTime? expiryDate = null;
+                    var expiryStr = sheet.Cells[row, 16].Text?.Trim();
+                    if (!string.IsNullOrEmpty(expiryStr))
+                    {
+                        if (DateTime.TryParse(expiryStr, out var exp))
+                        {
+                            if (exp <= DateTime.Now)
+                            {
+                                result.Errors.Add($"Lỗi tại dòng {row}: ExpiryDate phải sau ngày hiện tại");
+                                rowIsValid = false;
+                            }
+                            else
+                            {
+                                expiryDate = exp;
+                            }
+                        }
+                        else
+                        {
+                            result.Errors.Add($"Lỗi tại dòng {row}: ExpiryDate không hợp lệ");
+                            rowIsValid = false;
+                        }
+                    }
+
+                    // WarrantyMonths
+                    int? warrantyMonths = null;
+                    var warrantyStr = sheet.Cells[row, 17].Text?.Trim();
+                    if (!string.IsNullOrEmpty(warrantyStr))
+                    {
+                        if (int.TryParse(warrantyStr, out var wm) && wm > 0)
+                            warrantyMonths = wm;
+                        else
+                        {
+                            result.Errors.Add($"Lỗi tại dòng {row}: WarrantyMonths không hợp lệ (phải là số nguyên > 0)");
+                            rowIsValid = false;
+                        }
+                    }
+
                     // Đọc cột image từ excel
                     var image = new CreateImageForProductDetailDto
                     {
@@ -225,6 +264,37 @@ namespace ResiBuy.Server.Infrastructure.DbServices.ProductDbServices
                         Name = sheet.Cells[row, 13].Text
                     };
 
+                    // Đọc cột barcode và tách thành list
+                    var barcodeStr = sheet.Cells[row, 15].Text;
+                    var barcodes = !string.IsNullOrEmpty(barcodeStr)
+                        ? barcodeStr.Split(';').Select(b => b.Trim()).Where(b => !string.IsNullOrEmpty(b)).ToList()
+                        : new List<string>();
+
+                    if (barcodes.Count != quantity)
+                    {
+                        result.Errors.Add($"Lỗi tại dòng {row}: Số lượng Barcode ({barcodes.Count}) không khớp với Quantity ({quantity})");
+                        rowIsValid = false;
+                    }
+
+                    var duplicateInRow = barcodes.GroupBy(b => b).Where(g => g.Count() > 1).Select(g => g.Key).ToList();
+                    if (duplicateInRow.Any())
+                    {
+                        result.Errors.Add($"Lỗi tại dòng {row}: Barcode bị trùng trong cùng dòng ({string.Join(", ", duplicateInRow)})");
+                        rowIsValid = false;
+                    }
+
+                    // Kiểm tra barcode đã tồn tại trong hệ thống
+                    if (barcodes.Any())
+                    {
+                        var existedBarcodes = await QueryBarcodesAsync(barcodes);
+                        if (existedBarcodes.Any())
+                        {
+                            result.Errors.Add($"Lỗi tại dòng {row}: Barcode đã tồn tại trong hệ thống ({string.Join(", ", existedBarcodes)})");
+                            rowIsValid = false;
+                        }
+                    }
+
+                    // Đọc và tách cột AdditionalData
                     var additionalData = new List<AdditionalDataDto>();
                     var additionalStr = sheet.Cells[row, 14].Text;
                     if (!string.IsNullOrEmpty(additionalStr))
@@ -269,6 +339,8 @@ namespace ResiBuy.Server.Infrastructure.DbServices.ProductDbServices
                                 PromotionId = promotionId,
                                 StoreId = storeId,
                                 CategoryId = categoryId,
+                                ExpiryDate = expiryDate,
+                                WarrantyMonths = warrantyMonths,
                                 ProductDetails = new List<CreateProductDetailDto>()
                             };
                             detailDataSetsByProduct[name] = new List<HashSet<string>>();
@@ -292,7 +364,8 @@ namespace ResiBuy.Server.Infrastructure.DbServices.ProductDbServices
                                 Quantity = quantity,
                                 IsOutOfStock = isOutOfStock,
                                 Image = image,
-                                AdditionalData = additionalData
+                                AdditionalData = additionalData,
+                                Barcodes = barcodes // Thêm barcodes vào DTO
                             });
                         }
                     }
@@ -329,6 +402,8 @@ namespace ResiBuy.Server.Infrastructure.DbServices.ProductDbServices
                             product.Name, product.Describe, product.PromotionId, product.StoreId, product.CategoryId
                         )
                         {
+                            ExpiryDate = product.ExpiryDate,
+                            WarrantyMonths = product.WarrantyMonths,
                             ProductDetails = product.ProductDetails.Select(d => new ProductDetail(d.Price, d.Weight, d.Quantity, d.IsOutOfStock)
                             {
                                 Image = d.Image != null ? new Image
@@ -338,7 +413,8 @@ namespace ResiBuy.Server.Infrastructure.DbServices.ProductDbServices
                                     ThumbUrl = d.Image.ThumbUrl,
                                     Name = d.Image.Name
                                 } : null,
-                                AdditionalData = d.AdditionalData.Select(a => new AdditionalData(a.Key, a.Value)).ToList()
+                                AdditionalData = d.AdditionalData.Select(a => new AdditionalData(a.Key, a.Value)).ToList(),
+                                Barcodes = d.Barcodes?.Select(b => new Barcode { Code = b }).ToList() ?? new List<Barcode>()
                             }).ToList()
                         });
                     }
@@ -357,9 +433,16 @@ namespace ResiBuy.Server.Infrastructure.DbServices.ProductDbServices
 
                             if (existingDetail != null)
                             {
-                                // Nếu đã có detail này → cộng số lượng
+                                // Nếu đã có detail này → cộng số lượng và thêm barcodes mới
                                 existingDetail.Quantity += detailDto.Quantity;
                                 existingDetail.IsOutOfStock = existingDetail.Quantity <= 0;
+
+                                // Thêm barcodes mới (nếu có)
+                                if (detailDto.Barcodes != null && detailDto.Barcodes.Any())
+                                {
+                                    var newBarcodes = detailDto.Barcodes.Select(b => new Barcode { Code = b }).ToList();
+                                    existingDetail.Barcodes.AddRange(newBarcodes);
+                                }
                             }
                             else
                             {
@@ -373,7 +456,8 @@ namespace ResiBuy.Server.Infrastructure.DbServices.ProductDbServices
                                         ThumbUrl = detailDto.Image.ThumbUrl,
                                         Name = detailDto.Image.Name
                                     } : null,
-                                    AdditionalData = detailDto.AdditionalData.Select(a => new AdditionalData(a.Key, a.Value)).ToList()
+                                    AdditionalData = detailDto.AdditionalData.Select(a => new AdditionalData(a.Key, a.Value)).ToList(),
+                                    Barcodes = detailDto.Barcodes?.Select(b => new Barcode { Code = b }).ToList() ?? new List<Barcode>()
                                 };
                                 existingProduct.ProductDetails.Add(newDetail);
                             }
@@ -384,6 +468,7 @@ namespace ResiBuy.Server.Infrastructure.DbServices.ProductDbServices
                 }
 
                 result.Success = true;
+                result.Successful = validRows.Count;
             }
             catch (Exception ex)
             {
@@ -392,6 +477,14 @@ namespace ResiBuy.Server.Infrastructure.DbServices.ProductDbServices
             }
 
             return result;
+        }
+
+        public async Task<List<string>> QueryBarcodesAsync(List<string> codes)
+        {
+            return await _context.Barcodes
+                .Where(b => codes.Contains(b.Code))
+                .Select(b => b.Code)
+                .ToListAsync();
         }
     }
 }

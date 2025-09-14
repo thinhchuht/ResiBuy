@@ -31,6 +31,7 @@ import {
     Category,
     Inventory,
     PhotoCamera,
+    LocalOffer,
 } from "@mui/icons-material";
 import { v4 } from "uuid";
 import axiosClient from "../../api/base.api";
@@ -55,17 +56,30 @@ interface ProductDetailInput {
     weight: number;
     quantity: number;
     isOutOfStock: boolean;
-    image: Image;
+    image: Image | null;
     additionalData: AdditionalDataInput[];
+    barcodes: string[];
 }
 
 interface ProductInput {
     name: string;
     describe: string;
-    discount: number;
+    promotionId: number;
     storeId: string;
     categoryId: string;
+    expiryDate?: string;
+    warrantyMonths?: number;
     productDetails: ProductDetailInput[];
+}
+
+// Promotion interface based on your API
+interface PromotionDto {
+    id: number;
+    name: string;
+    discount: number;
+    startDate: string;
+    endDate: string;
+    isActive: boolean;
 }
 
 interface Classify {
@@ -85,7 +99,9 @@ export default function CreateProduct() {
 
     // State declarations
     const [listCategory, setListCategory] = useState<CategoryDto[]>([]);
+    const [listPromotions, setListPromotions] = useState<PromotionDto[]>([]);
     const [isLoading, setIsLoading] = useState(false);
+    const [isLoadingPromotions, setIsLoadingPromotions] = useState(false);
 
     // Error states consolidated
     const [formErrors, setFormErrors] = useState<ValidationErrors>({});
@@ -94,35 +110,92 @@ export default function CreateProduct() {
     const [priceErrors, setPriceErrors] = useState<ValidationErrors>({});
     const [weightErrors, setWeightErrors] = useState<ValidationErrors>({});
     const [quantityErrors, setQuantityErrors] = useState<ValidationErrors>({});
+    const [barcodeErrors, setBarcodeErrors] = useState<ValidationErrors>({});
     const [uploadingImages, setUploadingImages] = useState<{ [key: number]: boolean }>({});
 
     const [product, setProduct] = useState<ProductInput>({
         name: "",
         describe: "",
-        discount: 0,
+        promotionId: 0, // Changed to 0 to indicate no selection
         storeId: storeId || "",
         categoryId: "",
+        expiryDate: undefined,
+        warrantyMonths: undefined,
         productDetails: [],
     });
 
     const [listProductDetail, setListProductDetail] = useState<ProductDetailInput[]>([]);
     const [classifies, setClassifies] = useState<Classify[]>([]);
 
-    // Load categories on mount
+    // Load categories and promotions on mount
     useEffect(() => {
-        const loadCategories = async () => {
-            try {
-                const response = await axiosClient.get("api/Category/categories");
-                const categories: CategoryDto[] = response.data.data || [];
-                setListCategory(categories);
-            } catch (error) {
-                console.error("Error loading categories:", error);
-                showError("Không thể tải danh sách danh mục");
-            }
+        const loadInitialData = async () => {
+            await Promise.all([loadCategories(), loadPromotions()]);
         };
 
-        loadCategories();
-    },[]);
+        loadInitialData();
+    }, []);
+
+    const loadCategories = async () => {
+        try {
+            const response = await axiosClient.get("api/Category/categories");
+            const categories: CategoryDto[] = response.data.data || [];
+            setListCategory(categories);
+        } catch (error) {
+            console.error("Error loading categories:", error);
+            showError("Không thể tải danh sách danh mục");
+        }
+    };
+
+    const loadPromotions = async () => {
+        try {
+            setIsLoadingPromotions(true);
+            // Fetch only active promotions
+            const response = await axiosClient.get("api/Promotion", {
+                params: {
+                    IsActive: true // Only get active promotions
+                }
+            });
+
+            const promotions: PromotionDto[] = response.data.data || [];
+
+            // Filter promotions that are currently valid (not expired)
+            const currentDate = new Date();
+            const validPromotions = promotions.filter(promotion => {
+                const endDate = new Date(promotion.endDate);
+                const startDate = new Date(promotion.startDate);
+                return promotion.isActive && startDate <= currentDate && endDate >= currentDate;
+            });
+
+            setListPromotions(validPromotions);
+
+            // Auto-select first promotion if available
+            if (validPromotions.length > 0 && product.promotionId === 0) {
+                setProduct(prev => ({ ...prev, promotionId: validPromotions[0].id }));
+            }
+        } catch (error) {
+            console.error("Error loading promotions:", error);
+            showError("Không thể tải danh sách khuyến mãi");
+        } finally {
+            setIsLoadingPromotions(false);
+        }
+    };
+
+    // Helper function to format promotion display text
+    const formatPromotionDisplay = (promotion: PromotionDto): string => {
+        const startDate = new Date(promotion.startDate).toLocaleDateString('vi-VN');
+        const endDate = new Date(promotion.endDate).toLocaleDateString('vi-VN');
+        return `${promotion.name} (${promotion.discount}% - ${startDate} đến ${endDate})`;
+    };
+
+    // Helper function to check if promotion is ending soon (within 7 days)
+    const isPromotionEndingSoon = (promotion: PromotionDto): boolean => {
+        const endDate = new Date(promotion.endDate);
+        const currentDate = new Date();
+        const diffTime = endDate.getTime() - currentDate.getTime();
+        const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+        return diffDays <= 7 && diffDays > 0;
+    };
 
     // Classification management functions
     const addClassifies = () => {
@@ -214,6 +287,9 @@ export default function CreateProduct() {
         if (!product.name.trim()) {
             newFormErrors.name = "Tên sản phẩm không được để trống";
             isValid = false;
+        } else if (product.name.length > 255) {
+            newFormErrors.name = "Tên sản phẩm không được vượt quá 255 ký tự";
+            isValid = false;
         }
 
         if (!product.categoryId) {
@@ -221,8 +297,20 @@ export default function CreateProduct() {
             isValid = false;
         }
 
-        if (product.discount < 0 || product.discount > 99) {
-            newFormErrors.discount = "Giảm giá phải từ 0 đến 99%";
+        if (!product.promotionId || product.promotionId <= 0) {
+            newFormErrors.promotionId = "Vui lòng chọn chương trình khuyến mãi";
+            isValid = false;
+        }
+
+        // Validate warranty months if provided
+        if (product.warrantyMonths !== undefined && product.warrantyMonths <= 0) {
+            newFormErrors.warrantyMonths = "Thời gian bảo hành phải lớn hơn 0 tháng";
+            isValid = false;
+        }
+
+        // Validate expiry date if provided
+        if (product.expiryDate && new Date(product.expiryDate) <= new Date()) {
+            newFormErrors.expiryDate = "Hạn sử dụng phải sau ngày hiện tại";
             isValid = false;
         }
 
@@ -282,26 +370,33 @@ export default function CreateProduct() {
         const newPriceErrors: ValidationErrors = {};
         const newWeightErrors: ValidationErrors = {};
         const newQuantityErrors: ValidationErrors = {};
+        const newBarcodeErrors: ValidationErrors = {};
+
+        // Collect all barcodes to check for duplicates across details
+        const allBarcodes: string[] = [];
 
         listProductDetail.forEach((detail, index) => {
             // Validate price
             if (detail.price <= 0) {
                 newPriceErrors[index] = "Giá phải lớn hơn 0";
                 isValid = false;
-            } else if (detail.price % 500 !== 0) {
-                newPriceErrors[index] = "Giá phải là bội số của 500";
-                isValid = false;
             }
 
             // Validate weight
-            if (detail.weight < 0 || detail.weight > 999) {
-                newWeightErrors[index] = "Cân nặng phải từ 0 đến 999g";
+            if (detail.weight < 0) {
+                newWeightErrors[index] = "Cân nặng phải từ 0 trở lên";
                 isValid = false;
             }
 
             // Validate quantity
-            if (detail.quantity < 0 || detail.quantity > 999) {
-                newQuantityErrors[index] = "Số lượng phải từ 0 đến 999";
+            if (detail.quantity < 0) {
+                newQuantityErrors[index] = "Số lượng phải từ 0 trở lên";
+                isValid = false;
+            }
+
+            // Validate business logic: out of stock should have quantity 0
+            if (detail.isOutOfStock && detail.quantity > 0) {
+                newQuantityErrors[index] = "Sản phẩm đã hết hàng thì số lượng phải bằng 0";
                 isValid = false;
             }
 
@@ -310,11 +405,59 @@ export default function CreateProduct() {
                 showError(`Vui lòng tải ảnh cho tất cả các chi tiết sản phẩm`);
                 isValid = false;
             }
+
+            // Validate barcodes
+            if (detail.quantity > 0) {
+                if (!detail.barcodes || detail.barcodes.length === 0) {
+                    newBarcodeErrors[index] = "Nếu số lượng > 0 thì phải có barcode";
+                    isValid = false;
+                } else if (detail.barcodes.length !== detail.quantity) {
+                    newBarcodeErrors[index] = `Số lượng barcode (${detail.barcodes.length}) phải bằng số lượng sản phẩm (${detail.quantity})`;
+                    isValid = false;
+                } else {
+                    // Check for duplicate barcodes within the same detail
+                    const uniqueBarcodes = new Set(detail.barcodes.map(b => b.trim()));
+                    if (uniqueBarcodes.size !== detail.barcodes.length) {
+                        newBarcodeErrors[index] = "Barcode bị trùng trong cùng chi tiết sản phẩm";
+                        isValid = false;
+                    } else {
+                        // Add to global barcode list for cross-detail validation
+                        detail.barcodes.forEach(barcode => {
+                            const trimmedBarcode = barcode.trim();
+                            if (trimmedBarcode) {
+                                allBarcodes.push(trimmedBarcode);
+                            }
+                        });
+                    }
+                }
+            } else {
+                // If quantity is 0, barcodes should be empty
+                if (detail.barcodes && detail.barcodes.length > 0) {
+                    newBarcodeErrors[index] = "Nếu số lượng = 0 thì không nên có barcode";
+                    isValid = false;
+                }
+            }
         });
+
+        // Check for duplicate barcodes across different details
+        const barcodeFrequency = new Map<string, number>();
+        allBarcodes.forEach(barcode => {
+            barcodeFrequency.set(barcode, (barcodeFrequency.get(barcode) || 0) + 1);
+        });
+
+        const duplicateBarcodes = Array.from(barcodeFrequency.entries())
+            .filter(([_, count]) => count > 1)
+            .map(([barcode, _]) => barcode);
+
+        if (duplicateBarcodes.length > 0) {
+            showError(`Barcode bị trùng giữa các chi tiết sản phẩm: ${duplicateBarcodes.join(", ")}`);
+            isValid = false;
+        }
 
         setPriceErrors(newPriceErrors);
         setWeightErrors(newWeightErrors);
         setQuantityErrors(newQuantityErrors);
+        setBarcodeErrors(newBarcodeErrors);
 
         if (!isValid) {
             showError("Vui lòng kiểm tra lại thông tin chi tiết sản phẩm");
@@ -329,8 +472,6 @@ export default function CreateProduct() {
 
         if (price <= 0) {
             newErrors[index] = "Giá phải lớn hơn 0";
-        } else if (price % 500 !== 0) {
-            newErrors[index] = "Giá phải là bội số của 500";
         } else {
             delete newErrors[index];
         }
@@ -343,8 +484,6 @@ export default function CreateProduct() {
 
         if (weight < 0) {
             newErrors[index] = "Cân nặng không được nhỏ hơn 0";
-        } else if (weight > 999) {
-            newErrors[index] = "Cân nặng không được vượt quá 999g";
         } else {
             delete newErrors[index];
         }
@@ -357,8 +496,6 @@ export default function CreateProduct() {
 
         if (quantity < 0) {
             newErrors[index] = "Số lượng không được nhỏ hơn 0";
-        } else if (quantity > 999) {
-            newErrors[index] = "Số lượng không được vượt quá 999";
         } else {
             delete newErrors[index];
         }
@@ -388,6 +525,7 @@ export default function CreateProduct() {
         setPriceErrors({});
         setWeightErrors({});
         setQuantityErrors({});
+        setBarcodeErrors({});
 
         // Generate new product details
         const newProductDetails: ProductDetailInput[] = listAdditionalData.map((data) => ({
@@ -395,8 +533,9 @@ export default function CreateProduct() {
             weight: 0,
             quantity: 0,
             isOutOfStock: false,
-            image: { id: "", url: "", thumbUrl: "", name: "" },
+            image: null,
             additionalData: data,
+            barcodes: [],
         }));
 
         setListProductDetail(newProductDetails);
@@ -477,14 +616,15 @@ export default function CreateProduct() {
             }
         } catch (error: any) {
             console.error("Error creating product:", error);
-            showError(`Lỗi khi tạo sản phẩm: ${error.response.data.message}. Vui lòng thử lại!`);
+            const errorMessage = error.response?.data?.message || error.message || "Có lỗi xảy ra";
+            showError(`Lỗi khi tạo sản phẩm: ${errorMessage}. Vui lòng thử lại!`);
         } finally {
             setIsLoading(false);
         }
     };
 
     // Handler functions for form updates
-    const updateProductField = (field: keyof ProductInput, value: string | number) => {
+    const updateProductField = (field: keyof ProductInput, value: string | number | undefined) => {
         setProduct(prev => ({ ...prev, [field]: value }));
 
         // Clear related errors
@@ -500,6 +640,12 @@ export default function CreateProduct() {
                 delete newErrors.categoryId;
                 return newErrors;
             });
+        } else if (field === 'promotionId' && value && formErrors.promotionId) {
+            setFormErrors(prev => {
+                const newErrors = { ...prev };
+                delete newErrors.promotionId;
+                return newErrors;
+            });
         }
     };
 
@@ -510,6 +656,25 @@ export default function CreateProduct() {
             return newList;
         });
     };
+
+    // Handle barcode input
+    const updateBarcodes = (index: number, barcodesText: string) => {
+        const barcodes = barcodesText.split('\n')
+            .map(b => b.trim())
+            .filter(b => b.length > 0);
+
+        updateProductDetail(index, 'barcodes', barcodes);
+
+        // Clear barcode error when user updates
+        if (barcodes.length > 0) {
+            const newErrors = { ...barcodeErrors };
+            delete newErrors[index];
+            setBarcodeErrors(newErrors);
+        }
+    };
+
+    // Get the selected promotion for display
+    const selectedPromotion = listPromotions.find(p => p.id === product.promotionId);
 
     return (
         <Box sx={{ p: 3, backgroundColor: "#f5f7fa", minHeight: "100vh" }}>
@@ -529,6 +694,13 @@ export default function CreateProduct() {
                     {Object.keys(formErrors).length > 0 && (
                         <Alert severity="error">
                             Vui lòng sửa các lỗi sau: {Object.values(formErrors).join(", ")}
+                        </Alert>
+                    )}
+
+                    {/* Show promotion ending soon warning */}
+                    {selectedPromotion && isPromotionEndingSoon(selectedPromotion) && (
+                        <Alert severity="warning" icon={<LocalOffer />}>
+                            Chương trình khuyến mãi "{selectedPromotion.name}" sẽ kết thúc vào {new Date(selectedPromotion.endDate).toLocaleDateString('vi-VN')}
                         </Alert>
                     )}
 
@@ -607,21 +779,78 @@ export default function CreateProduct() {
                                     }}
                                 />
 
-                                <Box sx={{ maxWidth: 300 }}>
+                                <Stack direction="row" spacing={3}>
                                     <TextField
-                                        label="Giảm giá (%)"
-                                        type="number"
+                                        select
+                                        label="Chương trình khuyến mãi"
                                         fullWidth
+                                        required
                                         variant="outlined"
-                                        value={product.discount}
-                                        error={!!formErrors.discount}
-                                        helperText={formErrors.discount || "Nhập giá trị từ 0 đến 99"}
-                                        inputProps={{ min: 0, max: 99 }}
+                                        value={product.promotionId || ""}
+                                        error={!!formErrors.promotionId}
+                                        helperText={formErrors.promotionId || (selectedPromotion ? `Giảm ${selectedPromotion.discount}%` : "")}
+                                        disabled={isLoadingPromotions}
+                                        onChange={(e) => updateProductField('promotionId', Number(e.target.value))}
+                                        sx={{
+                                            "& .MuiOutlinedInput-root": {
+                                                borderRadius: 2,
+                                            },
+                                        }}
+                                    >
+                                        {isLoadingPromotions ? (
+                                            <MenuItem disabled>
+                                                <CircularProgress size={16} sx={{ mr: 1 }} />
+                                                Đang tải...
+                                            </MenuItem>
+                                        ) : listPromotions.length > 0 ? (
+                                            listPromotions.map((promotion) => (
+                                                <MenuItem key={promotion.id} value={promotion.id}>
+                                                    <Stack direction="row" alignItems="center" spacing={1} sx={{ width: '100%' }}>
+                                                        <LocalOffer fontSize="small" color="primary" />
+                                                        <Typography variant="body2" sx={{ flex: 1 }}>
+                                                            {formatPromotionDisplay(promotion)}
+                                                        </Typography>
+                                                        {isPromotionEndingSoon(promotion) && (
+                                                            <Chip
+                                                                label="Sắp hết hạn"
+                                                                size="small"
+                                                                color="warning"
+                                                                variant="outlined"
+                                                            />
+                                                        )}
+                                                    </Stack>
+                                                </MenuItem>
+                                            ))
+                                        ) : (
+                                            <MenuItem disabled>
+                                                <Typography color="text.secondary">
+                                                    Không có chương trình khuyến mãi nào khả dụng
+                                                </Typography>
+                                            </MenuItem>
+                                        )}
+                                        <MenuItem>
+                                            <Button
+                                                variant="text"
+                                                size="small"
+                                                onClick={loadPromotions}
+                                                disabled={isLoadingPromotions}
+                                                startIcon={isLoadingPromotions ? <CircularProgress size={16} /> : undefined}
+                                            >
+                                                Tải lại danh sách
+                                            </Button>
+                                        </MenuItem>
+                                    </TextField>
+                                    <TextField
+                                        label="Thời gian bảo hành (tháng)"
+                                        type="number"
+                                        variant="outlined"
+                                        value={product.warrantyMonths || ""}
+                                        error={!!formErrors.warrantyMonths}
+                                        helperText={formErrors.warrantyMonths || "Tùy chọn"}
+                                        inputProps={{ min: 1 }}
                                         onChange={(e) => {
-                                            const value = Number(e.target.value);
-                                            if (value >= 0 && value <= 99) {
-                                                updateProductField('discount', value);
-                                            }
+                                            const value = e.target.value ? Number(e.target.value) : undefined;
+                                            updateProductField('warrantyMonths', value);
                                         }}
                                         sx={{
                                             "& .MuiOutlinedInput-root": {
@@ -629,7 +858,57 @@ export default function CreateProduct() {
                                             },
                                         }}
                                     />
-                                </Box>
+                                    <TextField
+                                        label="Hạn sử dụng"
+                                        type="date"
+                                        variant="outlined"
+                                        value={product.expiryDate || ""}
+                                        error={!!formErrors.expiryDate}
+                                        helperText={formErrors.expiryDate || "Tùy chọn"}
+                                        InputLabelProps={{ shrink: true }}
+                                        onChange={(e) => {
+                                            const value = e.target.value || undefined;
+                                            updateProductField('expiryDate', value);
+                                        }}
+                                        sx={{
+                                            "& .MuiOutlinedInput-root": {
+                                                borderRadius: 2,
+                                            },
+                                        }}
+                                    />
+                                </Stack>
+
+                                {/* Show selected promotion details */}
+                                {selectedPromotion && (
+                                    <Paper
+                                        elevation={0}
+                                        sx={{
+                                            p: 3,
+                                            bgcolor: "primary.lighter",
+                                            borderRadius: 2,
+                                            border: "1px solid",
+                                            borderColor: "primary.light"
+                                        }}
+                                    >
+                                        <Stack direction="row" alignItems="center" spacing={2}>
+                                            <LocalOffer color="primary" />
+                                            <Box sx={{ flex: 1 }}>
+                                                <Typography variant="subtitle1" fontWeight="bold" color="primary">
+                                                    {selectedPromotion.name}
+                                                </Typography>
+                                                <Typography variant="body2" color="text.secondary">
+                                                    Giảm giá: {selectedPromotion.discount}% |
+                                                    Từ {new Date(selectedPromotion.startDate).toLocaleDateString('vi-VN')} đến {new Date(selectedPromotion.endDate).toLocaleDateString('vi-VN')}
+                                                </Typography>
+                                            </Box>
+                                            <Chip
+                                                label={selectedPromotion.isActive ? "Đang hoạt động" : "Không hoạt động"}
+                                                color={selectedPromotion.isActive ? "success" : "error"}
+                                                size="small"
+                                            />
+                                        </Stack>
+                                    </Paper>
+                                )}
                             </Stack>
                         </CardContent>
                     </Paper>
@@ -812,15 +1091,16 @@ export default function CreateProduct() {
                                 </Stack>
                             </Box>
                             <Box sx={{ overflow: "auto" }}>
-                                <Table sx={{ minWidth: 800 }}>
+                                <Table sx={{ minWidth: 1000 }}>
                                     <TableHead>
                                         <TableRow sx={{ bgcolor: "grey.50" }}>
-                                            <TableCell sx={{ fontWeight: "bold" }}>Phân loại</TableCell>
-                                            <TableCell sx={{ fontWeight: "bold" }}>Giá (VNĐ)</TableCell>
-                                            <TableCell sx={{ fontWeight: "bold" }}>Cân nặng (kg)</TableCell>
-                                            <TableCell sx={{ fontWeight: "bold" }}>Số lượng</TableCell>
-                                            <TableCell sx={{ fontWeight: "bold" }}>Hết hàng</TableCell>
-                                            <TableCell sx={{ fontWeight: "bold" }}>Ảnh sản phẩm</TableCell>
+                                            <TableCell sx={{ fontWeight: "bold", minWidth: 200 }}>Phân loại</TableCell>
+                                            <TableCell sx={{ fontWeight: "bold", minWidth: 120 }}>Giá (VNĐ)</TableCell>
+                                            <TableCell sx={{ fontWeight: "bold", minWidth: 120 }}>Cân nặng (g)</TableCell>
+                                            <TableCell sx={{ fontWeight: "bold", minWidth: 100 }}>Số lượng</TableCell>
+                                            <TableCell sx={{ fontWeight: "bold", minWidth: 100 }}>Hết hàng</TableCell>
+                                            <TableCell sx={{ fontWeight: "bold", minWidth: 200 }}>Barcode</TableCell>
+                                            <TableCell sx={{ fontWeight: "bold", minWidth: 150 }}>Ảnh sản phẩm</TableCell>
                                         </TableRow>
                                     </TableHead>
                                     <TableBody>
@@ -858,10 +1138,10 @@ export default function CreateProduct() {
                                                         value={productDetail.weight}
                                                         error={!!weightErrors[index]}
                                                         helperText={weightErrors[index]}
-                                                        inputProps={{ min: 0, max: 999 }}
+                                                        inputProps={{ min: 0 }}
                                                         onChange={(e) => {
                                                             const newWeight = Number(e.target.value);
-                                                            if (newWeight <= 999) {
+                                                            if (newWeight >= 0) {
                                                                 updateProductDetail(index, 'weight', newWeight);
                                                             }
                                                         }}
@@ -878,11 +1158,21 @@ export default function CreateProduct() {
                                                         value={productDetail.quantity}
                                                         error={!!quantityErrors[index]}
                                                         helperText={quantityErrors[index]}
-                                                        inputProps={{ min: 0, max: 999 }}
+                                                        inputProps={{ min: 0 }}
                                                         onChange={(e) => {
                                                             const newQuantity = Number(e.target.value);
-                                                            if (newQuantity <= 999) {
+                                                            if (newQuantity >= 0) {
                                                                 updateProductDetail(index, 'quantity', newQuantity);
+                                                                // Auto-generate or clear barcodes based on quantity
+                                                                if (newQuantity === 0) {
+                                                                    updateProductDetail(index, 'barcodes', []);
+                                                                } else if (productDetail.barcodes.length !== newQuantity) {
+                                                                    // Generate empty barcode slots
+                                                                    const newBarcodes = Array(newQuantity).fill('').map((_, i) =>
+                                                                        productDetail.barcodes[i] || ''
+                                                                    );
+                                                                    updateProductDetail(index, 'barcodes', newBarcodes);
+                                                                }
                                                             }
                                                         }}
                                                         onBlur={() => validateQuantity(productDetail.quantity, index)}
@@ -896,9 +1186,33 @@ export default function CreateProduct() {
                                                         checked={productDetail.isOutOfStock}
                                                         onChange={(e) => {
                                                             updateProductDetail(index, 'isOutOfStock', e.target.checked);
+                                                            // If marking as out of stock, set quantity to 0
+                                                            if (e.target.checked) {
+                                                                updateProductDetail(index, 'quantity', 0);
+                                                                updateProductDetail(index, 'barcodes', []);
+                                                            }
                                                         }}
                                                         color="primary"
                                                     />
+                                                </TableCell>
+                                                <TableCell>
+                                                    <Stack spacing={1}>
+                                                        <TextField
+                                                            size="small"
+                                                            multiline
+                                                            rows={3}
+                                                            placeholder={`Nhập ${productDetail.quantity} barcode (mỗi dòng một barcode)`}
+                                                            value={productDetail.barcodes.join('\n')}
+                                                            error={!!barcodeErrors[index]}
+                                                            helperText={barcodeErrors[index] || `${productDetail.barcodes.filter(b => b.trim()).length}/${productDetail.quantity} barcode`}
+                                                            disabled={productDetail.quantity === 0}
+                                                            onChange={(e) => updateBarcodes(index, e.target.value)}
+                                                            sx={{
+                                                                "& .MuiOutlinedInput-root": { borderRadius: 2 },
+                                                                minWidth: 180,
+                                                            }}
+                                                        />
+                                                    </Stack>
                                                 </TableCell>
                                                 <TableCell>
                                                     <Stack spacing={2} alignItems="center" sx={{ minWidth: 120 }}>

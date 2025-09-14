@@ -4,6 +4,7 @@
     {
         public int Total { get; set; }
         public bool Success { get; set; }
+        public int Successful { get; set; }
         public List<string> Errors { get; set; } = new();
     }
 }
