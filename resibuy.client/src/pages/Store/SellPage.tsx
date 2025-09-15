@@ -4,8 +4,6 @@ import {
   Toolbar,
   Typography,
   IconButton,
-  TextField,
-  InputAdornment,
   Button,
   Tabs,
   Tab,
@@ -22,7 +20,7 @@ import {
   Paper,
   CircularProgress,
 } from "@mui/material";
-import { Search, Close, Add } from "@mui/icons-material";
+import { Close, Add } from "@mui/icons-material";
 import productApi from "../../api/product.api";
 import cartApi from "../../api/cart.api";
 import type { ProductDto } from "../../types/product";
@@ -46,6 +44,7 @@ type OrderItem = {
     stock: number;
     image?: string;
   };
+  productDetail?: any; // Thêm trường productDetail để tránh lỗi TypeScript
 };
 
 const PosPage: React.FC = () => {
@@ -113,10 +112,10 @@ const PosPage: React.FC = () => {
       const res = await cartApi.getCartById(cartId, 1, 50);
       const loadedItems: OrderItem[] =
         res.data.data?.items?.map((it: any) => ({
-          id: it.id, // cartItem id
+          id: it.id,
           quantity: it.quantity,
           price: it.productDetail.price,
-          discount: 0, // API chưa có discount thì gán mặc định
+          discount: 0,
           productDetailId: it.productDetail.id,
           product: {
             id: it.productDetail.product.id,
@@ -124,6 +123,7 @@ const PosPage: React.FC = () => {
             stock: it.productDetail.quantity,
             image: it.productDetail.image?.url,
           },
+          productDetail: it.productDetail, // giữ lại để dùng promotion
         })) || [];
       setItems(loadedItems);
     } catch (err) {
@@ -270,42 +270,112 @@ const PosPage: React.FC = () => {
               </TableRow>
             </TableHead>
             <TableBody>
-              {items.map((item) => (
-                <TableRow key={item.id}>
-                  <TableCell>
-                    <Box
-                      component="img"
-                      src={item.product.image || "/no-image.png"}
-                      alt={item.product.name}
-                      sx={{ width: 50, height: 50, objectFit: "cover" }}
-                    />
-                  </TableCell>
-                  <TableCell>
-                    {item.product.name}
-                    <br />
-                    <Typography variant="caption">
-                      SL tồn: {item.product.stock}
-                    </Typography>
-                  </TableCell>
-                  <TableCell>{item.quantity}</TableCell>
-                  <TableCell>{item.price.toLocaleString()}</TableCell>
-                  <TableCell>{item.discount}%</TableCell>
-                  <TableCell>
-                    {(
-                      item.price *
-                      item.quantity *
-                      (1 - item.discount / 100)
-                    ).toLocaleString()}
-                  </TableCell>
-                  <TableCell>
-                    <IconButton
-                      onClick={() => handleRemoveItem(item.productDetailId)}
-                    >
-                      <Close />
-                    </IconButton>
-                  </TableCell>
-                </TableRow>
-              ))}
+              {items.map((item) => {
+                const promotion =
+                  item.productDetail?.product?.promotion &&
+                  item.productDetail.product.promotion.isActive
+                    ? item.productDetail.product.promotion
+                    : undefined;
+                const discount = promotion ? promotion.discount : item.discount;
+                const priceAfterDiscount = item.price * (1 - discount / 100);
+                const totalRow = priceAfterDiscount * item.quantity;
+
+                // Hàm xử lý tăng/giảm số lượng
+                const handleChangeQuantity = async (isAdd: boolean) => {
+                  try {
+                    const cartId = tabs[currentTab]?.id;
+                    if (!cartId) return;
+                    await cartApi.addItemToCart(
+                      cartId,
+                      item.productDetailId,
+                      1,
+                      isAdd
+                    );
+                    await loadCart(cartId);
+                    window.toast &&
+                      window.toast.success(
+                        isAdd
+                          ? "Tăng số lượng thành công!"
+                          : "Giảm số lượng thành công!"
+                      );
+                  } catch (err: any) {
+                    const msg =
+                      err?.response?.data?.message ||
+                      (isAdd
+                        ? "Tăng số lượng thất bại!"
+                        : "Giảm số lượng thất bại!");
+                    window.toast && window.toast.error(msg);
+                  }
+                };
+
+                return (
+                  <TableRow key={item.id}>
+                    <TableCell>
+                      <Box
+                        component="img"
+                        src={item.product.image || "/no-image.png"}
+                        alt={item.product.name}
+                        sx={{ width: 50, height: 50, objectFit: "cover" }}
+                      />
+                    </TableCell>
+                    <TableCell>
+                      {item.product.name}
+                      <br />
+                      <Typography variant="caption">
+                        SL tồn: {item.product.stock}
+                      </Typography>
+                      {promotion && (
+                        <Typography
+                          variant="caption"
+                          color="success.main"
+                          ml={1}
+                        >
+                          (KM: -{promotion.discount}%)
+                        </Typography>
+                      )}
+                    </TableCell>
+                    <TableCell>
+                      <Box display="flex" alignItems="center">
+                        <IconButton
+                          size="small"
+                          onClick={() => handleChangeQuantity(false)}
+                          disabled={item.quantity <= 1}
+                        >
+                          -
+                        </IconButton>
+                        <Typography mx={1}>{item.quantity}</Typography>
+                        <IconButton
+                          size="small"
+                          onClick={() => handleChangeQuantity(true)}
+                        >
+                          +
+                        </IconButton>
+                      </Box>
+                    </TableCell>
+                    <TableCell>{item.price.toLocaleString()}</TableCell>
+                    <TableCell>
+                      {discount}%
+                      {promotion && (
+                        <Typography
+                          variant="caption"
+                          color="success.main"
+                          ml={1}
+                        >
+                          (KM)
+                        </Typography>
+                      )}
+                    </TableCell>
+                    <TableCell>{totalRow.toLocaleString()}</TableCell>
+                    <TableCell>
+                      <IconButton
+                        onClick={() => handleRemoveItem(item.productDetailId)}
+                      >
+                        <Close />
+                      </IconButton>
+                    </TableCell>
+                  </TableRow>
+                );
+              })}
             </TableBody>
           </Table>
         </Box>

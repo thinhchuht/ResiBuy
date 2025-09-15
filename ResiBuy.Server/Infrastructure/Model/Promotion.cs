@@ -8,7 +8,7 @@
         public DateTime StartDate { get; set; }
         public DateTime EndDate { get; set; }
         public bool IsActive { get; set; }
-        public List<Product> Products { get; set; } = new List<Product>();
+        public ICollection<Product> Products { get; set; }
 
         public Promotion(string name, int discount, DateTime startDate, DateTime endDate, bool isActive)
         {
