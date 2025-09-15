@@ -1,4 +1,3 @@
-
 export interface ImageDto {
   id: string;
   url: string;
@@ -15,12 +14,14 @@ export interface AdditionalDataDto {
 export interface ProductDetailDto {
   id: number;
   isOutOfStock: boolean;
+  productId: number;
   sold: number;
   price: number;
   weight: number;
   quantity: number;
   image: ImageDto;
   additionalData: AdditionalDataDto[];
+  // Không cần cartItems, orderItems, reviews ở DTO phía client
 }
 
 export interface CategoryDto {
@@ -29,17 +30,27 @@ export interface CategoryDto {
   status: boolean;
 }
 
+export interface PromotionDto {
+  id: number;
+  name: string;
+  discount: number;
+  startDate: string;
+  endDate: string;
+  isActive: boolean;
+}
+
 export interface ProductDto {
   id: number;
   name: string;
   describe: string;
   isOutOfStock: boolean;
-  discount: number;
-  sold: number;
+  promotionId: number;
+  createdAt: string;
+  updatedAt: string;
   storeId: string;
   categoryId: string;
   category: CategoryDto;
-  avarageRate: number;
+  promotion: PromotionDto;
   productDetails: ProductDetailDto[];
 }
 

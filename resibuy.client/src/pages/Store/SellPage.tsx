@@ -26,6 +26,8 @@ import { Search, Close, Add } from "@mui/icons-material";
 import productApi from "../../api/product.api";
 import cartApi from "../../api/cart.api";
 import type { ProductDto } from "../../types/product";
+import ProductDetailDialog from "../Store/ProductDetailDialog";
+import ProductSearchBox from "../Store/ProductSearchBox";
 
 type CartTab = {
   id: string;
@@ -52,6 +54,9 @@ const PosPage: React.FC = () => {
   const [items, setItems] = useState<OrderItem[]>([]);
   const [products, setProducts] = useState<ProductDto[]>([]);
   const [loading, setLoading] = useState(false);
+  const [selectedProduct, setSelectedProduct] = useState<
+    ProductDto | undefined
+  >(undefined);
 
   // --- load danh sách cart khi mở trang ---
   useEffect(() => {
@@ -148,16 +153,28 @@ const PosPage: React.FC = () => {
     }
   };
 
-  const handleCloseTab = (index: number) => {
-    const newTabs = [...tabs];
-    newTabs.splice(index, 1);
-    setTabs(newTabs);
-    if (newTabs.length > 0) {
-      setCurrentTab(0);
-      loadCart(newTabs[0].id);
-    } else {
-      setCurrentTab(0);
-      setItems([]);
+  const handleCloseTab = async (index: number) => {
+    const confirmed = window.confirm("Bạn có chắc muốn xóa đơn hàng này?");
+    if (!confirmed) return;
+
+    const cartId = tabs[index]?.id;
+    if (!cartId) return;
+
+    try {
+      await cartApi.deleteCart(cartId);
+      const newTabs = [...tabs];
+      newTabs.splice(index, 1);
+      setTabs(newTabs);
+      if (newTabs.length > 0) {
+        setCurrentTab(0);
+        loadCart(newTabs[0].id);
+      } else {
+        setCurrentTab(0);
+        setItems([]);
+      }
+    } catch (err) {
+      console.error("Lỗi xoá đơn hàng:", err);
+      alert("Xóa đơn hàng thất bại!");
     }
   };
 
@@ -198,17 +215,8 @@ const PosPage: React.FC = () => {
             <Typography variant="h6" sx={{ flexGrow: 1 }}>
               Bán tại quầy
             </Typography>
-            <TextField
-              placeholder="Tìm tên sản phẩm"
-              size="small"
-              InputProps={{
-                startAdornment: (
-                  <InputAdornment position="start">
-                    <Search />
-                  </InputAdornment>
-                ),
-              }}
-              sx={{ mr: 2, width: 300 }}
+            <ProductSearchBox
+              onSelectProduct={(product) => setSelectedProduct(product)}
             />
             <Button
               variant="outlined"
@@ -302,6 +310,17 @@ const PosPage: React.FC = () => {
           </Table>
         </Box>
 
+        {/* Product Detail Dialog */}
+        <ProductDetailDialog
+          open={!!selectedProduct}
+          product={selectedProduct}
+          onClose={() => setSelectedProduct(undefined)}
+          onSelectDetail={async (detailId) => {
+            await handleAddProduct(detailId);
+            setSelectedProduct(undefined);
+          }}
+        />
+
         {/* Product grid */}
         <Box p={2} borderTop="1px solid #ddd">
           <Typography variant="subtitle1" gutterBottom>
@@ -314,16 +333,17 @@ const PosPage: React.FC = () => {
             <Grid container spacing={2}>
               {products.map((p) => {
                 const detail = p.productDetails?.[0];
+                if (!detail) return null;
                 return (
-                  <Grid item xs={2} key={p.id}>
+                  <Grid item xs={2} key={detail.id}>
                     <Card
-                      onClick={() => handleAddProduct(detail?.id!)}
+                      onClick={() => setSelectedProduct(p)}
                       sx={{ cursor: "pointer", textAlign: "center" }}
                     >
                       <CardContent>
                         <Box
                           component="img"
-                          src={detail?.image?.url || "/no-image.png"}
+                          src={detail.image?.url || "/no-image.png"}
                           alt={p.name}
                           sx={{
                             width: "100%",
@@ -333,11 +353,11 @@ const PosPage: React.FC = () => {
                           }}
                         />
                         <Typography variant="body2" fontWeight="bold">
-                          {detail?.price?.toLocaleString()} đ
+                          {detail.price?.toLocaleString()} đ
                         </Typography>
                         <Typography variant="body2">{p.name}</Typography>
                         <Typography variant="caption">
-                          SL: {detail?.quantity ?? 0}
+                          SL: {detail.quantity ?? 0}
                         </Typography>
                       </CardContent>
                     </Card>

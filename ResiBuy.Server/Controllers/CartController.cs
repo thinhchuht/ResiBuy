@@ -1,4 +1,5 @@
 using ResiBuy.Server.Application.Commands.CartCommands;
+using ResiBuy.Server.Application.Commands.CartCommands.Dtos;
 using ResiBuy.Server.Application.Queries.CartQueries;
 using ResiBuy.Server.Infrastructure.Model.DTOs.CartDtos;
 
@@ -119,6 +120,8 @@ namespace ResiBuy.Server.Controllers
                 return BadRequest(ResponseModel.ExceptionResponse(ex.ToString()));
             }
         }
+
+
         [HttpGet("{cartId}/items/count")]
         public async Task<IActionResult> CountCartItems(Guid cartId)
         {
@@ -132,5 +135,16 @@ namespace ResiBuy.Server.Controllers
                 return BadRequest(ResponseModel.ExceptionResponse(ex.ToString()));
             }
         }
+
+        [HttpDelete("{cartId:guid}")]
+        public async Task<IActionResult> DeleteCart(Guid cartId)
+        {
+            var command = new DeleteCartCommand(new ClearCartCommand { CartId = cartId });
+            var result = await mediator.Send(command);
+
+            return Ok(result);
+        }
+
+
     }
 }

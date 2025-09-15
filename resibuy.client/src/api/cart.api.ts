@@ -53,6 +53,12 @@ const cartApi = {
   countItems: (cartId: string) => {
     return axiosClient.get(`${cartUrl}/${cartId}/items/count`);
   },
+
+  deleteCart: (cartId: string) => {
+    return axiosClient.delete(`${cartUrl}/${cartId}`);
+  },
+
+  
 };
 
 export default cartApi;
