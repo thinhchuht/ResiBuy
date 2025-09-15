@@ -2,7 +2,6 @@ import axiosClient from "./base.api";
 const cartUrl = "/api/cart";
 
 const cartApi = {
-  
   getCartById: (id: string, pageNumber: number, pageSize: number) => {
     return axiosClient.get(
       `${cartUrl}/${id}?pageNumber=${pageNumber}&pageSize=${pageSize}`
@@ -59,7 +58,11 @@ const cartApi = {
     return axiosClient.delete(`${cartUrl}/${cartId}`);
   },
 
-
+  deleteCartItems: (cartId: string, cartItemIds: string[]) => {
+    return axiosClient.delete(`${cartUrl}/${cartId}/items`, {
+      data: cartItemIds,
+    });
+  },
 };
 
 export default cartApi;

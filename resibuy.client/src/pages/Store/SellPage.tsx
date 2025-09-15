@@ -16,16 +16,15 @@ import {
   Card,
   CardContent,
   Grid,
-  Divider,
-  Paper,
   CircularProgress,
 } from "@mui/material";
-import { Close, Add } from "@mui/icons-material";
+import { Close, Add, Delete } from "@mui/icons-material";
 import productApi from "../../api/product.api";
 import cartApi from "../../api/cart.api";
 import type { ProductDto } from "../../types/product";
 import ProductDetailDialog from "../Store/ProductDetailDialog";
 import ProductSearchBox from "../Store/ProductSearchBox";
+import CheckoutSidebar from "../Store/CheckoutSidebar";
 
 type CartTab = {
   id: string;
@@ -33,7 +32,7 @@ type CartTab = {
 };
 
 type OrderItem = {
-  id: string; // id của cartItem (từ API)
+  id: string;
   productDetailId: number;
   quantity: number;
   price: number;
@@ -44,10 +43,10 @@ type OrderItem = {
     stock: number;
     image?: string;
   };
-  productDetail?: any; // Thêm trường productDetail để tránh lỗi TypeScript
+  productDetail?: any;
 };
 
-const PosPage: React.FC = () => {
+const SellPage: React.FC = () => {
   const [tabs, setTabs] = useState<CartTab[]>([]);
   const [currentTab, setCurrentTab] = useState(0);
   const [items, setItems] = useState<OrderItem[]>([]);
@@ -57,21 +56,17 @@ const PosPage: React.FC = () => {
     ProductDto | undefined
   >(undefined);
 
-  // --- load danh sách cart khi mở trang ---
+  // Load danh sách cart khi mở trang
   useEffect(() => {
     const fetchCarts = async () => {
       try {
         const res = await cartApi.getAllCartInShop();
-        console.log("API carts:", res.data);
-
         const cartsFromApi: CartTab[] =
           res.data?.data?.map((cart: { id: string }, index: number) => ({
             id: cart.id,
             name: `Đơn hàng ${index + 1}`,
           })) || [];
-
         setTabs(cartsFromApi);
-
         if (cartsFromApi.length > 0) {
           setCurrentTab(0);
           loadCart(cartsFromApi[0].id);
@@ -80,11 +75,11 @@ const PosPage: React.FC = () => {
         console.error("Lỗi load carts:", err);
       }
     };
-
     fetchCarts();
+    // eslint-disable-next-line
   }, []);
 
-  // --- load sản phẩm gợi ý ---
+  // Load sản phẩm gợi ý
   useEffect(() => {
     const fetchProducts = async () => {
       try {
@@ -100,11 +95,12 @@ const PosPage: React.FC = () => {
     fetchProducts();
   }, []);
 
-  // --- load cart theo id khi đổi tab ---
+  // Load cart theo id khi đổi tab
   useEffect(() => {
     if (tabs[currentTab]) {
       loadCart(tabs[currentTab].id);
     }
+    // eslint-disable-next-line
   }, [currentTab, tabs]);
 
   const loadCart = async (cartId: string) => {
@@ -123,7 +119,7 @@ const PosPage: React.FC = () => {
             stock: it.productDetail.quantity,
             image: it.productDetail.image?.url,
           },
-          productDetail: it.productDetail, // giữ lại để dùng promotion
+          productDetail: it.productDetail,
         })) || [];
       setItems(loadedItems);
     } catch (err) {
@@ -131,12 +127,8 @@ const PosPage: React.FC = () => {
     }
   };
 
-  const handleChangeTab = (e: React.SyntheticEvent, newValue: number) => {
+  const handleChangeTab = (_: React.SyntheticEvent, newValue: number) => {
     setCurrentTab(newValue);
-    const selectedCart = tabs[newValue];
-    if (selectedCart) {
-      loadCart(selectedCart.id);
-    }
   };
 
   const handleAddTab = async () => {
@@ -153,13 +145,31 @@ const PosPage: React.FC = () => {
     }
   };
 
+  // Hàm xử lý tăng/giảm số lượng cho từng item
+
+  const handleChangeQuantity = async (item: OrderItem, isAdd: boolean) => {
+    try {
+      const cartId = tabs[currentTab]?.id;
+      if (!cartId) return;
+      await cartApi.addItemToCart(cartId, item.productDetailId, 1, isAdd);
+      await loadCart(cartId); // Đảm bảo cập nhật lại giỏ hàng sau khi thay đổi
+      window.toast &&
+        window.toast.success(
+          isAdd ? "Tăng số lượng thành công!" : "Giảm số lượng thành công!"
+        );
+    } catch (err: any) {
+      const msg =
+        err?.response?.data?.message ||
+        (isAdd ? "Tăng số lượng thất bại!" : "Giảm số lượng thất bại!");
+      window.toast && window.toast.error(msg);
+    }
+  };
+
   const handleCloseTab = async (index: number) => {
     const confirmed = window.confirm("Bạn có chắc muốn xóa đơn hàng này?");
     if (!confirmed) return;
-
     const cartId = tabs[index]?.id;
     if (!cartId) return;
-
     try {
       await cartApi.deleteCart(cartId);
       const newTabs = [...tabs];
@@ -189,21 +199,20 @@ const PosPage: React.FC = () => {
     }
   };
 
-  const handleRemoveItem = async (productDetailId: number) => {
-    try {
-      const cartId = tabs[currentTab]?.id;
-      if (!cartId) return;
-      await cartApi.addItemToCart(cartId, productDetailId, 1, false);
-      loadCart(cartId);
-    } catch (err) {
-      console.error("Lỗi xoá sản phẩm:", err);
-    }
-  };
-
   const total = items.reduce(
     (sum, i) => sum + i.price * i.quantity * (1 - i.discount / 100),
     0
   );
+  const totalDiscount = items.reduce((sum, item) => {
+    const promotion =
+      item.productDetail?.product?.promotion &&
+      item.productDetail.product.promotion.isActive
+        ? item.productDetail.product.promotion
+        : undefined;
+    const discount = promotion ? promotion.discount : item.discount;
+    const discountAmount = item.price * item.quantity * (discount / 100);
+    return sum + discountAmount;
+  }, 0);
 
   return (
     <Box display="flex" height="100vh">
@@ -262,6 +271,7 @@ const PosPage: React.FC = () => {
               <TableRow>
                 <TableCell>Ảnh</TableCell>
                 <TableCell>Tên sản phẩm</TableCell>
+                <TableCell>Chi tiết</TableCell>
                 <TableCell>Số lượng</TableCell>
                 <TableCell>Đơn giá (VND)</TableCell>
                 <TableCell>Giảm giá</TableCell>
@@ -279,34 +289,13 @@ const PosPage: React.FC = () => {
                 const discount = promotion ? promotion.discount : item.discount;
                 const priceAfterDiscount = item.price * (1 - discount / 100);
                 const totalRow = priceAfterDiscount * item.quantity;
-
-                // Hàm xử lý tăng/giảm số lượng
-                const handleChangeQuantity = async (isAdd: boolean) => {
-                  try {
-                    const cartId = tabs[currentTab]?.id;
-                    if (!cartId) return;
-                    await cartApi.addItemToCart(
-                      cartId,
-                      item.productDetailId,
-                      1,
-                      isAdd
-                    );
-                    await loadCart(cartId);
-                    window.toast &&
-                      window.toast.success(
-                        isAdd
-                          ? "Tăng số lượng thành công!"
-                          : "Giảm số lượng thành công!"
-                      );
-                  } catch (err: any) {
-                    const msg =
-                      err?.response?.data?.message ||
-                      (isAdd
-                        ? "Tăng số lượng thất bại!"
-                        : "Giảm số lượng thất bại!");
-                    window.toast && window.toast.error(msg);
-                  }
-                };
+                const detailInfo =
+                  item.productDetail?.additionalData &&
+                  item.productDetail.additionalData.length > 0
+                    ? item.productDetail.additionalData
+                        .map((ad: any) => `${ad.key}: ${ad.value}`)
+                        .join(", ")
+                    : "";
 
                 return (
                   <TableRow key={item.id}>
@@ -335,10 +324,15 @@ const PosPage: React.FC = () => {
                       )}
                     </TableCell>
                     <TableCell>
+                      <Typography variant="body2" color="text.secondary">
+                        {detailInfo || <i>Không có</i>}
+                      </Typography>
+                    </TableCell>
+                    <TableCell>
                       <Box display="flex" alignItems="center">
                         <IconButton
                           size="small"
-                          onClick={() => handleChangeQuantity(false)}
+                          onClick={() => handleChangeQuantity(item, false)}
                           disabled={item.quantity <= 1}
                         >
                           -
@@ -346,7 +340,7 @@ const PosPage: React.FC = () => {
                         <Typography mx={1}>{item.quantity}</Typography>
                         <IconButton
                           size="small"
-                          onClick={() => handleChangeQuantity(true)}
+                          onClick={() => handleChangeQuantity(item, true)}
                         >
                           +
                         </IconButton>
@@ -368,9 +362,26 @@ const PosPage: React.FC = () => {
                     <TableCell>{totalRow.toLocaleString()}</TableCell>
                     <TableCell>
                       <IconButton
-                        onClick={() => handleRemoveItem(item.productDetailId)}
+                        color="error"
+                        onClick={async () => {
+                          const cartId = tabs[currentTab]?.id;
+                          if (!cartId) return;
+                          try {
+                            await cartApi.deleteCartItems(cartId, [item.id]);
+                            await loadCart(cartId);
+                            window.toast &&
+                              window.toast.success(
+                                "Xóa sản phẩm khỏi đơn hàng thành công!"
+                              );
+                          } catch (err: any) {
+                            const msg =
+                              err?.response?.data?.message ||
+                              "Xóa sản phẩm khỏi đơn hàng thất bại!";
+                            window.toast && window.toast.error(msg);
+                          }
+                        }}
                       >
-                        <Close />
+                        <Delete />
                       </IconButton>
                     </TableCell>
                   </TableRow>
@@ -396,7 +407,6 @@ const PosPage: React.FC = () => {
           <Typography variant="subtitle1" gutterBottom>
             Chọn nhanh sản phẩm
           </Typography>
-
           {loading ? (
             <CircularProgress />
           ) : (
@@ -440,41 +450,15 @@ const PosPage: React.FC = () => {
       </Box>
 
       {/* Sidebar */}
-      <Box flex={1} p={2} component={Paper} elevation={2}>
-        <Typography variant="h6">Khách lẻ</Typography>
-        <Divider sx={{ my: 1 }} />
-
-        <Typography>Tiền hàng: {total.toLocaleString()} đ</Typography>
-        <Typography>Giảm tiền đơn hàng: 0 đ</Typography>
-        <Typography variant="h6" sx={{ mt: 2 }}>
-          Khách phải trả: {total.toLocaleString()} đ
-        </Typography>
-
-        <Divider sx={{ my: 2 }} />
-
-        <Typography variant="subtitle1">Chọn phương thức thanh toán</Typography>
-        <Box display="flex" gap={1} my={1}>
-          <Button variant="outlined">Chuyển khoản</Button>
-          <Button variant="outlined">Tiền mặt</Button>
-        </Box>
-
-        <Divider sx={{ my: 2 }} />
-
-        <Typography>Tiền khách đưa: {total.toLocaleString()} đ</Typography>
-        <Typography>Tiền thừa trả khách: 0 đ</Typography>
-
-        <Button
-          variant="contained"
-          color="success"
-          fullWidth
-          sx={{ mt: 3 }}
-          onClick={() => alert("Thanh toán thành công!")}
-        >
-          Xác nhận thanh toán (F9)
-        </Button>
+      <Box display="flex" height="100vh">
+        <CheckoutSidebar
+          total={total}
+          discount={totalDiscount}
+          onCheckout={() => alert("Thanh toán thành công!")}
+        />
       </Box>
     </Box>
   );
 };
 
-export default PosPage;
+export default SellPage;

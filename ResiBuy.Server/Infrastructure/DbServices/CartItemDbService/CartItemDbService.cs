@@ -118,5 +118,19 @@ namespace ResiBuy.Server.Infrastructure.DbServices.CartItemDbService
                 .Include(ci => ci.Cart)
                 .ToListAsync();
         }
+
+        public async Task<bool> DeleteByCartIdAndItemIdsAsync(Guid cartId, List<Guid> cartItemIds)
+        {
+            var items = await _context.CartItems
+        .Where(ci => ci.CartId == cartId && cartItemIds.Contains(ci.Id))
+        .ToListAsync();
+
+            if (!items.Any())
+                return false;
+
+            _context.CartItems.RemoveRange(items);
+            await _context.SaveChangesAsync();
+            return true;
+        }
     }
 }

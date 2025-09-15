@@ -145,6 +145,19 @@ namespace ResiBuy.Server.Controllers
             return Ok(result);
         }
 
+        [HttpDelete("{cartId:guid}/items")]
+        public async Task<IActionResult> DeleteCartItems(Guid cartId, [FromBody] List<Guid> cartItemIds)
+        {
+            var command = new DeleteCartItemsByCartCommand(
+                new DeleteCartItemsByCartCommandDto
+                {
+                    CartId = cartId,
+                    CartItemIds = cartItemIds
+                });
+
+            var result = await mediator.Send(command);
+            return Ok(result);
+        }
 
     }
 }
