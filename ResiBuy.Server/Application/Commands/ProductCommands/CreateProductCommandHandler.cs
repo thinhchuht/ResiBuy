@@ -1,11 +1,12 @@
 ﻿using Confluent.Kafka;
 using ResiBuy.Server.Application.Commands.ProductCommands.DTOs.Create;
+using ResiBuy.Server.Infrastructure.DbServices.PromotionDbService;
 
 namespace ResiBuy.Server.Application.Commands.ProductCommands
 {
     public record CreateProductCommand(CreateProductDto ProductDto) : IRequest<ResponseModel>;
 
-    public class CreateProductCommandHandler(IProductDbService productDbService) : IRequestHandler<CreateProductCommand, ResponseModel>
+    public class CreateProductCommandHandler(IProductDbService productDbService, IPromotionDbService promotionDbService) : IRequestHandler<CreateProductCommand, ResponseModel>
     {
         public async Task<ResponseModel> Handle(CreateProductCommand command, CancellationToken cancellationToken)
         {
@@ -85,6 +86,12 @@ namespace ResiBuy.Server.Application.Commands.ProductCommands
             if (dto.ProductDetails == null || !dto.ProductDetails.Any())
                 throw new CustomException(ExceptionErrorCode.ValidationFailed,
                     "Sản phẩm phải có ít nhất một chi tiết sản phẩm.");
+            var promotion = await promotionDbService.GetPromotionByIdAsync(dto.PromotionId);
+            if (promotion == null)
+            {
+                throw new CustomException(ExceptionErrorCode.ValidationFailed,
+                    $"Khuyến mãi với ID {dto.PromotionId} không tồn tại.");
+            }
         }
 
         private async Task ValidateAndProcessProductDetails(IEnumerable<CreateProductDetailDto> detailDtos, Product product)
