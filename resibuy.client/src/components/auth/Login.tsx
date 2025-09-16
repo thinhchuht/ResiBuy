@@ -65,8 +65,9 @@ const Login: React.FC = () => {
     roomIds: false,
   });
   const [registerLoading, setRegisterLoading] = useState(false);
-  const [registerCodeModalOpen, setRegisterCodeModalOpen] = useState(false);
-  const [registerCode, setRegisterCode] = useState("");
+  // Xóa state liên quan đến mã xác nhận đăng ký
+  // const [registerCodeModalOpen, setRegisterCodeModalOpen] = useState(false);
+  // const [registerCode, setRegisterCode] = useState("");
   // Debounce fetchRooms khi search phòng
   const searchTimeout = useRef<NodeJS.Timeout | null>(null);
 
@@ -187,33 +188,11 @@ const Login: React.FC = () => {
         dateOfBirth: new Date(registerForm.dateOfBirth),
         roomIds: registerForm.roomIds,
       };
-      console.log("call getCode", payload);
-      const res = await userApi.getCode(payload);
-      if (!res || res.error) {
-        console.error(res?.error?.message || "Gửi mã xác nhận thất bại!");
-      } else {
-        setRegisterCodeModalOpen(true);
-      }
-    } finally {
-      setRegisterLoading(false);
-    }
-  };
-
-  const handleRegisterCodeSubmit = async () => {
-    setRegisterLoading(true);
-    try {
-      const payload = {
-        ...registerForm,
-        code: registerCode,
-        phoneNumber: registerForm.phone,
-        roomIds: registerForm.roomIds,
-        dateOfBirth: new Date(registerForm.dateOfBirth),
-      };
+      console.log("Creating user with payload:", payload);
       const res = await userApi.createUser(payload);
       if (!res || res.error) {
-        toast.error(res?.error?.message || "Đăng ký thất bại!");
+        // toast.error(res?.error?.message || "Đăng ký thất bại!");
       } else {
-        setRegisterCodeModalOpen(false);
         setRegisterModalOpen(false);
         setRegisterForm({ identityNumber: "", phone: "", email: "", password: "", fullName: "", dateOfBirth: "", areaId: "", buildingId: "", roomId: "", roomIds: [] });
         setRegisterTouched({
@@ -228,9 +207,11 @@ const Login: React.FC = () => {
           roomId: false,
           roomIds: false,
         });
-        setRegisterCode("");
         toast.success("Đăng ký thành công! Vui lòng đăng nhập.");
       }
+    } catch (error: any) {
+      console.error("Register error:", error);
+      // toast.error(error.message || "Lỗi khi đăng ký");
     } finally {
       setRegisterLoading(false);
     }
@@ -771,19 +752,6 @@ const Login: React.FC = () => {
           </Box>
         </Box>
       </Dialog>
-
-      {/* Modal nhập mã xác nhận đăng ký */}
-      <ConfirmCodeModal
-        open={registerCodeModalOpen}
-        onClose={() => {
-          setRegisterCodeModalOpen(false);
-          setRegisterCode("");
-        }}
-        onSubmit={handleRegisterCodeSubmit}
-        isSubmitting={registerLoading}
-        code={registerCode}
-        setCode={setRegisterCode}
-      />
     </Box>
   );
 };
