@@ -10,7 +10,9 @@
         public DateTime               CreatedAt    { get; set; }
         public DateTime               UpdatedAt    { get; set; }
         public Guid                   StoreId      { get; set; }
-        public Guid                 CategoryId   { get; set; }
+        public Guid                   CategoryId   { get; set; }
+        public DateTime?              ExpiryDate { get; set; }
+        public int?                   WarrantyMonths { get; set; } // in months
         public Store                  Store        { get; set; }
         public Category               Category     { get; set; }
         public List<ProductDetail> ProductDetails { get; set; }

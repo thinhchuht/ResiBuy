@@ -37,6 +37,9 @@ import CreateVoucher from "./Voucher/CreateVoucher";
 import UpdateVoucher from "./Voucher/UpdateVoucher";
 import ChartView from "./Analysis/ChartView";
 import ProductDetailPage from "./ProductPageDetail";
+import PromotionListPage from "./Promotion/PromotionListPage.tsx";
+import PromotionCreatePage from "./Promotion/PromotionCreatePage.tsx";
+import PromotionUpdatePage from "./Promotion/PromotionUpdatePage.tsx";
 import SellPage from "./SellPage";
 
 // Interface cho route config
@@ -334,6 +337,15 @@ const StorePage: React.FC = () => {
                 path="product-detail/:productId"
                 element={<ProductDetailPage />}
               />
+                <Route
+                    path="promotion-update/:promotionId"
+                    element={<PromotionUpdatePage />}
+                />
+                <Route
+                    path="promotion-create"
+                    element={<PromotionCreatePage />}
+                />
+                <Route path="promotions" element={<PromotionListPage />} />
               <Route
                 path="sell"
                 element={<SellPage />}

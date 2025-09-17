@@ -10,6 +10,11 @@
         public bool IsActive { get; set; }
         public ICollection<Product> Products { get; set; }
 
+        public Promotion()
+        {
+
+        }
+
         public Promotion(string name, int discount, DateTime startDate, DateTime endDate, bool isActive)
         {
             Name = name;

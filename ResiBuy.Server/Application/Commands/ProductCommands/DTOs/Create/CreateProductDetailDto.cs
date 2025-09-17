@@ -8,5 +8,6 @@
         public int Quantity { get; set; } = 0;
         public CreateImageForProductDetailDto Image { get; set; } = new();
         public List<AdditionalDataDto> AdditionalData { get; set; } = new();
+        public List<string> Barcodes { get; set; } = new();
     }
 }

@@ -78,7 +78,7 @@ const AppRoutes: React.FC = () => {
         <Route
           path="/store/:storeId/*"
           element={
-            <ProtectedRoute allowedRoles={["SELLER"]}>
+            <ProtectedRoute allowedRoles={["SELLER", "ADMIN"]}>
               <HomeLayout>
                 <Store />
               </HomeLayout>

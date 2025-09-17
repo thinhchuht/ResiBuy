@@ -15,6 +15,7 @@
         public IEnumerable<OrderItem> OrderItems { get; set; }
         public List<AdditionalData> AdditionalData { get; set; } = new List<AdditionalData>();
         public List<Review> Reviews { get; set; }
+        public List<Barcode> Barcodes { get; set; }
 
         public ProductDetail(decimal price, float weight, int quantity, bool isOutOfStock = false)
         {

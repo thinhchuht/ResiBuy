@@ -32,6 +32,7 @@ namespace ResiBuy.Server.Infrastructure
         public DbSet<Review> Reviews { get; set; }
         public DbSet<TimeSheet> TimeSheets { get; set; }
         public DbSet<Promotion> Promotions { get; set; }
+        public DbSet<Barcode> Barcodes { get; set; }
 
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {
@@ -78,6 +79,7 @@ namespace ResiBuy.Server.Infrastructure
             var defaultBuildingId = Guid.Parse("22222222-2222-2222-2222-222222222222");
             var defaultRoomId = Guid.Parse("33333333-3333-3333-3333-333333333333");
             var defaultStoreId = Guid.Parse("44444444-4444-4444-4444-444444444444");
+            var defaultPromotionId = 1;
 
             var area = new Area
             {
@@ -116,10 +118,20 @@ namespace ResiBuy.Server.Infrastructure
                 IsPayFee = false
             };
 
+            var promotion = new Promotion
+            {
+                Id = defaultPromotionId,
+                Name = "No Promotion",
+                Discount = 0,
+                StartDate = DateTime.Now,
+                EndDate = DateTime.Now.AddYears(200),
+            };
+
             modelBuilder.Entity<Area>().HasData(area);
             modelBuilder.Entity<Building>().HasData(building);
             modelBuilder.Entity<Room>().HasData(room);
             modelBuilder.Entity<Store>().HasData(store);
+            modelBuilder.Entity<Promotion>().HasData(promotion);
         }
     }
 }
