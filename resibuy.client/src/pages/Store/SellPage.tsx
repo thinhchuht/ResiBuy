@@ -106,6 +106,7 @@ const SellPage: React.FC = () => {
   // Load cart theo id khi đổi tab
   useEffect(() => {
     if (tabs[currentTab]) {
+      console.log("Loading cart for tab:", tabs[currentTab]);
       loadCart(tabs[currentTab].id);
     }
     // eslint-disable-next-line
@@ -142,12 +143,14 @@ const SellPage: React.FC = () => {
   const handleAddTab = async () => {
     try {
       const res = await cartApi.createCart();
+      console.log("Tạo cart mới:", res.data);
       const newTab: CartTab = {
-        id: res.data.id,
+        id: res.data.data.id,
         name: `Đơn hàng ${tabs.length + 1}`,
       };
       setTabs((prev) => [...prev, newTab]);
       setCurrentTab(tabs.length);
+
     } catch (err) {
       console.error("Lỗi tạo cart mới:", err);
     }
