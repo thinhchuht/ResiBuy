@@ -133,6 +133,16 @@ namespace ResiBuy.Server.Infrastructure.DbServices.UserDbServices
                 PageSize = pageSize
             };
         }
+
+        public async Task<User?> GetCustomerByPhoneAsync(string phoneNumber)
+        {
+            return await context.Users
+                .FirstOrDefaultAsync(c => c.PhoneNumber == phoneNumber
+                                       && c.Roles.Contains("CUSTOMER"));
+        }
+
+
+
         public async Task CheckUniqueField(string userId = null, string phoneNumber = null, string email = null, string identityNumber = null)
         {
             var query = context.Users.AsQueryable();

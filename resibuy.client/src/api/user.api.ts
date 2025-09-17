@@ -63,6 +63,25 @@ const userApi = {
     }
   },
 
+  getUserByPhone: async (phone: string) => {
+    try {
+      const response = await axiosClient.get(userUrl + "/by-phone", {
+        params: { phone },
+      });
+      return response.data;
+    } catch (error: any) {
+      console.error("Get user by phone failed:", error);
+      return {
+        error: {
+          message:
+            error.response?.data?.message ||
+            error.message ||
+            "Không tìm thấy người dùng",
+        },
+      };
+    }
+  },
+
   createUser: async (userData: creatUserPayload) => {
     try {
       const response = await axiosClient.post(userUrl, userData);
@@ -176,12 +195,24 @@ const userApi = {
     }
   },
 
-  updateUserRoles: async (id: string, data: {
-    roles: string[];
-    shipper?: { lastLocationId: string; startWorkTime: number; endWorkTime: number };
-    store?: { name: string; description: string; phoneNumber: string; roomId: string };
-    customer?: { roomId: string };
-  }) => {
+  updateUserRoles: async (
+    id: string,
+    data: {
+      roles: string[];
+      shipper?: {
+        lastLocationId: string;
+        startWorkTime: number;
+        endWorkTime: number;
+      };
+      store?: {
+        name: string;
+        description: string;
+        phoneNumber: string;
+        roomId: string;
+      };
+      customer?: { roomId: string };
+    }
+  ) => {
     try {
       const response = await axiosClient.put(userUrl + `/${id}/roles`, data);
       return response.data;
@@ -260,11 +291,15 @@ const userApi = {
   },
   importExcel: async (formData: FormData) => {
     try {
-      const response = await axiosClient.post(userUrl + "/import-excel", formData, {
-        headers: {
-          'Content-Type': 'multipart/form-data',
-        },
-      });
+      const response = await axiosClient.post(
+        userUrl + "/import-excel",
+        formData,
+        {
+          headers: {
+            "Content-Type": "multipart/form-data",
+          },
+        }
+      );
       return response.data;
     } catch (error: any) {
       console.error("Import excel failed:", error);
