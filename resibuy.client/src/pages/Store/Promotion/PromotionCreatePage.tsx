@@ -154,7 +154,7 @@ const PromotionCreatePage: React.FC = () => {
                 isActive,
             };
 
-            await axios.post("/api/Promotion", payload);
+            await axios.post("/api/Promotion/create", payload);
             showSuccess("Tạo khuyến mãi thành công");
             navigate(`/store/${storeId}/promotions`);
         } catch (error: any) {
