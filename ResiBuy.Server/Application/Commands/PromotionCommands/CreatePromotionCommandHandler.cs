@@ -8,18 +8,27 @@ namespace ResiBuy.Server.Application.Commands.PromotionCommands
         public async Task<ResponseModel> Handle(CreatePromotionCommand request, CancellationToken cancellationToken)
         {
             var dto = request.Promotion;
+            var startDate = dto.StartDate.Date.AddDays(1).AddTicks(-1); // đầu ngày
+            var endDate = dto.EndDate.Date.AddDays(1).AddTicks(-1); // cuối ngày (23:59:59.9999999)
+
             if (string.IsNullOrEmpty(dto.Name))
                 throw new CustomException(ExceptionErrorCode.ValidationFailed, "Tên khuyến mãi là bắt buộc");
+
             if (dto.Discount <= 0 || dto.Discount > 100)
                 throw new CustomException(ExceptionErrorCode.ValidationFailed, "Giá trị khuyến mãi phải lớn hơn 0 và nhỏ hơn hoặc bằng 100");
-            if (dto.StartDate >= dto.EndDate)
+
+            if (startDate >= endDate)
                 throw new CustomException(ExceptionErrorCode.ValidationFailed, "Ngày bắt đầu phải trước ngày kết thúc");
-            if (dto.StartDate < DateTime.UtcNow)
+
+            if (startDate < DateTime.UtcNow.Date)
                 throw new CustomException(ExceptionErrorCode.ValidationFailed, "Ngày bắt đầu phải sau ngày hiện tại");
-            if (dto.EndDate < DateTime.UtcNow)
+
+            if (endDate < DateTime.UtcNow)
                 throw new CustomException(ExceptionErrorCode.ValidationFailed, "Ngày kết thúc phải sau ngày hiện tại");
-            var promotion = new Promotion(dto.Name, dto.Discount, dto.StartDate, dto.EndDate, dto.IsActive);
+
+            var promotion = new Promotion(dto.Name, dto.Discount, startDate, endDate, dto.IsActive);
             await promotionDbService.CreateAsync(promotion);
+
             return ResponseModel.SuccessResponse(promotion);
         }
     }
