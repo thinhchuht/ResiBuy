@@ -1,42 +1,42 @@
 import React, { useState, useEffect, useCallback } from "react";
 import {
-    Drawer,
-    List,
-    ListItem,
-    ListItemButton,
-    ListItemIcon,
-    ListItemText,
-    Box,
-    Typography,
-    Switch,
-    Chip,
-    Divider,
-    Alert,
-    Snackbar,
-    Skeleton,
-    Tooltip,
-    IconButton,
-    Card,
-    CardContent,
-    Stack,
-    Button,
-    CircularProgress,
-    Dialog,
-    DialogActions,
-    DialogContent,
-    DialogTitle,
+  Drawer,
+  List,
+  ListItem,
+  ListItemButton,
+  ListItemIcon,
+  ListItemText,
+  Box,
+  Typography,
+  Switch,
+  Chip,
+  Divider,
+  Alert,
+  Snackbar,
+  Skeleton,
+  Tooltip,
+  IconButton,
+  Card,
+  CardContent,
+  Stack,
+  Button,
+  CircularProgress,
+  Dialog,
+  DialogActions,
+  DialogContent,
+  DialogTitle,
 } from "@mui/material";
 import {
-    Store as StoreIcon,
-    Dashboard as DashboardIcon,
-    Inventory as InventoryIcon,
-    LocalOffer as VoucherIcon,
-    ShoppingCart as OrdersIcon,
-    BarChart as AnalyticsIcon,
-    Refresh as RefreshIcon,
-    CheckCircle as OpenIcon,
-    Cancel as ClosedIcon,
-    Campaign as PromotionIcon,
+  Store as StoreIcon,
+  Dashboard as DashboardIcon,
+  Inventory as InventoryIcon,
+  LocalOffer as VoucherIcon,
+  ShoppingCart as OrdersIcon,
+  BarChart as AnalyticsIcon,
+  Refresh as RefreshIcon,
+  CheckCircle as OpenIcon,
+  Cancel as ClosedIcon,
+  Campaign as PromotionIcon,
 } from "@mui/icons-material";
 import { useNavigate, useParams, useLocation } from "react-router-dom";
 import axios from "../../api/base.api";
@@ -44,19 +44,19 @@ import WarningIcon from "@mui/icons-material/Warning";
 import CheckCircleIcon from "@mui/icons-material/CheckCircle";
 
 interface Store {
-    id: string;
-    name: string;
-    isOpen: boolean;
-    address?: string;
-    phone?: string;
-    description?: string;
+  id: string;
+  name: string;
+  isOpen: boolean;
+  address?: string;
+  phone?: string;
+  description?: string;
 }
 
 interface SidebarProps {
-    open: boolean;
-    onClose?: () => void;
-    variant?: "permanent" | "persistent" | "temporary";
-    width?: number;
+  open: boolean;
+  onClose?: () => void;
+  variant?: "permanent" | "persistent" | "temporary";
+  width?: number;
 }
 
 const menuItems = [
@@ -91,6 +91,12 @@ const menuItems = [
     path: "vouchers",
   },
   {
+    id: "promotions",
+    label: "Khuyến mãi",
+    icon: <PromotionIcon />,
+    path: "promotions",
+  },
+  {
     id: "analytics",
     label: "Thống kê",
     icon: <AnalyticsIcon />,
@@ -108,21 +114,21 @@ const Sidebar: React.FC<SidebarProps> = ({
   const location = useLocation();
   const { storeId } = useParams<{ storeId: string }>();
 
-    // State management
-    const [store, setStore] = useState<Store | null>(null);
-    const [loading, setLoading] = useState(false);
-    const [statusLoading, setStatusLoading] = useState(false);
-    const [error, setError] = useState<string | null>(null);
-    const [success, setSuccess] = useState<string | null>(null);
-    const [openStatusDialog, setOpenStatusDialog] = useState(false);
+  // State management
+  const [store, setStore] = useState<Store | null>(null);
+  const [loading, setLoading] = useState(false);
+  const [statusLoading, setStatusLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+  const [success, setSuccess] = useState<string | null>(null);
+  const [openStatusDialog, setOpenStatusDialog] = useState(false);
 
-    // Fetch store information
-    const fetchStoreInfo = useCallback(async () => {
-        if (!storeId) return;
+  // Fetch store information
+  const fetchStoreInfo = useCallback(async () => {
+    if (!storeId) return;
 
-        try {
-            setLoading(true);
-            setError(null);
+    try {
+      setLoading(true);
+      setError(null);
 
       const response = await axios.get<Store | { data: Store }>(
         `/api/Store/${storeId}`
@@ -167,23 +173,23 @@ const Sidebar: React.FC<SidebarProps> = ({
     setOpenStatusDialog(true);
   };
 
-    // Close status confirmation dialog
-    const handleCloseStatusDialog = () => {
-        setOpenStatusDialog(false);
-    };
+  // Close status confirmation dialog
+  const handleCloseStatusDialog = () => {
+    setOpenStatusDialog(false);
+  };
 
-    // Toggle store status
-    const handleToggleStoreStatus = async () => {
-        if (!store || !storeId) return;
+  // Toggle store status
+  const handleToggleStoreStatus = async () => {
+    if (!store || !storeId) return;
 
-        try {
-            setStatusLoading(true);
-            setError(null);
+    try {
+      setStatusLoading(true);
+      setError(null);
 
-            await axios.put(`/api/Store/${storeId}/status`, {
-                storeId: storeId,
-                isOpen: !store.isOpen,
-            });
+      await axios.put(`/api/Store/${storeId}/status`, {
+        storeId: storeId,
+        isOpen: !store.isOpen,
+      });
 
       setStore((prev) => (prev ? { ...prev, isOpen: !prev.isOpen } : null));
       setSuccess(
@@ -200,18 +206,18 @@ const Sidebar: React.FC<SidebarProps> = ({
     }
   };
 
-    // Navigation handler
-    const handleNavigation = (path: string) => {
-        const targetPath = path ? `/store/${storeId}/${path}` : `/store/${storeId}`;
-        navigate(targetPath);
-        if (onClose && variant === "temporary") {
-            onClose();
-        }
-    };
+  // Navigation handler
+  const handleNavigation = (path: string) => {
+    const targetPath = path ? `/store/${storeId}/${path}` : `/store/${storeId}`;
+    navigate(targetPath);
+    if (onClose && variant === "temporary") {
+      onClose();
+    }
+  };
 
-    // Check if current path is active
-    const isActive = (path: string) => {
-        const currentPath = location.pathname;
+  // Check if current path is active
+  const isActive = (path: string) => {
+    const currentPath = location.pathname;
 
     if (!path) {
       return (
@@ -236,70 +242,23 @@ const Sidebar: React.FC<SidebarProps> = ({
       );
     }
 
-        if (path === "promotions") {
-            return currentPath.includes("/promotions") || currentPath.includes("/promotion-create") || currentPath.includes("/promotion-update");
-        }
+    if (path === "promotions") {
+      return (
+        currentPath.includes("/promotions") ||
+        currentPath.includes("/promotion-create") ||
+        currentPath.includes("/promotion-update")
+      );
+    }
 
-        return currentPath.includes(`/${path}`);
-    };
+    return currentPath.includes(`/${path}`);
+  };
 
-    // Load store info on mount
-    useEffect(() => {
-        fetchStoreInfo();
-    }, [fetchStoreInfo]);
+  // Load store info on mount
+  useEffect(() => {
+    fetchStoreInfo();
+  }, [fetchStoreInfo]);
 
   // ✅ Render payment fee section
-  const renderPaymentSection = () => {
-    if (loading || !store) return null;
-
-    return (
-      <Box sx={{ mx: 2, mb: 2 }}>
-        {store.isPayFee ? (
-          // ✅ Đã thanh toán - Hiển thị trạng thái và vô hiệu hóa
-          <Button
-            fullWidth
-            variant="outlined"
-            disabled
-            startIcon={<PaidIcon />}
-            sx={{
-              color: "success.main",
-              borderColor: "success.main",
-              "&.Mui-disabled": {
-                color: "success.main",
-                borderColor: "success.light",
-              },
-            }}
-          >
-            Đã thanh toán phí
-          </Button>
-        ) : (
-          // ✅ Chưa thanh toán - Hiển thị nút thanh toán
-          <Button
-            fullWidth
-            variant="contained"
-            color="warning"
-            startIcon={
-              paymentLoading ? (
-                <CircularProgress size={18} color="inherit" />
-              ) : (
-                <PaymentIcon />
-              )
-            }
-            onClick={handleStorePayment}
-            disabled={paymentLoading}
-            sx={{
-              backgroundColor: "warning.main",
-              "&:hover": {
-                backgroundColor: "warning.dark",
-              },
-            }}
-          >
-            {paymentLoading ? "Đang xử lý..." : "Thanh toán phí cửa hàng"}
-          </Button>
-        )}
-      </Box>
-    );
-  };
 
   // Render store status section
   const renderStoreStatus = () => {
@@ -316,13 +275,13 @@ const Sidebar: React.FC<SidebarProps> = ({
       );
     }
 
-        if (!store) {
-            return (
-                <Alert severity="warning" sx={{ mx: 2, mb: 2 }}>
-                    Không thể tải thông tin cửa hàng
-                </Alert>
-            );
-        }
+    if (!store) {
+      return (
+        <Alert severity="warning" sx={{ mx: 2, mb: 2 }}>
+          Không thể tải thông tin cửa hàng
+        </Alert>
+      );
+    }
 
     return (
       <Card sx={{ mx: 2, mb: 2 }} elevation={2}>
@@ -343,18 +302,6 @@ const Sidebar: React.FC<SidebarProps> = ({
                   <RefreshIcon fontSize="small" />
                 </IconButton>
               </Tooltip>
-            </Stack>
-
-            {/* ✅ Payment status chip */}
-            <Stack direction="row" alignItems="center" spacing={1}>
-              <Typography variant="body2">Phí cửa hàng:</Typography>
-              <Chip
-                label={store.isPayFee ? "Đã thanh toán" : "Chưa thanh toán"}
-                size="small"
-                color={store.isPayFee ? "success" : "warning"}
-                variant="filled"
-                icon={store.isPayFee ? <PaidIcon /> : <PaymentIcon />}
-              />
             </Stack>
 
             {/* Store status toggle */}
@@ -389,17 +336,17 @@ const Sidebar: React.FC<SidebarProps> = ({
               </Stack>
             </Stack>
 
-                        {/* Additional store info */}
-                        {store.address && (
-                            <Typography variant="caption" color="text.secondary" noWrap>
-                                📍 {store.address}
-                            </Typography>
-                        )}
-                    </Stack>
-                </CardContent>
-            </Card>
-        );
-    };
+            {/* Additional store info */}
+            {store.address && (
+              <Typography variant="caption" color="text.secondary" noWrap>
+                📍 {store.address}
+              </Typography>
+            )}
+          </Stack>
+        </CardContent>
+      </Card>
+    );
+  };
 
   // Render status dialog
   const renderStatusDialog = () => (
@@ -491,8 +438,8 @@ const Sidebar: React.FC<SidebarProps> = ({
                 Trạng thái hiện tại:{" "}
                 <strong>{store?.isOpen ? "Đang mở" : "Đã đóng"}</strong>
               </span>
-                        </Typography>
-                    </Box>
+            </Typography>
+          </Box>
 
           {store?.isOpen && (
             <Alert
@@ -580,10 +527,10 @@ const Sidebar: React.FC<SidebarProps> = ({
         </Typography>
       </Box>
 
-            {/* Store status section */}
-            <Box sx={{ py: 2 }}>{renderStoreStatus()}</Box>
+      {/* Store status section */}
+      <Box sx={{ py: 2 }}>{renderStoreStatus()}</Box>
 
-            <Divider />
+      <Divider />
 
       {/* Navigation menu */}
       <Box sx={{ flex: 1, overflow: "auto" }}>
@@ -623,7 +570,7 @@ const Sidebar: React.FC<SidebarProps> = ({
         {drawerContent}
       </Drawer>
 
-            {renderStatusDialog()}
+      {renderStatusDialog()}
 
       {/* Error Snackbar */}
       <Snackbar
