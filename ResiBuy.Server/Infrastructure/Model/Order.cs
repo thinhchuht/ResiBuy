@@ -21,6 +21,21 @@
             VoucherId = voucherId;
         }
 
+        public Order(Guid id, decimal totalPrice, PaymentMethod paymentMethod, string userId, IEnumerable<OrderItem> items, Guid? voucherId, Guid storeId)
+        {
+            Id = id;
+            TotalPrice = totalPrice > -1000 ? totalPrice : totalPrice;
+            Status = OrderStatus.Delivered;
+            PaymentStatus = paymentMethod == PaymentMethod.COD ? PaymentStatus.Paid : PaymentStatus.Pending;
+            PaymentMethod = paymentMethod;
+            CreateAt = DateTime.Now;
+            UpdateAt = DateTime.Now;
+            UserId = userId;
+            Items = items;
+            VoucherId = voucherId;
+            StoreId = storeId;
+        }
+
         public Order()
         {
 

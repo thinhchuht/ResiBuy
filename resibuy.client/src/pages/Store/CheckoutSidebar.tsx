@@ -10,15 +10,24 @@ import {
   DialogTitle,
   DialogContent,
   DialogActions,
+  Snackbar,
+  Alert,
 } from "@mui/material";
 import userApi from "../../api/user.api";
-import cartApi from "../../api/cart.api";
+import voucherApi from "../../api/voucher.api";
 
 type CheckoutSidebarProps = {
   total: number;
   discount: number;
-  onCheckout: () => void;
-  cartId: string; // 🔹 truyền cartId từ props
+  onCheckout: (data: any) => void;
+  cartId: string;
+};
+
+type CartState = {
+  customer: any | null;
+  voucher: any | null;
+  paymentMethod: "CASH" | "BANK" | null;
+  customerPaid: number;
 };
 
 const CheckoutSidebar: React.FC<CheckoutSidebarProps> = ({
@@ -27,47 +36,96 @@ const CheckoutSidebar: React.FC<CheckoutSidebarProps> = ({
   onCheckout,
   cartId,
 }) => {
-  const [customerPaid, setCustomerPaid] = useState<number>(total);
-
-  // State khách hàng
-  const [customer, setCustomer] = useState<any | null>(null);
+  // state theo cartId
+  const [cartStates, setCartStates] = useState<Record<string, CartState>>({});
   const [openDialog, setOpenDialog] = useState(false);
   const [phoneInput, setPhoneInput] = useState("");
+  const [openVoucherDialog, setOpenVoucherDialog] = useState(false);
+  const [vouchers, setVouchers] = useState<any[]>([]);
 
-  // 🔎 Tìm khách hàng theo số điện thoại
+  // snackbar thông báo
+  const [snackbar, setSnackbar] = useState<{
+    open: boolean;
+    message: string;
+    severity: "success" | "error" | "info" | "warning";
+  }>({ open: false, message: "", severity: "info" });
+
+  const showMessage = (
+    message: string,
+    severity: "success" | "error" | "info" | "warning" = "info"
+  ) => {
+    setSnackbar({ open: true, message, severity });
+  };
+
+  // lấy state của cart hiện tại
+  const currentCart = cartStates[cartId] || {
+    customer: null,
+    voucher: null,
+    paymentMethod: null,
+    customerPaid: total,
+  };
+
+  const setCartState = (updates: Partial<CartState>) => {
+    setCartStates((prev) => ({
+      ...prev,
+      [cartId]: { ...currentCart, ...updates },
+    }));
+  };
+
+  // tìm khách theo sđt
   const handleSearchCustomer = async () => {
     if (!phoneInput.trim()) return;
-
     try {
       const res = await userApi.getUserByPhone(phoneInput);
-      if (res.error) {
-        alert(res.error.message);
-        setCustomer(null);
-      } else {
-        const foundCustomer = res.data;
-        // ✅ Update cart với userId
-        await cartApi.updateUserInCart(cartId, foundCustomer.id);
-
-        setCustomer(foundCustomer);
-        setOpenDialog(false);
-      }
+      setCartState({ customer: res.data });
+      setOpenDialog(false);
+      showMessage("Đã chọn khách hàng thành công", "success");
     } catch (err: any) {
-      alert(err?.error?.message || "Lỗi khi tìm khách hàng");
+      showMessage(err?.error?.message || "Lỗi khi tìm khách hàng", "error");
     }
   };
 
-  const finalAmount = total - discount;
-  const change = customerPaid - finalAmount;
+  // mở popup voucher
+  const handleOpenVoucherDialog = async () => {
+    try {
+      const res = await voucherApi.getAll({
+        minOrderPrice: finalAmount,
+        isActive: true,
+        pageNumber: 1,
+        pageSize: 20,
+      });
+      setVouchers(res.data.items || []);
+      setOpenVoucherDialog(true);
+    } catch (err: any) {
+      showMessage(err?.error?.message || "Không thể tải voucher", "error");
+    }
+  };
+
+  const voucherDiscount = (() => {
+    if (!currentCart.voucher) return 0;
+    if (currentCart.voucher.type === "Amount") {
+      return currentCart.voucher.discountAmount;
+    }
+    if (currentCart.voucher.type === "Percentage") {
+      const discountValue =
+        (total - discount) * (currentCart.voucher.discountAmount / 100);
+      return Math.min(discountValue, currentCart.voucher.maxDiscountPrice);
+    }
+    return 0;
+  })();
+
+  const finalAmount = total - discount - voucherDiscount;
+  const change = currentCart.customerPaid - finalAmount;
 
   return (
     <Box flex={1} p={2} component={Paper} elevation={2}>
       <Typography variant="h6">Khách hàng</Typography>
       <Divider sx={{ my: 1 }} />
 
-      {customer ? (
+      {currentCart.customer ? (
         <Box>
-          <Typography>Họ tên: {customer.fullName}</Typography>
-          <Typography>SĐT: {customer.phoneNumber}</Typography>
+          <Typography>Họ tên: {currentCart.customer.fullName}</Typography>
+          <Typography>SĐT: {currentCart.customer.phoneNumber}</Typography>
           <Button
             variant="outlined"
             size="small"
@@ -79,7 +137,7 @@ const CheckoutSidebar: React.FC<CheckoutSidebarProps> = ({
         </Box>
       ) : (
         <Box>
-          <Typography>❌ Chưa có khách hàng</Typography>
+          <Typography color="error">❌ Chưa có khách hàng</Typography>
           <Button
             variant="outlined"
             size="small"
@@ -93,11 +151,31 @@ const CheckoutSidebar: React.FC<CheckoutSidebarProps> = ({
 
       <Divider sx={{ my: 2 }} />
 
-      <Typography>Tiền hàng: {total.toLocaleString()} đ</Typography>
+      <Box display="flex" alignItems="center" justifyContent="space-between">
+        <Typography>Voucher:</Typography>
+        <Button
+          variant="outlined"
+          size="small"
+          onClick={handleOpenVoucherDialog}
+        >
+          {currentCart.voucher
+            ? currentCart.voucher.type === "Percentage"
+              ? `Giảm ${currentCart.voucher.discountAmount}%`
+              : `Giảm ${currentCart.voucher.discountAmount}đ`
+            : "Chọn voucher"}
+        </Button>
+      </Box>
+
+      <Typography sx={{ mt: 1 }}>
+        Tiền hàng: {total.toLocaleString()} đ
+      </Typography>
       <Typography>
         Giảm tiền đơn hàng:{" "}
         {discount > 0 ? `-${discount.toLocaleString()} đ` : "0 đ"}
       </Typography>
+      {voucherDiscount > 0 && (
+        <Typography>Voucher: -{voucherDiscount.toLocaleString()} đ</Typography>
+      )}
       <Typography variant="h6" sx={{ mt: 2 }}>
         Khách phải trả: {finalAmount.toLocaleString()} đ
       </Typography>
@@ -106,64 +184,103 @@ const CheckoutSidebar: React.FC<CheckoutSidebarProps> = ({
 
       <Typography variant="subtitle1">Chọn phương thức thanh toán</Typography>
       <Box display="flex" gap={1} my={1}>
-        <Button variant="outlined">Chuyển khoản</Button>
-        <Button variant="outlined">Tiền mặt</Button>
+        <Button
+          variant={
+            currentCart.paymentMethod === "BANK" ? "contained" : "outlined"
+          }
+          onClick={() => setCartState({ paymentMethod: "BANK" })}
+        >
+          Chuyển khoản
+        </Button>
+        <Button
+          variant={
+            currentCart.paymentMethod === "CASH" ? "contained" : "outlined"
+          }
+          onClick={() => setCartState({ paymentMethod: "CASH" })}
+        >
+          Tiền mặt
+        </Button>
       </Box>
 
       <Divider sx={{ my: 2 }} />
 
-      <Typography>Tiền khách đưa:</Typography>
-      <TextField
-        size="small"
-        type="number"
-        value={customerPaid}
-        onChange={(e) => setCustomerPaid(Number(e.target.value))}
-        sx={{ my: 1, width: "100%" }}
-        inputProps={{ min: 0 }}
-      />
-      <Typography>
-        Tiền thừa trả khách: {change > 0 ? change.toLocaleString() : 0} đ
-      </Typography>
+      {currentCart.paymentMethod === "CASH" && (
+        <>
+          <Typography>Tiền khách đưa:</Typography>
+          <TextField
+            size="small"
+            type="number"
+            value={currentCart.customerPaid}
+            onChange={(e) =>
+              setCartState({ customerPaid: Number(e.target.value) })
+            }
+            sx={{ my: 1, width: "100%" }}
+            inputProps={{ min: 0 }}
+          />
+          <Typography>
+            Tiền thừa trả khách: {change > 0 ? change.toLocaleString() : 0} đ
+          </Typography>
+        </>
+      )}
 
       <Button
         variant="contained"
         color="success"
         fullWidth
         sx={{ mt: 3 }}
-        onClick={onCheckout}
-        disabled={customerPaid < finalAmount}
+        onClick={() => {
+          if (!currentCart.customer) {
+            showMessage("Vui lòng chọn khách hàng", "warning");
+            return;
+          }
+          if (!currentCart.paymentMethod) {
+            showMessage("Vui lòng chọn phương thức thanh toán", "warning");
+            return;
+          }
+          if (
+            currentCart.paymentMethod === "CASH" &&
+            currentCart.customerPaid < finalAmount
+          ) {
+            showMessage("Số tiền khách đưa chưa hợp lệ", "error");
+            return;
+          }
+          onCheckout({
+            cartId,
+            customer: currentCart.customer,
+            voucher: currentCart.voucher,
+            paymentMethod: currentCart.paymentMethod,
+            customerPaid: currentCart.customerPaid,
+          });
+          showMessage("Thanh toán thành công", "success");
+        }}
       >
         Xác nhận thanh toán
       </Button>
 
-      {/* 🔹 Popup thêm khách hàng */}
+      {/* Popup thêm khách hàng */}
       <Dialog open={openDialog} onClose={() => setOpenDialog(false)} fullWidth>
         <DialogTitle>Thêm khách hàng</DialogTitle>
         <DialogContent>
           <Box display="flex" flexDirection="column" gap={2} mt={1}>
-            {/* Khách vãng lai */}
             <Button
               variant="outlined"
               onClick={() => {
-                setCustomer({ fullName: "Khách vãng lai" });
+                setCartState({ customer: { fullName: "Khách vãng lai" } });
                 setOpenDialog(false);
               }}
             >
               Khách vãng lai
             </Button>
 
-            {/* Thêm mới khách hàng */}
             <Button
               variant="outlined"
               onClick={() => {
-                // TODO: mở form thêm mới khách hàng
-                alert("Chức năng thêm mới khách hàng");
+                showMessage("Chức năng thêm mới khách hàng", "info");
               }}
             >
               Thêm mới khách hàng
             </Button>
 
-            {/* Nhập số điện thoại để tìm */}
             <TextField
               label="Nhập số điện thoại"
               value={phoneInput}
@@ -178,6 +295,72 @@ const CheckoutSidebar: React.FC<CheckoutSidebarProps> = ({
           <Button onClick={() => setOpenDialog(false)}>Đóng</Button>
         </DialogActions>
       </Dialog>
+
+      {/* Popup chọn voucher */}
+      <Dialog
+        open={openVoucherDialog}
+        onClose={() => setOpenVoucherDialog(false)}
+        fullWidth
+      >
+        <DialogTitle>Chọn voucher</DialogTitle>
+        <DialogContent>
+          {vouchers.length > 0 ? (
+            vouchers.map((v: any) => {
+              const isPercent = v.type === "Percentage";
+              return (
+                <Box
+                  key={v.id}
+                  p={2}
+                  mb={1}
+                  border="1px solid #ccc"
+                  borderRadius={2}
+                  sx={{ cursor: "pointer" }}
+                  onClick={() => {
+                    setCartState({ voucher: v });
+                    setOpenVoucherDialog(false);
+                    showMessage("Đã chọn voucher", "success");
+                  }}
+                >
+                  <Typography fontWeight="bold">
+                    {isPercent
+                      ? `Giảm ${
+                          v.discountAmount
+                        }% (tối đa ${v.maxDiscountPrice.toLocaleString()} đ)`
+                      : `Giảm ${v.discountAmount.toLocaleString()} đ`}
+                  </Typography>
+                  <Typography>
+                    Đơn tối thiểu: {v.minOrderPrice.toLocaleString()} đ
+                  </Typography>
+                  <Typography>
+                    HSD: {new Date(v.endDate).toLocaleDateString("vi-VN")}
+                  </Typography>
+                </Box>
+              );
+            })
+          ) : (
+            <Typography>Không có voucher phù hợp</Typography>
+          )}
+        </DialogContent>
+        <DialogActions>
+          <Button onClick={() => setOpenVoucherDialog(false)}>Đóng</Button>
+        </DialogActions>
+      </Dialog>
+
+      {/* Snackbar thông báo */}
+      <Snackbar
+        open={snackbar.open}
+        autoHideDuration={3000}
+        onClose={() => setSnackbar((prev) => ({ ...prev, open: false }))}
+        anchorOrigin={{ vertical: "bottom", horizontal: "center" }}
+      >
+        <Alert
+          onClose={() => setSnackbar((prev) => ({ ...prev, open: false }))}
+          severity={snackbar.severity}
+          variant="filled"
+        >
+          {snackbar.message}
+        </Alert>
+      </Snackbar>
     </Box>
   );
 };

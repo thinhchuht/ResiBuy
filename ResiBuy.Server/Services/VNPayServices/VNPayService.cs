@@ -1,8 +1,10 @@
-﻿using ResiBuy.Server.Services.MyBackgroundService.CheckoutSessionService;
+﻿using ResiBuy.Server.Infrastructure.DbServices.OrderDbServices;
+using ResiBuy.Server.Services.MyBackgroundService.CheckoutSessionService;
+using System.Data;
 
 namespace ResiBuy.Server.Services.VNPayServices
 {
-    public class VNPayService(IConfiguration configuration, ICheckoutSessionService checkoutSessionService, IStoreDbService storeDbService) : IVNPayService
+    public class VNPayService(IConfiguration configuration, ICheckoutSessionService checkoutSessionService, IStoreDbService storeDbService, IOrderDbService orderDbService) : IVNPayService
     {
         public string CreatePaymentUrl(decimal amount, string orderId, string orderInfo)
         {
@@ -32,6 +34,20 @@ namespace ResiBuy.Server.Services.VNPayServices
             var url = $"{configuration.GetValue<string>("VnPay:BaseUrl")}?{queryString}";
             return url;
         }
+
+
+        public async Task<string> CustomerPay(Guid orderId)
+        {
+            var order = await orderDbService.GetById(orderId);
+            if (order == null)
+                throw new CustomException(ExceptionErrorCode.NotFound, "order not found");
+
+            var amount = order.TotalPrice;
+
+            var orderInfo = $"Thanh toan phi cua hang {orderId}";
+            return CreatePaymentUrl(amount, orderId.ToString(), orderInfo);
+        }
+
 
         public async Task<string> StorePayFee(Guid storeId)
         {
