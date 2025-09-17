@@ -608,6 +608,7 @@ const SellPage: React.FC = () => {
         boxShadow={2}
       >
         <CheckoutSidebar
+          cartId={tabs[currentTab]?.id} // ✅ Truyền cartId hiện tại
           total={total}
           discount={totalDiscount}
           onCheckout={() => alert("Thanh toán thành công!")}

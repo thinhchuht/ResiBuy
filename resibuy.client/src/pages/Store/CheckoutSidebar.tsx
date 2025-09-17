@@ -11,40 +11,53 @@ import {
   DialogContent,
   DialogActions,
 } from "@mui/material";
-import userApi from "../../api/user.api"; // API FE gọi BE
+import userApi from "../../api/user.api";
+import cartApi from "../../api/cart.api";
 
 type CheckoutSidebarProps = {
   total: number;
   discount: number;
   onCheckout: () => void;
+  cartId: string; // 🔹 truyền cartId từ props
 };
 
 const CheckoutSidebar: React.FC<CheckoutSidebarProps> = ({
   total,
   discount,
   onCheckout,
+  cartId,
 }) => {
   const [customerPaid, setCustomerPaid] = useState<number>(total);
-  const [customer, setCustomer] = useState<any>(null);
+
+  // State khách hàng
+  const [customer, setCustomer] = useState<any | null>(null);
   const [openDialog, setOpenDialog] = useState(false);
   const [phoneInput, setPhoneInput] = useState("");
 
-  const finalAmount = total - discount;
-  const change = customerPaid - finalAmount;
-
   // 🔎 Tìm khách hàng theo số điện thoại
   const handleSearchCustomer = async () => {
-    if (!phoneInput) return;
+    if (!phoneInput.trim()) return;
 
-    const res = await userApi.getUserByPhone(phoneInput);
-    if (res.error) {
-      alert(res.error.message);
-      setCustomer(null);
-    } else {
-      setCustomer(res.data); // ResponseModel.Data
-      setOpenDialog(false);
+    try {
+      const res = await userApi.getUserByPhone(phoneInput);
+      if (res.error) {
+        alert(res.error.message);
+        setCustomer(null);
+      } else {
+        const foundCustomer = res.data;
+        // ✅ Update cart với userId
+        await cartApi.updateUserInCart(cartId, foundCustomer.id);
+
+        setCustomer(foundCustomer);
+        setOpenDialog(false);
+      }
+    } catch (err: any) {
+      alert(err?.error?.message || "Lỗi khi tìm khách hàng");
     }
   };
+
+  const finalAmount = total - discount;
+  const change = customerPaid - finalAmount;
 
   return (
     <Box flex={1} p={2} component={Paper} elevation={2}>
@@ -55,6 +68,14 @@ const CheckoutSidebar: React.FC<CheckoutSidebarProps> = ({
         <Box>
           <Typography>Họ tên: {customer.fullName}</Typography>
           <Typography>SĐT: {customer.phoneNumber}</Typography>
+          <Button
+            variant="outlined"
+            size="small"
+            sx={{ mt: 1 }}
+            onClick={() => setOpenDialog(true)}
+          >
+            Đổi khách hàng
+          </Button>
         </Box>
       ) : (
         <Box>
@@ -120,6 +141,7 @@ const CheckoutSidebar: React.FC<CheckoutSidebarProps> = ({
         <DialogTitle>Thêm khách hàng</DialogTitle>
         <DialogContent>
           <Box display="flex" flexDirection="column" gap={2} mt={1}>
+            {/* Khách vãng lai */}
             <Button
               variant="outlined"
               onClick={() => {
@@ -130,6 +152,7 @@ const CheckoutSidebar: React.FC<CheckoutSidebarProps> = ({
               Khách vãng lai
             </Button>
 
+            {/* Thêm mới khách hàng */}
             <Button
               variant="outlined"
               onClick={() => {
@@ -140,6 +163,7 @@ const CheckoutSidebar: React.FC<CheckoutSidebarProps> = ({
               Thêm mới khách hàng
             </Button>
 
+            {/* Nhập số điện thoại để tìm */}
             <TextField
               label="Nhập số điện thoại"
               value={phoneInput}

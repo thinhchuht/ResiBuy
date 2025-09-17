@@ -159,5 +159,12 @@ namespace ResiBuy.Server.Controllers
             return Ok(result);
         }
 
+
+        public class UpdateCartUserRequest
+        {
+            public string UserId { get; set; }
+        }
+
+
     }
 }

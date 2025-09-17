@@ -63,6 +63,28 @@ const cartApi = {
       data: cartItemIds,
     });
   },
+
+  updateUserInCart: async (cartId: string, userId: string) => {
+    try {
+      const response = await axiosClient.put(
+        `/cart/${cartId}/update-user`,
+        userId,
+        {
+          headers: { "Content-Type": "application/json" },
+        }
+      );
+      return response.data;
+    } catch (error: any) {
+      return {
+        error: {
+          message:
+            error.response?.data?.message ||
+            error.message ||
+            "Cập nhật user cho giỏ hàng thất bại",
+        },
+      };
+    }
+  },
 };
 
 export default cartApi;
