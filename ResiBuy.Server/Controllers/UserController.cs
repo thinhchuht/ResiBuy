@@ -30,6 +30,14 @@ namespace ResiBuy.Server.Controllers
             return Ok(result);
         }
 
+        [HttpGet("by-phone")]
+        public async Task<IActionResult> GetCustomerByPhone([FromQuery] string phone)
+        {
+            var result = await mediator.Send(new GetCustomerByPhoneQuery(phone));
+            return Ok(result);
+        }
+
+
         //[Authorize(Roles = Constants.AdminRole)]
         [HttpPost]
         public async Task<IActionResult> CreateAsync([FromBody] RegisterDto dto)

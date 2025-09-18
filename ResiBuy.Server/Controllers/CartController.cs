@@ -1,4 +1,5 @@
 using ResiBuy.Server.Application.Commands.CartCommands;
+using ResiBuy.Server.Application.Commands.CartCommands.Dtos;
 using ResiBuy.Server.Application.Queries.CartQueries;
 using ResiBuy.Server.Infrastructure.Model.DTOs.CartDtos;
 
@@ -22,6 +23,21 @@ namespace ResiBuy.Server.Controllers
                 return BadRequest(ResponseModel.ExceptionResponse(ex.ToString()));
             }
         }
+
+        [HttpGet]
+        public async Task<IActionResult> GetAllCartInShop()
+        {
+            try
+            {
+                var result = await mediator.Send(new GetCartInShopQuery());
+                return Ok(result);
+            }
+            catch (Exception ex)
+            {
+                return BadRequest(ResponseModel.ExceptionResponse(ex.ToString()));
+            }
+        }
+
         [HttpGet("{id}/status")]
         public async Task<IActionResult> GetStatusById(Guid id)
         {
@@ -61,6 +77,23 @@ namespace ResiBuy.Server.Controllers
                 return BadRequest(ResponseModel.ExceptionResponse(ex.ToString()));
             }
         }
+
+        [HttpPost("{id}")]
+        public async Task<IActionResult> AddItemToCart(Guid? id, [FromBody] AddToCartDto? addToCartDto)
+        {
+            try
+            {
+                var cartId = id ?? Guid.NewGuid(); // n?u không có id thì t?o m?i
+                var result = await mediator.Send(new AddItemToCartCommand(cartId, addToCartDto));
+                return Ok(result);
+            }
+            catch (Exception ex)
+            {
+                return BadRequest(ResponseModel.ExceptionResponse(ex.ToString()));
+            }
+        }
+
+
         [HttpPost("reset-status")]
         public async Task<IActionResult> ResetStatus( [FromBody] List<Guid> ids)
         {
@@ -87,6 +120,8 @@ namespace ResiBuy.Server.Controllers
                 return BadRequest(ResponseModel.ExceptionResponse(ex.ToString()));
             }
         }
+
+
         [HttpGet("{cartId}/items/count")]
         public async Task<IActionResult> CountCartItems(Guid cartId)
         {
@@ -100,5 +135,36 @@ namespace ResiBuy.Server.Controllers
                 return BadRequest(ResponseModel.ExceptionResponse(ex.ToString()));
             }
         }
+
+        [HttpDelete("{cartId:guid}")]
+        public async Task<IActionResult> DeleteCart(Guid cartId)
+        {
+            var command = new DeleteCartCommand(new ClearCartCommand { CartId = cartId });
+            var result = await mediator.Send(command);
+
+            return Ok(result);
+        }
+
+        [HttpDelete("{cartId:guid}/items")]
+        public async Task<IActionResult> DeleteCartItems(Guid cartId, [FromBody] List<Guid> cartItemIds)
+        {
+            var command = new DeleteCartItemsByCartCommand(
+                new DeleteCartItemsByCartCommandDto
+                {
+                    CartId = cartId,
+                    CartItemIds = cartItemIds
+                });
+
+            var result = await mediator.Send(command);
+            return Ok(result);
+        }
+
+
+        public class UpdateCartUserRequest
+        {
+            public string UserId { get; set; }
+        }
+
+
     }
 }

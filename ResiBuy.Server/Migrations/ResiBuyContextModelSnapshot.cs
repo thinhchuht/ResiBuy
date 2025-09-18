@@ -43,7 +43,7 @@ namespace ResiBuy.Server.Migrations
 
                     b.HasIndex("ProductDetailId");
 
-                    b.ToTable("AdditionalDatas");
+                    b.ToTable("AdditionalDatas", (string)null);
                 });
 
             modelBuilder.Entity("ResiBuy.Server.Infrastructure.Model.Area", b =>
@@ -66,7 +66,7 @@ namespace ResiBuy.Server.Migrations
 
                     b.HasKey("Id");
 
-                    b.ToTable("Areas");
+                    b.ToTable("Areas", (string)null);
 
                     b.HasData(
                         new
@@ -119,7 +119,7 @@ namespace ResiBuy.Server.Migrations
 
                     b.HasIndex("AreaId");
 
-                    b.ToTable("Buildings");
+                    b.ToTable("Buildings", (string)null);
 
                     b.HasData(
                         new
@@ -155,7 +155,7 @@ namespace ResiBuy.Server.Migrations
                         .IsUnique()
                         .HasFilter("[UserId] IS NOT NULL");
 
-                    b.ToTable("Carts");
+                    b.ToTable("Carts", (string)null);
                 });
 
             modelBuilder.Entity("ResiBuy.Server.Infrastructure.Model.CartItem", b =>
@@ -179,7 +179,7 @@ namespace ResiBuy.Server.Migrations
 
                     b.HasIndex("ProductDetailId");
 
-                    b.ToTable("CartItems");
+                    b.ToTable("CartItems", (string)null);
                 });
 
             modelBuilder.Entity("ResiBuy.Server.Infrastructure.Model.Category", b =>
@@ -196,7 +196,7 @@ namespace ResiBuy.Server.Migrations
 
                     b.HasKey("Id");
 
-                    b.ToTable("Categories");
+                    b.ToTable("Categories", (string)null);
 
                     b.HasData(
                         new
@@ -292,7 +292,7 @@ namespace ResiBuy.Server.Migrations
 
                     b.HasIndex("StoreId");
 
-                    b.ToTable("Event");
+                    b.ToTable("Event", (string)null);
                 });
 
             modelBuilder.Entity("ResiBuy.Server.Infrastructure.Model.Image", b =>
@@ -332,7 +332,7 @@ namespace ResiBuy.Server.Migrations
                         .IsUnique()
                         .HasFilter("[UserId] IS NOT NULL");
 
-                    b.ToTable("Images");
+                    b.ToTable("Images", (string)null);
 
                     b.HasData(
                         new
@@ -445,7 +445,7 @@ namespace ResiBuy.Server.Migrations
 
                     b.HasKey("Id");
 
-                    b.ToTable("Notifications");
+                    b.ToTable("Notifications", (string)null);
                 });
 
             modelBuilder.Entity("ResiBuy.Server.Infrastructure.Model.Order", b =>
@@ -511,7 +511,7 @@ namespace ResiBuy.Server.Migrations
 
                     b.HasIndex("VoucherId");
 
-                    b.ToTable("Orders");
+                    b.ToTable("Orders", (string)null);
                 });
 
             modelBuilder.Entity("ResiBuy.Server.Infrastructure.Model.OrderItem", b =>
@@ -538,7 +538,7 @@ namespace ResiBuy.Server.Migrations
 
                     b.HasIndex("ProductDetailId");
 
-                    b.ToTable("OrderItems");
+                    b.ToTable("OrderItems", (string)null);
                 });
 
             modelBuilder.Entity("ResiBuy.Server.Infrastructure.Model.Product", b =>
@@ -587,7 +587,7 @@ namespace ResiBuy.Server.Migrations
 
                     b.HasIndex("StoreId");
 
-                    b.ToTable("Products");
+                    b.ToTable("Products", (string)null);
                 });
 
             modelBuilder.Entity("ResiBuy.Server.Infrastructure.Model.ProductDetail", b =>
@@ -620,7 +620,7 @@ namespace ResiBuy.Server.Migrations
 
                     b.HasIndex("ProductId");
 
-                    b.ToTable("ProductDetails");
+                    b.ToTable("ProductDetails", (string)null);
                 });
 
             modelBuilder.Entity("ResiBuy.Server.Infrastructure.Model.Promotion", b =>
@@ -692,7 +692,7 @@ namespace ResiBuy.Server.Migrations
 
                     b.HasIndex("UserId");
 
-                    b.ToTable("RefreshTokens");
+                    b.ToTable("RefreshTokens", (string)null);
                 });
 
             modelBuilder.Entity("ResiBuy.Server.Infrastructure.Model.Report", b =>
@@ -732,7 +732,7 @@ namespace ResiBuy.Server.Migrations
                     b.HasIndex("OrderId")
                         .IsUnique();
 
-                    b.ToTable("Reports");
+                    b.ToTable("Reports", (string)null);
                 });
 
             modelBuilder.Entity("ResiBuy.Server.Infrastructure.Model.Review", b =>
@@ -768,7 +768,7 @@ namespace ResiBuy.Server.Migrations
 
                     b.HasIndex("UserId");
 
-                    b.ToTable("Reviews");
+                    b.ToTable("Reviews", (string)null);
                 });
 
             modelBuilder.Entity("ResiBuy.Server.Infrastructure.Model.Room", b =>
@@ -790,7 +790,7 @@ namespace ResiBuy.Server.Migrations
 
                     b.HasIndex("BuildingId");
 
-                    b.ToTable("Rooms");
+                    b.ToTable("Rooms", (string)null);
 
                     b.HasData(
                         new
@@ -846,7 +846,7 @@ namespace ResiBuy.Server.Migrations
                         .IsUnique()
                         .HasFilter("[UserId] IS NOT NULL");
 
-                    b.ToTable("Shippers");
+                    b.ToTable("Shippers", (string)null);
                 });
 
             modelBuilder.Entity("ResiBuy.Server.Infrastructure.Model.Store", b =>
@@ -888,7 +888,7 @@ namespace ResiBuy.Server.Migrations
 
                     b.HasIndex("RoomId");
 
-                    b.ToTable("Stores");
+                    b.ToTable("Stores", (string)null);
 
                     b.HasData(
                         new
@@ -927,7 +927,7 @@ namespace ResiBuy.Server.Migrations
 
                     b.HasIndex("ShipperId");
 
-                    b.ToTable("TimeSheets");
+                    b.ToTable("TimeSheets", (string)null);
                 });
 
             modelBuilder.Entity("ResiBuy.Server.Infrastructure.Model.User", b =>
@@ -973,7 +973,7 @@ namespace ResiBuy.Server.Migrations
 
                     b.HasKey("Id");
 
-                    b.ToTable("Users");
+                    b.ToTable("Users", (string)null);
 
                     b.HasData(
                         new
@@ -1005,7 +1005,7 @@ namespace ResiBuy.Server.Migrations
 
                     b.HasIndex("NotificationId");
 
-                    b.ToTable("UserNotifications");
+                    b.ToTable("UserNotifications", (string)null);
                 });
 
             modelBuilder.Entity("ResiBuy.Server.Infrastructure.Model.UserRoom", b =>
@@ -1020,7 +1020,7 @@ namespace ResiBuy.Server.Migrations
 
                     b.HasIndex("RoomId");
 
-                    b.ToTable("UserRooms");
+                    b.ToTable("UserRooms", (string)null);
                 });
 
             modelBuilder.Entity("ResiBuy.Server.Infrastructure.Model.UserVoucher", b =>
@@ -1035,7 +1035,7 @@ namespace ResiBuy.Server.Migrations
 
                     b.HasIndex("VoucherId");
 
-                    b.ToTable("UserVouchers");
+                    b.ToTable("UserVouchers", (string)null);
                 });
 
             modelBuilder.Entity("ResiBuy.Server.Infrastructure.Model.Voucher", b =>
@@ -1075,7 +1075,7 @@ namespace ResiBuy.Server.Migrations
 
                     b.HasIndex("StoreId");
 
-                    b.ToTable("Vouchers");
+                    b.ToTable("Vouchers", (string)null);
                 });
 
             modelBuilder.Entity("ResiBuy.Server.Infrastructure.Model.AdditionalData", b =>

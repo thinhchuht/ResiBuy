@@ -1,4 +1,3 @@
-
 namespace ResiBuy.Server.Infrastructure.DbServices.CartItemDbService
 {
     public class CartItemDbService : BaseDbService<CartItem>, ICartItemDbService
@@ -59,6 +58,9 @@ namespace ResiBuy.Server.Infrastructure.DbServices.CartItemDbService
                     .ThenInclude(p => p.Product)
                     .Include(ci => ci.ProductDetail)
                     .ThenInclude(p => p.AdditionalData)
+                    .Include(ci => ci.ProductDetail)
+                    .ThenInclude(pd=>pd.Product)
+                    .ThenInclude(p=>p.Promotion)
                     .AsQueryable();
 
                 var totalCount = await query.CountAsync();
@@ -115,6 +117,20 @@ namespace ResiBuy.Server.Infrastructure.DbServices.CartItemDbService
                     .ThenInclude(pd => pd.AdditionalData)
                 .Include(ci => ci.Cart)
                 .ToListAsync();
+        }
+
+        public async Task<bool> DeleteByCartIdAndItemIdsAsync(Guid cartId, List<Guid> cartItemIds)
+        {
+            var items = await _context.CartItems
+        .Where(ci => ci.CartId == cartId && cartItemIds.Contains(ci.Id))
+        .ToListAsync();
+
+            if (!items.Any())
+                return false;
+
+            _context.CartItems.RemoveRange(items);
+            await _context.SaveChangesAsync();
+            return true;
         }
     }
 }

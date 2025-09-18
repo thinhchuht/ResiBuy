@@ -150,68 +150,75 @@ export default function UpdateProduct() {
     const [classifies, setClassifies] = useState<Classify[]>([]);
 
     // Load data on component mount
-    useEffect(() => {
-        const loadData = async () => {
-            try {
-                setLoading(true);
-                await Promise.all([loadCategories(), loadPromotions()]);
+   useEffect(() => {
+    const loadData = async () => {
+        try {
+            setLoading(true);
+            await Promise.all([loadCategories(), loadPromotions()]);
 
-                // Load product data if editing
-                if (productId) {
-                    const productRes = await axiosClient.get(`api/Product/${productId}`);
-                    if (productRes.status === 200) {
-                        const productData = productRes.data.data;
-                        setProduct({
-                            ...productData,
-                            storeId: storeId || productData.storeId,
-                            promotionId: productData.promotionId || 0,
+            if (productId) {
+                const productRes = await axiosClient.get(`api/Product/${productId}`);
+                if (productRes.status === 200) {
+                    const productData = productRes.data.data;
+                    setProduct({
+                        ...productData,
+                        storeId: storeId || productData.storeId,
+                        promotionId: productData.promotionId || 0,
+                    });
+
+                    const tempProductDetails: ProductDetailInput[] = productData.productDetails.map(detail => ({
+                        id: detail.id,
+                        price: detail.price,
+                        weight: detail.weight,
+                        quantity: detail.quantity,
+                        isOutOfStock: detail.isOutOfStock,
+                        image: detail.image,
+                        additionalData: detail.additionalData,
+                        barcodes: detail.barcodes.map(barcode => barcode.code ?? ''), // Xử lý null/undefined
+                    })) || [];
+
+                    setListProductDetail(tempProductDetails);
+
+                    const classifyMap: Record<string, Set<string>> = {};
+
+                    tempProductDetails.forEach((detail) => {
+                        detail.additionalData.forEach((data) => {
+                            if (!classifyMap[data.key]) {
+                                classifyMap[data.key] = new Set();
+                            }
+                            classifyMap[data.key].add(data.value);
                         });
+                    });
 
-                        const tempProductDetails: ProductDetailInput[] = productData.productDetails || [];
-                        setListProductDetail(tempProductDetails);
-
-                        // Convert classify from productDetails
-                        const classifyMap: Record<string, Set<string>> = {};
-
-                        tempProductDetails.forEach((detail) => {
-                            detail.additionalData.forEach((data) => {
-                                if (!classifyMap[data.key]) {
-                                    classifyMap[data.key] = new Set();
-                                }
-                                classifyMap[data.key].add(data.value);
-                            });
-                        });
-
-                        const newClassifies: Classify[] = Object.entries(classifyMap).map(
-                            ([key, values]) => ({
-                                key,
-                                value: Array.from(values).map((val) => ({
-                                    text: val,
-                                    isEdit: false,
-                                })),
+                    const newClassifies: Classify[] = Object.entries(classifyMap).map(
+                        ([key, values]) => ({
+                            key,
+                            value: Array.from(values).map((val) => ({
+                                text: val,
                                 isEdit: false,
-                            })
-                        );
+                            })),
+                            isEdit: false,
+                        })
+                    );
 
-                        setClassifies(newClassifies);
-                    }
-                } else {
-                    // Set default storeId for new product
-                    setProduct((prev) => ({
-                        ...prev,
-                        storeId: storeId || "",
-                    }));
+                    setClassifies(newClassifies);
                 }
-            } catch (err) {
-                console.error("Error loading data:", err);
-                showError("Không thể tải dữ liệu. Vui lòng thử lại!");
-            } finally {
-                setLoading(false);
+            } else {
+                setProduct((prev) => ({
+                    ...prev,
+                    storeId: storeId || "",
+                }));
             }
-        };
+        } catch (err) {
+            console.error("Error loading data:", err);
+            showError("Không thể tải dữ liệu. Vui lòng thử lại!");
+        } finally {
+            setLoading(false);
+        }
+    };
 
-        loadData();
-    }, [productId, storeId]);
+    loadData();
+}, [productId, storeId]);
 
     const loadCategories = async () => {
         try {

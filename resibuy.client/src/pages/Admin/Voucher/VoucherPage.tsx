@@ -52,6 +52,7 @@ interface Voucher {
   endDate: string;
   isActive: boolean;
 }
+const storeId = "44444444-4444-4444-4444-444444444444";
 
 interface VoucherQueryParams {
   storeId: string;
@@ -69,7 +70,7 @@ const VoucherPage: React.FC = () => {
   const [minOrderPrice, setMinOrderPrice] = useState("");
   const [startDate, setStartDate] = useState("");
   const [endDate, setEndDate] = useState("");
-  const { storeId } = useParams<{ storeId: string }>();
+  // const { storeId } = useParams<{ storeId: string }>();
   const navigate = useNavigate();
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -200,11 +201,11 @@ const VoucherPage: React.FC = () => {
   };
 
   const handleCreate = () => {
-    navigate(`/store/${storeId}/voucher-create`);
+    navigate(`/admin/voucher-create`);
   };
 
   const handleUpdate = (id: string) => {
-    navigate(`/store/${storeId}/voucher-update/${id}`);
+    navigate(`/admin/voucher-update/${id}`);
   };
 
   const handleClearFilters = () => {
@@ -266,9 +267,9 @@ const VoucherPage: React.FC = () => {
                   <RefreshIcon />
                 </IconButton>
               </Tooltip>
-              {/* <Button variant="contained" color="primary" onClick={handleCreate} size="large">
+              <Button variant="contained" color="primary" onClick={handleCreate} size="large">
                 Thêm voucher
-              </Button> */}
+              </Button>
             </Stack>
           }
         />
@@ -359,9 +360,9 @@ const VoucherPage: React.FC = () => {
                   <TableCell>
                     <strong>Trạng thái</strong>
                   </TableCell>
-                  {/* <TableCell align="center">
+                  <TableCell align="center">
                     <strong>Thao tác</strong>
-                  </TableCell> */}
+                  </TableCell>
                 </TableRow>
               </TableHead>
               <TableBody>
@@ -449,16 +450,16 @@ const VoucherPage: React.FC = () => {
                         <TableCell>
                           <Stack spacing={1} alignItems="flex-start">
                             <Chip label={getStatusLabel(status)} size="small" color={getStatusColor(status)} variant="filled" />
-                            {/* <Switch checked={voucher.isActive} onChange={() => handleToggleStatus(voucher)} color="primary" size="small" /> */}
+                            <Switch checked={voucher.isActive} onChange={() => handleToggleStatus(voucher)} color="primary" size="small" />
                           </Stack>
                         </TableCell>
                         <TableCell align="center">
                           <Stack direction="row" spacing={0.5} justifyContent="center">
-                            {/* <Tooltip title="Chỉnh sửa">
+                            <Tooltip title="Chỉnh sửa">
                               <IconButton size="small" onClick={() => handleUpdate(voucher.id)} color="primary">
                                 <EditIcon fontSize="small" />
                               </IconButton>
-                            </Tooltip> */}
+                            </Tooltip>
                             <Tooltip title="Xóa">
                               <IconButton size="small" onClick={() => setDeleteDialog({ open: true, voucher })} color="error" disabled={status === "active"}></IconButton>
                             </Tooltip>

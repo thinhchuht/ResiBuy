@@ -67,8 +67,8 @@ export function StatisticsSection({ startTime, endTime }: StatisticsSectionProps
     switch (activeTab) {
       case "customers":
         return "Top 20 Khách Hàng Nhiều Đơn Nhất";
-      case "stores":
-        return "Top 20 Cửa Hàng Nhiều Đơn Nhất";
+      // case "stores":
+      //   return "Top 20 Cửa Hàng Nhiều Đơn Nhất";
       case "products":
         return "Top 20 Sản Phẩm Nhiều Đơn Nhất";
       default:

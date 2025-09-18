@@ -1,3 +1,5 @@
+using Microsoft.EntityFrameworkCore;
+
 namespace ResiBuy.Server.Configuration
 {
     public class ProductConfig : IEntityTypeConfiguration<Product>
@@ -13,6 +15,13 @@ namespace ResiBuy.Server.Configuration
                    .WithMany(c => c.Products)
                    .HasForeignKey(p => p.CategoryId)
                    .OnDelete(DeleteBehavior.Restrict);
+
+            builder.HasOne(p => p.Promotion)
+        .WithMany(pr => pr.Products)
+        .HasForeignKey(p => p.PromotionId)
+        .OnDelete(DeleteBehavior.SetNull);
+
+
 
         }
     }
