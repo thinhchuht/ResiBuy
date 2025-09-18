@@ -1,4 +1,3 @@
-// StorePage.tsx
 import React, { useState } from "react";
 import {
   Box,
@@ -41,12 +40,13 @@ import PromotionListPage from "./Promotion/PromotionListPage.tsx";
 import PromotionCreatePage from "./Promotion/PromotionCreatePage.tsx";
 import PromotionUpdatePage from "./Promotion/PromotionUpdatePage.tsx";
 import SellPage from "./SellPage";
+import ViewProduct from "./ViewProduct.tsx";
 
 // Interface cho route config
 interface RouteConfig {
   title: string;
   icon: string;
-  parent?: string; // Optional parent property
+  parent?: string;
 }
 
 // Route configuration với breadcrumb info
@@ -101,6 +101,7 @@ const ScrollToTop: React.FC = () => {
           bottom: 16,
           right: 16,
           zIndex: 1000,
+          '@media print': { display: 'none !important' },
         }}
       >
         <KeyboardArrowUpIcon />
@@ -113,7 +114,6 @@ const ScrollToTop: React.FC = () => {
 const PageBreadcrumbs: React.FC<{ storeId: string }> = ({ storeId }) => {
   const location = useLocation();
 
-  // Parse current path to get route segments
   const pathSegments = location.pathname
     .replace(`/store/${storeId}`, "")
     .split("/")
@@ -132,7 +132,6 @@ const PageBreadcrumbs: React.FC<{ storeId: string }> = ({ storeId }) => {
     },
   ];
 
-  // Add parent route if exists
   if (currentConfig.parent) {
     const parentConfig = routeConfig[currentConfig.parent];
     if (parentConfig) {
@@ -144,7 +143,6 @@ const PageBreadcrumbs: React.FC<{ storeId: string }> = ({ storeId }) => {
     }
   }
 
-  // Add current route
   breadcrumbItems.push({
     title: currentConfig.title,
     icon: currentConfig.icon,
@@ -159,6 +157,7 @@ const PageBreadcrumbs: React.FC<{ storeId: string }> = ({ storeId }) => {
         mb: 3,
         background: "linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%)",
         borderRadius: 2,
+        '@media print': { display: 'none !important' },
       }}
     >
       <Breadcrumbs separator="›" sx={{ color: "text.primary" }}>
@@ -224,9 +223,10 @@ const StorePage: React.FC = () => {
           alignItems: "center",
           height: "100vh",
           background: "linear-gradient(135deg, #667eea 0%, #764ba2 100%)",
+          '@media print': { display: 'none !important' },
         }}
       >
-        <Paper sx={{ p: 4, textAlign: "center" }}>
+        <Paper sx={{ p: 4, textAlign: "center", '@media print': { display: 'none !important' } }}>
           <Typography variant="h5" color="error" gutterBottom>
             Lỗi: Không tìm thấy ID cửa hàng
           </Typography>
@@ -239,10 +239,9 @@ const StorePage: React.FC = () => {
   }
 
   return (
-    <Box sx={{ display: "flex" }}>
+    <Box sx={{ display: "flex", '@media print': { display: 'none !important' } }}>
       <CssBaseline />
 
-      {/* Mobile menu button */}
       {isMobile && (
         <IconButton
           color="primary"
@@ -257,13 +256,13 @@ const StorePage: React.FC = () => {
             "&:hover": {
               backgroundColor: "background.paper",
             },
+            '@media print': { display: 'none !important' },
           }}
         >
           <MenuIcon />
         </IconButton>
       )}
 
-      {/* Sidebar */}
       <Sidebar
         open={isMobile ? mobileOpen : true}
         onClose={handleDrawerClose}
@@ -271,7 +270,6 @@ const StorePage: React.FC = () => {
         width={280}
       />
 
-      {/* Main content */}
       <Box
         component="main"
         sx={{
@@ -285,6 +283,7 @@ const StorePage: React.FC = () => {
           ...(isMobile && {
             width: "100%",
           }),
+          '@media print': { display: 'none !important' },
         }}
       >
         <Container
@@ -293,12 +292,11 @@ const StorePage: React.FC = () => {
             pt: isMobile ? 8 : 3,
             pb: 3,
             px: { xs: 2, sm: 3 },
+            '@media print': { display: 'none !important' },
           }}
         >
-          {/* Breadcrumbs */}
           <PageBreadcrumbs storeId={storeId} />
 
-          {/* Page content */}
           <Box
             sx={{
               minHeight: "calc(100vh - 200px)",
@@ -315,6 +313,7 @@ const StorePage: React.FC = () => {
                   transform: "translateY(0)",
                 },
               },
+              '@media print': { display: 'none !important' },
             }}
           >
             <Routes>
@@ -335,23 +334,21 @@ const StorePage: React.FC = () => {
               <Route path="chart-view" element={<ChartView />} />
               <Route
                 path="product-detail/:productId"
-                element={<ProductDetailPage />}
+                element={<ViewProduct />}
               />
-                <Route
-                    path="promotion-update/:promotionId"
-                    element={<PromotionUpdatePage />}
-                />
-                <Route
-                    path="promotion-create"
-                    element={<PromotionCreatePage />}
-                />
-                <Route path="promotions" element={<PromotionListPage />} />
+              <Route
+                path="promotion-update/:promotionId"
+                element={<PromotionUpdatePage />}
+              />
+              <Route
+                path="promotion-create"
+                element={<PromotionCreatePage />}
+              />
+              <Route path="promotions" element={<PromotionListPage />} />
               <Route
                 path="sell"
                 element={<SellPage />}
               />
-
-              {/* 404 Route */}
               <Route
                 path="*"
                 element={
@@ -361,6 +358,7 @@ const StorePage: React.FC = () => {
                       textAlign: "center",
                       background:
                         "linear-gradient(135deg, #ff9a9e 0%, #fecfef 100%)",
+                      '@media print': { display: 'none !important' },
                     }}
                   >
                     <Typography variant="h4" gutterBottom>
@@ -397,7 +395,6 @@ const StorePage: React.FC = () => {
           </Box>
         </Container>
 
-        {/* Scroll to top button */}
         <ScrollToTop />
       </Box>
     </Box>

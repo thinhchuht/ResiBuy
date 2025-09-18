@@ -10,5 +10,6 @@
         public int Quantity { get; set; } 
         public ImageQueriesDto Image { get; set; }
         public List<AdditionalDataQueriesDto> AdditionalData { get; set; }
+        public List<BarcodeDto> Barcodes { get; init; }
     }
 }

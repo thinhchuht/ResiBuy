@@ -116,7 +116,6 @@ const ProductPage: React.FC = () => {
   const { storeId } = useParams<{ storeId: string }>();
   const navigate = useNavigate();
 
-  // Giới hạn giá tối đa
   const MAX_PRICE_LIMIT = 10000000000;
 
   const fetchProducts = async (searchText = "", minPrice?: number, maxPrice?: number, categoryId?: string) => {
@@ -187,7 +186,6 @@ const ProductPage: React.FC = () => {
   };
 
   const handlePriceInputChange = (value: string, type: "min" | "max") => {
-    // Chỉ cho phép nhập số
     const numericValue = value.replace(/[^0-9]/g, "");
 
     if (type === "min") {
@@ -202,7 +200,6 @@ const ProductPage: React.FC = () => {
   const handleFilterSubmit = (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
 
-    // Validate giá trước khi submit
     const minError = validatePriceInput(minPriceInput, "min");
     const maxError = validatePriceInput(maxPriceInput, "max");
     const rangeError = validatePriceRange();
@@ -210,7 +207,6 @@ const ProductPage: React.FC = () => {
     setMinPriceError(minError);
     setMaxPriceError(maxError);
 
-    // Kiểm tra lỗi validation
     if (minError || maxError || rangeError) {
       if (rangeError) {
         alert(rangeError);
@@ -306,7 +302,6 @@ const ProductPage: React.FC = () => {
 
   return (
     <Box sx={{ p: 3, backgroundColor: "#f8fafc", minHeight: "100vh" }}>
-      {/* Enhanced Confirmation Dialog */}
       <Dialog
         open={openConfirmDialog}
         onClose={handleCloseConfirmDialog}
@@ -399,7 +394,7 @@ const ProductPage: React.FC = () => {
           </DialogActions>
         </Box>
       </Dialog>
-      {/* Header Section */}
+
       <Paper
         elevation={0}
         sx={{
@@ -441,7 +436,6 @@ const ProductPage: React.FC = () => {
         </Box>
       </Paper>
 
-      {/* Stats Overview */}
       <Box
         sx={{
           display: "flex",
@@ -530,7 +524,6 @@ const ProductPage: React.FC = () => {
         </Card>
       </Box>
 
-      {/* Filter Section */}
       <Card sx={{ mb: 3, borderRadius: 2, border: "1px solid #e2e8f0" }}>
         <CardHeader
           title={
@@ -560,7 +553,6 @@ const ProductPage: React.FC = () => {
           <Divider />
           <CardContent>
             <Box component="form" onSubmit={handleFilterSubmit} display="flex" flexDirection="column" gap={3}>
-              {/* Search and Category Row */}
               <Box
                 sx={{
                   display: "flex",
@@ -636,7 +628,6 @@ const ProductPage: React.FC = () => {
                 </Button>
               </Box>
 
-              {/* Price Range */}
               <Box>
                 <Box display="flex" alignItems="center" gap={1} mb={2}>
                   <MoneyIcon color="action" />
@@ -645,7 +636,6 @@ const ProductPage: React.FC = () => {
                   </Typography>
                 </Box>
 
-                {/* Alert for price limit */}
                 <Alert severity="info" sx={{ mb: 2, fontSize: "0.875rem" }} icon={<WarningIcon fontSize="small" />}>
                   <Typography variant="body2">
                     • Chỉ nhập số, không âm và không vượt quá {formatPrice(MAX_PRICE_LIMIT)}
@@ -700,7 +690,6 @@ const ProductPage: React.FC = () => {
                   />
                 </Box>
 
-                {/* Price range preview */}
                 {(minPriceInput || maxPriceInput) && !hasValidationErrors() && (
                   <Box mt={2}>
                     <Typography variant="caption" color="primary.main" sx={{ fontWeight: 600 }}>
@@ -711,7 +700,6 @@ const ProductPage: React.FC = () => {
                   </Box>
                 )}
 
-                {/* Validation error for price range */}
                 {validatePriceRange() && (
                   <Alert severity="error" sx={{ mt: 2 }}>
                     {validatePriceRange()}
@@ -723,7 +711,6 @@ const ProductPage: React.FC = () => {
         </Collapse>
       </Card>
 
-      {/* Products Table */}
       {loading ? (
         <Card sx={{ p: 6, textAlign: "center", borderRadius: 2 }}>
           <CircularProgress size={48} />
@@ -916,6 +903,21 @@ const ProductPage: React.FC = () => {
 
                       <TableCell align="center">
                         <Box display="flex" gap={1} justifyContent="center">
+                          <Tooltip title="Xem chi tiết">
+                            <IconButton
+                              onClick={() => handleDetail(product.id)}
+                              sx={{
+                                color: "#0288d1",
+                                backgroundColor: "rgba(2, 136, 209, 0.08)",
+                                transition: "all 0.2s",
+                                "&:hover": {
+                                  backgroundColor: "rgba(2, 136, 209, 0.15)",
+                                  transform: "scale(1.1)",
+                                },
+                              }}>
+                              <VisibilityIcon />
+                            </IconButton>
+                          </Tooltip>
                           <Tooltip title="Chỉnh sửa">
                             <IconButton
                               onClick={() => handleEdit(product.id)}
@@ -931,7 +933,6 @@ const ProductPage: React.FC = () => {
                               <EditIcon />
                             </IconButton>
                           </Tooltip>
-
                           <Tooltip title={product.isOutOfStock ? "Mở bán" : "Dừng bán"}>
                             <IconButton
                               onClick={() => handleOpenConfirmDialog(product)}
@@ -944,8 +945,7 @@ const ProductPage: React.FC = () => {
                                   backgroundColor: product.isOutOfStock ? "rgba(16, 185, 129, 0.15)" : "rgba(239, 68, 68, 0.15)",
                                   transform: "scale(1.1)",
                                 },
-                              }}
-                              title={product.isOutOfStock ? "Mở bán" : "Dừng bán"}>
+                              }}>
                               {product.isOutOfStock ? <VisibilityIcon /> : <VisibilityOffIcon />}
                             </IconButton>
                           </Tooltip>
