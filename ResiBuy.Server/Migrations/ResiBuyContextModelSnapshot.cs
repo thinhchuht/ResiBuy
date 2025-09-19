@@ -43,7 +43,7 @@ namespace ResiBuy.Server.Migrations
 
                     b.HasIndex("ProductDetailId");
 
-                    b.ToTable("AdditionalDatas", (string)null);
+                    b.ToTable("AdditionalDatas");
                 });
 
             modelBuilder.Entity("ResiBuy.Server.Infrastructure.Model.Area", b =>
@@ -66,7 +66,7 @@ namespace ResiBuy.Server.Migrations
 
                     b.HasKey("Id");
 
-                    b.ToTable("Areas", (string)null);
+                    b.ToTable("Areas");
 
                     b.HasData(
                         new
@@ -90,10 +90,15 @@ namespace ResiBuy.Server.Migrations
                     b.Property<string>("Code")
                         .HasColumnType("nvarchar(max)");
 
+                    b.Property<Guid>("OrderItemId")
+                        .HasColumnType("uniqueidentifier");
+
                     b.Property<int>("ProductDetailId")
                         .HasColumnType("int");
 
                     b.HasKey("Id");
+
+                    b.HasIndex("OrderItemId");
 
                     b.HasIndex("ProductDetailId");
 
@@ -119,7 +124,7 @@ namespace ResiBuy.Server.Migrations
 
                     b.HasIndex("AreaId");
 
-                    b.ToTable("Buildings", (string)null);
+                    b.ToTable("Buildings");
 
                     b.HasData(
                         new
@@ -155,7 +160,7 @@ namespace ResiBuy.Server.Migrations
                         .IsUnique()
                         .HasFilter("[UserId] IS NOT NULL");
 
-                    b.ToTable("Carts", (string)null);
+                    b.ToTable("Carts");
                 });
 
             modelBuilder.Entity("ResiBuy.Server.Infrastructure.Model.CartItem", b =>
@@ -179,7 +184,7 @@ namespace ResiBuy.Server.Migrations
 
                     b.HasIndex("ProductDetailId");
 
-                    b.ToTable("CartItems", (string)null);
+                    b.ToTable("CartItems");
                 });
 
             modelBuilder.Entity("ResiBuy.Server.Infrastructure.Model.Category", b =>
@@ -196,72 +201,72 @@ namespace ResiBuy.Server.Migrations
 
                     b.HasKey("Id");
 
-                    b.ToTable("Categories", (string)null);
+                    b.ToTable("Categories");
 
                     b.HasData(
                         new
                         {
-                            Id = new Guid("d9de9b24-5543-4262-aac7-c148c80dfdfe"),
+                            Id = new Guid("39a9782f-feec-425c-be0d-67f40a3b65f5"),
                             Name = "Đồ điện tử",
                             Status = true
                         },
                         new
                         {
-                            Id = new Guid("feb872fa-9195-4ead-899e-753f90cba3fc"),
+                            Id = new Guid("b7aa5882-e732-472a-9568-78918d38b672"),
                             Name = "Thời trang",
                             Status = true
                         },
                         new
                         {
-                            Id = new Guid("dac507c8-2209-445e-9bc9-533a3b5f53a7"),
+                            Id = new Guid("8bc4e2cc-8fe0-4768-9e6b-ccd34e4b279f"),
                             Name = "Đồ gia dụng",
                             Status = true
                         },
                         new
                         {
-                            Id = new Guid("00e691b8-b6b8-4fcb-bc4d-c612f5f4ae60"),
+                            Id = new Guid("26e4baca-d351-44b7-87dd-f2b565ab6c32"),
                             Name = "Sách",
                             Status = true
                         },
                         new
                         {
-                            Id = new Guid("0124976d-6fd4-426a-965e-8248669b7b1c"),
+                            Id = new Guid("e8d34a9b-1e1e-4205-918c-5c426e121370"),
                             Name = "Thể thao",
                             Status = true
                         },
                         new
                         {
-                            Id = new Guid("6848695f-23a2-4340-ac7c-fafb55b6139c"),
+                            Id = new Guid("a9e26883-0e43-4aaf-bf28-cb48222186d7"),
                             Name = "Mỹ phẩm",
                             Status = true
                         },
                         new
                         {
-                            Id = new Guid("b7c6e2e2-ab4b-4ce8-80e3-f468ccf98127"),
+                            Id = new Guid("98204ec9-d85c-45d0-af1b-de9763eebf32"),
                             Name = "Đồ chơi",
                             Status = true
                         },
                         new
                         {
-                            Id = new Guid("b43c7856-e9f4-438b-933f-813e7c5bfa9f"),
+                            Id = new Guid("12c7d55e-1368-4cfe-9aa4-a388ef0b9536"),
                             Name = "Thực phẩm",
                             Status = true
                         },
                         new
                         {
-                            Id = new Guid("75e1a8bc-d4a1-4e28-9112-0e3a219e7990"),
+                            Id = new Guid("2d30a554-5e4b-4820-aa35-90df30bdc2c1"),
                             Name = "Phụ kiện",
                             Status = true
                         },
                         new
                         {
-                            Id = new Guid("ff86b982-dcb5-4021-9f7f-ac4fdb455c5c"),
+                            Id = new Guid("e31b9fcd-272f-4174-bff3-5f5f8a23adf5"),
                             Name = "Nội thất",
                             Status = true
                         },
                         new
                         {
-                            Id = new Guid("3047837b-8a8a-467e-bd6f-c378000dcd11"),
+                            Id = new Guid("e04165f2-098b-4a45-8f9e-3cfac3aa2324"),
                             Name = "Khác",
                             Status = true
                         });
@@ -292,7 +297,7 @@ namespace ResiBuy.Server.Migrations
 
                     b.HasIndex("StoreId");
 
-                    b.ToTable("Event", (string)null);
+                    b.ToTable("Event");
                 });
 
             modelBuilder.Entity("ResiBuy.Server.Infrastructure.Model.Image", b =>
@@ -332,93 +337,93 @@ namespace ResiBuy.Server.Migrations
                         .IsUnique()
                         .HasFilter("[UserId] IS NOT NULL");
 
-                    b.ToTable("Images", (string)null);
+                    b.ToTable("Images");
 
                     b.HasData(
                         new
                         {
-                            Id = "63b729ac-7a83-4625-aeb7-0b8c391c1fa2",
-                            CategoryId = new Guid("d9de9b24-5543-4262-aac7-c148c80dfdfe"),
+                            Id = "fd895a90-d2c0-4eb8-9ecd-881a8b092a7f",
+                            CategoryId = new Guid("39a9782f-feec-425c-be0d-67f40a3b65f5"),
                             Name = "thu-mua-do-dien-tu-1.jpg",
                             ThumbUrl = "http://res.cloudinary.com/dhz6zqwxx/image/upload/c_fill,h_300,w_300/string",
                             Url = "https://res.cloudinary.com/dhz6zqwxx/image/upload/v1756314488/string.jpg"
                         },
                         new
                         {
-                            Id = "1a9ea8f6-0a5b-458b-9b5f-f68312aea6d4",
-                            CategoryId = new Guid("feb872fa-9195-4ead-899e-753f90cba3fc"),
+                            Id = "a30f9e5a-3f51-4f29-9cac-a2ce8e63d706",
+                            CategoryId = new Guid("b7aa5882-e732-472a-9568-78918d38b672"),
                             Name = "thoitrang.jpg",
                             ThumbUrl = "http://res.cloudinary.com/dhz6zqwxx/image/upload/c_fill,h_300,w_300/v1/resibuy/thoitrang_usekdn",
                             Url = "https://res.cloudinary.com/dhz6zqwxx/image/upload/v1756314610/resibuy/thoitrang_usekdn.jpg"
                         },
                         new
                         {
-                            Id = "ee2bf2e1-864c-4edb-92c3-d375aac533e9",
-                            CategoryId = new Guid("dac507c8-2209-445e-9bc9-533a3b5f53a7"),
+                            Id = "704edbd1-8fdc-4ee9-8bd2-73554cdb25fe",
+                            CategoryId = new Guid("8bc4e2cc-8fe0-4768-9e6b-ccd34e4b279f"),
                             Name = "dogiadung.jpg",
                             ThumbUrl = "http://res.cloudinary.com/dhz6zqwxx/image/upload/c_fill,h_300,w_300/v1/resibuy/dogiadung_u5cuyh",
                             Url = "https://res.cloudinary.com/dhz6zqwxx/image/upload/v1756314610/resibuy/dogiadung_u5cuyh.jpg"
                         },
                         new
                         {
-                            Id = "5e7915a9-d954-4701-802b-264306b6c9b5",
-                            CategoryId = new Guid("00e691b8-b6b8-4fcb-bc4d-c612f5f4ae60"),
+                            Id = "8c728ece-56f5-4857-97db-a1726b948d38",
+                            CategoryId = new Guid("26e4baca-d351-44b7-87dd-f2b565ab6c32"),
                             Name = "sach.jpg",
                             ThumbUrl = "http://res.cloudinary.com/dhz6zqwxx/image/upload/c_fill,h_300,w_300/v1/resibuy/sach_w9rqwe",
                             Url = "https://res.cloudinary.com/dhz6zqwxx/image/upload/v1756314610/resibuy/sach_w9rqwe.jpg"
                         },
                         new
                         {
-                            Id = "9df21b2b-e59a-4fda-bd35-58b7919dda1a",
-                            CategoryId = new Guid("0124976d-6fd4-426a-965e-8248669b7b1c"),
+                            Id = "ec2615ca-777f-47c4-84a7-27c47bbd1e2f",
+                            CategoryId = new Guid("e8d34a9b-1e1e-4205-918c-5c426e121370"),
                             Name = "thethao.jpg",
                             ThumbUrl = "http://res.cloudinary.com/dhz6zqwxx/image/upload/c_fill,h_300,w_300/v1/resibuy/thethao_mv34he",
                             Url = "https://res.cloudinary.com/dhz6zqwxx/image/upload/v1756314611/resibuy/thethao_mv34he.jpg"
                         },
                         new
                         {
-                            Id = "6bba2d6b-e3ed-4399-8809-5c2cee8bb31c",
-                            CategoryId = new Guid("6848695f-23a2-4340-ac7c-fafb55b6139c"),
+                            Id = "bc999001-77e6-4ed3-ac4c-e6330c6ac008",
+                            CategoryId = new Guid("a9e26883-0e43-4aaf-bf28-cb48222186d7"),
                             Name = "mypham.jpg",
                             ThumbUrl = "http://res.cloudinary.com/dhz6zqwxx/image/upload/c_fill,h_300,w_300/v1/resibuy/mypham_iltnhv",
                             Url = "https://res.cloudinary.com/dhz6zqwxx/image/upload/v1756314610/resibuy/mypham_iltnhv.jpg"
                         },
                         new
                         {
-                            Id = "e6b40c4a-67dc-4f56-87a1-29c1185d516e",
-                            CategoryId = new Guid("b7c6e2e2-ab4b-4ce8-80e3-f468ccf98127"),
+                            Id = "ccc43e69-e202-4071-9de5-ebdd598149ec",
+                            CategoryId = new Guid("98204ec9-d85c-45d0-af1b-de9763eebf32"),
                             Name = "dochoi.png",
                             ThumbUrl = "http://res.cloudinary.com/dhz6zqwxx/image/upload/c_fill,h_300,w_300/v1/resibuy/dochoi_rz7pys",
                             Url = "https://res.cloudinary.com/dhz6zqwxx/image/upload/v1756314611/resibuy/dochoi_rz7pys.png"
                         },
                         new
                         {
-                            Id = "26a3ecd5-0f3d-47f8-a2c8-ae839cb91fcb",
-                            CategoryId = new Guid("b43c7856-e9f4-438b-933f-813e7c5bfa9f"),
+                            Id = "68f639df-7c05-4ec0-9596-d6cab85e15ef",
+                            CategoryId = new Guid("12c7d55e-1368-4cfe-9aa4-a388ef0b9536"),
                             Name = "thucpham.jpg",
                             ThumbUrl = "http://res.cloudinary.com/dhz6zqwxx/image/upload/c_fill,h_300,w_300/v1/resibuy/thucpham_la23wq",
                             Url = "https://res.cloudinary.com/dhz6zqwxx/image/upload/v1756314611/resibuy/thucpham_la23wq.jpg"
                         },
                         new
                         {
-                            Id = "22fd67ff-ddfa-47bd-abd8-bbb1cacdc4cc",
-                            CategoryId = new Guid("75e1a8bc-d4a1-4e28-9112-0e3a219e7990"),
+                            Id = "c383e31b-61dc-4b37-ae38-716939fda554",
+                            CategoryId = new Guid("2d30a554-5e4b-4820-aa35-90df30bdc2c1"),
                             Name = "phukien.jpg",
                             ThumbUrl = "http://res.cloudinary.com/dhz6zqwxx/image/upload/c_fill,h_300,w_300/v1/resibuy/phukien_sct8nd",
                             Url = "https://res.cloudinary.com/dhz6zqwxx/image/upload/v1756314610/resibuy/phukien_sct8nd.jpg"
                         },
                         new
                         {
-                            Id = "8060538c-796b-4096-8145-bb7102ba7bfb",
-                            CategoryId = new Guid("ff86b982-dcb5-4021-9f7f-ac4fdb455c5c"),
+                            Id = "9d79be03-79e6-425a-b978-817fce688a1a",
+                            CategoryId = new Guid("e31b9fcd-272f-4174-bff3-5f5f8a23adf5"),
                             Name = "noithat.jpg",
                             ThumbUrl = "http://res.cloudinary.com/dhz6zqwxx/image/upload/c_fill,h_300,w_300/v1/resibuy/noithat_steelt",
                             Url = "https://res.cloudinary.com/dhz6zqwxx/image/upload/v1756314610/resibuy/noithat_steelt.jpg"
                         },
                         new
                         {
-                            Id = "7e8f0815-fd4c-4acd-9e4f-b4f4ab8e0d07",
-                            CategoryId = new Guid("3047837b-8a8a-467e-bd6f-c378000dcd11"),
+                            Id = "166fb455-622e-4e32-a369-aaa738c0a1a5",
+                            CategoryId = new Guid("e04165f2-098b-4a45-8f9e-3cfac3aa2324"),
                             Name = "khac1.jpg",
                             ThumbUrl = "http://res.cloudinary.com/dhz6zqwxx/image/upload/c_fill,h_300,w_300/other",
                             Url = "https://res.cloudinary.com/dhz6zqwxx/image/upload/v1756315891/other.jpg"
@@ -445,7 +450,7 @@ namespace ResiBuy.Server.Migrations
 
                     b.HasKey("Id");
 
-                    b.ToTable("Notifications", (string)null);
+                    b.ToTable("Notifications");
                 });
 
             modelBuilder.Entity("ResiBuy.Server.Infrastructure.Model.Order", b =>
@@ -511,7 +516,7 @@ namespace ResiBuy.Server.Migrations
 
                     b.HasIndex("VoucherId");
 
-                    b.ToTable("Orders", (string)null);
+                    b.ToTable("Orders");
                 });
 
             modelBuilder.Entity("ResiBuy.Server.Infrastructure.Model.OrderItem", b =>
@@ -538,7 +543,7 @@ namespace ResiBuy.Server.Migrations
 
                     b.HasIndex("ProductDetailId");
 
-                    b.ToTable("OrderItems", (string)null);
+                    b.ToTable("OrderItems");
                 });
 
             modelBuilder.Entity("ResiBuy.Server.Infrastructure.Model.Product", b =>
@@ -587,7 +592,7 @@ namespace ResiBuy.Server.Migrations
 
                     b.HasIndex("StoreId");
 
-                    b.ToTable("Products", (string)null);
+                    b.ToTable("Products");
                 });
 
             modelBuilder.Entity("ResiBuy.Server.Infrastructure.Model.ProductDetail", b =>
@@ -620,7 +625,7 @@ namespace ResiBuy.Server.Migrations
 
                     b.HasIndex("ProductId");
 
-                    b.ToTable("ProductDetails", (string)null);
+                    b.ToTable("ProductDetails");
                 });
 
             modelBuilder.Entity("ResiBuy.Server.Infrastructure.Model.Promotion", b =>
@@ -655,10 +660,10 @@ namespace ResiBuy.Server.Migrations
                         {
                             Id = 1,
                             Discount = 0,
-                            EndDate = new DateTime(2225, 9, 17, 21, 43, 30, 374, DateTimeKind.Local).AddTicks(8412),
+                            EndDate = new DateTime(2225, 9, 17, 22, 46, 22, 640, DateTimeKind.Local).AddTicks(2083),
                             IsActive = false,
                             Name = "No Promotion",
-                            StartDate = new DateTime(2025, 9, 17, 21, 43, 30, 374, DateTimeKind.Local).AddTicks(8411)
+                            StartDate = new DateTime(2025, 9, 17, 22, 46, 22, 640, DateTimeKind.Local).AddTicks(2082)
                         });
                 });
 
@@ -692,7 +697,7 @@ namespace ResiBuy.Server.Migrations
 
                     b.HasIndex("UserId");
 
-                    b.ToTable("RefreshTokens", (string)null);
+                    b.ToTable("RefreshTokens");
                 });
 
             modelBuilder.Entity("ResiBuy.Server.Infrastructure.Model.Report", b =>
@@ -732,7 +737,7 @@ namespace ResiBuy.Server.Migrations
                     b.HasIndex("OrderId")
                         .IsUnique();
 
-                    b.ToTable("Reports", (string)null);
+                    b.ToTable("Reports");
                 });
 
             modelBuilder.Entity("ResiBuy.Server.Infrastructure.Model.Review", b =>
@@ -768,7 +773,7 @@ namespace ResiBuy.Server.Migrations
 
                     b.HasIndex("UserId");
 
-                    b.ToTable("Reviews", (string)null);
+                    b.ToTable("Reviews");
                 });
 
             modelBuilder.Entity("ResiBuy.Server.Infrastructure.Model.Room", b =>
@@ -790,7 +795,7 @@ namespace ResiBuy.Server.Migrations
 
                     b.HasIndex("BuildingId");
 
-                    b.ToTable("Rooms", (string)null);
+                    b.ToTable("Rooms");
 
                     b.HasData(
                         new
@@ -846,7 +851,7 @@ namespace ResiBuy.Server.Migrations
                         .IsUnique()
                         .HasFilter("[UserId] IS NOT NULL");
 
-                    b.ToTable("Shippers", (string)null);
+                    b.ToTable("Shippers");
                 });
 
             modelBuilder.Entity("ResiBuy.Server.Infrastructure.Model.Store", b =>
@@ -888,13 +893,13 @@ namespace ResiBuy.Server.Migrations
 
                     b.HasIndex("RoomId");
 
-                    b.ToTable("Stores", (string)null);
+                    b.ToTable("Stores");
 
                     b.HasData(
                         new
                         {
                             Id = new Guid("44444444-4444-4444-4444-444444444444"),
-                            CreatedAt = new DateTime(2025, 9, 17, 21, 43, 30, 374, DateTimeKind.Local).AddTicks(8407),
+                            CreatedAt = new DateTime(2025, 9, 17, 22, 46, 22, 640, DateTimeKind.Local).AddTicks(2072),
                             Description = "Default store for ResiBuy system",
                             IsLocked = false,
                             IsOpen = true,
@@ -927,7 +932,7 @@ namespace ResiBuy.Server.Migrations
 
                     b.HasIndex("ShipperId");
 
-                    b.ToTable("TimeSheets", (string)null);
+                    b.ToTable("TimeSheets");
                 });
 
             modelBuilder.Entity("ResiBuy.Server.Infrastructure.Model.User", b =>
@@ -973,23 +978,23 @@ namespace ResiBuy.Server.Migrations
 
                     b.HasKey("Id");
 
-                    b.ToTable("Users", (string)null);
+                    b.ToTable("Users");
 
                     b.HasData(
                         new
                         {
                             Id = "adm_df",
-                            CreatedAt = new DateTime(2025, 9, 17, 21, 43, 30, 374, DateTimeKind.Local).AddTicks(7933),
+                            CreatedAt = new DateTime(2025, 9, 17, 22, 46, 22, 640, DateTimeKind.Local).AddTicks(1091),
                             DateOfBirth = new DateTime(1990, 1, 1, 0, 0, 0, 0, DateTimeKind.Unspecified),
                             Email = "admin@123",
                             FullName = "Administrator",
                             IdentityNumber = "admin",
                             IsLocked = false,
-                            PasswordHash = "$2a$11$ayJzFsg7/scibM7qxullV.tdf/b0OlngB7gwe4ThP0bsAfR3aj/ve",
+                            PasswordHash = "$2a$11$nt8/cEpTnNxWx2V6rn5w1u/2X7.RaNArgoxH67u7XzVUYr0cFQq/q",
                             PhoneNumber = "admin",
                             ReportCount = 0,
                             Roles = "[\"ADMIN\"]",
-                            UpdatedAt = new DateTime(2025, 9, 17, 21, 43, 30, 374, DateTimeKind.Local).AddTicks(7948)
+                            UpdatedAt = new DateTime(2025, 9, 17, 22, 46, 22, 640, DateTimeKind.Local).AddTicks(1113)
                         });
                 });
 
@@ -1005,7 +1010,7 @@ namespace ResiBuy.Server.Migrations
 
                     b.HasIndex("NotificationId");
 
-                    b.ToTable("UserNotifications", (string)null);
+                    b.ToTable("UserNotifications");
                 });
 
             modelBuilder.Entity("ResiBuy.Server.Infrastructure.Model.UserRoom", b =>
@@ -1020,7 +1025,7 @@ namespace ResiBuy.Server.Migrations
 
                     b.HasIndex("RoomId");
 
-                    b.ToTable("UserRooms", (string)null);
+                    b.ToTable("UserRooms");
                 });
 
             modelBuilder.Entity("ResiBuy.Server.Infrastructure.Model.UserVoucher", b =>
@@ -1035,7 +1040,7 @@ namespace ResiBuy.Server.Migrations
 
                     b.HasIndex("VoucherId");
 
-                    b.ToTable("UserVouchers", (string)null);
+                    b.ToTable("UserVouchers");
                 });
 
             modelBuilder.Entity("ResiBuy.Server.Infrastructure.Model.Voucher", b =>
@@ -1075,7 +1080,7 @@ namespace ResiBuy.Server.Migrations
 
                     b.HasIndex("StoreId");
 
-                    b.ToTable("Vouchers", (string)null);
+                    b.ToTable("Vouchers");
                 });
 
             modelBuilder.Entity("ResiBuy.Server.Infrastructure.Model.AdditionalData", b =>
@@ -1091,11 +1096,19 @@ namespace ResiBuy.Server.Migrations
 
             modelBuilder.Entity("ResiBuy.Server.Infrastructure.Model.Barcode", b =>
                 {
+                    b.HasOne("ResiBuy.Server.Infrastructure.Model.OrderItem", "OrderItem")
+                        .WithMany("Barcodes")
+                        .HasForeignKey("OrderItemId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
                     b.HasOne("ResiBuy.Server.Infrastructure.Model.ProductDetail", "ProductDetail")
                         .WithMany("Barcodes")
                         .HasForeignKey("ProductDetailId")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
+
+                    b.Navigation("OrderItem");
 
                     b.Navigation("ProductDetail");
                 });
@@ -1474,6 +1487,11 @@ namespace ResiBuy.Server.Migrations
                     b.Navigation("Items");
 
                     b.Navigation("Report");
+                });
+
+            modelBuilder.Entity("ResiBuy.Server.Infrastructure.Model.OrderItem", b =>
+                {
+                    b.Navigation("Barcodes");
                 });
 
             modelBuilder.Entity("ResiBuy.Server.Infrastructure.Model.Product", b =>

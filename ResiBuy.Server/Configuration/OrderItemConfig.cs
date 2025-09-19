@@ -9,8 +9,6 @@
                    .WithMany(o => o.Items)
                    .HasForeignKey(oi => oi.OrderId)
                    .OnDelete(DeleteBehavior.Cascade); // Xóa Order sẽ xóa OrderItem
-
-          
         }
     }
 }
