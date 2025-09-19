@@ -150,7 +150,6 @@ const SellPage: React.FC = () => {
       };
       setTabs((prev) => [...prev, newTab]);
       setCurrentTab(tabs.length);
-
     } catch (err) {
       console.error("Lỗi tạo cart mới:", err);
     }

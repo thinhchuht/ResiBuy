@@ -41,7 +41,12 @@ const orderApi = {
     return response.data.data;
   },
 
-  updateOrder: async (userId: string, orderId: string, shippingAddressId: string, note: string) => {
+  updateOrder: async (
+    userId: string,
+    orderId: string,
+    shippingAddressId: string,
+    note: string
+  ) => {
     const body = {
       userId,
       orderId,
@@ -51,7 +56,12 @@ const orderApi = {
     const response = await axiosClient.put(`/api/order`, body);
     return response.data.data;
   },
-  updateOrderSatus: async (userId: string, orderId: string, orderStatus: string, reason: string) => {
+  updateOrderSatus: async (
+    userId: string,
+    orderId: string,
+    orderStatus: string,
+    reason: string
+  ) => {
     const body = {
       userId,
       orderId,
@@ -62,7 +72,11 @@ const orderApi = {
     return response.data;
   },
 
-  updateOrderStatusShip: async (orderId: string, orderStatus: string, shipperId: string) => {
+  updateOrderStatusShip: async (
+    orderId: string,
+    orderStatus: string,
+    shipperId: string
+  ) => {
     const body = {
       orderId,
       orderStatus,
@@ -72,32 +86,55 @@ const orderApi = {
     return response.data;
   },
 
-  countOrder: async (params: { shipperId?: string; storeId?: string; userId?: string; status?: OrderStatus | string }) => {
+  countOrder: async (params: {
+    shipperId?: string;
+    storeId?: string;
+    userId?: string;
+    status?: OrderStatus | string;
+  }) => {
     const response = await axiosClient.get(`${orderUrl}/count`, { params });
     return response.data;
   },
 
-  getTotalShippingFeeshipper: async (params: { shipperId: string; startDate?: string; endDate?: string }) => {
+  getTotalShippingFeeshipper: async (params: {
+    shipperId: string;
+    startDate?: string;
+    endDate?: string;
+  }) => {
     const response = await axiosClient.get(`${orderUrl}/total-shipping-fee`, {
       params,
     });
     return response.data;
   },
-  getTotalOrderAmount: async (params: { userId?: string; storeId?: string }) => {
-    const response = await axiosClient.get(`${orderUrl}/total-amount`, { params });
+  getTotalOrderAmount: async (params: {
+    userId?: string;
+    storeId?: string;
+  }) => {
+    const response = await axiosClient.get(`${orderUrl}/total-amount`, {
+      params,
+    });
     return response.data;
   },
 
-  getOverviewStats: async (params?: { startDate?: string; endDate?: string }) => {
-    const response = await axiosClient.get(`${orderUrl}/overview-stats`, { params });
+  getOverviewStats: async (params?: {
+    startDate?: string;
+    endDate?: string;
+  }) => {
+    const response = await axiosClient.get(`${orderUrl}/overview-stats`, {
+      params,
+    });
     if (response.data.code !== 0) {
       throw new Error(response.data.message || "Lỗi khi lấy thống kê đơn hàng");
     }
     return response.data.data;
   },
 
+  createOrder: async (data: any) => {
+    console.log("Creating order with data:", data);
+    const response = await axiosClient.post(`${orderUrl}/create`, data);
+    return response.data; // { success, message, orderId, paymentUrl }
+  },
 
-  
 };
 
 export default orderApi;
