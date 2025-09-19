@@ -110,7 +110,12 @@ namespace ResiBuy.Server.Application.Commands.OrderCommands
                 throw new CustomException(ExceptionErrorCode.ValidationFailed, "Không tìm thấy cửa hàng");
 
             // Tính phí ship
-            decimal shippingFee = await orderDbService.ShippingFeeCharged(
+            decimal shippingFee;
+            if (request.PaymentMethod == PaymentMethod.COD)
+            {
+                 shippingFee = 0;
+            }
+                shippingFee = await orderDbService.ShippingFeeCharged(
                 request.ShippingAddressId,
                 store.RoomId,
                 (float)totalWeight
@@ -119,7 +124,7 @@ namespace ResiBuy.Server.Application.Commands.OrderCommands
             // Khởi tạo Order
             var order = new Order(
                 Guid.NewGuid(),
-                totalPrice,
+                totalPrice + shippingFee,
                 shippingFee,
                 request.PaymentMethod,
                 request.ShippingAddressId,
@@ -132,10 +137,30 @@ namespace ResiBuy.Server.Application.Commands.OrderCommands
             );
 
             _context.Orders.Add(order);
-            await _context.SaveChangesAsync();
+
+
+            foreach (var ci in cart.CartItems)
+            {
+                var pd = ci.ProductDetail;
+
+                if (pd.IsOutOfStock || pd.Quantity < ci.Quantity)
+                    throw new CustomException(ExceptionErrorCode.ValidationFailed,
+                        $"Sản phẩm {pd.Product.Name} không đủ hàng");
+
+                pd.Quantity -= ci.Quantity;
+                pd.Sold += ci.Quantity;
+
+                if (pd.Quantity <= 0)
+                {
+                    pd.Quantity = 0;
+                    pd.IsOutOfStock = true;
+                }
+            }
+
+            await _context.SaveChangesAsync(cancellationToken);
 
             // Xử lý thanh toán online
-            string? paymentUrl = null;
+            string paymentUrl = null;
             if (request.PaymentMethod == PaymentMethod.BankTransfer)
             {
                 paymentUrl = await _vnPayService.CustomerPay(order.Id);

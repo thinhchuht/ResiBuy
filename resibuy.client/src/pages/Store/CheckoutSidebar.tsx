@@ -14,6 +14,7 @@ import {
   Alert,
 } from "@mui/material";
 import userApi from "../../api/user.api";
+import orderApi from "../../api/order.api";
 import voucherApi from "../../api/voucher.api";
 import shipperApi from "../../api/ship.api";
 import DeliveryAddressDialog from "./DeliveryAddressDialog";
@@ -21,8 +22,9 @@ import DeliveryAddressDialog from "./DeliveryAddressDialog";
 type CheckoutSidebarProps = {
   total: number;
   discount: number;
-  onCheckout: (data: any) => void;
+  onCheckout?: (data: any) => void;
   cartId: string;
+  storeId?: string;
 };
 
 type CartState = {
@@ -30,24 +32,42 @@ type CartState = {
   voucher: any | null;
   paymentMethod: "CASH" | "BANK" | null;
   customerPaid: number;
-  deliveryAddress?: any;
+  deliveryAddress?: DeliveryAddress | null;
   shippingFee?: number;
   deliveryMethod?: "PICKUP" | "DELIVERY";
+};
+
+type DeliveryAddress = {
+  id: string;
+  areaId: string;
+  areaName?: string;
+  buildingId: string;
+  buildingName?: string;
+  roomId: string;
+  roomName?: string;
+};
+
+type Voucher = {
+  id: string;
+  type: string;
+  discountAmount: number;
+  maxDiscountPrice?: number;
+  minOrderPrice?: number;
+  endDate?: string;
 };
 
 const CheckoutSidebar: React.FC<CheckoutSidebarProps> = ({
   total,
   discount,
-  onCheckout,
   cartId,
+  storeId,
 }) => {
   const [cartStates, setCartStates] = useState<Record<string, CartState>>({});
   const [openDialog, setOpenDialog] = useState(false);
   const [phoneInput, setPhoneInput] = useState("");
   const [openVoucherDialog, setOpenVoucherDialog] = useState(false);
-  const [vouchers, setVouchers] = useState<any[]>([]);
+  const [vouchers, setVouchers] = useState<Voucher[]>([]);
   const [showAddressDialog, setShowAddressDialog] = useState(false);
-  const [deliveryAddress, setDeliveryAddress] = useState<any>(null);
 
   // snackbar
   const [snackbar, setSnackbar] = useState<{
@@ -64,19 +84,26 @@ const CheckoutSidebar: React.FC<CheckoutSidebarProps> = ({
   };
 
   // state cart hiện tại
-  const currentCart = cartStates[cartId] || {
+  const defaultCartState = {
     customer: null,
     voucher: null,
     paymentMethod: null,
     customerPaid: total,
     shippingFee: 0,
-  };
+    deliveryMethod: undefined,
+    deliveryAddress: null,
+  } as CartState;
+
+  const currentCart = cartStates[cartId] || defaultCartState;
 
   const setCartState = (updates: Partial<CartState>) => {
-    setCartStates((prev) => ({
-      ...prev,
-      [cartId]: { ...currentCart, ...updates },
-    }));
+    setCartStates((prev) => {
+      const prevCart = prev[cartId] || defaultCartState;
+      return {
+        ...prev,
+        [cartId]: { ...prevCart, ...updates },
+      };
+    });
   };
 
   // tìm khách
@@ -87,8 +114,9 @@ const CheckoutSidebar: React.FC<CheckoutSidebarProps> = ({
       setCartState({ customer: res.data });
       setOpenDialog(false);
       showMessage("Đã chọn khách hàng thành công", "success");
-    } catch (err: any) {
-      showMessage(err?.error?.message || "Lỗi khi tìm khách hàng", "error");
+    } catch (err: unknown) {
+      console.error(err);
+      showMessage("Lỗi khi tìm khách hàng", "error");
     }
   };
 
@@ -103,8 +131,9 @@ const CheckoutSidebar: React.FC<CheckoutSidebarProps> = ({
       });
       setVouchers(res.data.items || []);
       setOpenVoucherDialog(true);
-    } catch (err: any) {
-      showMessage(err?.error?.message || "Không thể tải voucher", "error");
+    } catch (err: unknown) {
+      console.error(err);
+      showMessage("Không thể tải voucher", "error");
     }
   };
 
@@ -167,11 +196,19 @@ const CheckoutSidebar: React.FC<CheckoutSidebarProps> = ({
             currentCart.deliveryMethod === "PICKUP" ? "contained" : "outlined"
           }
           onClick={() => {
-            setDeliveryAddress(null); // 👈 reset UI
+            // reset any previously selected delivery address for this cart
             setCartState({
               deliveryMethod: "PICKUP",
               shippingFee: 0,
-              deliveryAddress: "33333333-3333-3333-3333-333333333333", // 👈 reset trong state cart
+              deliveryAddress: {
+                id: "33333333-3333-3333-3333-333333333333",
+                areaId: "",
+                areaName: "Cửa hàng",
+                buildingId: "",
+                buildingName: "Cửa hàng",
+                roomId: "",
+                roomName: "Cửa hàng",
+              },
             });
           }}
         >
@@ -191,21 +228,22 @@ const CheckoutSidebar: React.FC<CheckoutSidebarProps> = ({
         </Button>
       </Box>
 
-      {deliveryAddress && (
+      {currentCart.deliveryAddress && (
         <Typography
           variant="body2"
           sx={{ mt: 1, fontStyle: "italic", color: "#555" }}
         >
-          Địa chỉ nhận hàng: {deliveryAddress.areaName} -{" "}
-          {deliveryAddress.buildingName} - {deliveryAddress.roomName}
+          Địa chỉ nhận hàng: {currentCart.deliveryAddress.areaName} -{" "}
+          {currentCart.deliveryAddress.buildingName} -{" "}
+          {currentCart.deliveryAddress.roomName}
         </Typography>
       )}
 
       <DeliveryAddressDialog
         open={showAddressDialog}
         onClose={() => setShowAddressDialog(false)}
-        onSave={async (address) => {
-          setDeliveryAddress(address);
+        onSave={async (address: DeliveryAddress) => {
+          // save address in this cart only
           setCartState({ deliveryAddress: address });
 
           try {
@@ -214,8 +252,16 @@ const CheckoutSidebar: React.FC<CheckoutSidebarProps> = ({
               "33333333-3333-3333-3333-333333333333", // địa chỉ cửa hàng thật
               1.0
             );
-            setCartState({ shippingFee: res.data });
-          } catch (err: any) {
+            // merge shipping fee into the current cart state to avoid overwriting deliveryAddress
+            setCartStates((prev) => {
+              const prevCart = prev[cartId] || defaultCartState;
+              return {
+                ...prev,
+                [cartId]: { ...prevCart, shippingFee: res.data },
+              };
+            });
+          } catch (err: unknown) {
+            console.error(err);
             showMessage("Không tính được phí ship", "error");
           }
         }}
@@ -304,7 +350,7 @@ const CheckoutSidebar: React.FC<CheckoutSidebarProps> = ({
         color="success"
         fullWidth
         sx={{ mt: 3 }}
-        onClick={() => {
+        onClick={async () => {
           if (!currentCart.customer) {
             showMessage("Vui lòng chọn khách hàng", "warning");
             return;
@@ -320,16 +366,33 @@ const CheckoutSidebar: React.FC<CheckoutSidebarProps> = ({
             showMessage("Số tiền khách đưa chưa hợp lệ", "error");
             return;
           }
-          onCheckout({
+          // prepare payload for create order API
+          const payload = {
             cartId,
-            customer: currentCart.customer,
-            voucher: currentCart.voucher,
-            paymentMethod: currentCart.paymentMethod,
+            userId: currentCart.customer?.id || "",
+            voucherId: currentCart.voucher?.id || null,
+            paymentMethod:
+              currentCart.paymentMethod === "CASH" ? "COD" : "BankTransfer",
             customerPaid: currentCart.customerPaid,
-            deliveryAddress: currentCart.deliveryAddress,
-            shippingFee: currentCart.shippingFee || 0,
-          });
-          showMessage("Thanh toán thành công", "success");
+            storeId: storeId || undefined,
+            shippingAddressId:
+              currentCart.deliveryAddress?.id ||
+              "00000000-0000-0000-0000-000000000000",
+          };
+
+          try {
+            const res = await orderApi.createOrder(payload);
+            // orderApi.createOrder returns response.data (CreateOrderResponse)
+            if (res && res.success) {
+              showMessage("Tạo hóa đơn thành công", "success");
+              if (res.paymentUrl) window.open(res.paymentUrl, "_blank");
+            } else {
+              showMessage(res?.message || "Tạo hóa đơn thất bại", "error");
+            }
+          } catch (err) {
+            console.error(err);
+            showMessage("Lỗi khi gọi tạo hóa đơn", "error");
+          }
         }}
       >
         Xác nhận thanh toán
@@ -383,7 +446,7 @@ const CheckoutSidebar: React.FC<CheckoutSidebarProps> = ({
         <DialogTitle>Chọn voucher</DialogTitle>
         <DialogContent>
           {vouchers.length > 0 ? (
-            vouchers.map((v: any) => {
+            vouchers.map((v) => {
               const isPercent = v.type === "Percentage";
               return (
                 <Box
@@ -401,17 +464,22 @@ const CheckoutSidebar: React.FC<CheckoutSidebarProps> = ({
                 >
                   <Typography fontWeight="bold">
                     {isPercent
-                      ? `Giảm ${
-                          v.discountAmount
-                        }% (tối đa ${v.maxDiscountPrice.toLocaleString()} đ)`
+                      ? `Giảm ${v.discountAmount}%${
+                          v.maxDiscountPrice
+                            ? ` (tối đa ${v.maxDiscountPrice.toLocaleString()} đ)`
+                            : ""
+                        }`
                       : `Giảm ${v.discountAmount.toLocaleString()} đ`}
                   </Typography>
                   <Typography>
-                    Đơn tối thiểu: {v.minOrderPrice.toLocaleString()} đ
+                    Đơn tối thiểu:{" "}
+                    {v.minOrderPrice ? v.minOrderPrice.toLocaleString() : 0} đ
                   </Typography>
-                  <Typography>
-                    HSD: {new Date(v.endDate).toLocaleDateString("vi-VN")}
-                  </Typography>
+                  {v.endDate && (
+                    <Typography>
+                      HSD: {new Date(v.endDate).toLocaleDateString("vi-VN")}
+                    </Typography>
+                  )}
                 </Box>
               );
             })

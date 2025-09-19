@@ -42,7 +42,7 @@ namespace ResiBuy.Server.Services.VNPayServices
             if (order == null)
                 throw new CustomException(ExceptionErrorCode.NotFound, "order not found");
 
-            var amount = order.TotalPrice;
+            var amount = order.TotalPrice + (order.ShippingFee ?? 0);
 
             var orderInfo = $"Thanh toan hoa don {orderId}";
             return CreatePaymentUrl(amount, orderId.ToString(), orderInfo);
@@ -117,14 +117,14 @@ namespace ResiBuy.Server.Services.VNPayServices
                     return false;
 
                 if (!responseParams.ContainsKey("vnp_TxnRef") ||
-                    !Guid.TryParse(responseParams["vnp_TxnRef"][..responseParams["vnp_TxnRef"].LastIndexOf('-')], out var storeId))
+                    !Guid.TryParse(responseParams["vnp_TxnRef"][..responseParams["vnp_TxnRef"].LastIndexOf('-')], out var orderId))
                     return false;
 
-                //var store = await storeDbService.GetStoreByIdAsync(storeId);
-                //if (store == null)
-                //    return false;
-                //store.IsPayFee = true;
-                //await storeDbService.UpdateAsync(store);
+                var order = await orderDbService.GetById(orderId);
+                if (order == null)
+                    return false;
+                order.PaymentStatus = PaymentStatus.Paid;
+                await orderDbService.UpdateAsync(order);
 
                 return true;
 
