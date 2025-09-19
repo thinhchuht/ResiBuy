@@ -10,6 +10,11 @@ namespace ResiBuy.Server.Configuration
                    .HasForeignKey(v => v.ProductDetailId)
                    .OnDelete(DeleteBehavior.Cascade);
 
+            builder.HasOne(v => v.OrderItem)
+                   .WithMany(s => s.Barcodes)
+                   .HasForeignKey(v => v.OrderItemId)
+                   .OnDelete(DeleteBehavior.SetNull);
+
             builder.HasIndex(b => b.Code)
                    .IsUnique();
         }
