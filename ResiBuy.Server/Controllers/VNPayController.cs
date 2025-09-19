@@ -15,7 +15,7 @@ namespace ResiBuy.Server.Controllers
         [HttpPost("create-payment")]
         public async Task<IActionResult> CreatePaymentAsync([FromQuery] string userId, [FromQuery] Guid checkoutId)
         {
-            var db =  redisService.GetDatabase();
+            var db = redisService.GetDatabase();
             var key = $"temp_order:{userId}-{checkoutId}";
             var json = await db.StringGetAsync(key);
             if (json.IsNullOrEmpty)
@@ -42,8 +42,11 @@ namespace ResiBuy.Server.Controllers
         public async Task<IActionResult> PaymentCallbackAsync([FromQuery] VNPayCallback callback)
         {
             var responseData = Request.QueryString.ToString().TrimStart('?');
+            logger.LogInformation($"Payment callback received - OrderInfo: {callback.vnp_OrderInfo}, TxnRef: {callback.vnp_TxnRef}, ResponseCode: {callback.vnp_ResponseCode}, TransactionStatus: {callback.vnp_TransactionStatus}");
+            
             if (!vnPayService.ValidatePayment(responseData))
             {
+                logger.LogWarning("Payment validation failed");
                 var token = GenerateToken();
                 _paymentTokens[token] = DateTime.Now.AddMinutes(5);
                 return Redirect($"http://localhost:5001/checkout-failed?token={token}");
@@ -51,29 +54,44 @@ namespace ResiBuy.Server.Controllers
 
             if (callback.vnp_ResponseCode == "00" && callback.vnp_TransactionStatus == "00")
             {
-                var sessionId = callback.vnp_TxnRef;
+                // Check if this is invoice payment from CustomerPay method
                 if (callback.vnp_OrderInfo.Contains("Thanh toan hoa don"))
                 {
-                    var storeId = callback.vnp_TxnRef[..callback.vnp_TxnRef.LastIndexOf('-')];
-
-                    var isStorePaymentSuccess = await vnPayService.ProcessStorePaymentCallback(responseData);
-
-                    if (isStorePaymentSuccess)
+                    logger.LogInformation("Processing invoice payment callback");
+                    // Extract orderId from vnp_TxnRef (which is orderId.ToString() from CustomerPay)
+                    if (Guid.TryParse(callback.vnp_TxnRef, out var orderId))
                     {
-                        var token = GenerateToken();
-                        _paymentTokens[token] = DateTime.Now.AddMinutes(5);
-                        return Redirect($"http://localhost:5001/store/{storeId}");
+                        logger.LogInformation($"Parsed orderId: {orderId}");
+                        var isOrderPaymentSuccess = await vnPayService.ProcessOrderPaymentCallback(responseData, orderId);
+
+                        if (isOrderPaymentSuccess)
+                        {
+                            logger.LogInformation("Order payment processed successfully");
+                            var token = GenerateToken();
+                            _paymentTokens[token] = DateTime.Now.AddMinutes(5);
+                            return Redirect($"http://localhost:5001/payment-success?token={token}");
+                        }
+                        else
+                        {
+                            logger.LogWarning("Order payment processing failed");
+                            var token = GenerateToken();
+                            _paymentTokens[token] = DateTime.Now.AddMinutes(5);
+                            return Redirect($"http://localhost:5001/paymentFail?token={token}");
+                        }
                     }
                     else
                     {
+                        logger.LogWarning($"Failed to parse orderId from TxnRef: {callback.vnp_TxnRef}");
                         var token = GenerateToken();
                         _paymentTokens[token] = DateTime.Now.AddMinutes(5);
-                        return Redirect($"http://localhost:5001/paymentFail");
+                        return Redirect($"http://localhost:5001/paymentFail?token={token}");
                     }
                 }
                 else
                 {
-                    // Xử lý order payment như cũ
+                    logger.LogInformation("Processing checkout session payment");
+                    // Handle other payment types (checkout session-based)
+                    var sessionId = callback.vnp_TxnRef;
                     var checkoutData = checkoutSessionService.GetCheckoutSession(sessionId);
 
                     if (checkoutData != null)
@@ -163,7 +181,7 @@ namespace ResiBuy.Server.Controllers
         {
             try
             {
-                var paymentUrl = vnPayService.StorePayFee(storeId);
+                var paymentUrl = await vnPayService.StorePayFee(storeId);
                 return Ok(new { PaymentUrl = paymentUrl });
             }
             catch (ArgumentException ex)
@@ -176,6 +194,7 @@ namespace ResiBuy.Server.Controllers
             }
             catch (Exception ex)
             {
+                logger.LogError(ex, "Error in CreateStorePayment");
                 return StatusCode(500, new { Message = "Internal server error" });
             }
         }

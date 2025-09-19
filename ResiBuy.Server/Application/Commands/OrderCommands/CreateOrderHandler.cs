@@ -111,15 +111,20 @@ namespace ResiBuy.Server.Application.Commands.OrderCommands
 
             // Tính phí ship
             decimal shippingFee;
-            if (request.PaymentMethod == PaymentMethod.COD)
+            // If payment is COD or shipping address equals store pickup address (room), no shipping fee
+            if (request.PaymentMethod == PaymentMethod.COD || request.ShippingAddressId == store.RoomId || request.ShippingAddressId == store.Id)
             {
-                 shippingFee = 0;
+                shippingFee = 0;
             }
+            else
+            {
+                // Only call ShippingFeeCharged when shipping is needed
                 shippingFee = await orderDbService.ShippingFeeCharged(
-                request.ShippingAddressId,
-                store.RoomId,
-                (float)totalWeight
-            );
+                    request.ShippingAddressId,
+                    store.RoomId,
+                    (float)totalWeight
+                );
+            }
 
             // Khởi tạo Order
             var order = new Order(
@@ -137,6 +142,25 @@ namespace ResiBuy.Server.Application.Commands.OrderCommands
             );
 
             _context.Orders.Add(order);
+
+            // Nếu dùng voucher thì trừ số lượng voucher
+            if (request.VoucherId.HasValue)
+            {
+                var voucher = await _context.Vouchers.FindAsync(request.VoucherId.Value);
+                if (voucher != null)
+                {
+                    if (voucher.Quantity > 0)
+                    {
+                        voucher.Quantity -= 1;
+                        voucher.IsActive = voucher.Quantity > 0;
+                    }
+                    else
+                    {
+                        // Nếu voucher đã hết, block tạo đơn (hoặc bạn có thể ignore tuỳ yêu cầu)
+                        throw new CustomException(ExceptionErrorCode.ValidationFailed, "Voucher đã hết");
+                    }
+                }
+            }
 
 
             foreach (var ci in cart.CartItems)
@@ -156,6 +180,9 @@ namespace ResiBuy.Server.Application.Commands.OrderCommands
                     pd.IsOutOfStock = true;
                 }
             }
+
+            // Remove the cart since it has been converted into an order
+            _context.Carts.Remove(cart);
 
             await _context.SaveChangesAsync(cancellationToken);
 

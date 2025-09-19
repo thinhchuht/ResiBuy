@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useEffect, useRef } from "react";
 import {
   Box,
   Paper,
@@ -23,8 +23,10 @@ type CheckoutSidebarProps = {
   total: number;
   discount: number;
   onCheckout?: (data: any) => void;
+  onOrderCreated?: (cartId: string, orderId: string) => void;
   cartId: string;
   storeId?: string;
+  totalWeight?: number;
 };
 
 type CartState = {
@@ -61,6 +63,8 @@ const CheckoutSidebar: React.FC<CheckoutSidebarProps> = ({
   discount,
   cartId,
   storeId,
+  totalWeight,
+  onOrderCreated,
 }) => {
   const [cartStates, setCartStates] = useState<Record<string, CartState>>({});
   const [openDialog, setOpenDialog] = useState(false);
@@ -68,6 +72,7 @@ const CheckoutSidebar: React.FC<CheckoutSidebarProps> = ({
   const [openVoucherDialog, setOpenVoucherDialog] = useState(false);
   const [vouchers, setVouchers] = useState<Voucher[]>([]);
   const [showAddressDialog, setShowAddressDialog] = useState(false);
+  const recalculatingRef = useRef<NodeJS.Timeout | null>(null);
 
   // snackbar
   const [snackbar, setSnackbar] = useState<{
@@ -105,6 +110,45 @@ const CheckoutSidebar: React.FC<CheckoutSidebarProps> = ({
       };
     });
   };
+
+  // Recalculate shipping fee when totalWeight, delivery method or address changes
+  useEffect(() => {
+    // only recalc for DELIVERY method and when we have an address
+    const current = cartStates[cartId] || defaultCartState;
+    if (current.deliveryMethod !== "DELIVERY" || !current.deliveryAddress)
+      return;
+
+    // debounce rapid changes (e.g., multiple quantity changes)
+    if (recalculatingRef.current) clearTimeout(recalculatingRef.current);
+    recalculatingRef.current = setTimeout(async () => {
+      try {
+        const res = await shipperApi.calculate(
+          current.deliveryAddress!.id,
+          "33333333-3333-3333-3333-333333333333",
+          totalWeight ?? 1.0
+        );
+        setCartStates((prev) => {
+          const prevCart = prev[cartId] || defaultCartState;
+          return {
+            ...prev,
+            [cartId]: { ...prevCart, shippingFee: res.data },
+          };
+        });
+      } catch (err: unknown) {
+        console.error("Error recalculating shipping:", err);
+      }
+    }, 350);
+
+    return () => {
+      if (recalculatingRef.current) clearTimeout(recalculatingRef.current);
+      recalculatingRef.current = null;
+    };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [
+    cartStates[cartId]?.deliveryMethod,
+    cartStates[cartId]?.deliveryAddress?.id,
+    totalWeight,
+  ]);
 
   // tìm khách
   const handleSearchCustomer = async () => {
@@ -249,8 +293,8 @@ const CheckoutSidebar: React.FC<CheckoutSidebarProps> = ({
           try {
             const res = await shipperApi.calculate(
               address.id,
-              "33333333-3333-3333-3333-333333333333", // địa chỉ cửa hàng thật
-              1.0
+              "33333333-3333-3333-3333-333333333333", // địa chỉ cửa hàng (fallback)
+              totalWeight ?? 1.0
             );
             // merge shipping fee into the current cart state to avoid overwriting deliveryAddress
             setCartStates((prev) => {
@@ -386,6 +430,9 @@ const CheckoutSidebar: React.FC<CheckoutSidebarProps> = ({
             if (res && res.success) {
               showMessage("Tạo hóa đơn thành công", "success");
               if (res.paymentUrl) window.open(res.paymentUrl, "_blank");
+              // notify parent (SellPage) that order was created successfully so it can remove the cart
+              if (typeof onOrderCreated === "function")
+                onOrderCreated(cartId, res.orderId);
             } else {
               showMessage(res?.message || "Tạo hóa đơn thất bại", "error");
             }
