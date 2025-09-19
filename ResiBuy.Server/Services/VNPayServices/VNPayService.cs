@@ -44,7 +44,7 @@ namespace ResiBuy.Server.Services.VNPayServices
 
             var amount = order.TotalPrice;
 
-            var orderInfo = $"Thanh toan phi cua hang {orderId}";
+            var orderInfo = $"Thanh toan hoa don {orderId}";
             return CreatePaymentUrl(amount, orderId.ToString(), orderInfo);
         }
 
@@ -120,11 +120,11 @@ namespace ResiBuy.Server.Services.VNPayServices
                     !Guid.TryParse(responseParams["vnp_TxnRef"][..responseParams["vnp_TxnRef"].LastIndexOf('-')], out var storeId))
                     return false;
 
-                var store = await storeDbService.GetStoreByIdAsync(storeId);
-                if (store == null)
-                    return false;
-                store.IsPayFee = true;
-                await storeDbService.UpdateAsync(store);
+                //var store = await storeDbService.GetStoreByIdAsync(storeId);
+                //if (store == null)
+                //    return false;
+                //store.IsPayFee = true;
+                //await storeDbService.UpdateAsync(store);
 
                 return true;
 

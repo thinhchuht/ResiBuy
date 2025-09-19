@@ -52,7 +52,7 @@ namespace ResiBuy.Server.Controllers
             if (callback.vnp_ResponseCode == "00" && callback.vnp_TransactionStatus == "00")
             {
                 var sessionId = callback.vnp_TxnRef;
-                if (callback.vnp_OrderInfo.Contains("Thanh toan phi cua hang"))
+                if (callback.vnp_OrderInfo.Contains("Thanh toan hoa don"))
                 {
                     var storeId = callback.vnp_TxnRef[..callback.vnp_TxnRef.LastIndexOf('-')];
 
