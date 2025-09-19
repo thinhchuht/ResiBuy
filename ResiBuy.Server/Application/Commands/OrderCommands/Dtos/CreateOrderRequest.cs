@@ -8,6 +8,6 @@
         public PaymentMethod PaymentMethod { get; set; }
         public decimal? CustomerPaid { get; set; }
         public Guid StoreId { get; set; }
-
+        public Guid ShippingAddressId { get; set; }
     }
 }

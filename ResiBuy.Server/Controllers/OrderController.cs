@@ -91,7 +91,7 @@ namespace ResiBuy.Server.Controllers
            
                 var command = new CreateOrder(request);
                 var result = await mediator.Send(command);
-                return Ok(result); // Trả về 200 + dữ liệu CreateOrderResponse
+                return Ok(result); 
            
         }
 

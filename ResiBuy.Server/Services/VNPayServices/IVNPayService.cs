@@ -6,7 +6,7 @@
         bool ValidatePayment(string responseData);
         Task<string> StorePayFee(Guid storeId);
         Task<bool> ProcessStorePaymentCallback(string responseData);
-
         Task<string> CustomerPay(Guid orderId);
+        Task<bool> ProcessOrderPaymentCallback(string responseData, Guid orderId);
     }
 }

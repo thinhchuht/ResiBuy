@@ -1,5 +1,8 @@
 ﻿
+using DocumentFormat.OpenXml.Spreadsheet;
 using ResiBuy.Server.Application.Commands.OrderCommands.Dtos;
+using ResiBuy.Server.Infrastructure.DbServices.OrderDbServices;
+using ResiBuy.Server.Infrastructure.Model;
 
 namespace ResiBuy.Server.Application.Commands.OrderCommands
 {
@@ -9,11 +12,13 @@ namespace ResiBuy.Server.Application.Commands.OrderCommands
     {
         private readonly ResiBuyContext _context;
         private readonly IVNPayService _vnPayService;
+        private readonly IOrderDbService orderDbService;
 
-        public CreateOrderHandler(ResiBuyContext context, IVNPayService vnPayService)
+        public CreateOrderHandler(ResiBuyContext context, IVNPayService vnPayService, IOrderDbService orderDbService)
         {
             _context = context;
             _vnPayService = vnPayService;
+            this.orderDbService = orderDbService;
         }
 
         public async Task<CreateOrderResponse> Handle(CreateOrder command, CancellationToken cancellationToken)
@@ -32,11 +37,13 @@ namespace ResiBuy.Server.Application.Commands.OrderCommands
                 throw new CustomException(ExceptionErrorCode.ValidationFailed, "Giỏ hàng trống hoặc không tồn tại");
 
             decimal totalPrice = 0;
+            float totalWeight = 0;
 
             foreach (var item in cart.CartItems)
             {
                 var productPrice = item.ProductDetail.Price;
 
+                // áp dụng khuyến mãi
                 if (item.ProductDetail.Product.Promotion != null &&
                     item.ProductDetail.Product.Promotion.IsActive &&
                     DateTime.Now >= item.ProductDetail.Product.Promotion.StartDate &&
@@ -50,6 +57,7 @@ namespace ResiBuy.Server.Application.Commands.OrderCommands
                         $"Sản phẩm {item.ProductDetail.Product.Name} không đủ hàng");
 
                 totalPrice += productPrice * item.Quantity;
+                totalWeight += item.ProductDetail.Weight * item.Quantity;
             }
 
             // Áp dụng voucher
@@ -84,6 +92,7 @@ namespace ResiBuy.Server.Application.Commands.OrderCommands
 
             if (totalPrice < 0) totalPrice = 0;
 
+            // Kiểm tra phương thức thanh toán
             if (request.PaymentMethod != PaymentMethod.COD && request.PaymentMethod != PaymentMethod.BankTransfer)
                 throw new CustomException(ExceptionErrorCode.ValidationFailed, "Phương thức thanh toán không hợp lệ");
 
@@ -96,24 +105,89 @@ namespace ResiBuy.Server.Application.Commands.OrderCommands
                     throw new CustomException(ExceptionErrorCode.ValidationFailed, "Tiền khách đưa không đủ");
             }
 
+            var store = await _context.Stores.FindAsync(request.StoreId);
+            if (store == null)
+                throw new CustomException(ExceptionErrorCode.ValidationFailed, "Không tìm thấy cửa hàng");
+
+            // Tính phí ship
+            decimal shippingFee;
+            // If payment is COD or shipping address equals store pickup address (room), no shipping fee
+            if (request.PaymentMethod == PaymentMethod.COD || request.ShippingAddressId == store.RoomId || request.ShippingAddressId == store.Id)
+            {
+                shippingFee = 0;
+            }
+            else
+            {
+                // Only call ShippingFeeCharged when shipping is needed
+                shippingFee = await orderDbService.ShippingFeeCharged(
+                    request.ShippingAddressId,
+                    store.RoomId,
+                    (float)totalWeight
+                );
+            }
+
+            // Khởi tạo Order
             var order = new Order(
                 Guid.NewGuid(),
-                totalPrice,
+                totalPrice + shippingFee,
+                shippingFee,
                 request.PaymentMethod,
+                request.ShippingAddressId,
                 request.UserId,
                 cart.CartItems.Select(ci =>
                     new OrderItem(ci.Quantity, ci.ProductDetail.Price, Guid.Empty, ci.ProductDetailId)
-                ).ToList(), 
+                ).ToList(),
                 request.VoucherId,
                 request.StoreId
             );
 
-
             _context.Orders.Add(order);
-            await _context.SaveChangesAsync();
+
+            // Nếu dùng voucher thì trừ số lượng voucher
+            if (request.VoucherId.HasValue)
+            {
+                var voucher = await _context.Vouchers.FindAsync(request.VoucherId.Value);
+                if (voucher != null)
+                {
+                    if (voucher.Quantity > 0)
+                    {
+                        voucher.Quantity -= 1;
+                        voucher.IsActive = voucher.Quantity > 0;
+                    }
+                    else
+                    {
+                        // Nếu voucher đã hết, block tạo đơn (hoặc bạn có thể ignore tuỳ yêu cầu)
+                        throw new CustomException(ExceptionErrorCode.ValidationFailed, "Voucher đã hết");
+                    }
+                }
+            }
+
+
+            foreach (var ci in cart.CartItems)
+            {
+                var pd = ci.ProductDetail;
+
+                if (pd.IsOutOfStock || pd.Quantity < ci.Quantity)
+                    throw new CustomException(ExceptionErrorCode.ValidationFailed,
+                        $"Sản phẩm {pd.Product.Name} không đủ hàng");
+
+                pd.Quantity -= ci.Quantity;
+                pd.Sold += ci.Quantity;
+
+                if (pd.Quantity <= 0)
+                {
+                    pd.Quantity = 0;
+                    pd.IsOutOfStock = true;
+                }
+            }
+
+            // Remove the cart since it has been converted into an order
+            _context.Carts.Remove(cart);
+
+            await _context.SaveChangesAsync(cancellationToken);
 
             // Xử lý thanh toán online
-            string? paymentUrl = null;
+            string paymentUrl = null;
             if (request.PaymentMethod == PaymentMethod.BankTransfer)
             {
                 paymentUrl = await _vnPayService.CustomerPay(order.Id);
@@ -121,5 +195,6 @@ namespace ResiBuy.Server.Application.Commands.OrderCommands
 
             return new CreateOrderResponse(true, "Tạo đơn hàng thành công", order.Id, paymentUrl);
         }
+
     }
 }

@@ -42,9 +42,9 @@ namespace ResiBuy.Server.Services.VNPayServices
             if (order == null)
                 throw new CustomException(ExceptionErrorCode.NotFound, "order not found");
 
-            var amount = order.TotalPrice;
+            var amount = order.TotalPrice + (order.ShippingFee ?? 0);
 
-            var orderInfo = $"Thanh toan phi cua hang {orderId}";
+            var orderInfo = $"Thanh toan hoa don {orderId}";
             return CreatePaymentUrl(amount, orderId.ToString(), orderInfo);
         }
 
@@ -103,6 +103,43 @@ namespace ResiBuy.Server.Services.VNPayServices
             }
             return hash.ToString();
         }
+        public async Task<bool> ProcessOrderPaymentCallback(string responseData, Guid orderId)
+        {
+            try
+            {
+                Console.WriteLine($"Processing order payment callback for orderId: {orderId}");
+                
+                // Parse response data directly (validation already done in controller)
+                var responseParams = ParseResponseData(responseData);
+                Console.WriteLine($"Response code: {responseParams.GetValueOrDefault("vnp_ResponseCode", "NOT_FOUND")}");
+                Console.WriteLine($"Transaction status: {responseParams.GetValueOrDefault("vnp_TransactionStatus", "NOT_FOUND")}");
+
+                // Get the order and update payment status
+                var order = await orderDbService.GetById(orderId);
+                if (order == null)
+                {
+                    Console.WriteLine($"Order not found for orderId: {orderId}");
+                    return false;
+                }
+
+                Console.WriteLine($"Found order: {order.Id}, current payment status: {order.PaymentStatus}");
+
+                // Update order payment status to Paid
+                order.PaymentStatus = PaymentStatus.Paid;
+                await orderDbService.UpdateAsync(order);
+
+                Console.WriteLine($"Successfully updated order payment status to Paid");
+                return true;
+            }
+            catch (Exception ex)
+            {
+                // Log error
+                Console.WriteLine($"Error processing order payment callback: {ex.Message}");
+                Console.WriteLine($"Stack trace: {ex.StackTrace}");
+                return false;
+            }
+        }
+
         public async Task<bool> ProcessStorePaymentCallback(string responseData)
         {
             try
@@ -117,14 +154,14 @@ namespace ResiBuy.Server.Services.VNPayServices
                     return false;
 
                 if (!responseParams.ContainsKey("vnp_TxnRef") ||
-                    !Guid.TryParse(responseParams["vnp_TxnRef"][..responseParams["vnp_TxnRef"].LastIndexOf('-')], out var storeId))
+                    !Guid.TryParse(responseParams["vnp_TxnRef"][..responseParams["vnp_TxnRef"].LastIndexOf('-')], out var orderId))
                     return false;
 
-                var store = await storeDbService.GetStoreByIdAsync(storeId);
-                if (store == null)
+                var order = await orderDbService.GetById(orderId);
+                if (order == null)
                     return false;
-                store.IsPayFee = true;
-                await storeDbService.UpdateAsync(store);
+                order.PaymentStatus = PaymentStatus.Paid;
+                await orderDbService.UpdateAsync(order);
 
                 return true;
 
