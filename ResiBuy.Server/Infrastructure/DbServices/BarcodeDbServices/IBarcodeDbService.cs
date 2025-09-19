@@ -5,5 +5,6 @@
         Task<Barcode> GetBarcodeByBarcodeValueAsync(string barcodeValue);
 
         Task UpdateOrderItemIdForBarcodesAsync(List<string> barcodeCodes, Guid orderItemId);
+        Task<List<string>> GenerateUniqueBarcodesAsync(int count);
     }
 }

@@ -1,12 +1,13 @@
 ﻿using Confluent.Kafka;
 using ResiBuy.Server.Application.Commands.ProductCommands.DTOs.Create;
+using ResiBuy.Server.Infrastructure.DbServices.BarcodeDbServices;
 using ResiBuy.Server.Infrastructure.DbServices.PromotionDbService;
 
 namespace ResiBuy.Server.Application.Commands.ProductCommands
 {
     public record CreateProductCommand(CreateProductDto ProductDto) : IRequest<ResponseModel>;
 
-    public class CreateProductCommandHandler(IProductDbService productDbService, IPromotionDbService promotionDbService) : IRequestHandler<CreateProductCommand, ResponseModel>
+    public class CreateProductCommandHandler(IProductDbService productDbService, IPromotionDbService promotionDbService, IBarcodeDbService barcodeDbService) : IRequestHandler<CreateProductCommand, ResponseModel>
     {
         public async Task<ResponseModel> Handle(CreateProductCommand command, CancellationToken cancellationToken)
         {
@@ -86,6 +87,7 @@ namespace ResiBuy.Server.Application.Commands.ProductCommands
             if (dto.ProductDetails == null || !dto.ProductDetails.Any())
                 throw new CustomException(ExceptionErrorCode.ValidationFailed,
                     "Sản phẩm phải có ít nhất một chi tiết sản phẩm.");
+
             var promotion = await promotionDbService.GetPromotionByIdAsync(dto.PromotionId);
             if (promotion == null)
             {
@@ -97,7 +99,6 @@ namespace ResiBuy.Server.Application.Commands.ProductCommands
         private async Task ValidateAndProcessProductDetails(IEnumerable<CreateProductDetailDto> detailDtos, Product product)
         {
             var detailDataSets = new List<HashSet<string>>();
-            var allBarcodes = new List<string>();
 
             foreach (var detailDto in detailDtos)
             {
@@ -114,21 +115,10 @@ namespace ResiBuy.Server.Application.Commands.ProductCommands
                 // Process Image
                 ProcessProductDetailImage(detailDto, detail);
 
-                // Validate and process Barcodes
-                await ValidateAndProcessBarcodes(detailDto, detail, allBarcodes);
+                // Generate and process Barcodes
+                await GenerateAndProcessBarcodes(detailDto, detail);
 
                 product.ProductDetails.Add(detail);
-            }
-
-            // Final validation: check all barcodes across the system
-            if (allBarcodes.Any())
-            {
-                var existingCodes = await productDbService.QueryBarcodesAsync(allBarcodes);
-                if (existingCodes.Any())
-                {
-                    throw new CustomException(ExceptionErrorCode.ValidationFailed,
-                        $"Các barcode đã tồn tại trong hệ thống: {string.Join(", ", existingCodes)}");
-                }
             }
         }
 
@@ -168,7 +158,7 @@ namespace ResiBuy.Server.Application.Commands.ProductCommands
                 {
                     var message = string.Join(", ", duplicatesInSame);
                     throw new CustomException(ExceptionErrorCode.ValidationFailed,
-                        $"AdditionalData bị trùng trong 1 ProductDetail: {message}");
+                        $"Phân loại bị trùng trong 1 chi tiết sản phẩm: {message}");
                 }
 
                 dataSet = detailDto.AdditionalData
@@ -180,7 +170,7 @@ namespace ResiBuy.Server.Application.Commands.ProductCommands
                 {
                     var formatted = string.Join(", ", dataSet.Select(s => s.Replace("|", ": ")));
                     throw new CustomException(ExceptionErrorCode.ValidationFailed,
-                        $"AdditionalData bị trùng hoàn toàn giữa các ProductDetail: {formatted}");
+                        $"Các phân loại bị trùng hoàn toàn giữa các chi tiết sản phẩm: {formatted}");
                 }
 
                 // Validate AdditionalData keys and values
@@ -188,11 +178,11 @@ namespace ResiBuy.Server.Application.Commands.ProductCommands
                 {
                     if (string.IsNullOrWhiteSpace(additionalData.Key))
                         throw new CustomException(ExceptionErrorCode.ValidationFailed,
-                            "Key của AdditionalData không được để trống.");
+                            "Tên của phân loại không được để trống.");
 
                     if (string.IsNullOrWhiteSpace(additionalData.Value))
                         throw new CustomException(ExceptionErrorCode.ValidationFailed,
-                            "Value của AdditionalData không được để trống.");
+                            "thuộc tính của phân loại không được để trống.");
                 }
 
                 detail.AdditionalData = detailDto.AdditionalData
@@ -222,54 +212,31 @@ namespace ResiBuy.Server.Application.Commands.ProductCommands
             }
         }
 
-        private async Task ValidateAndProcessBarcodes(CreateProductDetailDto detailDto, ProductDetail detail, List<string> allBarcodes)
+        private async Task GenerateAndProcessBarcodes(CreateProductDetailDto detailDto, ProductDetail detail)
         {
-            if (detailDto.Barcodes != null && detailDto.Barcodes.Any())
+            // Chỉ tạo barcode nếu Quantity > 0
+            if (detailDto.Quantity > 0)
             {
-                // Validate barcode count matches quantity
-                if (detailDto.Barcodes.Count != detailDto.Quantity)
+                try
                 {
-                    throw new CustomException(ExceptionErrorCode.ValidationFailed,
-                        $"Số lượng barcode ({detailDto.Barcodes.Count}) phải bằng với Quantity ({detailDto.Quantity}) cho sản phẩm chi tiết.");
-                }
+                    // Tạo barcode tự động từ BarcodeDbService
+                    var generatedBarcodes = await barcodeDbService.GenerateUniqueBarcodesAsync(detailDto.Quantity);
 
-                // Validate barcode format and uniqueness within detail
-                var cleanBarcodes = new List<string>();
-                foreach (var barcode in detailDto.Barcodes)
+                    // Chuyển đổi thành danh sách Barcode entities
+                    detail.Barcodes = generatedBarcodes
+                        .Select(code => new Barcode { Code = code })
+                        .ToList();
+                }
+                catch (InvalidOperationException ex)
                 {
-                    if (string.IsNullOrWhiteSpace(barcode))
-                        throw new CustomException(ExceptionErrorCode.ValidationFailed,
-                            "Barcode không được để trống.");
-
-                    var cleanBarcode = barcode.Trim();
-                    if (cleanBarcodes.Contains(cleanBarcode))
-                        throw new CustomException(ExceptionErrorCode.ValidationFailed,
-                            $"Barcode bị trùng trong cùng 1 ProductDetail: {cleanBarcode}");
-
-                    cleanBarcodes.Add(cleanBarcode);
+                    throw new CustomException(ExceptionErrorCode.CreateFailed,
+                        $"Không thể tạo barcode cho sản phẩm chi tiết: {ex.Message}");
                 }
-
-                // Check for duplicates across all details in this product
-                var duplicatesAcrossDetails = allBarcodes.Intersect(cleanBarcodes).ToList();
-                if (duplicatesAcrossDetails.Any())
-                {
-                    throw new CustomException(ExceptionErrorCode.ValidationFailed,
-                        $"Barcode bị trùng giữa các ProductDetail: {string.Join(", ", duplicatesAcrossDetails)}");
-                }
-
-                allBarcodes.AddRange(cleanBarcodes);
-
-                detail.Barcodes = cleanBarcodes
-                    .Select(code => new Barcode { Code = code })
-                    .ToList();
             }
             else
             {
-                if (detailDto.Quantity > 0)
-                {
-                    throw new CustomException(ExceptionErrorCode.ValidationFailed,
-                        "Nếu Quantity > 0 thì phải có danh sách Barcode tương ứng.");
-                }
+                // Nếu Quantity = 0, không cần barcode
+                detail.Barcodes = new List<Barcode>();
             }
         }
     }
