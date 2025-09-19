@@ -90,6 +90,20 @@ const shipperApi = {
     });
     return response.data.data;
   },
+
+  calculate: async (
+    shippingAddress: string,
+    storeAddress: string,
+    weight: number
+  ) => {
+    const response = await axiosClient.post(`${shipperUrl}/calculate`, {
+      shippingAddress,
+      storeAddress,
+      weight,
+    });
+    return response.data; // { code, message, data = fee }
+  },
+  
 };
 
 export default shipperApi;
