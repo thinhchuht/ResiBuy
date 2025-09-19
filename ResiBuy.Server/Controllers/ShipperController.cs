@@ -1,3 +1,6 @@
+using ResiBuy.Server.Application.Queries.ShipperQueries.DTOs;
+using ResiBuy.Server.Infrastructure.DbServices.OrderDbServices;
+
 namespace ResiBuy.Server.Controllers
 {
     [ApiController]
@@ -7,10 +10,12 @@ namespace ResiBuy.Server.Controllers
     public class ShipperController : ControllerBase
     {
         private readonly IMediator _mediator;
+        private readonly IOrderDbService _shippingService;
 
-        public ShipperController(IMediator mediator)
+        public ShipperController(IMediator mediator, IOrderDbService shippingService)
         {
             _mediator = mediator;
+            _shippingService = shippingService;
         }
 
         [HttpPost]
@@ -98,5 +103,30 @@ namespace ResiBuy.Server.Controllers
             return Ok(result);
         }
 
+        [HttpPost("calculate")]
+        public async Task<IActionResult> Calculate([FromBody] ShippingFeeRequest request)
+        {
+            if (request == null)
+                return BadRequest(new ApiResponse<string>(1, "Invalid request"));
+
+            try
+            {
+                var fee = await _shippingService.ShippingFeeCharged(
+                    request.ShippingAddress,
+                    request.StoreAddress,
+                    request.Weight
+                );
+
+                return Ok(new ApiResponse<decimal>(fee));
+            }
+            catch (Exception ex)
+            {
+                return StatusCode(500, new ApiResponse<string>(1, ex.Message));
+            }
         }
+
+
+
+
+    }
 }

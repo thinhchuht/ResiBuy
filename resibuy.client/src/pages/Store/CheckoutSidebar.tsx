@@ -15,6 +15,8 @@ import {
 } from "@mui/material";
 import userApi from "../../api/user.api";
 import voucherApi from "../../api/voucher.api";
+import shipperApi from "../../api/ship.api";
+import DeliveryAddressDialog from "./DeliveryAddressDialog";
 
 type CheckoutSidebarProps = {
   total: number;
@@ -28,6 +30,9 @@ type CartState = {
   voucher: any | null;
   paymentMethod: "CASH" | "BANK" | null;
   customerPaid: number;
+  deliveryAddress?: any;
+  shippingFee?: number;
+  deliveryMethod?: "PICKUP" | "DELIVERY";
 };
 
 const CheckoutSidebar: React.FC<CheckoutSidebarProps> = ({
@@ -36,14 +41,15 @@ const CheckoutSidebar: React.FC<CheckoutSidebarProps> = ({
   onCheckout,
   cartId,
 }) => {
-  // state theo cartId
   const [cartStates, setCartStates] = useState<Record<string, CartState>>({});
   const [openDialog, setOpenDialog] = useState(false);
   const [phoneInput, setPhoneInput] = useState("");
   const [openVoucherDialog, setOpenVoucherDialog] = useState(false);
   const [vouchers, setVouchers] = useState<any[]>([]);
+  const [showAddressDialog, setShowAddressDialog] = useState(false);
+  const [deliveryAddress, setDeliveryAddress] = useState<any>(null);
 
-  // snackbar thông báo
+  // snackbar
   const [snackbar, setSnackbar] = useState<{
     open: boolean;
     message: string;
@@ -57,12 +63,13 @@ const CheckoutSidebar: React.FC<CheckoutSidebarProps> = ({
     setSnackbar({ open: true, message, severity });
   };
 
-  // lấy state của cart hiện tại
+  // state cart hiện tại
   const currentCart = cartStates[cartId] || {
     customer: null,
     voucher: null,
     paymentMethod: null,
     customerPaid: total,
+    shippingFee: 0,
   };
 
   const setCartState = (updates: Partial<CartState>) => {
@@ -72,7 +79,7 @@ const CheckoutSidebar: React.FC<CheckoutSidebarProps> = ({
     }));
   };
 
-  // tìm khách theo sđt
+  // tìm khách
   const handleSearchCustomer = async () => {
     if (!phoneInput.trim()) return;
     try {
@@ -85,7 +92,7 @@ const CheckoutSidebar: React.FC<CheckoutSidebarProps> = ({
     }
   };
 
-  // mở popup voucher
+  // mở voucher
   const handleOpenVoucherDialog = async () => {
     try {
       const res = await voucherApi.getAll({
@@ -101,6 +108,7 @@ const CheckoutSidebar: React.FC<CheckoutSidebarProps> = ({
     }
   };
 
+  // tính giảm giá từ voucher
   const voucherDiscount = (() => {
     if (!currentCart.voucher) return 0;
     if (currentCart.voucher.type === "Amount") {
@@ -115,7 +123,8 @@ const CheckoutSidebar: React.FC<CheckoutSidebarProps> = ({
   })();
 
   const finalAmount = total - discount - voucherDiscount;
-  const change = currentCart.customerPaid - finalAmount;
+  const shippingFee = currentCart.shippingFee || 0;
+  const change = currentCart.customerPaid - (finalAmount + shippingFee);
 
   return (
     <Box flex={1} p={2} component={Paper} elevation={2}>
@@ -151,6 +160,69 @@ const CheckoutSidebar: React.FC<CheckoutSidebarProps> = ({
 
       <Divider sx={{ my: 2 }} />
 
+      <Typography variant="subtitle1">Hình thức nhận hàng</Typography>
+      <Box display="flex" gap={1} my={1}>
+        <Button
+          variant={
+            currentCart.deliveryMethod === "PICKUP" ? "contained" : "outlined"
+          }
+          onClick={() => {
+            setDeliveryAddress(null); // 👈 reset UI
+            setCartState({
+              deliveryMethod: "PICKUP",
+              shippingFee: 0,
+              deliveryAddress: "33333333-3333-3333-3333-333333333333", // 👈 reset trong state cart
+            });
+          }}
+        >
+          Lấy tại quầy
+        </Button>
+
+        <Button
+          variant={
+            currentCart.deliveryMethod === "DELIVERY" ? "contained" : "outlined"
+          }
+          onClick={() => {
+            setCartState({ deliveryMethod: "DELIVERY" });
+            setShowAddressDialog(true);
+          }}
+        >
+          Giao hàng
+        </Button>
+      </Box>
+
+      {deliveryAddress && (
+        <Typography
+          variant="body2"
+          sx={{ mt: 1, fontStyle: "italic", color: "#555" }}
+        >
+          Địa chỉ nhận hàng: {deliveryAddress.areaName} -{" "}
+          {deliveryAddress.buildingName} - {deliveryAddress.roomName}
+        </Typography>
+      )}
+
+      <DeliveryAddressDialog
+        open={showAddressDialog}
+        onClose={() => setShowAddressDialog(false)}
+        onSave={async (address) => {
+          setDeliveryAddress(address);
+          setCartState({ deliveryAddress: address });
+
+          try {
+            const res = await shipperApi.calculate(
+              address.id,
+              "33333333-3333-3333-3333-333333333333", // địa chỉ cửa hàng thật
+              1.0
+            );
+            setCartState({ shippingFee: res.data });
+          } catch (err: any) {
+            showMessage("Không tính được phí ship", "error");
+          }
+        }}
+      />
+
+      <Divider sx={{ my: 2 }} />
+
       <Box display="flex" alignItems="center" justifyContent="space-between">
         <Typography>Voucher:</Typography>
         <Button
@@ -170,14 +242,18 @@ const CheckoutSidebar: React.FC<CheckoutSidebarProps> = ({
         Tiền hàng: {total.toLocaleString()} đ
       </Typography>
       <Typography>
+        Phí ship:{" "}
+        {shippingFee > 0 ? `${shippingFee.toLocaleString()} đ` : "0 đ"}
+      </Typography>
+      <Typography>
         Giảm tiền đơn hàng:{" "}
         {discount > 0 ? `-${discount.toLocaleString()} đ` : "0 đ"}
       </Typography>
       {voucherDiscount > 0 && (
         <Typography>Voucher: -{voucherDiscount.toLocaleString()} đ</Typography>
       )}
-      <Typography variant="h6" sx={{ mt: 2 }}>
-        Khách phải trả: {finalAmount.toLocaleString()} đ
+      <Typography variant="h6">
+        Tổng cộng: {(finalAmount + shippingFee).toLocaleString()} đ
       </Typography>
 
       <Divider sx={{ my: 2 }} />
@@ -239,7 +315,7 @@ const CheckoutSidebar: React.FC<CheckoutSidebarProps> = ({
           }
           if (
             currentCart.paymentMethod === "CASH" &&
-            currentCart.customerPaid < finalAmount
+            currentCart.customerPaid < finalAmount + shippingFee
           ) {
             showMessage("Số tiền khách đưa chưa hợp lệ", "error");
             return;
@@ -250,6 +326,8 @@ const CheckoutSidebar: React.FC<CheckoutSidebarProps> = ({
             voucher: currentCart.voucher,
             paymentMethod: currentCart.paymentMethod,
             customerPaid: currentCart.customerPaid,
+            deliveryAddress: currentCart.deliveryAddress,
+            shippingFee: currentCart.shippingFee || 0,
           });
           showMessage("Thanh toán thành công", "success");
         }}
@@ -346,7 +424,7 @@ const CheckoutSidebar: React.FC<CheckoutSidebarProps> = ({
         </DialogActions>
       </Dialog>
 
-      {/* Snackbar thông báo */}
+      {/* Snackbar */}
       <Snackbar
         open={snackbar.open}
         autoHideDuration={3000}
