@@ -46,9 +46,12 @@ namespace ResiBuy.Server.Application.Commands.OrderCommands
                 {
                     foreach (var item in order.Items)
                     {
-                        if(item.Barcodes.Count() != item.Quantity)
-                            throw new CustomException(ExceptionErrorCode.ValidationFailed, $"Số lượng mã vạch không khớp với số lượng sản phẩm của mã sản phẩm chi tiết {item.ProductDetailId}");
-                        await checkListBarCode(item.Barcodes);
+                        if (item.Barcodes != null && item.Barcodes.Any())
+                        {
+                            if (item.Barcodes.Count() != item.Quantity)
+                                throw new CustomException(ExceptionErrorCode.ValidationFailed, $"Số lượng mã vạch không khớp với số lượng sản phẩm của mã sản phẩm chi tiết {item.ProductDetailId}");
+                            await checkListBarCode(item.Barcodes);
+                        }
                     }
                 }
                 else
@@ -176,7 +179,10 @@ namespace ResiBuy.Server.Application.Commands.OrderCommands
                     if (orderItem == null) continue;
 
                     // Cập nhật OrderItemId cho từng barcode
-                    await barcodeDbService.UpdateOrderItemIdForBarcodesAsync(itemDto.Barcodes, orderItem.ID);
+                    if (itemDto.Barcodes != null && itemDto.Barcodes.Any())
+                    {
+                        await barcodeDbService.UpdateOrderItemIdForBarcodesAsync(itemDto.Barcodes, orderItem.ID);
+                    }
                 }
             }
         }
