@@ -13,12 +13,12 @@ import {
   TableCell,
   TableHead,
   TableRow,
+  CircularProgress,
+  Grid,
   Card,
   CardContent,
-  Grid,
-  CircularProgress,
 } from "@mui/material";
-import { Close, Add, Delete } from "@mui/icons-material";
+import { Add, Close, Delete } from "@mui/icons-material";
 import productApi from "../../api/product.api";
 import cartApi from "../../api/cart.api";
 import type { ProductDto } from "../../types/product";
@@ -148,9 +148,13 @@ const SellPage: React.FC = () => {
         id: res.data.data.id,
         name: `Đơn hàng ${tabs.length + 1}`,
       };
-      setTabs((prev) => [...prev, newTab]);
-      setCurrentTab(tabs.length);
-
+      const newTabs = [...tabs, newTab];
+      const renumbered = newTabs.map((t, i) => ({
+        id: t.id,
+        name: `Đơn hàng ${i + 1}`,
+      }));
+      setTabs(renumbered);
+      setCurrentTab(renumbered.length - 1);
     } catch (err) {
       console.error("Lỗi tạo cart mới:", err);
     }
@@ -193,10 +197,18 @@ const SellPage: React.FC = () => {
       await cartApi.deleteCart(cartId);
       const newTabs = [...tabs];
       newTabs.splice(tabToDelete, 1);
-      setTabs(newTabs);
-      if (newTabs.length > 0) {
-        setCurrentTab(0);
-        loadCart(newTabs[0].id);
+      const renumbered = newTabs.map((t, i) => ({
+        id: t.id,
+        name: `Đơn hàng ${i + 1}`,
+      }));
+      setTabs(renumbered);
+      if (renumbered.length > 0) {
+        const nextIndex = Math.max(
+          0,
+          Math.min(tabToDelete, renumbered.length - 1)
+        );
+        setCurrentTab(nextIndex);
+        await loadCart(renumbered[nextIndex].id);
       } else {
         setCurrentTab(0);
         setItems([]);
@@ -614,7 +626,29 @@ const SellPage: React.FC = () => {
           cartId={tabs[currentTab]?.id} // ✅ Truyền cartId hiện tại
           total={total}
           discount={totalDiscount}
-          onCheckout={() => alert("Thanh toán thành công!")}
+          storeId={products?.[0]?.storeId}
+          totalWeight={items.reduce(
+            (s, it) => s + (it.productDetail?.weight || 0) * it.quantity,
+            0
+          )}
+          onOrderCreated={async (paidCartId: string) => {
+            // remove the cart tab and load next cart if present
+            const idx = tabs.findIndex((t) => t.id === paidCartId);
+            if (idx === -1) return;
+            const newTabs = [...tabs];
+            newTabs.splice(idx, 1);
+            setTabs(newTabs);
+            if (newTabs.length > 0) {
+              const nextIndex = Math.max(0, Math.min(idx, newTabs.length - 1));
+              setCurrentTab(nextIndex);
+              await loadCart(newTabs[nextIndex].id);
+            } else {
+              setCurrentTab(0);
+              setItems([]);
+            }
+            if (window.toast)
+              window.toast.success("Đã thanh toán và đóng đơn hàng");
+          }}
         />
       </Box>
       {/* Dialog xác nhận xóa */}

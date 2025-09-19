@@ -1,0 +1,59 @@
+import React from "react";
+import {
+  Container,
+  Paper,
+  Stack,
+  Typography,
+  Box,
+  Button,
+} from "@mui/material";
+import CancelOutlinedIcon from "@mui/icons-material/CancelOutlined";
+import HomeIcon from "@mui/icons-material/Home";
+import SupportAgentIcon from "@mui/icons-material/SupportAgent";
+import { useNavigate } from "react-router-dom";
+
+const PaymentFailed: React.FC = () => {
+  const navigate = useNavigate();
+
+  return (
+    <Container maxWidth="md" sx={{ py: 8 }}>
+      <Paper elevation={3} sx={{ p: 6, borderRadius: 4 }}>
+        <Stack spacing={4} alignItems="center">
+          <CancelOutlinedIcon sx={{ fontSize: 96, color: "#f44336" }} />
+          <Typography variant="h4" sx={{ fontWeight: 700 }}>
+            Thanh toán thất bại
+          </Typography>
+          <Typography
+            variant="body1"
+            sx={{ color: "#666", textAlign: "center", maxWidth: 640 }}
+          >
+            Rất tiếc, giao dịch không hoàn tất. Vui lòng kiểm tra thông tin
+            thanh toán hoặc thử lại.
+          </Typography>
+
+          <Box sx={{ display: "flex", gap: 2 }}>
+            <Button variant="contained" onClick={() => navigate("/checkout")}>
+              Thử lại thanh toán
+            </Button>
+            <Button
+              variant="outlined"
+              startIcon={<SupportAgentIcon />}
+              onClick={() => navigate("/contact")}
+            >
+              Liên hệ hỗ trợ
+            </Button>
+            <Button
+              variant="text"
+              startIcon={<HomeIcon />}
+              onClick={() => navigate("/")}
+            >
+              Về trang chủ
+            </Button>
+          </Box>
+        </Stack>
+      </Paper>
+    </Container>
+  );
+};
+
+export default PaymentFailed;

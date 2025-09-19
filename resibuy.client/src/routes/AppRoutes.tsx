@@ -1,5 +1,10 @@
 import React from "react";
-import { BrowserRouter as Router, Routes, Route, Navigate } from "react-router-dom";
+import {
+  BrowserRouter as Router,
+  Routes,
+  Route,
+  Navigate,
+} from "react-router-dom";
 import { useAuth } from "../contexts/AuthContext";
 import Login from "../components/auth/Login";
 import ProtectedRoute from "../components/auth/ProtectedRoute";
@@ -14,6 +19,8 @@ import Unauthorized from "../components/Unauthorized";
 import Forbidden from "../components/Forbidden";
 import CheckoutSuccess from "../pages/CheckoutSuccess/CheckoutSuccess";
 import CheckoutFailed from "../pages/CheckoutFailed/CheckoutFailed";
+import PaymentSuccess from "../pages/Payment/PaymentSuccess";
+import PaymentFailed from "../pages/Payment/PaymentFailed";
 import AdminLayout from "../layouts/AdminLayout";
 import Dashboard from "../pages/Admin/dashboard/Dashboard";
 import StoresPage from "../pages/Admin/Store/page";
@@ -104,7 +111,9 @@ const AppRoutes: React.FC = () => {
         <Route
           path="/profile"
           element={
-            <ProtectedRoute allowedRoles={["CUSTOMER", "ADMIN", "SHIPPER", "SELLER"]}>
+            <ProtectedRoute
+              allowedRoles={["CUSTOMER", "ADMIN", "SHIPPER", "SELLER"]}
+            >
               <HomeLayout>
                 <Profile />
               </HomeLayout>
@@ -129,6 +138,22 @@ const AppRoutes: React.FC = () => {
                 <CheckoutFailed />
               </HomeLayout>
             </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/payment-success"
+          element={
+            <HomeLayout>
+              <PaymentSuccess />
+            </HomeLayout>
+          }
+        />
+        <Route
+          path="/paymentFail"
+          element={
+            <HomeLayout>
+              <PaymentFailed />
+            </HomeLayout>
           }
         />
         <Route
@@ -165,7 +190,8 @@ const AppRoutes: React.FC = () => {
             <ProtectedRoute allowedRoles={["ADMIN"]}>
               <AdminLayout />
             </ProtectedRoute>
-          }>
+          }
+        >
           <Route index element={<Navigate to="dashboard" replace />} />
           <Route path="dashboard" element={<Dashboard />} />
           <Route path="Shipper" element={<ShippersPage />} />
@@ -178,12 +204,15 @@ const AppRoutes: React.FC = () => {
           <Route path="user" element={<UserPage />} />
           <Route path="reports" element={<ReportsPage />} />
           <Route path="orders" element={<OrderPage />} />
-               <Route path="promotion-create" element={<PromotionCreatePage />} />
-                 <Route path="promotion" element={<PromotionListPage />} />
-                   <Route path="promotion-update/:promotionId" element={<PromotionUpdatePage />} />
-                     <Route path="voucher" element={<VoucherPage />} />
-                       <Route path="voucher-create" element={<VoucherCreatePage />} />
-                         <Route path="voucher-update/:voucherId" element={<UpdateVoucher />} />
+          <Route path="promotion-create" element={<PromotionCreatePage />} />
+          <Route path="promotion" element={<PromotionListPage />} />
+          <Route
+            path="promotion-update/:promotionId"
+            element={<PromotionUpdatePage />}
+          />
+          <Route path="voucher" element={<VoucherPage />} />
+          <Route path="voucher-create" element={<VoucherCreatePage />} />
+          <Route path="voucher-update/:voucherId" element={<UpdateVoucher />} />
         </Route>
         <Route
           path="/seller/*"
@@ -201,7 +230,8 @@ const AppRoutes: React.FC = () => {
             <ProtectedRoute allowedRoles={["SHIPPER"]}>
               <ShipperLayout />
             </ProtectedRoute>
-          }>
+          }
+        >
           <Route index element={<Navigate to="home" replace />} />
           <Route path="home" element={<HomePage />} />
           <Route path="attendance" element={<AttendancePage />} />
