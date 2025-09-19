@@ -1,4 +1,5 @@
 ﻿using ResiBuy.Server.Application.Commands.OrderCommands;
+using ResiBuy.Server.Application.Commands.OrderCommands.Dtos;
 using ResiBuy.Server.Application.Queries.OrderQueries;
 using ResiBuy.Server.Infrastructure.Model.DTOs.CheckoutDtos;
 using ResiBuy.Server.Infrastructure.Model.DTOs.OrderDtos;
@@ -83,5 +84,17 @@ namespace ResiBuy.Server.Controllers
             var result = await mediator.Send(new GetOverviewStatsQuery(startDate, endDate));
             return Ok(result);
         }
+
+        [HttpPost("create")]
+        public async Task<IActionResult> CreateOrder([FromBody] CreateOrderRequest request)
+        {
+           
+                var command = new CreateOrder(request);
+                var result = await mediator.Send(command);
+                return Ok(result); // Trả về 200 + dữ liệu CreateOrderResponse
+           
+        }
+
+
     }
 }

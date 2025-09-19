@@ -5,5 +5,6 @@
         Task<Cart> GetByIdAsync(Guid id);
         Task<List<Cart>> GetCheckingOutCartsAsync();
         Task<ResponseModel> ResetStatus(List<Guid> ids);
+        Task<IEnumerable<Cart>> GetCartsInShoppingAsync();
     }
 }

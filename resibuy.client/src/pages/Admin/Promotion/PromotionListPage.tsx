@@ -197,11 +197,11 @@ const PromotionListPage: React.FC = () => {
     };
 
     const handleCreatePromotion = () => {
-        navigate(`/store/${storeId}/promotion-create`);
+        navigate(`/admin/promotion-create`);
     };
 
     const handleEditPromotion = (promotionId: number) => {
-        navigate(`/store/${storeId}/promotion-update/${promotionId}`);
+        navigate(`/admin/promotion-update/${promotionId}`);
     };
 
     const isPromotionActive = (promotion: Promotion) => {
@@ -230,10 +230,10 @@ const PromotionListPage: React.FC = () => {
     };
 
     return (
-        <Box p={4}>
+      <Box p={4} sx={{ bgcolor: "white", minHeight: "100vh" }}>
             <Stack spacing={3}>
                 {/* Header */}
-                {/* <Box display="flex" justifyContent="space-between" alignItems="center">
+                <Box display="flex" justifyContent="space-between" alignItems="center">
                     <Typography variant="h4">Danh sách Khuyến mãi</Typography>
                     <Button
                         variant="contained"
@@ -242,7 +242,7 @@ const PromotionListPage: React.FC = () => {
                     >
                         Tạo khuyến mãi mới
                     </Button>
-                </Box> */}
+                </Box>
 
                 {/* Filters */}
                 <Card>
@@ -342,8 +342,8 @@ const PromotionListPage: React.FC = () => {
                                                 <TableCell align="center">Ngày bắt đầu</TableCell>
                                                 <TableCell align="center">Ngày kết thúc</TableCell>
                                                 <TableCell align="center">Trạng thái</TableCell>
-                                                {/* <TableCell align="center">Kích hoạt</TableCell>
-                                                <TableCell align="center">Thao tác</TableCell> */}
+                                                <TableCell align="center">Kích hoạt</TableCell>
+                                                <TableCell align="center">Thao tác</TableCell>
                                             </TableRow>
                                         </TableHead>
                                         <TableBody>
@@ -379,7 +379,7 @@ const PromotionListPage: React.FC = () => {
                                                                     size="small"
                                                                 />
                                                             </TableCell>
-                                                            {/* <TableCell align="center">
+                                                            <TableCell align="center">
                                                                 <Switch
                                                                     checked={promotion.isActive}
                                                                     onChange={() =>
@@ -397,7 +397,7 @@ const PromotionListPage: React.FC = () => {
                                                                         <EditIcon />
                                                                     </IconButton>
                                                                 </Tooltip>
-                                                            </TableCell> */}
+                                                            </TableCell>
                                                         </TableRow>
                                                     );
                                                 })

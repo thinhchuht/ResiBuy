@@ -18,6 +18,7 @@ namespace ResiBuy.Server.Infrastructure.Model
             CartId = cartId;
             ProductDetailId = productDetailId;
         }
+
         public void UpdateQuantity(int quantity)
         {
             Quantity = quantity;
