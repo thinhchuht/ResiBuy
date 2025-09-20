@@ -2,7 +2,7 @@
 {
     public class Order
     {
-        public Order(Guid id, decimal totalPrice, decimal shippingFee, PaymentMethod paymentMethod, string note, Guid shippingAddressId, string userId, Guid storeId, IEnumerable<OrderItem> items, Guid? voucherId)
+        public Order(Guid id, decimal totalPrice, decimal shippingFee, PaymentMethod paymentMethod, string note, Guid shippingAddressId, string userId, Guid storeId, IEnumerable<OrderItem> items, Guid? voucherId, OrderType? orderType = null)
         {
             Id = id;
             TotalPrice = totalPrice > -1000 ? totalPrice : totalPrice;
@@ -19,9 +19,10 @@
             StoreId = storeId;
             Items = items;
             VoucherId = voucherId;
+            OrderType = orderType;
         }
 
-        public Order(Guid id, decimal totalPrice, PaymentMethod paymentMethod, string userId, IEnumerable<OrderItem> items, Guid? voucherId, Guid storeId)
+        public Order(Guid id, decimal totalPrice, PaymentMethod paymentMethod, string userId, IEnumerable<OrderItem> items, Guid? voucherId, Guid storeId, OrderType? orderType = null)
         {
             Id = id;
             TotalPrice = totalPrice > -1000 ? totalPrice : totalPrice;
@@ -34,6 +35,7 @@
             Items = items;
             VoucherId = voucherId;
             StoreId = storeId;
+            OrderType = orderType;
         }
 
         public Order()
@@ -46,10 +48,12 @@
         public OrderStatus Status { get; set; }
         public PaymentStatus PaymentStatus { get; set; }
         public PaymentMethod PaymentMethod { get; set; }
+        public OrderType? OrderType { get; set; }
+
         public DateTime CreateAt { get; set; }
         public DateTime UpdateAt { get; set; }
         public string Note { get; set; }
-        public Guid ShippingAddressId { get; set; }
+        public Guid? ShippingAddressId { get; set; }
         public string UserId { get; set; }
         public Guid StoreId { get; set; }
         public Guid? ShipperId { get; set; }

@@ -11,6 +11,13 @@ public enum OrderStatus
     Cancelled, // Hủy đơn hàng
     Reported // Đơn hàng bị báo cáo
 }
+[JsonConverter(typeof(JsonStringEnumConverter))]
+public enum OrderType
+{
+    None,
+    Online,
+    InStore // Tại quầy
+}
 
 [JsonConverter(typeof(JsonStringEnumConverter))]
 public enum PaymentMethod

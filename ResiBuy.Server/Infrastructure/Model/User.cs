@@ -3,11 +3,11 @@
     public class User
     {
         public string Id { get; set; }
-        public string Email { get; set; }
+        public string? Email { get; set; }
         public string PhoneNumber { get; set; }
         public string PasswordHash { get; set; }
-        public string IdentityNumber { get; set; }
-        public DateTime DateOfBirth { get; set; }
+        public string? IdentityNumber { get; set; }
+        public DateTime? DateOfBirth { get; set; }
         public bool IsLocked { get; set; }
         public List<string> Roles { get; set; }
         public string FullName { get; set; }

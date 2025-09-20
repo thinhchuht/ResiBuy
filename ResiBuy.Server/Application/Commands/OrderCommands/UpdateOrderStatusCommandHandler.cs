@@ -132,7 +132,12 @@ namespace ResiBuy.Server.Application.Commands.OrderCommands
                 if (dto.OrderStatus == OrderStatus.Delivered)
                 {
                     var user = await userDbService.GetUserById(order.UserId);
-                    var shippingAddress = await roomDbService.GetByIdAsync(order.ShippingAddressId);
+                    Room? shippingAddress = null;
+                    if (order.ShippingAddressId.HasValue)
+                    {
+                        shippingAddress = await roomDbService.GetByIdAsync(order.ShippingAddressId.Value);
+                    }
+
                     await shipperDbService.UpdateTimeDelevery(order.ShipperId.Value);
                     if (user != null && shippingAddress != null)
                     {

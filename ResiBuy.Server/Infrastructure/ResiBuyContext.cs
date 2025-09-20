@@ -74,6 +74,24 @@ namespace ResiBuy.Server.Infrastructure
                 CreatedAt = DateTime.Now,
                 UpdatedAt = DateTime.Now
             };
+            // default guest customer
+            var guest = new User
+            {
+                Id = Guid.NewGuid().ToString(),
+                Email = null,
+                PasswordHash = CustomPasswordHasher.HashPassword("Admin@123"), // mật khẩu mặc định
+                PhoneNumber = "0",
+                IdentityNumber = null,
+                DateOfBirth = new DateTime(2000, 1, 1),
+                IsLocked = false,
+                Roles = [Constants.CustomerRole], // role customer
+                FullName = "Khách vãng lai",
+                CreatedAt = DateTime.Now,
+                UpdatedAt = DateTime.Now
+            }; ;
+
+            modelBuilder.Entity<User>().HasData(guest);
+
             modelBuilder.Entity<User>().HasData(admin);
             var defaultAreaId = Guid.Parse("11111111-1111-1111-1111-111111111111");
             var defaultBuildingId = Guid.Parse("22222222-2222-2222-2222-222222222222");

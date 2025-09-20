@@ -55,7 +55,6 @@
   <ItemGroup>
     <Folder Include="Assets\" />
     <Folder Include="Infrastructure\Migrations\" />
-    <Folder Include="Migrations\" />
     <Folder Include="Services\HttpServices\" />
   </ItemGroup>
 </Project>
