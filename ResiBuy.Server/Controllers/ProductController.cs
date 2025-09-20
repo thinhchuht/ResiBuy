@@ -74,5 +74,12 @@ namespace ResiBuy.Server.Controllers
 
             return Ok(result);
         }
+
+        [HttpPost("remove-barcode")]
+        public async Task<IActionResult> RemoveBarcodeFromProduct([FromBody] List<string> dto)
+        {
+            var result = await mediator.Send(new RemoveBarcodeFromProductCommand(dto));
+            return Ok(result);
+        }
     }
 }

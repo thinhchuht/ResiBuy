@@ -119,5 +119,33 @@ namespace ResiBuy.Server.Infrastructure.DbServices.BarcodeDbServices
 
             return string.Join("", digits) + checkDigit.ToString();
         }
+
+        public Task<ResponseModel> RemoveBarcode(List<string> barcodes)
+        {
+            foreach (var code in barcodes)
+            {
+                var barcode = _context.Barcodes.Include(b => b.OrderItem).FirstOrDefault(b => b.Code == code);
+                if (barcode != null && barcode.OrderItem == null && barcode.OrderItemId == null)
+                {
+                    _context.Barcodes.Remove(barcode);
+                    var productDetail = _context.ProductDetails.Find(barcode.ProductDetailId);
+                    if(productDetail == null)
+                    {
+                        throw new CustomException(ExceptionErrorCode.ValidationFailed, $"Barcode {code} không được gán với sản phẩm nào");
+                    }
+                    productDetail.Quantity -= 1;
+                    if (productDetail.Quantity < 0)
+                    {
+                        productDetail.Quantity = 0;
+                    }
+                }
+                else
+                {
+                    throw new CustomException(ExceptionErrorCode.ValidationFailed, $"Mã vạch {code} không thể xóa vì đang được sử dụng trong đơn hàng hoặc không tồn tại.");
+                }
+            }
+            _context.SaveChanges();
+            return Task.FromResult(ResponseModel.SuccessResponse(barcodes));
+        }
     }
 }

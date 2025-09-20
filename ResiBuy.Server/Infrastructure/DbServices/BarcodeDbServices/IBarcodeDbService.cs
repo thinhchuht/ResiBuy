@@ -6,5 +6,6 @@
 
         Task UpdateOrderItemIdForBarcodesAsync(List<string> barcodeCodes, Guid orderItemId);
         Task<List<string>> GenerateUniqueBarcodesAsync(int count);
+        Task<ResponseModel> RemoveBarcode(List<string> barcodes);
     }
 }
