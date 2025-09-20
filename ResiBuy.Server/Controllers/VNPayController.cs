@@ -43,7 +43,7 @@ namespace ResiBuy.Server.Controllers
         {
             var responseData = Request.QueryString.ToString().TrimStart('?');
             logger.LogInformation($"Payment callback received - OrderInfo: {callback.vnp_OrderInfo}, TxnRef: {callback.vnp_TxnRef}, ResponseCode: {callback.vnp_ResponseCode}, TransactionStatus: {callback.vnp_TransactionStatus}");
-            
+
             if (!vnPayService.ValidatePayment(responseData))
             {
                 logger.LogWarning("Payment validation failed");

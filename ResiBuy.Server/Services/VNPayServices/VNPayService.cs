@@ -62,7 +62,7 @@ namespace ResiBuy.Server.Services.VNPayServices
             var orderInfo = $"Thanh toan phi cua hang {store.Id}";
 
             // Tạo payment URL với storeId làm orderId
-            var paymentId = storeId.ToString()+"-"+ DateTimeOffset.Now.ToUnixTimeSeconds().ToString();
+            var paymentId = storeId.ToString() + "-" + DateTimeOffset.Now.ToUnixTimeSeconds().ToString();
             return CreatePaymentUrl(feeAmount, paymentId, orderInfo);
         }
 
@@ -108,7 +108,7 @@ namespace ResiBuy.Server.Services.VNPayServices
             try
             {
                 Console.WriteLine($"Processing order payment callback for orderId: {orderId}");
-                
+
                 // Parse response data directly (validation already done in controller)
                 var responseParams = ParseResponseData(responseData);
                 Console.WriteLine($"Response code: {responseParams.GetValueOrDefault("vnp_ResponseCode", "NOT_FOUND")}");
