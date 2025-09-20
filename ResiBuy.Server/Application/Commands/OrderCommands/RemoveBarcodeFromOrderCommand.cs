@@ -27,6 +27,7 @@ namespace ResiBuy.Server.Application.Commands.OrderCommands
 
             barcode.OrderItemId = null;
             barcode.OrderItem.Quantity -= 1;
+            barcode.OrderItem.Order.IsReport = true;
             if(request.dto.IsRemoveFromStore)
                 barcode.ProductDetail.Quantity += 1;
             try

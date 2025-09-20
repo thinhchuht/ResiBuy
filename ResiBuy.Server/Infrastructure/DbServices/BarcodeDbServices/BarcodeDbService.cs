@@ -16,7 +16,8 @@ namespace ResiBuy.Server.Infrastructure.DbServices.BarcodeDbServices
 
         public Task<Barcode> GetBarcodeByBarcodeValueAsync(string barcodeValue)
         {
-            return _context.Barcodes.Include(b=>b.OrderItem).Include(b => b.ProductDetail).FirstOrDefaultAsync(b => b.Code == barcodeValue);
+            return _context.Barcodes.Include(b => b.OrderItem).ThenInclude(o => o.Order).Include(b => b.ProductDetail)
+                .FirstOrDefaultAsync(b => b.Code == barcodeValue);
         }
 
         public async Task UpdateOrderItemIdForBarcodesAsync(List<string> barcodeCodes, Guid orderItemId)
