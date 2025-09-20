@@ -95,6 +95,14 @@ namespace ResiBuy.Server.Controllers
            
         }
 
+        [HttpPost("UpdateBarcodeToOrder")]
+        public async Task<IActionResult> CreateOrder([FromBody] OrderDto request)
+        {
 
+            var command = new UpdateBarcodeToOrderCommand(request);
+            var result = await mediator.Send(command);
+            return Ok(result);
+
+        }
     }
 }

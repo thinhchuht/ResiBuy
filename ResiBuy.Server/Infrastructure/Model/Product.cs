@@ -18,6 +18,11 @@
         public List<ProductDetail> ProductDetails { get; set; }
         public Promotion Promotion { get; set; }
 
+        public Product()
+        {
+            
+        }
+
         public Product(
            string name,
            string describe,
