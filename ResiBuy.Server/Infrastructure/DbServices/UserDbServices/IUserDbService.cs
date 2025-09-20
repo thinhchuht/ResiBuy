@@ -14,5 +14,6 @@
         Task<int> CountLockedUsersAsync();
         Task<int> SumUserReportCountAsync();
         Task<User?> GetCustomerByPhoneAsync(string phoneNumber);
+        Task<User> CreateSimpleCustomerUser(string fullName, string phoneNumber);
     }
 }

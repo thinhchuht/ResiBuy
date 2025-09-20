@@ -213,5 +213,26 @@ namespace ResiBuy.Server.Infrastructure.DbServices.UserDbServices
             }
             return users;
         }
+        public async Task<User> CreateSimpleCustomerUser(string fullName, string phoneNumber)
+        {
+            try
+            {
+                // Kiểm tra tính duy nhất của số điện thoại
+                await CheckUniqueField(phoneNumber: phoneNumber);
+
+                // Tạo user mới với thông tin tối giản
+                var user = new User(fullName, phoneNumber);
+                user.Cart = new Cart(user.Id);
+
+                // Thêm user vào database
+                context.Users.Add(user);
+                await context.SaveChangesAsync();
+                return user;
+            }
+            catch (Exception ex)
+            {
+                throw new CustomException(ExceptionErrorCode.RepositoryError, ex.Message);
+            }
+        }
     }
 }

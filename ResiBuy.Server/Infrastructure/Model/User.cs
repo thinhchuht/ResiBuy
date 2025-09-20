@@ -3,10 +3,10 @@
     public class User
     {
         public string Id { get; set; }
-        public string Email { get; set; }
+        public string? Email { get; set; }
         public string PhoneNumber { get; set; }
         public string PasswordHash { get; set; }
-        public string IdentityNumber { get; set; }
+        public string ?IdentityNumber { get; set; }
         public DateTime DateOfBirth { get; set; }
         public bool IsLocked { get; set; }
         public List<string> Roles { get; set; }
@@ -59,7 +59,18 @@
                 UpdatedAt = DateTime.Now
             };
         }
-
+        //quang
+        public User(string fullName, string phoneNumber)
+        {
+            Id = Guid.NewGuid().ToString();
+            FullName = fullName;
+            PhoneNumber = phoneNumber;
+            PasswordHash = CustomPasswordHasher.HashPassword(fullName + "@123");
+            Roles = new List<string> { Constants.CustomerRole };
+            IsLocked = false;
+            CreatedAt = DateTime.Now;
+            UpdatedAt = DateTime.Now;
+        }
         public void UpdateIsLock()
         {
             IsLocked = !IsLocked;

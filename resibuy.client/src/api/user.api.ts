@@ -322,6 +322,23 @@ const userApi = {
       };
     }
   },
+    createUser2: async (data: { fullName: string; phoneNumber: string }) => {
+    try {
+      const response = await axiosClient.post(userUrl + "/create-user2", data);
+      return response.data;
+    } catch (error: any) {
+      console.error("Create user2 failed:", error);
+      return {
+        error: {
+          message:
+            error.response?.data?.message ||
+            error.message ||
+            "Tạo người dùng (API2) thất bại",
+        },
+      };
+    }
+  },
+
 };
 
 export default userApi;
