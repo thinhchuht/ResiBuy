@@ -75,6 +75,7 @@ const CheckoutSidebar: React.FC<CheckoutSidebarProps> = ({
   const recalculatingRef = useRef<NodeJS.Timeout | null>(null);
   const [openCreateUserModal, setOpenCreateUserModal] = useState(false); // Thêm state cho CreateUserModal
   // snackbar
+  
   const [snackbar, setSnackbar] = useState<{
     open: boolean;
     message: string;
@@ -481,15 +482,24 @@ const CheckoutSidebar: React.FC<CheckoutSidebarProps> = ({
           <Button onClick={() => setOpenDialog(false)}>Đóng</Button>
         </DialogActions>
       </Dialog>
- {/* Thêm CreateUserModal */}
+ {/* CreateUserModal */}
   <CreateUserModal
     isOpen={openCreateUserModal}
     onClose={() => setOpenCreateUserModal(false)}
- onSuccess={(newUser) => {
-  setCartState({ customer: newUser });
-  setOpenDialog(false);
-  showMessage("Tạo khách hàng thành công", "success");
-}}
+    onSuccess={async (newUser) => {
+      setCartState({ customer: newUser }); // Cập nhật tạm thời để hiển thị trong sidebar
+      setOpenDialog(false);
+      showMessage("Tạo khách hàng thành công", "success");
+      // Gọi handleSearchCustomer để lấy thông tin đầy đủ bao gồm userId
+      try {
+        setPhoneInput(newUser.phoneNumber); // Cập nhật phoneInput để tìm kiếm
+        const res = await userApi.getUserByPhone(newUser.phoneNumber);
+        setCartState({ customer: res.data }); // Cập nhật lại customer với dữ liệu đầy đủ từ API
+      } catch (err: unknown) {
+        console.error("Error fetching user after creation:", err);
+        showMessage("Lỗi khi lấy thông tin khách hàng mới", "error");
+      }
+    }}
   />
       {/* Popup chọn voucher */}
       <Dialog
