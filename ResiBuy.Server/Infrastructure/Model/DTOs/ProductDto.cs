@@ -24,12 +24,21 @@
         {
             if (product == null)
                 throw new ArgumentNullException(nameof(product));
+            var discount = 0;
+            if (product.Promotion != null)
+            {
+                var now = DateTime.UtcNow;
+                if (product.Promotion.StartDate <= now && product.Promotion.EndDate >= now && product.Promotion.IsActive)
+                {
+                    discount = product.Promotion.Discount;
+                }
+            }
 
             Id = product.Id;
             Name = product.Name;
             Describe = product.Describe;
             IsOutOfStock = product.IsOutOfStock;
-            Discount = product.Promotion.Discount;
+            Discount = discount;
             CreatedAt = product.CreatedAt;
             UpdatedAt = product.UpdatedAt;
             StoreId = product.StoreId;

@@ -30,8 +30,22 @@ namespace ResiBuy.Server.Application.Commands.CheckoutComands
                 foreach (var ci in group)
                 {
                     var productDetail = await productDetailDbService.GetByIdAsync(ci.ProductDetailId);
+                    int discount = 0;
                     if (productDetail == null)
                         throw new CustomException(ExceptionErrorCode.NotFound, $"Không tìm thấy sản phẩm: {ci.ProductDetailId}");
+                    else
+                    {
+                        //Kiểm tra promotion
+                        if (productDetail.Product.Promotion != null)
+                        {
+                            var promotion = productDetail.Product.Promotion;
+                            var now = DateTime.UtcNow;
+                            if (promotion.StartDate <= now && promotion.EndDate >= now && promotion.IsActive)
+                            {
+                                discount = productDetail.Product.Promotion.Discount;
+                            }
+                        }
+                    }
                     if (productDetail.Product.IsOutOfStock || productDetail.IsOutOfStock || productDetail.Quantity <= 0) throw new CustomException(ExceptionErrorCode.ValidationFailed, $"Sản phẩm {productDetail.Product.Name} đã hết hàng");
                     if (!productDetail.Product.Category.Status) throw new CustomException(ExceptionErrorCode.ValidationFailed, $"Danh mục sản phẩm {productDetail.Product.Name} đã tạm thời ngừng hoạt động.");
                     if (productDetail.Quantity < ci.Quantity)
@@ -43,7 +57,7 @@ namespace ResiBuy.Server.Application.Commands.CheckoutComands
                         productDetail.Product.Name,
                         productDetail.IsOutOfStock,
                         productDetail.Weight,
-                        productDetail.Price * (100 - productDetail.Product.Promotion.Discount) / 100,
+                        productDetail.Price * (100 - discount) / 100,
                         ci.Quantity,
                         new Image { Id = productDetail.Image.Id, Name = productDetail.Image.Name, ThumbUrl = productDetail.Image.ThumbUrl, Url = productDetail.Image.Url, ProductDetailId = productDetail.Id },
                         productDetail.AdditionalData.Select(ad => { ad.ProductDetail = null; return ad; }).ToList()

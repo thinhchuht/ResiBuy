@@ -6,7 +6,7 @@
         public string                 Name         { get; set; }
         public string                 Describe     { get; set; }
         public bool                   IsOutOfStock { get; set; }
-        public int                    PromotionId     { get; set; }
+        public int?                    PromotionId     { get; set; }
         public DateTime               CreatedAt    { get; set; }
         public DateTime               UpdatedAt    { get; set; }
         public Guid                   StoreId      { get; set; }

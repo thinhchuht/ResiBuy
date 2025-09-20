@@ -17,6 +17,16 @@ namespace ResiBuy.Server.Application.Commands.OrderCommands
             var oldStatus = order.Status;
             if (order.UserId != order.UserId && order.UserId != store.OwnerId.ToString() && dto.UserId != order.ShipperId.ToString())
                 throw new CustomException(ExceptionErrorCode.ValidationFailed, "Người dùng không có quyền sửa đơn hàng này.");
+            if (dto.OrderStatus != OrderStatus.Pending)
+            {
+                foreach (var item in order.Items)
+                {
+                    if (item.Barcodes.Count == 0)
+                        throw new CustomException(ExceptionErrorCode.ValidationFailed, "Vui lòng thêm barcode cho order");
+                    else if (item.Quantity != item.Barcodes.Count)
+                        throw new CustomException(ExceptionErrorCode.ValidationFailed, "Số lượng barcode không khớp với số lượng sản phẩm trong đơn hàng");
+                }
+            }
             IDbContextTransaction? transaction = null;
             try
             {
@@ -49,7 +59,6 @@ namespace ResiBuy.Server.Application.Commands.OrderCommands
                     if (oldStatus == OrderStatus.Pending && dto.OrderStatus != OrderStatus.Cancelled && dto.OrderStatus != OrderStatus.Processing)
                         throw new CustomException(ExceptionErrorCode.ValidationFailed, "Đơn hàng chưa xử lý chỉ được xử lý hoặc hủy.");
                     if (dto.OrderStatus != order.Status + 1 && dto.OrderStatus != OrderStatus.Delivered && dto.OrderStatus != OrderStatus.Cancelled && dto.OrderStatus != OrderStatus.CustomerNotAvailable) throw new CustomException(ExceptionErrorCode.ValidationFailed, "Có vẻ bạn đã bỏ quả bước nào đó trong quá trình đổi trạng thái đơn hàng.");
-
                     if (dto.OrderStatus == OrderStatus.Processing)
                     {
                         var message = JsonSerializer.Serialize(dto);
@@ -123,8 +132,8 @@ namespace ResiBuy.Server.Application.Commands.OrderCommands
                 if (dto.OrderStatus == OrderStatus.Delivered) userIds.AddRange([order.UserId, store.OwnerId.ToString()]);
                 if (dto.OrderStatus == OrderStatus.CustomerNotAvailable) userIds.AddRange([order.UserId, store.OwnerId.ToString()]);
                 if (dto.OrderStatus == OrderStatus.Cancelled) userIds.AddRange([order.UserId, store.OwnerId.ToString()]);
-                if(dto.OrderStatus != OrderStatus.Processing)
-                await notificationService.SendNotificationAsync($"{Constants.OrderStatusChanged}-{order.Status}", new OrderStatusChangedDto(order.Id, order.StoreId, store.Name, order.Status, oldStatus, order.PaymentStatus, order.CreateAt, order.UpdateAt), "", userIds);
+                if (dto.OrderStatus != OrderStatus.Processing)
+                    await notificationService.SendNotificationAsync($"{Constants.OrderStatusChanged}-{order.Status}", new OrderStatusChangedDto(order.Id, order.StoreId, store.Name, order.Status, oldStatus, order.PaymentStatus, order.CreateAt, order.UpdateAt), "", userIds);
                 //foreach (var productDetail in notiProductDetails)
                 //{
                 //    await notificationService.SendNotificationAsync(Constants.ProductOutOfStock, new ProductOutOfStockDto(productDetail.Id, productDetail.Product.Name, productDetail.Product.Store.Name, productDetail.Product.StoreId), Constants.NoHubGroup, [productDetail.Product.Store.OwnerId.ToString()]);

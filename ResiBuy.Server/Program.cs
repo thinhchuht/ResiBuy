@@ -1,4 +1,5 @@
-﻿using ResiBuy.Server.Infrastructure.DbServices.NotificationDbServices;
+﻿using ResiBuy.Server.Infrastructure.DbServices.BarcodeDbServices;
+using ResiBuy.Server.Infrastructure.DbServices.NotificationDbServices;
 using ResiBuy.Server.Infrastructure.DbServices.PromotionDbService;
 using ResiBuy.Server.Infrastructure.DbServices.ReportServices;
 using ResiBuy.Server.Infrastructure.DbServices.ReviewDbServices;
@@ -23,6 +24,7 @@ services.AddScoped<IReportDbService, ReportDbService>();
 services.AddScoped<INotificationDbService, NotificationDbService>();
 services.AddScoped<IReviewDbService, ReviewDbService>();
 services.AddScoped<IPromotionDbService, PromotionDbService>();
+services.AddScoped<IBarcodeDbService, BarcodeDbService>();
 services.AddMemoryCache();
 services.AddSignalR();
 services.AddMediatR(cfg => cfg.RegisterServicesFromAssemblyContaining(typeof(Program)));
