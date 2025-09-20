@@ -18,7 +18,7 @@ import orderApi from "../../api/order.api";
 import voucherApi from "../../api/voucher.api";
 import shipperApi from "../../api/ship.api";
 import DeliveryAddressDialog from "./DeliveryAddressDialog";
-
+import CreateUserModal from "./CreateUserModal";
 type CheckoutSidebarProps = {
   total: number;
   discount: number;
@@ -73,7 +73,7 @@ const CheckoutSidebar: React.FC<CheckoutSidebarProps> = ({
   const [vouchers, setVouchers] = useState<Voucher[]>([]);
   const [showAddressDialog, setShowAddressDialog] = useState(false);
   const recalculatingRef = useRef<NodeJS.Timeout | null>(null);
-
+  const [openCreateUserModal, setOpenCreateUserModal] = useState(false); // Thêm state cho CreateUserModal
   // snackbar
   const [snackbar, setSnackbar] = useState<{
     open: boolean;
@@ -461,13 +461,11 @@ const CheckoutSidebar: React.FC<CheckoutSidebarProps> = ({
             </Button>
 
             <Button
-              variant="outlined"
-              onClick={() => {
-                showMessage("Chức năng thêm mới khách hàng", "info");
-              }}
-            >
-              Thêm mới khách hàng
-            </Button>
+          variant="outlined"
+          onClick={() => setOpenCreateUserModal(true)} // Mở CreateUserModal
+        >
+          Thêm mới khách hàng
+        </Button>
 
             <TextField
               label="Nhập số điện thoại"
@@ -483,7 +481,16 @@ const CheckoutSidebar: React.FC<CheckoutSidebarProps> = ({
           <Button onClick={() => setOpenDialog(false)}>Đóng</Button>
         </DialogActions>
       </Dialog>
-
+ {/* Thêm CreateUserModal */}
+  <CreateUserModal
+    isOpen={openCreateUserModal}
+    onClose={() => setOpenCreateUserModal(false)}
+ onSuccess={(newUser) => {
+  setCartState({ customer: newUser });
+  setOpenDialog(false);
+  showMessage("Tạo khách hàng thành công", "success");
+}}
+  />
       {/* Popup chọn voucher */}
       <Dialog
         open={openVoucherDialog}
