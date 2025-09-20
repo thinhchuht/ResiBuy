@@ -1,4 +1,5 @@
 ﻿using Microsoft.EntityFrameworkCore.Storage;
+using ResiBuy.Server.Infrastructure.DbServices.BarcodeDbServices;
 using ResiBuy.Server.Infrastructure.DbServices.CartItemDbService;
 using ResiBuy.Server.Infrastructure.DbServices.OrderDbServices;
 using ResiBuy.Server.Infrastructure.DbServices.ProductDetailDbServices;
@@ -12,7 +13,7 @@ namespace ResiBuy.Server.Application.Commands.OrderCommands
     public class CreateOrderCommandHandler(IUserDbService userDbService, IOrderDbService orderDbService, IRoomDbService roomDbService,
         IVoucherDbService voucherDbService, ICartDbService cartDbService, ICartItemDbService cartItemDbService,
         IProductDetailDbService productDetailDbService, IStoreDbService storeDbService, IProductDbService productDbService,
-        IMailBaseService mailBaseService, INotificationService notificationService
+        IMailBaseService mailBaseService, INotificationService notificationService, IBarcodeDbService barcodeDbService
         ) : IRequestHandler<CreateOrderCommand, ResponseModel>
     {
         public async Task<ResponseModel> Handle(CreateOrderCommand request, CancellationToken cancellationToken)
@@ -38,6 +39,27 @@ namespace ResiBuy.Server.Application.Commands.OrderCommands
             if (!cart.CartItems.Any() && !dto.IsInstance) throw new CustomException(ExceptionErrorCode.ValidationFailed, "Giỏ hàng không có sản phẩm nào.");
             if (!cart.IsCheckingOut)
                 throw new CustomException(ExceptionErrorCode.ValidationFailed, "Giỏ hàng chưa ở trạng thái thanh toán.");
+            var ordersDto = dto.Orders;
+            foreach (var order in ordersDto)
+            {
+                if (order.Items.Count() > 0)
+                {
+                    foreach (var item in order.Items)
+                    {
+                        if (item.Barcodes != null && item.Barcodes.Any())
+                        {
+                            if (item.Barcodes.Count() != item.Quantity)
+                                throw new CustomException(ExceptionErrorCode.ValidationFailed, $"Số lượng mã vạch không khớp với số lượng sản phẩm của mã sản phẩm chi tiết {item.ProductDetailId}");
+                            await checkListBarCode(item.Barcodes);
+                        }
+                    }
+                }
+                else
+                {
+                    throw new CustomException(ExceptionErrorCode.ValidationFailed, "Đơn hàng phải có chi tiết đơn hàng.");
+                }
+            }
+
             var voucherIds = dto.Orders.Select(o => o.VoucherId);
             var checkVoucherRs = await voucherDbService.CheckIsActiveVouchers(voucherIds);
             if (!checkVoucherRs.IsSuccess()) throw new CustomException(ExceptionErrorCode.ValidationFailed, checkVoucherRs.Message);
@@ -52,18 +74,22 @@ namespace ResiBuy.Server.Application.Commands.OrderCommands
                 cart.IsCheckingOut = false;
                 await cartDbService.UpdateTransactionAsync(cart);
                 var notiProductDetails = new List<ProductDetail>();
+                // Tạo orders với OrderItems
                 var orders = dto.Orders.Select(o => new Order(o.Id, o.TotalPrice, o.ShippingFee, dto.PaymentMethod, o.Note, dto.AddressId, dto.UserId, o.StoreId, o.Items.Select(i => new OrderItem(i.Quantity, i.Price, o.Id, i.ProductDetailId)).ToList(), o.VoucherId));
+
                 if (voucherIds.Any()) await voucherDbService.UpdateQuantityBatchAsync(voucherIds);
 
-
                 var createdOrders = await orderDbService.CreateBatchTransactionAsync(orders);
+
+                // Cập nhật OrderItemId cho các barcode
+                await UpdateBarcodesWithOrderItemId(dto.Orders, createdOrders.ToList());
                 var productDetails = await productDetailDbService.GetBatchAsync(productDetailIds);
                 foreach (var productDetail in productDetails)
                 {
-                    if(!productDetail.Product.Category.Status) throw new CustomException(ExceptionErrorCode.ValidationFailed, $"Danh mục sản phẩm {productDetail.Product.Name} đã tạm thời ngừng hoạt động");
-                    if(!dto.IsInstance && !cart.CartItems.Any(ci => ci.ProductDetailId == productDetail.Id)) throw new CustomException(ExceptionErrorCode.ValidationFailed, $"Không tồn tài sản phẩm trong giỏ hàng");
+                    if (!productDetail.Product.Category.Status) throw new CustomException(ExceptionErrorCode.ValidationFailed, $"Danh mục sản phẩm {productDetail.Product.Name} đã tạm thời ngừng hoạt động");
+                    if (!dto.IsInstance && !cart.CartItems.Any(ci => ci.ProductDetailId == productDetail.Id)) throw new CustomException(ExceptionErrorCode.ValidationFailed, $"Không tồn tài sản phẩm trong giỏ hàng");
                     if (productDetail.Product.IsOutOfStock || productDetail.IsOutOfStock || productDetail.Quantity <= 0) throw new CustomException(ExceptionErrorCode.ValidationFailed, $"Sản phẩm {productDetail.Product.Name} đã hết hàng");
-                    if (!productDetail.Product.Store.IsOpen && productDetail.Product.Store.IsLocked) throw new CustomException(ExceptionErrorCode.ValidationFailed, $"Cửa hàng sản phẩm {productDetail.Product.Name} đã đóng cửa, hãy thử lại vào khung giờ khác");
+                    //if (!productDetail.Product.Store.IsOpen && productDetail.Product.Store.IsLocked) throw new CustomException(ExceptionErrorCode.ValidationFailed, $"Cửa hàng sản phẩm {productDetail.Product.Name} đã đóng cửa, hãy thử lại vào khung giờ khác");
                     var totalOrderedQuantity = orders
                         .SelectMany(o => o.Items)
                         .Where(oi => oi.ProductDetailId == productDetail.Id)
@@ -109,6 +135,55 @@ namespace ResiBuy.Server.Application.Commands.OrderCommands
                 //    await transaction.RollbackAsync();
                 await notificationService.SendNotificationAsync(Constants.OrderCreatedFailed, new OrderCreateFailedDto(dto.Orders.Select(o => o.Id), ex.Message), Constants.NoHubGroup, [user.Id]);
                 throw new CustomException(ExceptionErrorCode.RepositoryError, ex.ToString());
+            }
+        }
+
+        private async Task checkBarCode(string barcode)
+        {
+            var bar = await barcodeDbService.GetBarcodeByBarcodeValueAsync(barcode);
+            if (bar == null)
+                throw new CustomException(ExceptionErrorCode.ValidationFailed, $"Mã vạch {barcode} không tồn tại trong hệ thống");
+        }
+
+        private async Task checkListBarCode(List<string> barcodes)
+        {
+            if(barcodes.Count == 0)
+                throw new CustomException(ExceptionErrorCode.ValidationFailed, $"Danh sách mã vạch rỗng");
+
+            var seen = new HashSet<string>();
+
+            foreach (var barcode in barcodes)
+            {
+                if (String.IsNullOrEmpty(barcode)) 
+                    throw new CustomException(ExceptionErrorCode.ValidationFailed, $"Mã vạch rỗng");
+                else if (seen.Add(barcode)) // chỉ trả về true nếu chưa tồn tại
+                {
+                    await checkBarCode(barcode);
+                }
+                else
+                {
+                    throw new CustomException(ExceptionErrorCode.ValidationFailed, $"Mã vạch {barcode} Bị lặp");
+                }
+            }
+        }
+        private async Task UpdateBarcodesWithOrderItemId(List<OrderDto> orderDtos, List<Order> createdOrders)
+        {
+            foreach (var orderDto in orderDtos)
+            {
+                var createdOrder = createdOrders.FirstOrDefault(o => o.Id == orderDto.Id);
+                if (createdOrder == null) continue;
+
+                foreach (var itemDto in orderDto.Items)
+                {
+                    var orderItem = createdOrder.Items.FirstOrDefault(oi => oi.ProductDetailId == itemDto.ProductDetailId);
+                    if (orderItem == null) continue;
+
+                    // Cập nhật OrderItemId cho từng barcode
+                    if (itemDto.Barcodes != null && itemDto.Barcodes.Any())
+                    {
+                        await barcodeDbService.UpdateOrderItemIdForBarcodesAsync(itemDto.Barcodes, orderItem.ID);
+                    }
+                }
             }
         }
     }

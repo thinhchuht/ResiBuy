@@ -1,11 +1,12 @@
 ﻿using Confluent.Kafka;
 using ResiBuy.Server.Application.Commands.ProductCommands.DTOs.Update;
+using ResiBuy.Server.Infrastructure.DbServices.BarcodeDbServices;
 
 namespace ResiBuy.Server.Application.Commands.ProductCommands
 {
     public record UpdateProductCommand(UpdateProductDto ProductDto) : IRequest<ResponseModel>;
 
-    public class UpdateProductCommandHandler(IProductDbService productDbService, IImageDbService imageDbService)
+    public class UpdateProductCommandHandler(IProductDbService productDbService, IImageDbService imageDbService, IBarcodeDbService barcodeDbService)
         : IRequestHandler<UpdateProductCommand, ResponseModel>
     {
         public async Task<ResponseModel> Handle(UpdateProductCommand command, CancellationToken cancellationToken)
@@ -89,8 +90,6 @@ namespace ResiBuy.Server.Application.Commands.ProductCommands
         {
             var existingDetails = product.ProductDetails.ToDictionary(d => d.Id);
             var allDataSets = new List<HashSet<string>>();
-            var allBarcodes = new List<string>();
-            var allCurrentBarcodes = new List<string>();
 
             // Process each product detail from DTO
             foreach (var detailDto in dto.ProductDetails)
@@ -120,12 +119,19 @@ namespace ResiBuy.Server.Application.Commands.ProductCommands
                     // Process Image for new detail
                     await ProcessProductDetailImage(detailDto, detail, null);
 
+                    // Generate barcodes for new detail
+                    await GenerateBarcodesForNewDetail(detailDto, detail);
+
                     product.ProductDetails.Add(detail);
                 }
                 else
                 {
                     // Update existing detail
                     detail = existingDetails[detailDto.Id];
+
+                    // Validate quantity - chỉ được tăng hoặc giữ nguyên
+                    await ValidateAndUpdateQuantity(detailDto, detail);
+
                     detail.UpdateProductDetail(detailDto.Price, detailDto.Weight, detailDto.IsOutOfStock, detailDto.Quantity);
 
                     // Update AdditionalData
@@ -134,28 +140,10 @@ namespace ResiBuy.Server.Application.Commands.ProductCommands
                     // Update Image
                     await ProcessProductDetailImage(detailDto, detail, detail.Image);
                 }
-
-                // Validate and process Barcodes
-                await ValidateAndProcessBarcodes(detailDto, detail, allBarcodes, allCurrentBarcodes, isNewDetail);
             }
 
             // Remove details that are not in the DTO
             await RemoveObsoleteDetails(dto, product, existingDetails);
-
-            // Final validation: check all barcodes across the system (excluding current product barcodes)
-            if (allBarcodes.Any())
-            {
-                var barcodesToCheck = allBarcodes.Except(allCurrentBarcodes).ToList();
-                if (barcodesToCheck.Any())
-                {
-                    var existingCodes = await productDbService.QueryBarcodesAsync(barcodesToCheck);
-                    if (existingCodes.Any())
-                    {
-                        throw new CustomException(ExceptionErrorCode.ValidationFailed,
-                            $"Các barcode đã tồn tại trong hệ thống: {string.Join(", ", existingCodes)}");
-                    }
-                }
-            }
         }
 
         private void ValidateProductDetailBasics(UpdateProductDetailDto detailDto)
@@ -175,6 +163,80 @@ namespace ResiBuy.Server.Application.Commands.ProductCommands
             if (detailDto.IsOutOfStock && detailDto.Quantity > 0)
                 throw new CustomException(ExceptionErrorCode.ValidationFailed,
                     "Sản phẩm đã hết hàng thì số lượng phải bằng 0.");
+        }
+
+        private async Task ValidateAndUpdateQuantity(UpdateProductDetailDto detailDto, ProductDetail existingDetail)
+        {
+            var currentQuantity = existingDetail.Quantity;
+            var newQuantity = detailDto.Quantity;
+
+            // Kiểm tra quantity chỉ được tăng hoặc giữ nguyên
+            if (newQuantity < currentQuantity)
+            {
+                throw new CustomException(ExceptionErrorCode.ValidationFailed,
+                    $"Số lượng chỉ được tăng hoặc giữ nguyên. Số lượng hiện tại: {currentQuantity}, số lượng mới: {newQuantity}");
+            }
+
+            // Nếu quantity tăng, tạo thêm barcode
+            if (newQuantity > currentQuantity)
+            {
+                var additionalQuantity = newQuantity - currentQuantity;
+                await GenerateAdditionalBarcodes(existingDetail, additionalQuantity);
+            }
+        }
+
+        private async Task GenerateAdditionalBarcodes(ProductDetail detail, int additionalQuantity)
+        {
+            try
+            {
+                // Tạo barcode bổ sung
+                var additionalBarcodes = await barcodeDbService.GenerateUniqueBarcodesAsync(additionalQuantity);
+
+                // Khởi tạo danh sách Barcodes nếu chưa có
+                if (detail.Barcodes == null)
+                {
+                    detail.Barcodes = new List<Barcode>();
+                }
+
+                // Thêm barcode mới vào danh sách hiện tại
+                foreach (var code in additionalBarcodes)
+                {
+                    detail.Barcodes.Add(new Barcode { Code = code });
+                }
+            }
+            catch (InvalidOperationException ex)
+            {
+                throw new CustomException(ExceptionErrorCode.UpdateFailed,
+                    $"Không thể tạo barcode bổ sung cho sản phẩm chi tiết: {ex.Message}");
+            }
+        }
+
+        private async Task GenerateBarcodesForNewDetail(UpdateProductDetailDto detailDto, ProductDetail detail)
+        {
+            // Chỉ tạo barcode nếu Quantity > 0
+            if (detailDto.Quantity > 0)
+            {
+                try
+                {
+                    // Tạo barcode tự động từ BarcodeDbService
+                    var generatedBarcodes = await barcodeDbService.GenerateUniqueBarcodesAsync(detailDto.Quantity);
+
+                    // Chuyển đổi thành danh sách Barcode entities
+                    detail.Barcodes = generatedBarcodes
+                        .Select(code => new Barcode { Code = code })
+                        .ToList();
+                }
+                catch (InvalidOperationException ex)
+                {
+                    throw new CustomException(ExceptionErrorCode.CreateFailed,
+                        $"Không thể tạo barcode cho sản phẩm chi tiết mới: {ex.Message}");
+                }
+            }
+            else
+            {
+                // Nếu Quantity = 0, không cần barcode
+                detail.Barcodes = new List<Barcode>();
+            }
         }
 
         private HashSet<string> ValidateAdditionalDataForDetail(UpdateProductDetailDto detailDto, List<HashSet<string>> allDataSets)
@@ -302,72 +364,6 @@ namespace ResiBuy.Server.Application.Commands.ProductCommands
                         detailDto.Image.ThumbUrl,
                         detailDto.Image.Name
                     );
-                }
-            }
-        }
-
-        private async Task ValidateAndProcessBarcodes(UpdateProductDetailDto detailDto, ProductDetail detail,
-            List<string> allBarcodes, List<string> allCurrentBarcodes, bool isNewDetail)
-        {
-            // Get current barcodes for existing details
-            if (!isNewDetail && detail.Barcodes != null)
-            {
-                allCurrentBarcodes.AddRange(detail.Barcodes.Select(b => b.Code));
-            }
-
-            if (detailDto.Barcodes != null && detailDto.Barcodes.Any())
-            {
-                // Validate barcode count matches quantity
-                if (detailDto.Barcodes.Count != detailDto.Quantity)
-                {
-                    throw new CustomException(ExceptionErrorCode.ValidationFailed,
-                        $"Số lượng barcode ({detailDto.Barcodes.Count}) phải bằng với Quantity ({detailDto.Quantity}) cho sản phẩm chi tiết.");
-                }
-
-                // Validate barcode format and uniqueness within detail
-                var cleanBarcodes = new List<string>();
-                foreach (var barcode in detailDto.Barcodes)
-                {
-                    if (string.IsNullOrWhiteSpace(barcode))
-                        throw new CustomException(ExceptionErrorCode.ValidationFailed,
-                            "Barcode không được để trống.");
-
-                    var cleanBarcode = barcode.Trim();
-                    if (cleanBarcodes.Contains(cleanBarcode))
-                        throw new CustomException(ExceptionErrorCode.ValidationFailed,
-                            $"Barcode bị trùng trong cùng 1 ProductDetail: {cleanBarcode}");
-
-                    cleanBarcodes.Add(cleanBarcode);
-                }
-
-                // Check for duplicates across all details in this product (excluding current detail's existing barcodes)
-                var existingBarcodesInThisProduct = allBarcodes.ToList();
-                var duplicatesAcrossDetails = existingBarcodesInThisProduct.Intersect(cleanBarcodes).ToList();
-                if (duplicatesAcrossDetails.Any())
-                {
-                    throw new CustomException(ExceptionErrorCode.ValidationFailed,
-                        $"Barcode bị trùng giữa các ProductDetail: {string.Join(", ", duplicatesAcrossDetails)}");
-                }
-
-                allBarcodes.AddRange(cleanBarcodes);
-
-                // Update barcodes for the detail
-                detail.Barcodes = cleanBarcodes
-                    .Select(code => new Barcode { Code = code })
-                    .ToList();
-            }
-            else
-            {
-                if (detailDto.Quantity > 0)
-                {
-                    throw new CustomException(ExceptionErrorCode.ValidationFailed,
-                        "Nếu Quantity > 0 thì phải có danh sách Barcode tương ứng.");
-                }
-
-                // Clear barcodes if no barcodes provided
-                if (!isNewDetail)
-                {
-                    detail.Barcodes?.Clear();
                 }
             }
         }

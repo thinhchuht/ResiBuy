@@ -6,7 +6,7 @@
         public string                 Name         { get; set; }
         public string                 Describe     { get; set; }
         public bool                   IsOutOfStock { get; set; }
-        public int                    PromotionId     { get; set; }
+        public int?                    PromotionId     { get; set; }
         public DateTime               CreatedAt    { get; set; }
         public DateTime               UpdatedAt    { get; set; }
         public Guid                   StoreId      { get; set; }
@@ -17,6 +17,11 @@
         public Category               Category     { get; set; }
         public List<ProductDetail> ProductDetails { get; set; }
         public Promotion Promotion { get; set; }
+
+        public Product()
+        {
+            
+        }
 
         public Product(
            string name,

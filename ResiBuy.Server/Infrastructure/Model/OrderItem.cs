@@ -18,5 +18,6 @@
         public int ProductDetailId { get; set; }
         public Order Order { get; set; }
         public ProductDetail ProductDetail { get; set; }
+        public List<Barcode> Barcodes { get; set; } = new List<Barcode>();
     }
 }

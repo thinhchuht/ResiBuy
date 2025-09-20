@@ -18,7 +18,7 @@ import orderApi from "../../api/order.api";
 import voucherApi from "../../api/voucher.api";
 import shipperApi from "../../api/ship.api";
 import DeliveryAddressDialog from "./DeliveryAddressDialog";
-
+import CreateUserModal from "./CreateUserModal";
 type CheckoutSidebarProps = {
   total: number;
   discount: number;
@@ -73,8 +73,9 @@ const CheckoutSidebar: React.FC<CheckoutSidebarProps> = ({
   const [vouchers, setVouchers] = useState<Voucher[]>([]);
   const [showAddressDialog, setShowAddressDialog] = useState(false);
   const recalculatingRef = useRef<NodeJS.Timeout | null>(null);
-
+  const [openCreateUserModal, setOpenCreateUserModal] = useState(false); // Thêm state cho CreateUserModal
   // snackbar
+  
   const [snackbar, setSnackbar] = useState<{
     open: boolean;
     message: string;
@@ -313,6 +314,86 @@ const CheckoutSidebar: React.FC<CheckoutSidebarProps> = ({
 
       <Divider sx={{ my: 2 }} />
 
+      <Typography variant="subtitle1">Hình thức nhận hàng</Typography>
+      <Box display="flex" gap={1} my={1}>
+        <Button
+          variant={
+            currentCart.deliveryMethod === "PICKUP" ? "contained" : "outlined"
+          }
+          onClick={() => {
+            // reset any previously selected delivery address for this cart
+            setCartState({
+              deliveryMethod: "PICKUP",
+              shippingFee: 0,
+              deliveryAddress: {
+                id: "33333333-3333-3333-3333-333333333333",
+                areaId: "",
+                areaName: "Cửa hàng",
+                buildingId: "",
+                buildingName: "Cửa hàng",
+                roomId: "",
+                roomName: "Cửa hàng",
+              },
+            });
+          }}
+        >
+          Lấy tại quầy
+        </Button>
+
+        <Button
+          variant={
+            currentCart.deliveryMethod === "DELIVERY" ? "contained" : "outlined"
+          }
+          onClick={() => {
+            setCartState({ deliveryMethod: "DELIVERY" });
+            setShowAddressDialog(true);
+          }}
+        >
+          Giao hàng
+        </Button>
+      </Box>
+
+      {currentCart.deliveryAddress && (
+        <Typography
+          variant="body2"
+          sx={{ mt: 1, fontStyle: "italic", color: "#555" }}
+        >
+          Địa chỉ nhận hàng: {currentCart.deliveryAddress.areaName} -{" "}
+          {currentCart.deliveryAddress.buildingName} -{" "}
+          {currentCart.deliveryAddress.roomName}
+        </Typography>
+      )}
+
+      <DeliveryAddressDialog
+        open={showAddressDialog}
+        onClose={() => setShowAddressDialog(false)}
+        onSave={async (address: DeliveryAddress) => {
+          // save address in this cart only
+          setCartState({ deliveryAddress: address });
+
+          try {
+            const res = await shipperApi.calculate(
+              address.id,
+              "33333333-3333-3333-3333-333333333333", // địa chỉ cửa hàng (fallback)
+              totalWeight ?? 1.0
+            );
+            // merge shipping fee into the current cart state to avoid overwriting deliveryAddress
+            setCartStates((prev) => {
+              const prevCart = prev[cartId] || defaultCartState;
+              return {
+                ...prev,
+                [cartId]: { ...prevCart, shippingFee: res.data },
+              };
+            });
+          } catch (err: unknown) {
+            console.error(err);
+            showMessage("Không tính được phí ship", "error");
+          }
+        }}
+      />
+
+      <Divider sx={{ my: 2 }} />
+
       <Box display="flex" alignItems="center" justifyContent="space-between">
         <Typography>Voucher:</Typography>
         <Button
@@ -461,13 +542,11 @@ const CheckoutSidebar: React.FC<CheckoutSidebarProps> = ({
             </Button>
 
             <Button
-              variant="outlined"
-              onClick={() => {
-                showMessage("Chức năng thêm mới khách hàng", "info");
-              }}
-            >
-              Thêm mới khách hàng
-            </Button>
+          variant="outlined"
+          onClick={() => setOpenCreateUserModal(true)} // Mở CreateUserModal
+        >
+          Thêm mới khách hàng
+        </Button>
 
             <TextField
               label="Nhập số điện thoại"
@@ -483,7 +562,25 @@ const CheckoutSidebar: React.FC<CheckoutSidebarProps> = ({
           <Button onClick={() => setOpenDialog(false)}>Đóng</Button>
         </DialogActions>
       </Dialog>
-
+ {/* CreateUserModal */}
+  <CreateUserModal
+    isOpen={openCreateUserModal}
+    onClose={() => setOpenCreateUserModal(false)}
+    onSuccess={async (newUser) => {
+      setCartState({ customer: newUser }); // Cập nhật tạm thời để hiển thị trong sidebar
+      setOpenDialog(false);
+      showMessage("Tạo khách hàng thành công", "success");
+      // Gọi handleSearchCustomer để lấy thông tin đầy đủ bao gồm userId
+      try {
+        setPhoneInput(newUser.phoneNumber); // Cập nhật phoneInput để tìm kiếm
+        const res = await userApi.getUserByPhone(newUser.phoneNumber);
+        setCartState({ customer: res.data }); // Cập nhật lại customer với dữ liệu đầy đủ từ API
+      } catch (err: unknown) {
+        console.error("Error fetching user after creation:", err);
+        showMessage("Lỗi khi lấy thông tin khách hàng mới", "error");
+      }
+    }}
+  />
       {/* Popup chọn voucher */}
       <Dialog
         open={openVoucherDialog}

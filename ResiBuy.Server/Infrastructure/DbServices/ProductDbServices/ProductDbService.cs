@@ -2,15 +2,18 @@
 using System.Linq;
 using OfficeOpenXml;
 using ResiBuy.Server.Application.Commands.ProductCommands.DTOs.Create;
+using ResiBuy.Server.Infrastructure.DbServices.BarcodeDbServices;
 
 namespace ResiBuy.Server.Infrastructure.DbServices.ProductDbServices
 {
     public class ProductDbService : BaseDbService<Product>, IProductDbService
     {
         private readonly ResiBuyContext _context;
-        public ProductDbService(ResiBuyContext context) : base(context)
+        private readonly IBarcodeDbService _barcodeService;
+        public ProductDbService(ResiBuyContext context, BarcodeDbServices.IBarcodeDbService barcodeService) : base(context)
         {
             this._context = context;
+            this._barcodeService = barcodeService;
         }
 
         public IQueryable<Product> GetAllProductsQuery()
@@ -90,10 +93,10 @@ namespace ResiBuy.Server.Infrastructure.DbServices.ProductDbServices
             var products = new Dictionary<string, CreateProductDto>();
             var result = new ImportResult();
             var detailDataSetsByProduct = new Dictionary<string, List<HashSet<string>>>();
-            var validRows = new List<int>(); // Danh sách các dòng hợp lệ
+            var validRows = new List<int>();
+            var totalBarcodeNeeded = 0; // Tổng số barcode cần tạo
 
-            // Validate storeId và categoryId có tồn tại không
-            // storeId
+            // Validate storeId
             var storeIdsInFile = new HashSet<Guid>();
             for (int row = 2; row <= sheet.Dimension.End.Row; row++)
             {
@@ -127,7 +130,7 @@ namespace ResiBuy.Server.Infrastructure.DbServices.ProductDbServices
 
             var invalidCategoryIds = categoryIdsInFile.Except(existingCategoryIds).ToHashSet();
 
-            //promotionId
+            // Validate promotionId
             var promotionIdsInFile = new HashSet<int>();
             for (int row = 2; row <= sheet.Dimension.End.Row; row++)
             {
@@ -144,7 +147,7 @@ namespace ResiBuy.Server.Infrastructure.DbServices.ProductDbServices
 
             var invalidPromotionIds = promotionIdsInFile.Except(existingPromotionIds).ToHashSet();
 
-            // Duyệt từng dòng trong file excel để validate
+            // Duyệt từng dòng trong file excel để validate và tính tổng số barcode cần
             for (int row = 2; row <= sheet.Dimension.End.Row; row++)
             {
                 result.Total++;
@@ -163,7 +166,7 @@ namespace ResiBuy.Server.Infrastructure.DbServices.ProductDbServices
 
                     if (!int.TryParse(sheet.Cells[row, 3].Text, out int promotionId))
                     {
-                        result.Errors.Add($"Lỗi tại dòng {row}: Discount không hợp lệ");
+                        result.Errors.Add($"Lỗi tại dòng {row}: PromotionId không hợp lệ");
                         rowIsValid = false;
                     }
                     else if (invalidPromotionIds.Contains(promotionId))
@@ -265,36 +268,6 @@ namespace ResiBuy.Server.Infrastructure.DbServices.ProductDbServices
                         Name = sheet.Cells[row, 13].Text
                     };
 
-                    // Đọc cột barcode và tách thành list
-                    var barcodeStr = sheet.Cells[row, 15].Text;
-                    var barcodes = !string.IsNullOrEmpty(barcodeStr)
-                        ? barcodeStr.Split(';').Select(b => b.Trim()).Where(b => !string.IsNullOrEmpty(b)).ToList()
-                        : new List<string>();
-
-                    if (barcodes.Count != quantity)
-                    {
-                        result.Errors.Add($"Lỗi tại dòng {row}: Số lượng Barcode ({barcodes.Count}) không khớp với Quantity ({quantity})");
-                        rowIsValid = false;
-                    }
-
-                    var duplicateInRow = barcodes.GroupBy(b => b).Where(g => g.Count() > 1).Select(g => g.Key).ToList();
-                    if (duplicateInRow.Any())
-                    {
-                        result.Errors.Add($"Lỗi tại dòng {row}: Barcode bị trùng trong cùng dòng ({string.Join(", ", duplicateInRow)})");
-                        rowIsValid = false;
-                    }
-
-                    // Kiểm tra barcode đã tồn tại trong hệ thống
-                    if (barcodes.Any())
-                    {
-                        var existedBarcodes = await QueryBarcodesAsync(barcodes);
-                        if (existedBarcodes.Any())
-                        {
-                            result.Errors.Add($"Lỗi tại dòng {row}: Barcode đã tồn tại trong hệ thống ({string.Join(", ", existedBarcodes)})");
-                            rowIsValid = false;
-                        }
-                    }
-
                     // Đọc và tách cột AdditionalData
                     var additionalData = new List<AdditionalDataDto>();
                     var additionalStr = sheet.Cells[row, 14].Text;
@@ -323,7 +296,7 @@ namespace ResiBuy.Server.Infrastructure.DbServices.ProductDbServices
 
                     if (duplicatesInSame.Any())
                     {
-                        result.Errors.Add($"Lỗi tại dòng {row}: AdditionalData trùng trong cùng ProductDetail ({string.Join(", ", duplicatesInSame)})");
+                        result.Errors.Add($"Lỗi tại dòng {row}: Phân loại trùng trong cùng chi tiết sản phẩm ({string.Join(", ", duplicatesInSame)})");
                         rowIsValid = false;
                     }
 
@@ -351,7 +324,7 @@ namespace ResiBuy.Server.Infrastructure.DbServices.ProductDbServices
                         var dataSet = additionalData.Select(a => $"{a.Key}|{a.Value}").ToHashSet();
                         if (detailDataSetsByProduct[name].Any(existing => existing.SetEquals(dataSet)))
                         {
-                            result.Errors.Add($"Lỗi tại dòng {row}: AdditionalData bị trùng với 1 ProductDetail khác của {name}");
+                            result.Errors.Add($"Lỗi tại dòng {row}: Phân loại bị trùng với 1 chi tiết sản phẩm khác khác của {name}");
                             rowIsValid = false;
                         }
                         else
@@ -365,9 +338,11 @@ namespace ResiBuy.Server.Infrastructure.DbServices.ProductDbServices
                                 Quantity = quantity,
                                 IsOutOfStock = isOutOfStock,
                                 Image = image,
-                                AdditionalData = additionalData,
-                                Barcodes = barcodes // Thêm barcodes vào DTO
+                                AdditionalData = additionalData
                             });
+
+                            // Cộng dồn số lượng barcode cần tạo
+                            totalBarcodeNeeded += quantity;
                         }
                     }
 
@@ -390,34 +365,68 @@ namespace ResiBuy.Server.Infrastructure.DbServices.ProductDbServices
                 return result;
             }
 
+            // Tạo tất cả barcode cần thiết trong một lần gọi duy nhất
+            List<string> allBarcodes = new List<string>();
+            if (totalBarcodeNeeded > 0)
+            {
+                try
+                {
+                    allBarcodes = await _barcodeService.GenerateUniqueBarcodesAsync(totalBarcodeNeeded);
+                }
+                catch (Exception ex)
+                {
+                    result.Success = false;
+                    result.Errors.Add($"Lỗi khi tạo barcode: {ex.Message}");
+                    return result;
+                }
+            }
+
             // Nếu không có lỗi, tiến hành lưu xuống DB
             try
             {
+                int barcodeIndex = 0; // Chỉ số để lấy barcode từ list đã tạo
+
                 foreach (var product in products.Values)
                 {
                     var existingProduct = await this.GetByNameAsync(product.StoreId, product.Name);
                     if (existingProduct == null)
                     {
                         // Tạo mới product
-                        await this.CreateAsync(new Product(
+                        var newProduct = new Product(
                             product.Name, product.Describe, product.PromotionId, product.StoreId, product.CategoryId
                         )
                         {
                             ExpiryDate = product.ExpiryDate,
                             WarrantyMonths = product.WarrantyMonths,
-                            ProductDetails = product.ProductDetails.Select(d => new ProductDetail(d.Price, d.Weight, d.Quantity, d.IsOutOfStock)
+                            ProductDetails = new List<ProductDetail>()
+                        };
+
+                        // Tạo ProductDetails với barcode
+                        foreach (var detailDto in product.ProductDetails)
+                        {
+                            var barcodes = new List<string>();
+                            for (int i = 0; i < detailDto.Quantity; i++)
                             {
-                                Image = d.Image != null ? new Image
+                                barcodes.Add(allBarcodes[barcodeIndex++]);
+                            }
+
+                            var newDetail = new ProductDetail(detailDto.Price, detailDto.Weight, detailDto.Quantity, detailDto.IsOutOfStock)
+                            {
+                                Image = detailDto.Image != null ? new Image
                                 {
-                                    Id = d.Image.Id,
-                                    Url = d.Image.Url,
-                                    ThumbUrl = d.Image.ThumbUrl,
-                                    Name = d.Image.Name
+                                    Id = detailDto.Image.Id,
+                                    Url = detailDto.Image.Url,
+                                    ThumbUrl = detailDto.Image.ThumbUrl,
+                                    Name = detailDto.Image.Name
                                 } : null,
-                                AdditionalData = d.AdditionalData.Select(a => new AdditionalData(a.Key, a.Value)).ToList(),
-                                Barcodes = d.Barcodes?.Select(b => new Barcode { Code = b }).ToList() ?? new List<Barcode>()
-                            }).ToList()
-                        });
+                                AdditionalData = detailDto.AdditionalData.Select(a => new AdditionalData(a.Key, a.Value)).ToList(),
+                                Barcodes = barcodes.Select(b => new Barcode { Code = b }).ToList()
+                            };
+
+                            newProduct.ProductDetails.Add(newDetail);
+                        }
+
+                        await this.CreateAsync(newProduct);
                     }
                     else
                     {
@@ -438,16 +447,24 @@ namespace ResiBuy.Server.Infrastructure.DbServices.ProductDbServices
                                 existingDetail.Quantity += detailDto.Quantity;
                                 existingDetail.IsOutOfStock = existingDetail.Quantity <= 0;
 
-                                // Thêm barcodes mới (nếu có)
-                                if (detailDto.Barcodes != null && detailDto.Barcodes.Any())
+                                // Tạo và thêm barcodes mới
+                                var newBarcodes = new List<string>();
+                                for (int i = 0; i < detailDto.Quantity; i++)
                                 {
-                                    var newBarcodes = detailDto.Barcodes.Select(b => new Barcode { Code = b }).ToList();
-                                    existingDetail.Barcodes.AddRange(newBarcodes);
+                                    newBarcodes.Add(allBarcodes[barcodeIndex++]);
                                 }
+                                var barcodeEntities = newBarcodes.Select(b => new Barcode { Code = b }).ToList();
+                                existingDetail.Barcodes.AddRange(barcodeEntities);
                             }
                             else
                             {
                                 // Nếu chưa có → thêm detail mới
+                                var barcodes = new List<string>();
+                                for (int i = 0; i < detailDto.Quantity; i++)
+                                {
+                                    barcodes.Add(allBarcodes[barcodeIndex++]);
+                                }
+
                                 var newDetail = new ProductDetail(detailDto.Price, detailDto.Weight, detailDto.Quantity, detailDto.IsOutOfStock)
                                 {
                                     Image = detailDto.Image != null ? new Image
@@ -458,7 +475,7 @@ namespace ResiBuy.Server.Infrastructure.DbServices.ProductDbServices
                                         Name = detailDto.Image.Name
                                     } : null,
                                     AdditionalData = detailDto.AdditionalData.Select(a => new AdditionalData(a.Key, a.Value)).ToList(),
-                                    Barcodes = detailDto.Barcodes?.Select(b => new Barcode { Code = b }).ToList() ?? new List<Barcode>()
+                                    Barcodes = barcodes.Select(b => new Barcode { Code = b }).ToList()
                                 };
                                 existingProduct.ProductDetails.Add(newDetail);
                             }

@@ -162,6 +162,11 @@ namespace ResiBuy.Server.Controllers
             var result = await mediator.Send(new ImportResidentExcelCommand(file));
             return Ok(result);
         }
-
+        [HttpPost("create-user2")]
+        public async Task<IActionResult> CreateSimpleAsync([FromBody] CreateSimpleCustomerCommand command)
+        {
+            var result = await mediator.Send(command);
+            return Ok(result);
+        }
     }
 }
