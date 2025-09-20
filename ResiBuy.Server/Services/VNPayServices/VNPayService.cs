@@ -1,10 +1,12 @@
 ﻿using ResiBuy.Server.Infrastructure.DbServices.OrderDbServices;
-using ResiBuy.Server.Services.MyBackgroundService.CheckoutSessionService;
 using System.Data;
+using ResiBuy.Server.Infrastructure;
+using Microsoft.EntityFrameworkCore;
+using ResiBuy.Server.Infrastructure.Model;
 
 namespace ResiBuy.Server.Services.VNPayServices
 {
-    public class VNPayService(IConfiguration configuration, ICheckoutSessionService checkoutSessionService, IStoreDbService storeDbService, IOrderDbService orderDbService) : IVNPayService
+    public class VNPayService(IConfiguration configuration, IStoreDbService storeDbService, IOrderDbService orderDbService, ResiBuyContext _dbContext) : IVNPayService
     {
         public string CreatePaymentUrl(decimal amount, string orderId, string orderInfo)
         {
@@ -42,7 +44,7 @@ namespace ResiBuy.Server.Services.VNPayServices
             if (order == null)
                 throw new CustomException(ExceptionErrorCode.NotFound, "order not found");
 
-            var amount = order.TotalPrice + (order.ShippingFee ?? 0);
+            var amount = order.TotalPrice;
 
             var orderInfo = $"Thanh toan hoa don {orderId}";
             return CreatePaymentUrl(amount, orderId.ToString(), orderInfo);
@@ -103,6 +105,7 @@ namespace ResiBuy.Server.Services.VNPayServices
             }
             return hash.ToString();
         }
+
         public async Task<bool> ProcessOrderPaymentCallback(string responseData, Guid orderId)
         {
             try
@@ -124,7 +127,6 @@ namespace ResiBuy.Server.Services.VNPayServices
 
                 Console.WriteLine($"Found order: {order.Id}, current payment status: {order.PaymentStatus}");
 
-                // Update order payment status to Paid
                 order.PaymentStatus = PaymentStatus.Paid;
                 await orderDbService.UpdateAsync(order);
 
@@ -137,6 +139,61 @@ namespace ResiBuy.Server.Services.VNPayServices
                 Console.WriteLine($"Error processing order payment callback: {ex.Message}");
                 Console.WriteLine($"Stack trace: {ex.StackTrace}");
                 return false;
+            }
+        }
+
+        public async Task<bool> RollbackOrderPaymentAsync(Guid orderId)
+        {
+            await using var tx = await _dbContext.Database.BeginTransactionAsync();
+            try
+            {
+                var order = await _dbContext.Orders
+                    .Include(o => o.Items)
+                    .FirstOrDefaultAsync(o => o.Id == orderId);
+
+                if (order == null)
+                    return false;
+
+                foreach (var item in order.Items)
+                {
+                    var productDetail = await _dbContext.ProductDetails
+                        .FirstOrDefaultAsync(p => p.Id == item.ProductDetailId);
+                    if (productDetail != null)
+                    {
+                        // restore quantity
+                        productDetail.Quantity += item.Quantity;
+                        // decrease sold count but not below 0
+                        productDetail.Sold = Math.Max(0, productDetail.Sold - item.Quantity);
+                        if (productDetail.Quantity > 0 && productDetail.IsOutOfStock)
+                        {
+                            productDetail.IsOutOfStock = false;
+                        }
+                    }
+                }
+
+                // restore voucher quantity if present
+                if (order.VoucherId.HasValue)
+                {
+                    var voucher = await _dbContext.Vouchers.FindAsync(order.VoucherId.Value);
+                    if (voucher != null)
+                    {
+                        voucher.Quantity += 1;
+                        voucher.IsActive = voucher.Quantity > 0;
+                    }
+                }
+
+                order.PaymentStatus = PaymentStatus.Failed;
+                order.Status = OrderStatus.Cancelled;
+                order.UpdateAt = DateTime.Now;
+
+                await _dbContext.SaveChangesAsync();
+                await tx.CommitAsync();
+                return true;
+            }
+            catch
+            {
+                await tx.RollbackAsync();
+                throw;
             }
         }
 

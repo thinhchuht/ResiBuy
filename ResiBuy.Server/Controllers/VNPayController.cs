@@ -59,10 +59,10 @@ namespace ResiBuy.Server.Controllers
                 {
                     logger.LogInformation("Processing invoice payment callback");
                     // Extract orderId from vnp_TxnRef (which is orderId.ToString() from CustomerPay)
-                    if (Guid.TryParse(callback.vnp_TxnRef, out var orderId))
+                    if (Guid.TryParse(callback.vnp_TxnRef, out var OrderId))
                     {
-                        logger.LogInformation($"Parsed orderId: {orderId}");
-                        var isOrderPaymentSuccess = await vnPayService.ProcessOrderPaymentCallback(responseData, orderId);
+                        logger.LogInformation($"Parsed orderId: {OrderId}");
+                        var isOrderPaymentSuccess = await vnPayService.ProcessOrderPaymentCallback(responseData, OrderId);
 
                         if (isOrderPaymentSuccess)
                         {
@@ -74,6 +74,24 @@ namespace ResiBuy.Server.Controllers
                         else
                         {
                             logger.LogWarning("Order payment processing failed");
+                            // rollback stock and mark order as Failed
+                            try
+                            {
+                                var rollbackOk = await vnPayService.RollbackOrderPaymentAsync(OrderId);
+                                if (!rollbackOk)
+                                {
+                                    logger.LogWarning($"Rollback failed or order not found for orderId={OrderId}");
+                                }
+                                else
+                                {
+                                    logger.LogInformation($"Rollback succeeded for orderId={OrderId}");
+                                }
+                            }
+                            catch (Exception ex)
+                            {
+                                logger.LogError(ex, $"Error while rolling back orderId={OrderId}");
+                            }
+
                             var token = GenerateToken();
                             _paymentTokens[token] = DateTime.Now.AddMinutes(5);
                             return Redirect($"http://localhost:5001/paymentFail?token={token}");
@@ -148,6 +166,11 @@ namespace ResiBuy.Server.Controllers
 
             var failedToken = GenerateToken();
             _paymentTokens[failedToken] = DateTime.Now.AddMinutes(5);
+            if (Guid.TryParse(callback.vnp_TxnRef, out var orderId))
+            {
+                logger.LogInformation($"Parsed orderId: {orderId}");
+                var isOrderPaymentSuccess = await vnPayService.RollbackOrderPaymentAsync(orderId);
+            }
             return Redirect($"http://localhost:5001/checkout-failed?token={failedToken}");
         }
 

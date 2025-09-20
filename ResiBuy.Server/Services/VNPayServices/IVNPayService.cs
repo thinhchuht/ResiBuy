@@ -8,5 +8,6 @@
         Task<bool> ProcessStorePaymentCallback(string responseData);
         Task<string> CustomerPay(Guid orderId);
         Task<bool> ProcessOrderPaymentCallback(string responseData, Guid orderId);
+        Task<bool> RollbackOrderPaymentAsync(Guid orderId);
     }
 }
