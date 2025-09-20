@@ -8,7 +8,11 @@ using Microsoft.EntityFrameworkCore.Migrations;
 namespace ResiBuy.Server.Migrations
 {
     /// <inheritdoc />
+<<<<<<<< HEAD:ResiBuy.Server/Migrations/20250920050427_updatebarcode.cs
     public partial class updatebarcode : Migration
+========
+    public partial class barcodeInOrderItem : Migration
+>>>>>>>> e7e1633143d84933d061fb76c77f12f8e8e68034:ResiBuy.Server/Migrations/20250917154623_barcodeInOrderItem.cs
     {
         /// <inheritdoc />
         protected override void Up(MigrationBuilder migrationBuilder)
@@ -680,7 +684,11 @@ namespace ResiBuy.Server.Migrations
                         .Annotation("SqlServer:Identity", "1, 1"),
                     Code = table.Column<string>(type: "nvarchar(max)", nullable: true),
                     ProductDetailId = table.Column<int>(type: "int", nullable: false),
+<<<<<<<< HEAD:ResiBuy.Server/Migrations/20250920050427_updatebarcode.cs
                     OrderItemId = table.Column<Guid>(type: "uniqueidentifier", nullable: true)
+========
+                    OrderItemId = table.Column<Guid>(type: "uniqueidentifier", nullable: false)
+>>>>>>>> e7e1633143d84933d061fb76c77f12f8e8e68034:ResiBuy.Server/Migrations/20250917154623_barcodeInOrderItem.cs
                 },
                 constraints: table =>
                 {
@@ -689,7 +697,12 @@ namespace ResiBuy.Server.Migrations
                         name: "FK_Barcodes_OrderItems_OrderItemId",
                         column: x => x.OrderItemId,
                         principalTable: "OrderItems",
+<<<<<<<< HEAD:ResiBuy.Server/Migrations/20250920050427_updatebarcode.cs
                         principalColumn: "ID");
+========
+                        principalColumn: "ID",
+                        onDelete: ReferentialAction.Cascade);
+>>>>>>>> e7e1633143d84933d061fb76c77f12f8e8e68034:ResiBuy.Server/Migrations/20250917154623_barcodeInOrderItem.cs
                     table.ForeignKey(
                         name: "FK_Barcodes_ProductDetails_ProductDetailId",
                         column: x => x.ProductDetailId,
@@ -708,6 +721,7 @@ namespace ResiBuy.Server.Migrations
                 columns: new[] { "Id", "Name", "Status" },
                 values: new object[,]
                 {
+<<<<<<<< HEAD:ResiBuy.Server/Migrations/20250920050427_updatebarcode.cs
                     { new Guid("03876703-6872-4047-92d8-b91b4298da1d"), "Đồ chơi", true },
                     { new Guid("0d0d9c64-0fe3-48c4-908c-f79031b8cd34"), "Đồ điện tử", true },
                     { new Guid("0e011096-01c0-40ee-9a56-5c83c565191d"), "Thực phẩm", true },
@@ -719,17 +733,38 @@ namespace ResiBuy.Server.Migrations
                     { new Guid("d0adb9ae-e277-40b2-ac35-feb8be3821ad"), "Phụ kiện", true },
                     { new Guid("e14da67b-a367-4ade-b8c5-1c747e17da95"), "Sách", true },
                     { new Guid("f0631fd8-66e0-4c32-8bee-5d8df34eb742"), "Mỹ phẩm", true }
+========
+                    { new Guid("12c7d55e-1368-4cfe-9aa4-a388ef0b9536"), "Thực phẩm", true },
+                    { new Guid("26e4baca-d351-44b7-87dd-f2b565ab6c32"), "Sách", true },
+                    { new Guid("2d30a554-5e4b-4820-aa35-90df30bdc2c1"), "Phụ kiện", true },
+                    { new Guid("39a9782f-feec-425c-be0d-67f40a3b65f5"), "Đồ điện tử", true },
+                    { new Guid("8bc4e2cc-8fe0-4768-9e6b-ccd34e4b279f"), "Đồ gia dụng", true },
+                    { new Guid("98204ec9-d85c-45d0-af1b-de9763eebf32"), "Đồ chơi", true },
+                    { new Guid("a9e26883-0e43-4aaf-bf28-cb48222186d7"), "Mỹ phẩm", true },
+                    { new Guid("b7aa5882-e732-472a-9568-78918d38b672"), "Thời trang", true },
+                    { new Guid("e04165f2-098b-4a45-8f9e-3cfac3aa2324"), "Khác", true },
+                    { new Guid("e31b9fcd-272f-4174-bff3-5f5f8a23adf5"), "Nội thất", true },
+                    { new Guid("e8d34a9b-1e1e-4205-918c-5c426e121370"), "Thể thao", true }
+>>>>>>>> e7e1633143d84933d061fb76c77f12f8e8e68034:ResiBuy.Server/Migrations/20250917154623_barcodeInOrderItem.cs
                 });
 
             migrationBuilder.InsertData(
                 table: "Promotions",
                 columns: new[] { "Id", "Discount", "EndDate", "IsActive", "Name", "StartDate" },
+<<<<<<<< HEAD:ResiBuy.Server/Migrations/20250920050427_updatebarcode.cs
                 values: new object[] { 1, 0, new DateTime(2225, 9, 20, 12, 4, 27, 441, DateTimeKind.Local).AddTicks(8472), false, "No Promotion", new DateTime(2025, 9, 20, 12, 4, 27, 441, DateTimeKind.Local).AddTicks(8471) });
+========
+                values: new object[] { 1, 0, new DateTime(2225, 9, 17, 22, 46, 22, 640, DateTimeKind.Local).AddTicks(2083), false, "No Promotion", new DateTime(2025, 9, 17, 22, 46, 22, 640, DateTimeKind.Local).AddTicks(2082) });
+>>>>>>>> e7e1633143d84933d061fb76c77f12f8e8e68034:ResiBuy.Server/Migrations/20250917154623_barcodeInOrderItem.cs
 
             migrationBuilder.InsertData(
                 table: "Users",
                 columns: new[] { "Id", "AvatarId", "CreatedAt", "DateOfBirth", "Email", "FullName", "IdentityNumber", "IsLocked", "PasswordHash", "PhoneNumber", "ReportCount", "Roles", "UpdatedAt" },
+<<<<<<<< HEAD:ResiBuy.Server/Migrations/20250920050427_updatebarcode.cs
                 values: new object[] { "adm_df", null, new DateTime(2025, 9, 20, 12, 4, 27, 441, DateTimeKind.Local).AddTicks(8085), new DateTime(1990, 1, 1, 0, 0, 0, 0, DateTimeKind.Unspecified), "admin@123", "Administrator", "admin", false, "$2a$11$nqRLMMFfnOMsr7kbgF53ROOqgcV8L31xizsiUCGANVG0a.RZMbNe.", "admin", 0, "[\"ADMIN\"]", new DateTime(2025, 9, 20, 12, 4, 27, 441, DateTimeKind.Local).AddTicks(8100) });
+========
+                values: new object[] { "adm_df", null, new DateTime(2025, 9, 17, 22, 46, 22, 640, DateTimeKind.Local).AddTicks(1091), new DateTime(1990, 1, 1, 0, 0, 0, 0, DateTimeKind.Unspecified), "admin@123", "Administrator", "admin", false, "$2a$11$nt8/cEpTnNxWx2V6rn5w1u/2X7.RaNArgoxH67u7XzVUYr0cFQq/q", "admin", 0, "[\"ADMIN\"]", new DateTime(2025, 9, 17, 22, 46, 22, 640, DateTimeKind.Local).AddTicks(1113) });
+>>>>>>>> e7e1633143d84933d061fb76c77f12f8e8e68034:ResiBuy.Server/Migrations/20250917154623_barcodeInOrderItem.cs
 
             migrationBuilder.InsertData(
                 table: "Buildings",
@@ -741,6 +776,7 @@ namespace ResiBuy.Server.Migrations
                 columns: new[] { "Id", "CategoryId", "Name", "ProductDetailId", "ThumbUrl", "Url", "UserId" },
                 values: new object[,]
                 {
+<<<<<<<< HEAD:ResiBuy.Server/Migrations/20250920050427_updatebarcode.cs
                     { "0ad532eb-8a4e-45f3-94c7-11ae5846f7f8", new Guid("0e011096-01c0-40ee-9a56-5c83c565191d"), "thucpham.jpg", null, "http://res.cloudinary.com/dhz6zqwxx/image/upload/c_fill,h_300,w_300/v1/resibuy/thucpham_la23wq", "https://res.cloudinary.com/dhz6zqwxx/image/upload/v1756314611/resibuy/thucpham_la23wq.jpg", null },
                     { "33a2efa6-a2a0-4530-a0f2-9fc2608cb944", new Guid("d0adb9ae-e277-40b2-ac35-feb8be3821ad"), "phukien.jpg", null, "http://res.cloudinary.com/dhz6zqwxx/image/upload/c_fill,h_300,w_300/v1/resibuy/phukien_sct8nd", "https://res.cloudinary.com/dhz6zqwxx/image/upload/v1756314610/resibuy/phukien_sct8nd.jpg", null },
                     { "4b0175f0-6cc0-47ce-9c98-dc402fdff607", new Guid("b43b860f-5c4d-46f2-ade9-dc00393775a7"), "dogiadung.jpg", null, "http://res.cloudinary.com/dhz6zqwxx/image/upload/c_fill,h_300,w_300/v1/resibuy/dogiadung_u5cuyh", "https://res.cloudinary.com/dhz6zqwxx/image/upload/v1756314610/resibuy/dogiadung_u5cuyh.jpg", null },
@@ -752,6 +788,19 @@ namespace ResiBuy.Server.Migrations
                     { "a8c67b44-fe1f-4790-9b5a-4785ada8fd03", new Guid("78e345fb-2b7c-4bf3-9045-4933ac2d69f7"), "thethao.jpg", null, "http://res.cloudinary.com/dhz6zqwxx/image/upload/c_fill,h_300,w_300/v1/resibuy/thethao_mv34he", "https://res.cloudinary.com/dhz6zqwxx/image/upload/v1756314611/resibuy/thethao_mv34he.jpg", null },
                     { "c0c80910-920b-42c3-aaad-e7b588ca2914", new Guid("03876703-6872-4047-92d8-b91b4298da1d"), "dochoi.png", null, "http://res.cloudinary.com/dhz6zqwxx/image/upload/c_fill,h_300,w_300/v1/resibuy/dochoi_rz7pys", "https://res.cloudinary.com/dhz6zqwxx/image/upload/v1756314611/resibuy/dochoi_rz7pys.png", null },
                     { "c499b9bd-d4b4-488b-a3a4-8a6a8734103e", new Guid("5b924576-a899-4447-9a60-051240f07111"), "noithat.jpg", null, "http://res.cloudinary.com/dhz6zqwxx/image/upload/c_fill,h_300,w_300/v1/resibuy/noithat_steelt", "https://res.cloudinary.com/dhz6zqwxx/image/upload/v1756314610/resibuy/noithat_steelt.jpg", null }
+========
+                    { "166fb455-622e-4e32-a369-aaa738c0a1a5", new Guid("e04165f2-098b-4a45-8f9e-3cfac3aa2324"), "khac1.jpg", null, "http://res.cloudinary.com/dhz6zqwxx/image/upload/c_fill,h_300,w_300/other", "https://res.cloudinary.com/dhz6zqwxx/image/upload/v1756315891/other.jpg", null },
+                    { "68f639df-7c05-4ec0-9596-d6cab85e15ef", new Guid("12c7d55e-1368-4cfe-9aa4-a388ef0b9536"), "thucpham.jpg", null, "http://res.cloudinary.com/dhz6zqwxx/image/upload/c_fill,h_300,w_300/v1/resibuy/thucpham_la23wq", "https://res.cloudinary.com/dhz6zqwxx/image/upload/v1756314611/resibuy/thucpham_la23wq.jpg", null },
+                    { "704edbd1-8fdc-4ee9-8bd2-73554cdb25fe", new Guid("8bc4e2cc-8fe0-4768-9e6b-ccd34e4b279f"), "dogiadung.jpg", null, "http://res.cloudinary.com/dhz6zqwxx/image/upload/c_fill,h_300,w_300/v1/resibuy/dogiadung_u5cuyh", "https://res.cloudinary.com/dhz6zqwxx/image/upload/v1756314610/resibuy/dogiadung_u5cuyh.jpg", null },
+                    { "8c728ece-56f5-4857-97db-a1726b948d38", new Guid("26e4baca-d351-44b7-87dd-f2b565ab6c32"), "sach.jpg", null, "http://res.cloudinary.com/dhz6zqwxx/image/upload/c_fill,h_300,w_300/v1/resibuy/sach_w9rqwe", "https://res.cloudinary.com/dhz6zqwxx/image/upload/v1756314610/resibuy/sach_w9rqwe.jpg", null },
+                    { "9d79be03-79e6-425a-b978-817fce688a1a", new Guid("e31b9fcd-272f-4174-bff3-5f5f8a23adf5"), "noithat.jpg", null, "http://res.cloudinary.com/dhz6zqwxx/image/upload/c_fill,h_300,w_300/v1/resibuy/noithat_steelt", "https://res.cloudinary.com/dhz6zqwxx/image/upload/v1756314610/resibuy/noithat_steelt.jpg", null },
+                    { "a30f9e5a-3f51-4f29-9cac-a2ce8e63d706", new Guid("b7aa5882-e732-472a-9568-78918d38b672"), "thoitrang.jpg", null, "http://res.cloudinary.com/dhz6zqwxx/image/upload/c_fill,h_300,w_300/v1/resibuy/thoitrang_usekdn", "https://res.cloudinary.com/dhz6zqwxx/image/upload/v1756314610/resibuy/thoitrang_usekdn.jpg", null },
+                    { "bc999001-77e6-4ed3-ac4c-e6330c6ac008", new Guid("a9e26883-0e43-4aaf-bf28-cb48222186d7"), "mypham.jpg", null, "http://res.cloudinary.com/dhz6zqwxx/image/upload/c_fill,h_300,w_300/v1/resibuy/mypham_iltnhv", "https://res.cloudinary.com/dhz6zqwxx/image/upload/v1756314610/resibuy/mypham_iltnhv.jpg", null },
+                    { "c383e31b-61dc-4b37-ae38-716939fda554", new Guid("2d30a554-5e4b-4820-aa35-90df30bdc2c1"), "phukien.jpg", null, "http://res.cloudinary.com/dhz6zqwxx/image/upload/c_fill,h_300,w_300/v1/resibuy/phukien_sct8nd", "https://res.cloudinary.com/dhz6zqwxx/image/upload/v1756314610/resibuy/phukien_sct8nd.jpg", null },
+                    { "ccc43e69-e202-4071-9de5-ebdd598149ec", new Guid("98204ec9-d85c-45d0-af1b-de9763eebf32"), "dochoi.png", null, "http://res.cloudinary.com/dhz6zqwxx/image/upload/c_fill,h_300,w_300/v1/resibuy/dochoi_rz7pys", "https://res.cloudinary.com/dhz6zqwxx/image/upload/v1756314611/resibuy/dochoi_rz7pys.png", null },
+                    { "ec2615ca-777f-47c4-84a7-27c47bbd1e2f", new Guid("e8d34a9b-1e1e-4205-918c-5c426e121370"), "thethao.jpg", null, "http://res.cloudinary.com/dhz6zqwxx/image/upload/c_fill,h_300,w_300/v1/resibuy/thethao_mv34he", "https://res.cloudinary.com/dhz6zqwxx/image/upload/v1756314611/resibuy/thethao_mv34he.jpg", null },
+                    { "fd895a90-d2c0-4eb8-9ecd-881a8b092a7f", new Guid("39a9782f-feec-425c-be0d-67f40a3b65f5"), "thu-mua-do-dien-tu-1.jpg", null, "http://res.cloudinary.com/dhz6zqwxx/image/upload/c_fill,h_300,w_300/string", "https://res.cloudinary.com/dhz6zqwxx/image/upload/v1756314488/string.jpg", null }
+>>>>>>>> e7e1633143d84933d061fb76c77f12f8e8e68034:ResiBuy.Server/Migrations/20250917154623_barcodeInOrderItem.cs
                 });
 
             migrationBuilder.InsertData(
@@ -762,7 +811,11 @@ namespace ResiBuy.Server.Migrations
             migrationBuilder.InsertData(
                 table: "Stores",
                 columns: new[] { "Id", "CreatedAt", "Description", "IsLocked", "IsOpen", "IsPayFee", "Name", "OwnerId", "PhoneNumber", "RoomId" },
+<<<<<<<< HEAD:ResiBuy.Server/Migrations/20250920050427_updatebarcode.cs
                 values: new object[] { new Guid("44444444-4444-4444-4444-444444444444"), new DateTime(2025, 9, 20, 12, 4, 27, 441, DateTimeKind.Local).AddTicks(8465), "Default store for ResiBuy system", false, true, false, "ResiBuy", "adm_df", "0123456789", new Guid("33333333-3333-3333-3333-333333333333") });
+========
+                values: new object[] { new Guid("44444444-4444-4444-4444-444444444444"), new DateTime(2025, 9, 17, 22, 46, 22, 640, DateTimeKind.Local).AddTicks(2072), "Default store for ResiBuy system", false, true, false, "ResiBuy", "adm_df", "0123456789", new Guid("33333333-3333-3333-3333-333333333333") });
+>>>>>>>> e7e1633143d84933d061fb76c77f12f8e8e68034:ResiBuy.Server/Migrations/20250917154623_barcodeInOrderItem.cs
 
             migrationBuilder.CreateIndex(
                 name: "IX_AdditionalDatas_ProductDetailId",
