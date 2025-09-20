@@ -1,4 +1,5 @@
-﻿using ResiBuy.Server.Infrastructure.DbServices.OrderDbServices;
+﻿using ResiBuy.Server.Infrastructure.DbServices.BarcodeDbServices;
+using ResiBuy.Server.Infrastructure.DbServices.OrderDbServices;
 using ResiBuy.Server.Infrastructure.Model.DTOs.OrderDtos;
 
 namespace ResiBuy.Server.Application.Commands.OrderCommands

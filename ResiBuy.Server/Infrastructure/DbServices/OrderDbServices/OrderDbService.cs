@@ -125,6 +125,7 @@ public class OrderDbService : BaseDbService<Order>, IOrderDbService
                 .Include(o => o.Items).ThenInclude(oi => oi.ProductDetail).ThenInclude(pd => pd.AdditionalData)
                 .Include(o => o.Voucher)
                 .Include(o => o.Shipper).ThenInclude(s => s.User)
+                .Include(o => o.Items).ThenInclude(oi => oi.Barcodes)
 
                 .Include(o => o.Report).FirstOrDefaultAsync(o => o.Id == id);
     }
