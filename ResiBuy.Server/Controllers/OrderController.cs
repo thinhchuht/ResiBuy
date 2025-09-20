@@ -102,7 +102,13 @@ namespace ResiBuy.Server.Controllers
             var command = new UpdateBarcodeToOrderCommand(request);
             var result = await mediator.Send(command);
             return Ok(result);
+        }
 
+        [HttpGet("removeBarcodeFromOrder")]
+        public async Task<IActionResult> RemoveBarcodeFromOrder([FromQuery] RemoveBarcodeFromOrderDto dto)
+        {
+            var result = await mediator.Send(new RemoveBarcodeFromOrderCommand(dto));
+            return Ok(result);
         }
     }
 }
