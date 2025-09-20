@@ -17,7 +17,7 @@ namespace ResiBuy.Server.Application.Commands.OrderCommands
             var oldStatus = order.Status;
             if (order.UserId != order.UserId && order.UserId != store.OwnerId.ToString() && dto.UserId != order.ShipperId.ToString())
                 throw new CustomException(ExceptionErrorCode.ValidationFailed, "Người dùng không có quyền sửa đơn hàng này.");
-            if (dto.OrderStatus != OrderStatus.Pending)
+            if (dto.OrderStatus != OrderStatus.Pending && dto.OrderStatus != OrderStatus.Cancelled)
             {
                 foreach (var item in order.Items)
                 {
