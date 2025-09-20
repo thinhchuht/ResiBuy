@@ -143,46 +143,48 @@ namespace ResiBuy.Server.Application.Commands.OrderCommands
 
             _context.Orders.Add(order);
 
-            // Nếu dùng voucher thì trừ số lượng voucher
-            if (request.VoucherId.HasValue)
-            {
-                var voucher = await _context.Vouchers.FindAsync(request.VoucherId.Value);
-                if (voucher != null)
+
+                // Nếu dùng voucher thì trừ số lượng voucher
+                if (request.VoucherId.HasValue)
                 {
-                    if (voucher.Quantity > 0)
+                    var voucher = await _context.Vouchers.FindAsync(request.VoucherId.Value);
+                    if (voucher != null)
                     {
-                        voucher.Quantity -= 1;
-                        voucher.IsActive = voucher.Quantity > 0;
-                    }
-                    else
-                    {
-                        // Nếu voucher đã hết, block tạo đơn (hoặc bạn có thể ignore tuỳ yêu cầu)
-                        throw new CustomException(ExceptionErrorCode.ValidationFailed, "Voucher đã hết");
+                        if (voucher.Quantity > 0)
+                        {
+                            voucher.Quantity -= 1;
+                            voucher.IsActive = voucher.Quantity > 0;
+                        }
+                        else
+                        {
+                            // Nếu voucher đã hết, block tạo đơn (hoặc bạn có thể ignore tuỳ yêu cầu)
+                            throw new CustomException(ExceptionErrorCode.ValidationFailed, "Voucher đã hết");
+                        }
                     }
                 }
-            }
 
 
-            foreach (var ci in cart.CartItems)
-            {
-                var pd = ci.ProductDetail;
-
-                if (pd.IsOutOfStock || pd.Quantity < ci.Quantity)
-                    throw new CustomException(ExceptionErrorCode.ValidationFailed,
-                        $"Sản phẩm {pd.Product.Name} không đủ hàng");
-
-                pd.Quantity -= ci.Quantity;
-                pd.Sold += ci.Quantity;
-
-                if (pd.Quantity <= 0)
+                foreach (var ci in cart.CartItems)
                 {
-                    pd.Quantity = 0;
-                    pd.IsOutOfStock = true;
-                }
-            }
+                    var pd = ci.ProductDetail;
 
-            // Remove the cart since it has been converted into an order
-            _context.Carts.Remove(cart);
+                    if (pd.IsOutOfStock || pd.Quantity < ci.Quantity)
+                        throw new CustomException(ExceptionErrorCode.ValidationFailed,
+                            $"Sản phẩm {pd.Product.Name} không đủ hàng");
+
+                    pd.Quantity -= ci.Quantity;
+                    pd.Sold += ci.Quantity;
+
+                    if (pd.Quantity <= 0)
+                    {
+                        pd.Quantity = 0;
+                        pd.IsOutOfStock = true;
+                    }
+                }
+
+                // Remove the cart since it has been converted into an order
+                _context.Carts.Remove(cart);
+            
 
             await _context.SaveChangesAsync(cancellationToken);
 

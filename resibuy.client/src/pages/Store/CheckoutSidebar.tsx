@@ -75,7 +75,7 @@ const CheckoutSidebar: React.FC<CheckoutSidebarProps> = ({
   const recalculatingRef = useRef<NodeJS.Timeout | null>(null);
   const [openCreateUserModal, setOpenCreateUserModal] = useState(false); // Thêm state cho CreateUserModal
   // snackbar
-  
+
   const [snackbar, setSnackbar] = useState<{
     open: boolean;
     message: string;
@@ -453,8 +453,36 @@ const CheckoutSidebar: React.FC<CheckoutSidebarProps> = ({
           <Box display="flex" flexDirection="column" gap={2} mt={1}>
             <Button
               variant="outlined"
-              onClick={() => {
-                setCartState({ customer: { fullName: "Khách vãng lai" } });
+              onClick={async () => {
+                // Try to fetch (or create) a guest user by the fixed phone number
+                const guestPhone = "0123456789";
+                try {
+                  const res = await userApi.getUserByPhone(guestPhone);
+                  // userApi methods are inconsistent about returning response vs response.data
+                  const user = res?.data ?? res;
+                  if (user) {
+                    setCartState({ customer: user });
+                    showMessage("Đã chọn khách hàng (vãng lai)", "success");
+                  } else {
+                    // fallback to a minimal guest object
+                    setCartState({
+                      customer: {
+                        fullName: "Khách vãng lai",
+                        phoneNumber: guestPhone,
+                      },
+                    });
+                    showMessage("Dùng khách vãng lai tạm thời", "warning");
+                  }
+                } catch (err: unknown) {
+                  console.error("Error selecting guest user:", err);
+                  setCartState({
+                    customer: {
+                      fullName: "Khách vãng lai",
+                      phoneNumber: guestPhone,
+                    },
+                  });
+                  showMessage("Lỗi khi lấy khách vãng lai", "error");
+                }
                 setOpenDialog(false);
               }}
             >
@@ -462,11 +490,11 @@ const CheckoutSidebar: React.FC<CheckoutSidebarProps> = ({
             </Button>
 
             <Button
-          variant="outlined"
-          onClick={() => setOpenCreateUserModal(true)} // Mở CreateUserModal
-        >
-          Thêm mới khách hàng
-        </Button>
+              variant="outlined"
+              onClick={() => setOpenCreateUserModal(true)} // Mở CreateUserModal
+            >
+              Thêm mới khách hàng
+            </Button>
 
             <TextField
               label="Nhập số điện thoại"
@@ -482,25 +510,25 @@ const CheckoutSidebar: React.FC<CheckoutSidebarProps> = ({
           <Button onClick={() => setOpenDialog(false)}>Đóng</Button>
         </DialogActions>
       </Dialog>
- {/* CreateUserModal */}
-  <CreateUserModal
-    isOpen={openCreateUserModal}
-    onClose={() => setOpenCreateUserModal(false)}
-    onSuccess={async (newUser) => {
-      setCartState({ customer: newUser }); // Cập nhật tạm thời để hiển thị trong sidebar
-      setOpenDialog(false);
-      showMessage("Tạo khách hàng thành công", "success");
-      // Gọi handleSearchCustomer để lấy thông tin đầy đủ bao gồm userId
-      try {
-        setPhoneInput(newUser.phoneNumber); // Cập nhật phoneInput để tìm kiếm
-        const res = await userApi.getUserByPhone(newUser.phoneNumber);
-        setCartState({ customer: res.data }); // Cập nhật lại customer với dữ liệu đầy đủ từ API
-      } catch (err: unknown) {
-        console.error("Error fetching user after creation:", err);
-        showMessage("Lỗi khi lấy thông tin khách hàng mới", "error");
-      }
-    }}
-  />
+      {/* CreateUserModal */}
+      <CreateUserModal
+        isOpen={openCreateUserModal}
+        onClose={() => setOpenCreateUserModal(false)}
+        onSuccess={async (newUser) => {
+          setCartState({ customer: newUser }); // Cập nhật tạm thời để hiển thị trong sidebar
+          setOpenDialog(false);
+          showMessage("Tạo khách hàng thành công", "success");
+          // Gọi handleSearchCustomer để lấy thông tin đầy đủ bao gồm userId
+          try {
+            setPhoneInput(newUser.phoneNumber); // Cập nhật phoneInput để tìm kiếm
+            const res = await userApi.getUserByPhone(newUser.phoneNumber);
+            setCartState({ customer: res.data }); // Cập nhật lại customer với dữ liệu đầy đủ từ API
+          } catch (err: unknown) {
+            console.error("Error fetching user after creation:", err);
+            showMessage("Lỗi khi lấy thông tin khách hàng mới", "error");
+          }
+        }}
+      />
       {/* Popup chọn voucher */}
       <Dialog
         open={openVoucherDialog}
