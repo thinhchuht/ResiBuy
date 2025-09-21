@@ -164,7 +164,22 @@ namespace ResiBuy.Server.Controllers
         {
             public string UserId { get; set; }
         }
+        [HttpPost("add-by-barcode/{id}")]
+        public async Task<IActionResult> AddToCartByBarcode(Guid id, [FromBody] BarcodeRequest request)
+        {
+            try
+            {
+                var command = new AddToCartByBarcodeCommand(id, request.Barcode);
+                var result = await mediator.Send(command);
+                return Ok(result);
+            }
+            catch (Exception ex)
+            {
+                return BadRequest(ResponseModel.ExceptionResponse(ex.ToString()));
+            }
+        }
 
+        public record BarcodeRequest(string Barcode);
 
     }
 }

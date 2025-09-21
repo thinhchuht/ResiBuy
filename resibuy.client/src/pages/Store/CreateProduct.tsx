@@ -58,7 +58,7 @@ interface ProductDetailInput {
     isOutOfStock: boolean;
     image: Image | null;
     additionalData: AdditionalDataInput[];
-    barcodes: string[];
+
 }
 
 interface ProductInput {
@@ -110,7 +110,7 @@ export default function CreateProduct() {
     const [priceErrors, setPriceErrors] = useState<ValidationErrors>({});
     const [weightErrors, setWeightErrors] = useState<ValidationErrors>({});
     const [quantityErrors, setQuantityErrors] = useState<ValidationErrors>({});
-    const [barcodeErrors, setBarcodeErrors] = useState<ValidationErrors>({});
+
     const [uploadingImages, setUploadingImages] = useState<{ [key: number]: boolean }>({});
 
     const [product, setProduct] = useState<ProductInput>({
@@ -407,57 +407,16 @@ export default function CreateProduct() {
             }
 
             // Validate barcodes
-            if (detail.quantity > 0) {
-                if (!detail.barcodes || detail.barcodes.length === 0) {
-                    newBarcodeErrors[index] = "Nếu số lượng > 0 thì phải có barcode";
-                    isValid = false;
-                } else if (detail.barcodes.length !== detail.quantity) {
-                    newBarcodeErrors[index] = `Số lượng barcode (${detail.barcodes.length}) phải bằng số lượng sản phẩm (${detail.quantity})`;
-                    isValid = false;
-                } else {
-                    // Check for duplicate barcodes within the same detail
-                    const uniqueBarcodes = new Set(detail.barcodes.map(b => b.trim()));
-                    if (uniqueBarcodes.size !== detail.barcodes.length) {
-                        newBarcodeErrors[index] = "Barcode bị trùng trong cùng chi tiết sản phẩm";
-                        isValid = false;
-                    } else {
-                        // Add to global barcode list for cross-detail validation
-                        detail.barcodes.forEach(barcode => {
-                            const trimmedBarcode = barcode.trim();
-                            if (trimmedBarcode) {
-                                allBarcodes.push(trimmedBarcode);
-                            }
-                        });
-                    }
-                }
-            } else {
-                // If quantity is 0, barcodes should be empty
-                if (detail.barcodes && detail.barcodes.length > 0) {
-                    newBarcodeErrors[index] = "Nếu số lượng = 0 thì không nên có barcode";
-                    isValid = false;
-                }
-            }
+           
         });
 
-        // Check for duplicate barcodes across different details
-        const barcodeFrequency = new Map<string, number>();
-        allBarcodes.forEach(barcode => {
-            barcodeFrequency.set(barcode, (barcodeFrequency.get(barcode) || 0) + 1);
-        });
-
-        const duplicateBarcodes = Array.from(barcodeFrequency.entries())
-            .filter(([_, count]) => count > 1)
-            .map(([barcode, _]) => barcode);
-
-        if (duplicateBarcodes.length > 0) {
-            showError(`Barcode bị trùng giữa các chi tiết sản phẩm: ${duplicateBarcodes.join(", ")}`);
-            isValid = false;
-        }
+      
+       
 
         setPriceErrors(newPriceErrors);
         setWeightErrors(newWeightErrors);
         setQuantityErrors(newQuantityErrors);
-        setBarcodeErrors(newBarcodeErrors);
+       
 
         if (!isValid) {
             showError("Vui lòng kiểm tra lại thông tin chi tiết sản phẩm");
@@ -525,7 +484,7 @@ export default function CreateProduct() {
         setPriceErrors({});
         setWeightErrors({});
         setQuantityErrors({});
-        setBarcodeErrors({});
+      
 
         // Generate new product details
         const newProductDetails: ProductDetailInput[] = listAdditionalData.map((data) => ({
@@ -658,21 +617,8 @@ export default function CreateProduct() {
     };
 
     // Handle barcode input
-    const updateBarcodes = (index: number, barcodesText: string) => {
-        const barcodes = barcodesText.split('\n')
-            .map(b => b.trim())
-            .filter(b => b.length > 0);
-
-        updateProductDetail(index, 'barcodes', barcodes);
-
-        // Clear barcode error when user updates
-        if (barcodes.length > 0) {
-            const newErrors = { ...barcodeErrors };
-            delete newErrors[index];
-            setBarcodeErrors(newErrors);
-        }
-    };
-
+    
+   
     // Get the selected promotion for display
     const selectedPromotion = listPromotions.find(p => p.id === product.promotionId);
 
@@ -1099,7 +1045,7 @@ export default function CreateProduct() {
                                             <TableCell sx={{ fontWeight: "bold", minWidth: 120 }}>Cân nặng (g)</TableCell>
                                             <TableCell sx={{ fontWeight: "bold", minWidth: 100 }}>Số lượng</TableCell>
                                             <TableCell sx={{ fontWeight: "bold", minWidth: 100 }}>Hết hàng</TableCell>
-                                            <TableCell sx={{ fontWeight: "bold", minWidth: 200 }}>Barcode</TableCell>
+                                           
                                             <TableCell sx={{ fontWeight: "bold", minWidth: 150 }}>Ảnh sản phẩm</TableCell>
                                         </TableRow>
                                     </TableHead>
@@ -1196,23 +1142,7 @@ export default function CreateProduct() {
                                                     />
                                                 </TableCell>
                                                 <TableCell>
-                                                    <Stack spacing={1}>
-                                                        <TextField
-                                                            size="small"
-                                                            multiline
-                                                            rows={3}
-                                                            placeholder={`Nhập ${productDetail.quantity} barcode (mỗi dòng một barcode)`}
-                                                            value={productDetail.barcodes.join('\n')}
-                                                            error={!!barcodeErrors[index]}
-                                                            helperText={barcodeErrors[index] || `${productDetail.barcodes.filter(b => b.trim()).length}/${productDetail.quantity} barcode`}
-                                                            disabled={productDetail.quantity === 0}
-                                                            onChange={(e) => updateBarcodes(index, e.target.value)}
-                                                            sx={{
-                                                                "& .MuiOutlinedInput-root": { borderRadius: 2 },
-                                                                minWidth: 180,
-                                                            }}
-                                                        />
-                                                    </Stack>
+                                                    
                                                 </TableCell>
                                                 <TableCell>
                                                     <Stack spacing={2} alignItems="center" sx={{ minWidth: 120 }}>

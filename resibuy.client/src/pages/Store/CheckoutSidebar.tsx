@@ -19,6 +19,7 @@ import voucherApi from "../../api/voucher.api";
 import shipperApi from "../../api/ship.api";
 import DeliveryAddressDialog from "./DeliveryAddressDialog";
 import CreateUserModal from "./CreateUserModal";
+
 type CheckoutSidebarProps = {
   total: number;
   discount: number;
@@ -27,6 +28,8 @@ type CheckoutSidebarProps = {
   cartId: string;
   storeId?: string;
   totalWeight?: number;
+  cartItems: OrderItem[];
+  scannedBarcodes: Record<string, { itemId: string; barcode: string }[]>;
 };
 
 type CartState = {
@@ -58,6 +61,23 @@ type Voucher = {
   endDate?: string;
 };
 
+type OrderItem = {
+  id: string;
+  productDetailId: number;
+  quantity: number;
+  price: number;
+  discount: number;
+  product: {
+    id: number;
+    name: string;
+    stock: number;
+    image?: string;
+  };
+  productDetail?: {
+    barcodes?: { id: number; code: string; productDetailId: number }[];
+  };
+};
+
 const CheckoutSidebar: React.FC<CheckoutSidebarProps> = ({
   total,
   discount,
@@ -65,6 +85,8 @@ const CheckoutSidebar: React.FC<CheckoutSidebarProps> = ({
   storeId,
   totalWeight,
   onOrderCreated,
+  cartItems,
+  scannedBarcodes,
 }) => {
   const [cartStates, setCartStates] = useState<Record<string, CartState>>({});
   const [openDialog, setOpenDialog] = useState(false);
@@ -73,8 +95,8 @@ const CheckoutSidebar: React.FC<CheckoutSidebarProps> = ({
   const [vouchers, setVouchers] = useState<Voucher[]>([]);
   const [showAddressDialog, setShowAddressDialog] = useState(false);
   const recalculatingRef = useRef<NodeJS.Timeout | null>(null);
-  const [openCreateUserModal, setOpenCreateUserModal] = useState(false); // Thêm state cho CreateUserModal
-  // snackbar
+  const [openCreateUserModal, setOpenCreateUserModal] = useState(false);
+
   const [snackbar, setSnackbar] = useState<{
     open: boolean;
     message: string;
@@ -88,7 +110,6 @@ const CheckoutSidebar: React.FC<CheckoutSidebarProps> = ({
     setSnackbar({ open: true, message, severity });
   };
 
-  // state cart hiện tại
   const defaultCartState = {
     customer: null,
     voucher: null,
@@ -111,14 +132,11 @@ const CheckoutSidebar: React.FC<CheckoutSidebarProps> = ({
     });
   };
 
-  // Recalculate shipping fee when totalWeight, delivery method or address changes
   useEffect(() => {
-    // only recalc for DELIVERY method and when we have an address
     const current = cartStates[cartId] || defaultCartState;
     if (current.deliveryMethod !== "DELIVERY" || !current.deliveryAddress)
       return;
 
-    // debounce rapid changes (e.g., multiple quantity changes)
     if (recalculatingRef.current) clearTimeout(recalculatingRef.current);
     recalculatingRef.current = setTimeout(async () => {
       try {
@@ -136,6 +154,7 @@ const CheckoutSidebar: React.FC<CheckoutSidebarProps> = ({
         });
       } catch (err: unknown) {
         console.error("Error recalculating shipping:", err);
+        showMessage("Không tính được phí ship", "error");
       }
     }, 350);
 
@@ -143,14 +162,12 @@ const CheckoutSidebar: React.FC<CheckoutSidebarProps> = ({
       if (recalculatingRef.current) clearTimeout(recalculatingRef.current);
       recalculatingRef.current = null;
     };
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [
     cartStates[cartId]?.deliveryMethod,
     cartStates[cartId]?.deliveryAddress?.id,
     totalWeight,
   ]);
 
-  // tìm khách
   const handleSearchCustomer = async () => {
     if (!phoneInput.trim()) return;
     try {
@@ -164,7 +181,18 @@ const CheckoutSidebar: React.FC<CheckoutSidebarProps> = ({
     }
   };
 
-  // mở voucher
+  const handleGuestCustomer = async () => {
+    try {
+      const res = await userApi.getUserByPhone("0123456789");
+      setCartState({ customer: res.data });
+      setOpenDialog(false);
+      showMessage("Đã chọn khách vãng lai", "success");
+    } catch (err: unknown) {
+      console.error("Error fetching guest customer:", err);
+      showMessage("Lỗi khi chọn khách vãng lai", "error");
+    }
+  };
+
   const handleOpenVoucherDialog = async () => {
     try {
       const res = await voucherApi.getAll({
@@ -181,7 +209,6 @@ const CheckoutSidebar: React.FC<CheckoutSidebarProps> = ({
     }
   };
 
-  // tính giảm giá từ voucher
   const voucherDiscount = (() => {
     if (!currentCart.voucher) return 0;
     if (currentCart.voucher.type === "Amount") {
@@ -240,7 +267,6 @@ const CheckoutSidebar: React.FC<CheckoutSidebarProps> = ({
             currentCart.deliveryMethod === "PICKUP" ? "contained" : "outlined"
           }
           onClick={() => {
-            // reset any previously selected delivery address for this cart
             setCartState({
               deliveryMethod: "PICKUP",
               shippingFee: 0,
@@ -287,16 +313,13 @@ const CheckoutSidebar: React.FC<CheckoutSidebarProps> = ({
         open={showAddressDialog}
         onClose={() => setShowAddressDialog(false)}
         onSave={async (address: DeliveryAddress) => {
-          // save address in this cart only
           setCartState({ deliveryAddress: address });
-
           try {
             const res = await shipperApi.calculate(
               address.id,
-              "33333333-3333-3333-3333-333333333333", // địa chỉ cửa hàng (fallback)
+              "33333333-3333-3333-3333-333333333333",
               totalWeight ?? 1.0
             );
-            // merge shipping fee into the current cart state to avoid overwriting deliveryAddress
             setCartStates((prev) => {
               const prevCart = prev[cartId] || defaultCartState;
               return {
@@ -410,7 +433,18 @@ const CheckoutSidebar: React.FC<CheckoutSidebarProps> = ({
             showMessage("Số tiền khách đưa chưa hợp lệ", "error");
             return;
           }
-          // prepare payload for create order API
+
+          // Lấy danh sách barcode từ scannedBarcodes
+          const barcodes = (scannedBarcodes[cartId] || []).map(
+            (entry) => entry.barcode
+          );
+
+          if (barcodes.length === 0) {
+            showMessage("Danh sách barcode không được để trống", "error");
+            return;
+          }
+
+          // Chuẩn bị payload cho API createOrder
           const payload = {
             cartId,
             userId: currentCart.customer?.id || "",
@@ -422,50 +456,48 @@ const CheckoutSidebar: React.FC<CheckoutSidebarProps> = ({
             shippingAddressId:
               currentCart.deliveryAddress?.id ||
               "00000000-0000-0000-0000-000000000000",
+            barcodes,
           };
 
           try {
             const res = await orderApi.createOrder(payload);
-            // orderApi.createOrder returns response.data (CreateOrderResponse)
             if (res && res.success) {
               showMessage("Tạo hóa đơn thành công", "success");
               if (res.paymentUrl) window.open(res.paymentUrl, "_blank");
-              // notify parent (SellPage) that order was created successfully so it can remove the cart
               if (typeof onOrderCreated === "function")
                 onOrderCreated(cartId, res.orderId);
             } else {
               showMessage(res?.message || "Tạo hóa đơn thất bại", "error");
             }
-          } catch (err) {
-            console.error(err);
-            showMessage("Lỗi khi gọi tạo hóa đơn", "error");
+          } catch (err: any) {
+            console.error("Error creating order:", err);
+            showMessage(
+              err?.response?.data?.message || "Lỗi khi gọi tạo hóa đơn",
+              "error"
+            );
           }
         }}
       >
         Xác nhận thanh toán
       </Button>
 
-      {/* Popup thêm khách hàng */}
       <Dialog open={openDialog} onClose={() => setOpenDialog(false)} fullWidth>
         <DialogTitle>Thêm khách hàng</DialogTitle>
         <DialogContent>
           <Box display="flex" flexDirection="column" gap={2} mt={1}>
             <Button
               variant="outlined"
-              onClick={() => {
-                setCartState({ customer: { fullName: "Khách vãng lai" } });
-                setOpenDialog(false);
-              }}
+              onClick={handleGuestCustomer}
             >
               Khách vãng lai
             </Button>
 
             <Button
-          variant="outlined"
-          onClick={() => setOpenCreateUserModal(true)} // Mở CreateUserModal
-        >
-          Thêm mới khách hàng
-        </Button>
+              variant="outlined"
+              onClick={() => setOpenCreateUserModal(true)}
+            >
+              Thêm mới khách hàng
+            </Button>
 
             <TextField
               label="Nhập số điện thoại"
@@ -481,17 +513,25 @@ const CheckoutSidebar: React.FC<CheckoutSidebarProps> = ({
           <Button onClick={() => setOpenDialog(false)}>Đóng</Button>
         </DialogActions>
       </Dialog>
- {/* Thêm CreateUserModal */}
-  <CreateUserModal
-    isOpen={openCreateUserModal}
-    onClose={() => setOpenCreateUserModal(false)}
- onSuccess={(newUser) => {
-  setCartState({ customer: newUser });
-  setOpenDialog(false);
-  showMessage("Tạo khách hàng thành công", "success");
-}}
-  />
-      {/* Popup chọn voucher */}
+
+      <CreateUserModal
+        isOpen={openCreateUserModal}
+        onClose={() => setOpenCreateUserModal(false)}
+        onSuccess={async (newUser) => {
+          setCartState({ customer: newUser });
+          setOpenDialog(false);
+          showMessage("Tạo khách hàng thành công", "success");
+          try {
+            setPhoneInput(newUser.phoneNumber);
+            const res = await userApi.getUserByPhone(newUser.phoneNumber);
+            setCartState({ customer: res.data });
+          } catch (err: unknown) {
+            console.error("Error fetching user after creation:", err);
+            showMessage("Lỗi khi lấy thông tin khách hàng mới", "error");
+          }
+        }}
+      />
+
       <Dialog
         open={openVoucherDialog}
         onClose={() => setOpenVoucherDialog(false)}
@@ -546,7 +586,6 @@ const CheckoutSidebar: React.FC<CheckoutSidebarProps> = ({
         </DialogActions>
       </Dialog>
 
-      {/* Snackbar */}
       <Snackbar
         open={snackbar.open}
         autoHideDuration={3000}
