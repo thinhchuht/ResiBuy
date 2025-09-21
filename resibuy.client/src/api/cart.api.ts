@@ -85,7 +85,11 @@ const cartApi = {
   //     };
   //   }
   // },
-
+  addByBarcode: (id: string, barcode: string) => {
+    return axiosClient.post(`${cartUrl}/add-by-barcode/${id}`, {
+      barcode,
+    });
+  },
 };
 
 
