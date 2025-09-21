@@ -266,7 +266,8 @@ namespace ResiBuy.Server.Application.Commands.OrderCommands
             string paymentUrl = null;
             if (request.PaymentMethod == PaymentMethod.BankTransfer)
             {
-                paymentUrl = await _vnPayService.CustomerPay(order.Id);
+                // Pass originating cart id so VNPay callback can remove the cart after successful payment
+                paymentUrl = await _vnPayService.CustomerPay(order.Id, cart.Id);
             }
 
             return new CreateOrderResponse(true, "Tạo đơn hàng thành công", order.Id, paymentUrl);
