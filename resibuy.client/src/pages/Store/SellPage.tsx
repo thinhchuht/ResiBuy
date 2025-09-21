@@ -615,7 +615,6 @@ const SellPage: React.FC = () => {
               localStorage.removeItem("scannedBarcodes");
               console.log("Đã xóa scannedBarcodes khỏi localStorage");
             }
-            toast.success("Đã thanh toán và đóng đơn hàng!");
           }}
         />
       </Box>
