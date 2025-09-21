@@ -22,14 +22,17 @@ namespace ResiBuy.Server.Application.Commands.OrderCommands
             var barcode = await barcodeDbService.GetBarcodeByBarcodeValueAsync(request.dto.BarcodeToRemove);
             if (barcode == null)
                 throw new CustomException(ExceptionErrorCode.NotFound, $"Không tìm thấy mã vạch: {request.dto.BarcodeToRemove}");
-            else if (String.IsNullOrEmpty(barcode.OrderItem.ToString()))
+            else if (barcode.OrderItemId == null)
                 throw new CustomException(ExceptionErrorCode.ValidationFailed, $"Mã vạch {request.dto.BarcodeToRemove} không có trong order nào");
 
-            barcode.OrderItemId = null;
             barcode.OrderItem.Quantity -= 1;
             barcode.OrderItem.Order.IsReport = true;
-            if(request.dto.IsRemoveFromStore)
+            barcode.OrderItemId = null;
+            if (request.dto.IsRemoveFromStore)
+                dbContext.Barcodes.Remove(barcode);
+            else
                 barcode.ProductDetail.Quantity += 1;
+
             try
             {
                 await dbContext.SaveChangesAsync();

@@ -44,13 +44,13 @@ namespace ResiBuy.Server.Controllers
             var responseData = Request.QueryString.ToString().TrimStart('?');
             logger.LogInformation($"Payment callback received - OrderInfo: {callback.vnp_OrderInfo}, TxnRef: {callback.vnp_TxnRef}, ResponseCode: {callback.vnp_ResponseCode}, TransactionStatus: {callback.vnp_TransactionStatus}");
 
-            if (!vnPayService.ValidatePayment(responseData))
-            {
-                logger.LogWarning("Payment validation failed");
-                var token = GenerateToken();
-                _paymentTokens[token] = DateTime.Now.AddMinutes(5);
-                return Redirect($"http://localhost:5001/checkout-failed?token={token}");
-            }
+            //if (!vnPayService.ValidatePayment(responseData))
+            //{
+            //    logger.LogWarning("Payment validation failed");
+            //    var token = GenerateToken();
+            //    _paymentTokens[token] = DateTime.Now.AddMinutes(5);
+            //    return Redirect($"http://localhost:5001/checkout-failed?token={token}");
+            //}
 
             if (callback.vnp_ResponseCode == "00" && callback.vnp_TransactionStatus == "00")
             {
