@@ -46,7 +46,8 @@ namespace ResiBuy.Server.Services.VNPayServices
 
             var amount = order.TotalPrice;
 
-            var orderInfo = $"Thanh toan hoa don {orderId}";
+
+            var orderInfo = cartId.HasValue ? $"Thanh toan hoa don {orderId},{cartId.Value}" : $"Thanh toan hoa don {orderId}";
             return CreatePaymentUrl(amount, orderId.ToString(), orderInfo);
         }
 
