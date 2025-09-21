@@ -33,7 +33,7 @@ namespace ResiBuy.Server.Application.Commands.CartCommands
                     return ResponseModel.FailureResponse("Không tìm thấy cart items cần xóa.");
                 }
 
-                return ResponseModel.SuccessResponse("Xóa cart items thành công.");
+                return ResponseModel.SuccessResponse(cartItemIds);
             }
             catch (Exception ex)
             {

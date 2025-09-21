@@ -9,5 +9,6 @@
         public decimal? CustomerPaid { get; set; }
         public Guid StoreId { get; set; }
         public Guid ShippingAddressId { get; set; }
+        public List<string> Barcodes { get; set; }
     }
 }
