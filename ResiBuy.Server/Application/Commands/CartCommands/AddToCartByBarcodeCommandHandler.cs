@@ -67,15 +67,7 @@ namespace ResiBuy.Server.Application.Commands.CartCommands
                 // Kiểm tra xem barcode cụ thể có trong giỏ khác với UserId = null hay không
                 var cartsWithNullUser = await _cartDbService.GetCartsInShoppingAsync();
                 var otherCartIds = cartsWithNullUser.Where(c => c.Id != command.CartId).Select(c => c.Id).ToList();
-                var barcodeInOtherCart = await _context.Barcodes
-                    .Where(b => b.Code == command.Barcode)
-                    .Join(_context.CartItems,
-                        b => b.ProductDetailId,
-                        ci => ci.ProductDetailId,
-                        (b, ci) => ci)
-                    .AnyAsync(ci => otherCartIds.Contains(ci.CartId), cancellationToken);
-                if (barcodeInOtherCart)
-                    throw new CustomException(ExceptionErrorCode.ValidationFailed, $"Sản phẩm với mã barcode {command.Barcode} tồn tại trong một giỏ khác tại quầy");
+              
 
                 // Kiểm tra xem barcode có trong đơn hàng hay không
                 if (barcode.OrderItemId.HasValue)
@@ -94,12 +86,19 @@ namespace ResiBuy.Server.Application.Commands.CartCommands
                     existingItem.Quantity += 1; // Tăng số lượng thêm 1
                     if (existingItem.Quantity > productDetail.Quantity)
                         throw new CustomException(ExceptionErrorCode.ValidationFailed, $"Chỉ còn {productDetail.Quantity} sản phẩm có sẵn");
-                    if (existingItem.Quantity > 10)
-                        throw new CustomException(ExceptionErrorCode.ValidationFailed, "Chỉ được đặt tối đa 10 sản phẩm cùng 1 mặt hàng");
+                    if (existingItem.Quantity > 100)
+                        throw new CustomException(ExceptionErrorCode.ValidationFailed, "Chỉ được đặt tối đa 100 sản phẩm cùng 1 mặt hàng");
 
                     await _cartItemDbService.UpdateAsync(existingItem);
 
-                    return ResponseModel.SuccessResponse(existingItem);
+                    return ResponseModel.SuccessResponse(new
+                    {
+                        CartItemId = existingItem.Id,
+                        existingItem.Quantity,
+                        existingItem.CartId,
+                        existingItem.ProductDetail // nếu muốn giữ nguyên
+                    });
+
                 }
 
                 // Thêm CartItem mới nếu ProductDetail chưa có trong giỏ
@@ -111,7 +110,13 @@ namespace ResiBuy.Server.Application.Commands.CartCommands
 
                 await _cartItemDbService.CreateAsync(cartItem);
 
-                return ResponseModel.SuccessResponse(cartItem);
+                return ResponseModel.SuccessResponse(new
+                {
+                    CartItemId = cartItem.Id,
+                    cartItem.Quantity,
+                    cartItem.CartId,
+                    cartItem.ProductDetail
+                });
             }
             catch (Exception ex)
             {

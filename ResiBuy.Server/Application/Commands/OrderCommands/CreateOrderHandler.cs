@@ -1,5 +1,4 @@
-﻿
-using DocumentFormat.OpenXml.Spreadsheet;
+﻿using DocumentFormat.OpenXml.Spreadsheet;
 using ResiBuy.Server.Application.Commands.OrderCommands.Dtos;
 using ResiBuy.Server.Infrastructure.DbServices.OrderDbServices;
 using ResiBuy.Server.Infrastructure.Model;
@@ -12,18 +11,22 @@ namespace ResiBuy.Server.Application.Commands.OrderCommands
     {
         private readonly ResiBuyContext _context;
         private readonly IVNPayService _vnPayService;
-        private readonly IOrderDbService orderDbService;
+        private readonly IOrderDbService _orderDbService;
 
         public CreateOrderHandler(ResiBuyContext context, IVNPayService vnPayService, IOrderDbService orderDbService)
         {
             _context = context;
             _vnPayService = vnPayService;
-            this.orderDbService = orderDbService;
+            _orderDbService = orderDbService;
         }
 
         public async Task<CreateOrderResponse> Handle(CreateOrder command, CancellationToken cancellationToken)
         {
             var request = command.Request;
+
+            // Kiểm tra đầu vào
+            if (request.Barcodes == null || !request.Barcodes.Any())
+                throw new CustomException(ExceptionErrorCode.ValidationFailed, "Danh sách barcode không được để trống");
 
             // Lấy giỏ hàng và product details
             var cart = await _context.Carts
@@ -31,10 +34,60 @@ namespace ResiBuy.Server.Application.Commands.OrderCommands
                 .ThenInclude(ci => ci.ProductDetail)
                 .ThenInclude(pd => pd.Product)
                 .ThenInclude(p => p.Promotion)
-                .FirstOrDefaultAsync(c => c.Id == request.CartId);
+                .FirstOrDefaultAsync(c => c.Id == request.CartId, cancellationToken);
 
             if (cart == null || !cart.CartItems.Any())
                 throw new CustomException(ExceptionErrorCode.ValidationFailed, "Giỏ hàng trống hoặc không tồn tại");
+
+            // Tính tổng số lượng từ CartItems
+            var totalCartQuantity = cart.CartItems.Sum(ci => ci.Quantity);
+
+            // Kiểm tra số lượng barcode khớp với tổng Quantity trong giỏ
+            if (request.Barcodes.Count != totalCartQuantity)
+                throw new CustomException(ExceptionErrorCode.ValidationFailed,
+                    $"Số lượng barcode ({request.Barcodes.Count}) không khớp với tổng số lượng trong giỏ ({totalCartQuantity})");
+
+            // Kiểm tra barcode trùng lặp
+            if (request.Barcodes.Distinct().Count() != request.Barcodes.Count)
+                throw new CustomException(ExceptionErrorCode.ValidationFailed, "Danh sách barcode chứa mã trùng lặp");
+
+            // Kiểm tra barcode tồn tại
+            var barcodeEntities = await _context.Barcodes
+                .Where(b => request.Barcodes.Contains(b.Code))
+                .Include(b => b.ProductDetail)
+                .ToListAsync(cancellationToken);
+
+            if (barcodeEntities.Count != request.Barcodes.Count)
+                throw new CustomException(ExceptionErrorCode.ValidationFailed,
+                    "Một hoặc nhiều barcode không tồn tại");
+
+            // Kiểm tra barcode đã được sử dụng trong đơn hàng khác
+            if (barcodeEntities.Any(b => b.OrderItemId.HasValue))
+                throw new CustomException(ExceptionErrorCode.ValidationFailed,
+                    "Một hoặc nhiều barcode đã được sử dụng trong đơn hàng khác");
+
+            // Kiểm tra barcode thuộc đúng ProductDetail trong giỏ
+            var cartProductDetailIds = cart.CartItems.Select(ci => ci.ProductDetailId).ToHashSet();
+            var invalidBarcodes = barcodeEntities
+                .Where(b => !cartProductDetailIds.Contains(b.ProductDetailId))
+                .Select(b => b.Code)
+                .ToList();
+            if (invalidBarcodes.Any())
+                throw new CustomException(ExceptionErrorCode.ValidationFailed,
+                    $"Các barcode {string.Join(", ", invalidBarcodes)} không thuộc sản phẩm trong giỏ hàng");
+
+            // Kiểm tra số lượng barcode theo ProductDetail
+            var barcodeCountByProductDetail = barcodeEntities
+                .GroupBy(b => b.ProductDetailId)
+                .ToDictionary(g => g.Key, g => g.Count());
+
+            foreach (var cartItem in cart.CartItems)
+            {
+                if (!barcodeCountByProductDetail.TryGetValue(cartItem.ProductDetailId, out var barcodeCount) ||
+                    barcodeCount != cartItem.Quantity)
+                    throw new CustomException(ExceptionErrorCode.ValidationFailed,
+                        $"Số lượng barcode ({barcodeCount}) cho ProductDetail {cartItem.ProductDetailId} không khớp với số lượng trong giỏ ({cartItem.Quantity})");
+            }
 
             decimal totalPrice = 0;
             float totalWeight = 0;
@@ -43,7 +96,7 @@ namespace ResiBuy.Server.Application.Commands.OrderCommands
             {
                 var productPrice = item.ProductDetail.Price;
 
-                // áp dụng khuyến mãi
+                // Áp dụng khuyến mãi
                 if (item.ProductDetail.Product.Promotion != null &&
                     item.ProductDetail.Product.Promotion.IsActive &&
                     DateTime.Now >= item.ProductDetail.Product.Promotion.StartDate &&
@@ -63,7 +116,7 @@ namespace ResiBuy.Server.Application.Commands.OrderCommands
             // Áp dụng voucher
             if (request.VoucherId.HasValue)
             {
-                var voucher = await _context.Vouchers.FindAsync(request.VoucherId.Value);
+                var voucher = await _context.Vouchers.FindAsync(request.VoucherId.Value, cancellationToken);
                 if (voucher == null)
                     throw new CustomException(ExceptionErrorCode.ValidationFailed, "Voucher không tồn tại");
 
@@ -98,28 +151,28 @@ namespace ResiBuy.Server.Application.Commands.OrderCommands
 
             if (request.PaymentMethod == PaymentMethod.COD)
             {
-                if (request.CustomerPaid <= 0)
+                if (request.CustomerPaid == null || request.CustomerPaid <= 0)
                     throw new CustomException(ExceptionErrorCode.ValidationFailed, "Vui lòng nhập số tiền khách đưa");
 
                 if (request.CustomerPaid < totalPrice)
                     throw new CustomException(ExceptionErrorCode.ValidationFailed, "Tiền khách đưa không đủ");
             }
 
-            var store = await _context.Stores.FindAsync(request.StoreId);
+            var store = await _context.Stores.FindAsync(request.StoreId, cancellationToken);
             if (store == null)
                 throw new CustomException(ExceptionErrorCode.ValidationFailed, "Không tìm thấy cửa hàng");
 
             // Tính phí ship
             decimal shippingFee;
-            // If payment is COD or shipping address equals store pickup address (room), no shipping fee
-            if (request.PaymentMethod == PaymentMethod.COD || request.ShippingAddressId == store.RoomId || request.ShippingAddressId == store.Id)
+            if (request.PaymentMethod == PaymentMethod.COD ||
+                request.ShippingAddressId == store.RoomId ||
+                request.ShippingAddressId == store.Id)
             {
                 shippingFee = 0;
             }
             else
             {
-                // Only call ShippingFeeCharged when shipping is needed
-                shippingFee = await orderDbService.ShippingFeeCharged(
+                shippingFee = await _orderDbService.ShippingFeeCharged(
                     request.ShippingAddressId,
                     store.RoomId,
                     (float)totalWeight
@@ -143,48 +196,66 @@ namespace ResiBuy.Server.Application.Commands.OrderCommands
 
             _context.Orders.Add(order);
 
+            // Gán OrderItemId vào Barcodes và liên kết với OrderItem
+            var remainingBarcodes = barcodeEntities.ToList();
+            foreach (var orderItem in order.Items)
+            {
+                var productDetailBarcodes = remainingBarcodes
+                    .Where(b => b.ProductDetailId == orderItem.ProductDetailId)
+                    .Take(orderItem.Quantity)
+                    .ToList();
 
-                // Nếu dùng voucher thì trừ số lượng voucher
-                if (request.VoucherId.HasValue)
+                if (productDetailBarcodes.Count != orderItem.Quantity)
+                    throw new CustomException(ExceptionErrorCode.ValidationFailed,
+                        $"Không đủ barcode cho ProductDetail {orderItem.ProductDetailId}. Cần {orderItem.Quantity} barcode, nhưng chỉ có {productDetailBarcodes.Count}");
+
+                foreach (var barcode in productDetailBarcodes)
                 {
-                    var voucher = await _context.Vouchers.FindAsync(request.VoucherId.Value);
-                    if (voucher != null)
-                    {
-                        if (voucher.Quantity > 0)
-                        {
-                            voucher.Quantity -= 1;
-                            voucher.IsActive = voucher.Quantity > 0;
-                        }
-                        else
-                        {
-                            // Nếu voucher đã hết, block tạo đơn (hoặc bạn có thể ignore tuỳ yêu cầu)
-                            throw new CustomException(ExceptionErrorCode.ValidationFailed, "Voucher đã hết");
-                        }
-                    }
+                    barcode.OrderItemId = orderItem.ID;
+                    orderItem.Barcodes.Add(barcode);
+                    remainingBarcodes.Remove(barcode);
                 }
+            }
 
+            // Kiểm tra xem tất cả barcode đã được sử dụng
+            if (remainingBarcodes.Any())
+                throw new CustomException(ExceptionErrorCode.ValidationFailed,
+                    $"Các barcode {string.Join(", ", remainingBarcodes.Select(b => b.Code))} không được sử dụng trong đơn hàng");
 
-                foreach (var ci in cart.CartItems)
+            // Cập nhật số lượng voucher
+            if (request.VoucherId.HasValue)
+            {
+                var voucher = await _context.Vouchers.FindAsync(request.VoucherId.Value, cancellationToken);
+                if (voucher != null)
                 {
-                    var pd = ci.ProductDetail;
+                    if (voucher.Quantity <= 0)
+                        throw new CustomException(ExceptionErrorCode.ValidationFailed, "Voucher đã hết");
 
-                    if (pd.IsOutOfStock || pd.Quantity < ci.Quantity)
-                        throw new CustomException(ExceptionErrorCode.ValidationFailed,
-                            $"Sản phẩm {pd.Product.Name} không đủ hàng");
-
-                    pd.Quantity -= ci.Quantity;
-                    pd.Sold += ci.Quantity;
-
-                    if (pd.Quantity <= 0)
-                    {
-                        pd.Quantity = 0;
-                        pd.IsOutOfStock = true;
-                    }
+                    voucher.Quantity -= 1;
+                    voucher.IsActive = voucher.Quantity > 0;
                 }
+            }
 
-                // Remove the cart since it has been converted into an order
-                _context.Carts.Remove(cart);
-            
+            // Cập nhật số lượng ProductDetail
+            foreach (var ci in cart.CartItems)
+            {
+                var pd = ci.ProductDetail;
+                if (pd.IsOutOfStock || pd.Quantity < ci.Quantity)
+                    throw new CustomException(ExceptionErrorCode.ValidationFailed,
+                        $"Sản phẩm {pd.Product.Name} không đủ hàng");
+
+                pd.Quantity -= ci.Quantity;
+                pd.Sold += ci.Quantity;
+
+                if (pd.Quantity <= 0)
+                {
+                    pd.Quantity = 0;
+                    pd.IsOutOfStock = true;
+                }
+            }
+
+            // Xóa giỏ hàng
+            _context.Carts.Remove(cart);
 
             await _context.SaveChangesAsync(cancellationToken);
 
@@ -197,6 +268,5 @@ namespace ResiBuy.Server.Application.Commands.OrderCommands
 
             return new CreateOrderResponse(true, "Tạo đơn hàng thành công", order.Id, paymentUrl);
         }
-
     }
 }

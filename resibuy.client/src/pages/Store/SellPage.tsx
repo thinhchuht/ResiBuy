@@ -18,19 +18,41 @@ import {
   Card,
   CardContent,
 } from "@mui/material";
-import { Add, Close, Delete } from "@mui/icons-material";
+import { Add, Close, Delete, QrCodeScanner } from "@mui/icons-material";
 import productApi from "../../api/product.api";
 import cartApi from "../../api/cart.api";
 import type { ProductDto } from "../../types/product";
 import ProductDetailDialog from "../Store/ProductDetailDialog";
 import ProductSearchBox from "../Store/ProductSearchBox";
 import CheckoutSidebar from "../Store/CheckoutSidebar";
+import BarcodeScanModal from "../Store/BarcodeScanModal";
 import {
   Dialog,
   DialogTitle,
   DialogContent,
   DialogActions,
 } from "@mui/material";
+import { useToastify } from "../../hooks/useToastify";
+
+// Hàm để lưu scannedBarcodes vào localStorage
+const saveScannedBarcodesToLocalStorage = (scannedBarcodes: Record<string, { itemId: string; barcode: string }[]>) => {
+  try {
+    localStorage.setItem("scannedBarcodes", JSON.stringify(scannedBarcodes));
+  } catch (err) {
+    console.error("Lỗi khi lưu scannedBarcodes vào localStorage:", err);
+  }
+};
+
+// Hàm để lấy scannedBarcodes từ localStorage
+const loadScannedBarcodesFromLocalStorage = (): Record<string, { itemId: string; barcode: string }[]> => {
+  try {
+    const stored = localStorage.getItem("scannedBarcodes");
+    return stored ? JSON.parse(stored) : {};
+  } catch (err) {
+    console.error("Lỗi khi tải scannedBarcodes từ localStorage:", err);
+    return {};
+  }
+};
 
 type CartTab = {
   id: string;
@@ -49,22 +71,32 @@ type OrderItem = {
     stock: number;
     image?: string;
   };
-  productDetail?: any;
+  productDetail?: {
+    barcodes?: { id: number; code: string; productDetailId: number }[];
+  };
 };
 
 const SellPage: React.FC = () => {
+  const toast = useToastify();
   const [tabs, setTabs] = useState<CartTab[]>([]);
   const [currentTab, setCurrentTab] = useState(0);
   const [items, setItems] = useState<OrderItem[]>([]);
   const [products, setProducts] = useState<ProductDto[]>([]);
   const [loading, setLoading] = useState(false);
-  const [selectedProduct, setSelectedProduct] = useState<
-    ProductDto | undefined
-  >(undefined);
+  const [selectedProduct, setSelectedProduct] = useState<ProductDto | undefined>(undefined);
   const [openConfirm, setOpenConfirm] = useState(false);
   const [tabToDelete, setTabToDelete] = useState<number | null>(null);
+  const [openBarcodeModal, setOpenBarcodeModal] = useState(false);
+  const [scannedBarcodes, setScannedBarcodes] = useState<
+    Record<string, { itemId: string; barcode: string }[]>
+  >(() => loadScannedBarcodesFromLocalStorage());
 
-  // Load danh sách cart khi mở trang
+  // Đồng bộ scannedBarcodes với localStorage mỗi khi thay đổi
+  useEffect(() => {
+    console.log("Đồng bộ scannedBarcodes với localStorage:", scannedBarcodes);
+    saveScannedBarcodesToLocalStorage(scannedBarcodes);
+  }, [scannedBarcodes]);
+
   useEffect(() => {
     const fetchCarts = async () => {
       try {
@@ -81,13 +113,12 @@ const SellPage: React.FC = () => {
         }
       } catch (err) {
         console.error("Lỗi load carts:", err);
+        toast.error("Lỗi khi tải danh sách đơn hàng!");
       }
     };
     fetchCarts();
-    // eslint-disable-next-line
   }, []);
 
-  // Load sản phẩm gợi ý
   useEffect(() => {
     const fetchProducts = async () => {
       try {
@@ -96,6 +127,7 @@ const SellPage: React.FC = () => {
         setProducts(res.items);
       } catch (err) {
         console.error("Lỗi khi tải sản phẩm:", err);
+        toast.error("Lỗi khi tải danh sách sản phẩm!");
       } finally {
         setLoading(false);
       }
@@ -103,13 +135,11 @@ const SellPage: React.FC = () => {
     fetchProducts();
   }, []);
 
-  // Load cart theo id khi đổi tab
   useEffect(() => {
     if (tabs[currentTab]) {
-      console.log("Loading cart for tab:", tabs[currentTab]);
+      console.log("Tải giỏ hàng cho tab:", tabs[currentTab]);
       loadCart(tabs[currentTab].id);
     }
-    // eslint-disable-next-line
   }, [currentTab, tabs]);
 
   const loadCart = async (cartId: string) => {
@@ -119,20 +149,29 @@ const SellPage: React.FC = () => {
         res.data.data?.items?.map((it: any) => ({
           id: it.id,
           quantity: it.quantity,
-          price: it.productDetail.price,
+          price: it.productDetail?.price || 0,
           discount: 0,
-          productDetailId: it.productDetail.id,
+          productDetailId: it.productDetail?.id || 0,
           product: {
-            id: it.productDetail.product.id,
-            name: it.productDetail.product.name,
-            stock: it.productDetail.quantity,
-            image: it.productDetail.image?.url,
+            id: it.productDetail?.product?.id || 0,
+            name: it.productDetail?.product?.name || "Không xác định",
+            stock: it.productDetail?.quantity || 0,
+            image: it.productDetail?.image?.url || "/no-image.png",
           },
-          productDetail: it.productDetail,
+          productDetail: it.productDetail
+            ? {
+                ...it.productDetail,
+                barcodes: Array.isArray(it.productDetail.barcodes)
+                  ? it.productDetail.barcodes
+                  : [],
+              }
+            : undefined,
         })) || [];
       setItems(loadedItems);
+      console.log("Giữ nguyên scannedBarcodes từ localStorage:", scannedBarcodes);
     } catch (err) {
-      console.error("Lỗi load cart:", err);
+      console.error("Lỗi load giỏ hàng:", err);
+      toast.error("Lỗi khi tải giỏ hàng!");
     }
   };
 
@@ -143,7 +182,7 @@ const SellPage: React.FC = () => {
   const handleAddTab = async () => {
     try {
       const res = await cartApi.createCart();
-      console.log("Tạo cart mới:", res.data);
+      console.log("Tạo giỏ hàng mới:", res.data);
       const newTab: CartTab = {
         id: res.data.data.id,
         name: `Đơn hàng ${tabs.length + 1}`,
@@ -155,28 +194,23 @@ const SellPage: React.FC = () => {
       }));
       setTabs(renumbered);
       setCurrentTab(renumbered.length - 1);
+      toast.success("Tạo đơn hàng mới thành công!");
     } catch (err) {
-      console.error("Lỗi tạo cart mới:", err);
+      console.error("Lỗi tạo giỏ hàng mới:", err);
+      toast.error("Lỗi khi tạo đơn hàng mới!");
     }
   };
-
-  // Hàm xử lý tăng/giảm số lượng cho từng item
 
   const handleChangeQuantity = async (item: OrderItem, isAdd: boolean) => {
     try {
       const cartId = tabs[currentTab]?.id;
       if (!cartId) return;
       await cartApi.addItemToCart(cartId, item.productDetailId, 1, isAdd);
-      await loadCart(cartId); // Đảm bảo cập nhật lại giỏ hàng sau khi thay đổi
-      window.toast &&
-        window.toast.success(
-          isAdd ? "Tăng số lượng thành công!" : "Giảm số lượng thành công!"
-        );
+      await loadCart(cartId);
+      toast.success(isAdd ? "Tăng số lượng thành công!" : "Giảm số lượng thành công!");
     } catch (err: any) {
-      const msg =
-        err?.response?.data?.message ||
-        (isAdd ? "Tăng số lượng thất bại!" : "Giảm số lượng thất bại!");
-      window.toast && window.toast.error(msg);
+      const msg = err?.response?.data?.message || (isAdd ? "Tăng số lượng thất bại!" : "Giảm số lượng thất bại!");
+      toast.error(msg);
     }
   };
 
@@ -202,20 +236,27 @@ const SellPage: React.FC = () => {
         name: `Đơn hàng ${i + 1}`,
       }));
       setTabs(renumbered);
+      setScannedBarcodes((prev) => {
+        const newBarcodes = { ...prev };
+        delete newBarcodes[cartId];
+        console.log("Cập nhật scannedBarcodes sau khi xóa:", newBarcodes);
+        saveScannedBarcodesToLocalStorage(newBarcodes);
+        return newBarcodes;
+      });
       if (renumbered.length > 0) {
-        const nextIndex = Math.max(
-          0,
-          Math.min(tabToDelete, renumbered.length - 1)
-        );
+        const nextIndex = Math.max(0, Math.min(tabToDelete, renumbered.length - 1));
         setCurrentTab(nextIndex);
         await loadCart(renumbered[nextIndex].id);
       } else {
         setCurrentTab(0);
         setItems([]);
+        localStorage.removeItem("scannedBarcodes");
+        console.log("Đã xóa scannedBarcodes khỏi localStorage");
       }
+      toast.success("Xóa đơn hàng thành công!");
     } catch (err) {
-      console.error("Lỗi xoá đơn hàng:", err);
-      alert("Xóa đơn hàng thất bại!");
+      console.error("Lỗi xóa đơn hàng:", err);
+      toast.error("Xóa đơn hàng thất bại!");
     }
     setOpenConfirm(false);
     setTabToDelete(null);
@@ -231,9 +272,11 @@ const SellPage: React.FC = () => {
       const cartId = tabs[currentTab]?.id;
       if (!cartId) return;
       await cartApi.addItemToCart(cartId, productDetailId, 1, true);
-      loadCart(cartId);
+      await loadCart(cartId);
+      toast.success("Thêm sản phẩm thành công!");
     } catch (err) {
       console.error("Lỗi thêm sản phẩm:", err);
+      toast.error("Lỗi khi thêm sản phẩm!");
     }
   };
 
@@ -245,8 +288,8 @@ const SellPage: React.FC = () => {
     const promotion =
       item.productDetail?.product?.promotion &&
       item.productDetail.product.promotion.isActive
-        ? item.productDetail.product.promotion
-        : undefined;
+      ? item.productDetail.product.promotion
+      : undefined;
     const discount = promotion ? promotion.discount : item.discount;
     const discountAmount = item.price * item.quantity * (discount / 100);
     return sum + discountAmount;
@@ -254,7 +297,6 @@ const SellPage: React.FC = () => {
 
   return (
     <Box display="flex" height="100vh" bgcolor="#f5f6fa">
-      {/* Main area */}
       <Box
         flex={3}
         display="flex"
@@ -265,7 +307,6 @@ const SellPage: React.FC = () => {
         m={2}
         overflow="hidden"
       >
-        {/* Header */}
         <AppBar
           position="static"
           color="default"
@@ -282,6 +323,17 @@ const SellPage: React.FC = () => {
             <ProductSearchBox
               onSelectProduct={(product) => setSelectedProduct(product)}
             />
+            {tabs.length > 0 && (
+              <Button
+                variant="contained"
+                color="primary"
+                onClick={() => setOpenBarcodeModal(true)}
+                startIcon={<QrCodeScanner />}
+                sx={{ ml: 2, fontWeight: 600, boxShadow: "none" }}
+              >
+                Quét Barcode
+              </Button>
+            )}
             <Button
               variant="contained"
               color="primary"
@@ -294,7 +346,6 @@ const SellPage: React.FC = () => {
           </Toolbar>
         </AppBar>
 
-        {/* Tabs */}
         <Tabs
           value={currentTab}
           onChange={handleChangeTab}
@@ -335,7 +386,6 @@ const SellPage: React.FC = () => {
           ))}
         </Tabs>
 
-        {/* Order table */}
         <Box flex={1} overflow="auto" p={2}>
           <Table sx={{ bgcolor: "#fff", borderRadius: 2, boxShadow: 1 }}>
             <TableHead>
@@ -374,8 +424,8 @@ const SellPage: React.FC = () => {
                   const promotion =
                     item.productDetail?.product?.promotion &&
                     item.productDetail.product.promotion.isActive
-                      ? item.productDetail.product.promotion
-                      : undefined;
+                    ? item.productDetail.product.promotion
+                    : undefined;
                   const discount = promotion
                     ? promotion.discount
                     : item.discount;
@@ -384,10 +434,10 @@ const SellPage: React.FC = () => {
                   const detailInfo =
                     item.productDetail?.additionalData &&
                     item.productDetail.additionalData.length > 0
-                      ? item.productDetail.additionalData
-                          .map((ad: any) => `${ad.key}: ${ad.value}`)
-                          .join(", ")
-                      : "";
+                    ? item.productDetail.additionalData
+                        .map((ad: any) => `${ad.key}: ${ad.value}`)
+                        .join(", ")
+                    : "";
 
                   return (
                     <TableRow key={item.id} hover>
@@ -483,19 +533,30 @@ const SellPage: React.FC = () => {
                           color="error"
                           onClick={async () => {
                             const cartId = tabs[currentTab]?.id;
-                            if (!cartId) return;
+                            if (!cartId) {
+                              toast.error("Không tìm thấy giỏ hàng!");
+                              return;
+                            }
                             try {
-                              await cartApi.deleteCartItems(cartId, [item.id]);
-                              await loadCart(cartId);
-                              window.toast &&
-                                window.toast.success(
-                                  "Xóa sản phẩm khỏi đơn hàng thành công!"
+                              const response = await cartApi.deleteCartItems(cartId, [item.id]);
+                              const deletedItemId = response.data.data[0];
+                              setScannedBarcodes((prev) => {
+                                const newBarcodes = { ...prev };
+                                newBarcodes[cartId] = (newBarcodes[cartId] || []).filter(
+                                  (entry) => entry.itemId !== deletedItemId
                                 );
+                                if (newBarcodes[cartId]?.length === 0) {
+                                  delete newBarcodes[cartId];
+                                }
+                                console.log("Cập nhật scannedBarcodes sau khi xóa:", newBarcodes);
+                                saveScannedBarcodesToLocalStorage(newBarcodes);
+                                return newBarcodes;
+                              });
+                              await loadCart(cartId);
+                              toast.success("Xóa sản phẩm khỏi đơn hàng thành công!");
                             } catch (err: any) {
-                              const msg =
-                                err?.response?.data?.message ||
-                                "Xóa sản phẩm khỏi đơn hàng thất bại!";
-                              window.toast && window.toast.error(msg);
+                              const msg = err?.response?.data?.message || "Xóa sản phẩm khỏi đơn hàng thất bại!";
+                              toast.error(msg);
                             }
                           }}
                         >
@@ -510,111 +571,9 @@ const SellPage: React.FC = () => {
           </Table>
         </Box>
 
-        {/* Product Detail Dialog */}
-        <ProductDetailDialog
-          open={!!selectedProduct}
-          product={selectedProduct}
-          onClose={() => setSelectedProduct(undefined)}
-          onSelectDetail={async (detailId) => {
-            await handleAddProduct(detailId);
-            setSelectedProduct(undefined);
-          }}
-        />
-
-        {/* Product grid */}
-        <Box p={2} borderTop="1px solid #eee" bgcolor="#fafbfc">
-          <Typography variant="subtitle1" gutterBottom fontWeight={700}>
-            Chọn nhanh sản phẩm
-          </Typography>
-          {loading ? (
-            <Box display="flex" justifyContent="center" py={4}>
-              <CircularProgress />
-            </Box>
-          ) : (
-            <Grid container spacing={2}>
-              {products.map((p) => {
-                const detail = p.productDetails?.[0];
-                if (!detail) return null;
-                return (
-                  <Grid
-                    item
-                    xs={12}
-                    sm={6}
-                    md={4}
-                    lg={3}
-                    xl={2}
-                    key={detail.id}
-                    sx={{ display: "flex" }}
-                  >
-                    <Card
-                      onClick={() => setSelectedProduct(p)}
-                      sx={{
-                        cursor: "pointer",
-                        textAlign: "center",
-                        transition: "box-shadow 0.2s",
-                        "&:hover": {
-                          boxShadow: 4,
-                          borderColor: "primary.main",
-                        },
-                        border: "1px solid #eee",
-                        borderRadius: 2,
-                        flex: 1,
-                        display: "flex",
-                        flexDirection: "column",
-                        height: "100%",
-                      }}
-                    >
-                      <CardContent
-                        sx={{
-                          flex: 1,
-                          display: "flex",
-                          flexDirection: "column",
-                          alignItems: "center",
-                          justifyContent: "flex-start",
-                          p: 2,
-                        }}
-                      >
-                        <Box
-                          component="img"
-                          src={detail.image?.url || "/no-image.png"}
-                          alt={p.name}
-                          sx={{
-                            width: 100,
-                            height: 100,
-                            objectFit: "cover",
-                            background: "#fafbfc",
-                            mb: 1,
-                            borderRadius: 1,
-                            border: "1px solid #f0f0f0",
-                          }}
-                        />
-                        <Typography
-                          variant="body2"
-                          fontWeight="bold"
-                          color="primary"
-                        >
-                          {detail.price?.toLocaleString()} đ
-                        </Typography>
-                        <Typography
-                          variant="body2"
-                          fontWeight={600}
-                          gutterBottom
-                        >
-                          {p.name}
-                        </Typography>
-                        <Typography variant="caption" color="text.secondary">
-                          SL: {detail.quantity ?? 0}
-                        </Typography>
-                      </CardContent>
-                    </Card>
-                  </Grid>
-                );
-              })}
-            </Grid>
-          )}
-        </Box>
+       
       </Box>
-      {/* Sidebar */}
+
       <Box
         display="flex"
         height="100vh"
@@ -623,7 +582,7 @@ const SellPage: React.FC = () => {
         boxShadow={2}
       >
         <CheckoutSidebar
-          cartId={tabs[currentTab]?.id} // ✅ Truyền cartId hiện tại
+          cartId={tabs[currentTab]?.id}
           total={total}
           discount={totalDiscount}
           storeId={products?.[0]?.storeId}
@@ -631,13 +590,21 @@ const SellPage: React.FC = () => {
             (s, it) => s + (it.productDetail?.weight || 0) * it.quantity,
             0
           )}
+          cartItems={items}
+          scannedBarcodes={scannedBarcodes}
           onOrderCreated={async (paidCartId: string) => {
-            // remove the cart tab and load next cart if present
             const idx = tabs.findIndex((t) => t.id === paidCartId);
             if (idx === -1) return;
             const newTabs = [...tabs];
             newTabs.splice(idx, 1);
             setTabs(newTabs);
+            setScannedBarcodes((prev) => {
+              const newBarcodes = { ...prev };
+              delete newBarcodes[paidCartId];
+              console.log("Cập nhật scannedBarcodes sau khi thanh toán:", newBarcodes);
+              saveScannedBarcodesToLocalStorage(newBarcodes);
+              return newBarcodes;
+            });
             if (newTabs.length > 0) {
               const nextIndex = Math.max(0, Math.min(idx, newTabs.length - 1));
               setCurrentTab(nextIndex);
@@ -645,13 +612,50 @@ const SellPage: React.FC = () => {
             } else {
               setCurrentTab(0);
               setItems([]);
+              localStorage.removeItem("scannedBarcodes");
+              console.log("Đã xóa scannedBarcodes khỏi localStorage");
             }
-            if (window.toast)
-              window.toast.success("Đã thanh toán và đóng đơn hàng");
+            toast.success("Đã thanh toán và đóng đơn hàng!");
           }}
         />
       </Box>
-      {/* Dialog xác nhận xóa */}
+
+      <ProductDetailDialog
+        open={!!selectedProduct}
+        product={selectedProduct}
+        onClose={() => setSelectedProduct(undefined)}
+        onSelectDetail={async (detailId) => {
+          await handleAddProduct(detailId);
+          setSelectedProduct(undefined);
+        }}
+      />
+
+      <BarcodeScanModal
+        isOpen={openBarcodeModal}
+        onClose={() => setOpenBarcodeModal(false)}
+        cartId={tabs[currentTab]?.id || ""}
+        cartItems={items}
+        allScannedBarcodes={Object.values(scannedBarcodes).flatMap(entries => entries.map(entry => entry.barcode))}
+        onAddItem={async () => {
+          const cartId = tabs[currentTab]?.id;
+          if (cartId) await loadCart(cartId);
+        }}
+        onBarcodeAdded={(barcode, itemId) => {
+          setScannedBarcodes((prev) => {
+            const currentCartId = tabs[currentTab]?.id || "";
+            const updatedBarcodes = {
+              ...prev,
+              [currentCartId]: [
+                ...(prev[currentCartId] || []),
+                { itemId, barcode },
+              ],
+            };
+            console.log("Cập nhật scannedBarcodes:", updatedBarcodes);
+            return updatedBarcodes;
+          });
+        }}
+      />
+
       <Dialog open={openConfirm} onClose={handleCancelDeleteTab}>
         <DialogTitle>Xác nhận xóa đơn hàng</DialogTitle>
         <DialogContent>Bạn có chắc muốn xóa đơn hàng này?</DialogContent>

@@ -25,6 +25,7 @@
     "@testing-library/user-event": "^13.5.0",
     "@types/jest": "^27.5.2",
     "@types/node": "^16.18.86",
+    "@zxing/library": "^0.21.3",
     "axios": "^1.6.7",
     "bwip-js": "^4.7.0",
     "chart.js": "^4.5.0",
@@ -47,7 +48,8 @@
     "uuid": "^11.1.0",
     "web-vitals": "^2.1.4",
     "xlsx": "^0.18.5",
-    "yup": "^1.6.1"
+    "yup": "^1.6.1",
+    "zxing": "^0.1.2"
   },
   "devDependencies": {
     "@eslint/js": "^9.25.0",
