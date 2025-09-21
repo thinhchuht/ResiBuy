@@ -92,10 +92,15 @@ namespace ResiBuy.Server.Application.Commands.OrderCommands
                     var productDetailIds = items.Select(i => i.ProductDetailId).ToList();
                     var productDetails = await productDetailDbService.GetBatchAsync(productDetailIds);
                     order.CancelReason = dto.Reason;
+                    // remove Barcodes from order
                     foreach (var item in items)
                     {
                         var productDetail = productDetails.First(pd => pd.Id == item.ProductDetailId);
                         productDetail.Quantity += item.Quantity;
+                        foreach (var barcode in item.Barcodes)
+                        {
+                            barcode.OrderItemId = null;
+                        }
                     }
                     await productDetailDbService.UpdateTransactionBatch(productDetails);
 
