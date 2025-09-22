@@ -41,7 +41,7 @@ import PromotionCreatePage from "./Promotion/PromotionCreatePage.tsx";
 import PromotionUpdatePage from "./Promotion/PromotionUpdatePage.tsx";
 import SellPage from "./SellPage";
 import ViewProduct from "./ViewProduct.tsx";
-
+import ImageManagement from "./ImageManagement.tsx";
 // Interface cho route config
 interface RouteConfig {
   title: string;
@@ -335,6 +335,10 @@ const StorePage: React.FC = () => {
               <Route
                 path="product-detail/:productId"
                 element={<ViewProduct />}
+              />
+               <Route
+                path="image-management"
+                element={<ImageManagement />}
               />
               <Route
                 path="promotion-update/:promotionId"
