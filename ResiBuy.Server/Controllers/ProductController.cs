@@ -81,5 +81,14 @@ namespace ResiBuy.Server.Controllers
             var result = await mediator.Send(new RemoveBarcodeFromProductCommand(dto));
             return Ok(result);
         }
+        [HttpPut("update2")]
+        public async Task<IActionResult> UpdateProduct2(
+      [FromBody] UpdateProduct2Dto dto,
+      CancellationToken cancellationToken)
+        {
+            var result = await mediator.Send(new UpdateProduct2Command(dto), cancellationToken);
+            return Ok(new { result });
+        }
+
     }
-}
+    }
