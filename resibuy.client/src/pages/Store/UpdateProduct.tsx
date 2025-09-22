@@ -63,7 +63,6 @@ interface ProductDetailInput {
     isOutOfStock: boolean;
     image?: Image;
     additionalData: AdditionalDataInput[];
-    barcodes: string[];
 }
 
 interface ProductInput {
@@ -131,7 +130,6 @@ export default function UpdateProduct() {
     const [priceErrors, setPriceErrors] = useState<ValidationErrors>({});
     const [weightErrors, setWeightErrors] = useState<ValidationErrors>({});
     const [quantityErrors, setQuantityErrors] = useState<ValidationErrors>({});
-    const [barcodeErrors, setBarcodeErrors] = useState<ValidationErrors>({});
     const [uploadingImages, setUploadingImages] = useState<{ [key: number]: boolean }>({});
 
     const [product, setProduct] = useState<ProductInput>({
@@ -150,75 +148,74 @@ export default function UpdateProduct() {
     const [classifies, setClassifies] = useState<Classify[]>([]);
 
     // Load data on component mount
-   useEffect(() => {
-    const loadData = async () => {
-        try {
-            setLoading(true);
-            await Promise.all([loadCategories(), loadPromotions()]);
+    useEffect(() => {
+        const loadData = async () => {
+            try {
+                setLoading(true);
+                await Promise.all([loadCategories(), loadPromotions()]);
 
-            if (productId) {
-                const productRes = await axiosClient.get(`api/Product/${productId}`);
-                if (productRes.status === 200) {
-                    const productData = productRes.data.data;
-                    setProduct({
-                        ...productData,
-                        storeId: storeId || productData.storeId,
-                        promotionId: productData.promotionId || 0,
-                    });
-
-                    const tempProductDetails: ProductDetailInput[] = productData.productDetails.map(detail => ({
-                        id: detail.id,
-                        price: detail.price,
-                        weight: detail.weight,
-                        quantity: detail.quantity,
-                        isOutOfStock: detail.isOutOfStock,
-                        image: detail.image,
-                        additionalData: detail.additionalData,
-                        barcodes: detail.barcodes.map(barcode => barcode.code ?? ''), // Xử lý null/undefined
-                    })) || [];
-
-                    setListProductDetail(tempProductDetails);
-
-                    const classifyMap: Record<string, Set<string>> = {};
-
-                    tempProductDetails.forEach((detail) => {
-                        detail.additionalData.forEach((data) => {
-                            if (!classifyMap[data.key]) {
-                                classifyMap[data.key] = new Set();
-                            }
-                            classifyMap[data.key].add(data.value);
+                if (productId) {
+                    const productRes = await axiosClient.get(`api/Product/${productId}`);
+                    if (productRes.status === 200) {
+                        const productData = productRes.data.data;
+                        setProduct({
+                            ...productData,
+                            storeId: storeId || productData.storeId,
+                            promotionId: productData.promotionId || 0,
                         });
-                    });
 
-                    const newClassifies: Classify[] = Object.entries(classifyMap).map(
-                        ([key, values]) => ({
-                            key,
-                            value: Array.from(values).map((val) => ({
-                                text: val,
+                        const tempProductDetails: ProductDetailInput[] = productData.productDetails.map(detail => ({
+                            id: detail.id,
+                            price: detail.price,
+                            weight: detail.weight,
+                            quantity: detail.quantity,
+                            isOutOfStock: detail.isOutOfStock,
+                            image: detail.image,
+                            additionalData: detail.additionalData,
+                        })) || [];
+
+                        setListProductDetail(tempProductDetails);
+
+                        const classifyMap: Record<string, Set<string>> = {};
+
+                        tempProductDetails.forEach((detail) => {
+                            detail.additionalData.forEach((data) => {
+                                if (!classifyMap[data.key]) {
+                                    classifyMap[data.key] = new Set();
+                                }
+                                classifyMap[data.key].add(data.value);
+                            });
+                        });
+
+                        const newClassifies: Classify[] = Object.entries(classifyMap).map(
+                            ([key, values]) => ({
+                                key,
+                                value: Array.from(values).map((val) => ({
+                                    text: val,
+                                    isEdit: false,
+                                })),
                                 isEdit: false,
-                            })),
-                            isEdit: false,
-                        })
-                    );
+                            })
+                        );
 
-                    setClassifies(newClassifies);
+                        setClassifies(newClassifies);
+                    }
+                } else {
+                    setProduct((prev) => ({
+                        ...prev,
+                        storeId: storeId || "",
+                    }));
                 }
-            } else {
-                setProduct((prev) => ({
-                    ...prev,
-                    storeId: storeId || "",
-                }));
+            } catch (err) {
+                console.error("Error loading data:", err);
+                showError("Không thể tải dữ liệu. Vui lòng thử lại!");
+            } finally {
+                setLoading(false);
             }
-        } catch (err) {
-            console.error("Error loading data:", err);
-            showError("Không thể tải dữ liệu. Vui lòng thử lại!");
-        } finally {
-            setLoading(false);
-        }
-    };
+        };
 
-    loadData();
-}, [productId, storeId]);
+        loadData();
+    }, [productId, storeId]);
 
     const loadCategories = async () => {
         try {
@@ -519,10 +516,6 @@ export default function UpdateProduct() {
         const newPriceErrors: ValidationErrors = {};
         const newWeightErrors: ValidationErrors = {};
         const newQuantityErrors: ValidationErrors = {};
-        const newBarcodeErrors: ValidationErrors = {};
-
-        // Collect all barcodes to check for duplicates across details
-        const allBarcodes: string[] = [];
 
         allDetails.forEach((detail, index) => {
             // Validate price
@@ -554,59 +547,11 @@ export default function UpdateProduct() {
                 showError(`Vui lòng tải ảnh cho tất cả các chi tiết sản phẩm mới`);
                 isValid = false;
             }
-
-            // Validate barcodes
-            if (detail.quantity > 0) {
-                if (!detail.barcodes || detail.barcodes.length === 0) {
-                    newBarcodeErrors[index] = "Nếu số lượng > 0 thì phải có barcode";
-                    isValid = false;
-                } else if (detail.barcodes.length !== detail.quantity) {
-                    newBarcodeErrors[index] = `Số lượng barcode (${detail.barcodes.length}) phải bằng số lượng sản phẩm (${detail.quantity})`;
-                    isValid = false;
-                } else {
-                    // Check for duplicate barcodes within the same detail
-                    const uniqueBarcodes = new Set(detail.barcodes.map(b => b.trim()));
-                    if (uniqueBarcodes.size !== detail.barcodes.length) {
-                        newBarcodeErrors[index] = "Barcode bị trùng trong cùng chi tiết sản phẩm";
-                        isValid = false;
-                    } else {
-                        // Add to global barcode list for cross-detail validation
-                        detail.barcodes.forEach(barcode => {
-                            const trimmedBarcode = barcode.trim();
-                            if (trimmedBarcode) {
-                                allBarcodes.push(trimmedBarcode);
-                            }
-                        });
-                    }
-                }
-            } else {
-                // If quantity is 0, barcodes should be empty
-                if (detail.barcodes && detail.barcodes.length > 0) {
-                    newBarcodeErrors[index] = "Nếu số lượng = 0 thì không nên có barcode";
-                    isValid = false;
-                }
-            }
         });
-
-        // Check for duplicate barcodes across different details
-        const barcodeFrequency = new Map<string, number>();
-        allBarcodes.forEach(barcode => {
-            barcodeFrequency.set(barcode, (barcodeFrequency.get(barcode) || 0) + 1);
-        });
-
-        const duplicateBarcodes = Array.from(barcodeFrequency.entries())
-            .filter(([_, count]) => count > 1)
-            .map(([barcode, _]) => barcode);
-
-        if (duplicateBarcodes.length > 0) {
-            showError(`Barcode bị trùng giữa các chi tiết sản phẩm: ${duplicateBarcodes.join(", ")}`);
-            isValid = false;
-        }
 
         setPriceErrors(newPriceErrors);
         setWeightErrors(newWeightErrors);
         setQuantityErrors(newQuantityErrors);
-        setBarcodeErrors(newBarcodeErrors);
 
         if (!isValid) {
             showError("Vui lòng kiểm tra lại thông tin chi tiết sản phẩm");
@@ -696,14 +641,12 @@ export default function UpdateProduct() {
             isOutOfStock: false,
             image: { id: "", url: "", thumbUrl: "", name: "" },
             additionalData: data,
-            barcodes: [],
         }));
 
         // Clear existing errors for new details
         setPriceErrors({});
         setWeightErrors({});
         setQuantityErrors({});
-        setBarcodeErrors({});
 
         setNewProductDetails(newDetails);
         showSuccess(`Đã tạo ${newDetails.length} chi tiết sản phẩm mới`);
@@ -804,23 +747,6 @@ export default function UpdateProduct() {
                 (newList[index] as any)[field] = value;
                 return newList;
             });
-        }
-    };
-
-    // Handle barcode input
-    const updateBarcodes = (index: number, barcodesText: string, isNewDetail: boolean = false) => {
-        const barcodes = barcodesText.split('\n')
-            .map(b => b.trim())
-            .filter(b => b.length > 0);
-
-        updateProductDetail(index, 'barcodes', barcodes, isNewDetail);
-
-        // Clear barcode error when user updates
-        if (barcodes.length > 0) {
-            const newErrors = { ...barcodeErrors };
-            const globalIndex = isNewDetail ? listProductDetail.length + index : index;
-            delete newErrors[globalIndex];
-            setBarcodeErrors(newErrors);
         }
     };
 
@@ -1307,7 +1233,7 @@ export default function UpdateProduct() {
                                 </Stack>
                             </Box>
                             <Box sx={{ overflow: "auto" }}>
-                                <Table sx={{ minWidth: 1000 }}>
+                                <Table sx={{ minWidth: 800 }}>
                                     <TableHead>
                                         <TableRow sx={{ bgcolor: "grey.50" }}>
                                             <TableCell sx={{ fontWeight: "bold", minWidth: 200 }}>Phân loại</TableCell>
@@ -1315,7 +1241,6 @@ export default function UpdateProduct() {
                                             <TableCell sx={{ fontWeight: "bold", minWidth: 120 }}>Cân nặng (g)</TableCell>
                                             <TableCell sx={{ fontWeight: "bold", minWidth: 100 }}>Số lượng</TableCell>
                                             <TableCell sx={{ fontWeight: "bold", minWidth: 100 }}>Hết hàng</TableCell>
-                                            <TableCell sx={{ fontWeight: "bold", minWidth: 200 }}>Barcode</TableCell>
                                             <TableCell sx={{ fontWeight: "bold", minWidth: 150 }}>Ảnh sản phẩm</TableCell>
                                         </TableRow>
                                     </TableHead>
@@ -1379,16 +1304,6 @@ export default function UpdateProduct() {
                                                             const newQuantity = Number(e.target.value);
                                                             if (newQuantity >= 0) {
                                                                 updateProductDetail(index, 'quantity', newQuantity, false);
-                                                                // Auto-generate or clear barcodes based on quantity
-                                                                if (newQuantity === 0) {
-                                                                    updateProductDetail(index, 'barcodes', [], false);
-                                                                } else if (productDetail.barcodes.length !== newQuantity) {
-                                                                    // Generate empty barcode slots
-                                                                    const newBarcodes = Array(newQuantity).fill('').map((_, i) =>
-                                                                        productDetail.barcodes[i] || ''
-                                                                    );
-                                                                    updateProductDetail(index, 'barcodes', newBarcodes, false);
-                                                                }
                                                             }
                                                         }}
                                                         onBlur={() => validateQuantity(productDetail.quantity, index)}
@@ -1405,30 +1320,10 @@ export default function UpdateProduct() {
                                                             // If marking as out of stock, set quantity to 0
                                                             if (e.target.checked) {
                                                                 updateProductDetail(index, 'quantity', 0, false);
-                                                                updateProductDetail(index, 'barcodes', [], false);
                                                             }
                                                         }}
                                                         color="primary"
                                                     />
-                                                </TableCell>
-                                                <TableCell>
-                                                    <Stack spacing={1}>
-                                                        <TextField
-                                                            size="small"
-                                                            multiline
-                                                            rows={3}
-                                                            placeholder={`Nhập ${productDetail.quantity} barcode (mỗi dòng một barcode)`}
-                                                            value={productDetail.barcodes?.join('\n') || ''}
-                                                            error={!!barcodeErrors[index]}
-                                                            helperText={barcodeErrors[index] || `${(productDetail.barcodes?.filter(b => b.trim()) || []).length}/${productDetail.quantity} barcode`}
-                                                            disabled={productDetail.quantity === 0}
-                                                            onChange={(e) => updateBarcodes(index, e.target.value, false)}
-                                                            sx={{
-                                                                "& .MuiOutlinedInput-root": { borderRadius: 2 },
-                                                                minWidth: 180,
-                                                            }}
-                                                        />
-                                                    </Stack>
                                                 </TableCell>
                                                 <TableCell>
                                                     <Stack
@@ -1560,7 +1455,7 @@ export default function UpdateProduct() {
                                 </Stack>
                             </Box>
                             <Box sx={{ overflow: "auto" }}>
-                                <Table sx={{ minWidth: 1000 }}>
+                                <Table sx={{ minWidth: 800 }}>
                                     <TableHead>
                                         <TableRow sx={{ bgcolor: "grey.50" }}>
                                             <TableCell sx={{ fontWeight: "bold", minWidth: 200 }}>Phân loại</TableCell>
@@ -1568,7 +1463,6 @@ export default function UpdateProduct() {
                                             <TableCell sx={{ fontWeight: "bold", minWidth: 120 }}>Cân nặng (g)</TableCell>
                                             <TableCell sx={{ fontWeight: "bold", minWidth: 100 }}>Số lượng</TableCell>
                                             <TableCell sx={{ fontWeight: "bold", minWidth: 100 }}>Hết hàng</TableCell>
-                                            <TableCell sx={{ fontWeight: "bold", minWidth: 200 }}>Barcode</TableCell>
                                             <TableCell sx={{ fontWeight: "bold", minWidth: 150 }}>Ảnh sản phẩm</TableCell>
                                         </TableRow>
                                     </TableHead>
@@ -1641,16 +1535,6 @@ export default function UpdateProduct() {
                                                                 const newQuantity = Number(e.target.value);
                                                                 if (newQuantity >= 0) {
                                                                     updateProductDetail(index, 'quantity', newQuantity, true);
-                                                                    // Auto-generate or clear barcodes based on quantity
-                                                                    if (newQuantity === 0) {
-                                                                        updateProductDetail(index, 'barcodes', [], true);
-                                                                    } else if (productDetail.barcodes.length !== newQuantity) {
-                                                                        // Generate empty barcode slots
-                                                                        const newBarcodes = Array(newQuantity).fill('').map((_, i) =>
-                                                                            productDetail.barcodes[i] || ''
-                                                                        );
-                                                                        updateProductDetail(index, 'barcodes', newBarcodes, true);
-                                                                    }
                                                                 }
                                                             }}
                                                             onBlur={() => validateQuantity(productDetail.quantity, globalIndex)}
@@ -1667,30 +1551,10 @@ export default function UpdateProduct() {
                                                                 // If marking as out of stock, set quantity to 0
                                                                 if (e.target.checked) {
                                                                     updateProductDetail(index, 'quantity', 0, true);
-                                                                    updateProductDetail(index, 'barcodes', [], true);
                                                                 }
                                                             }}
                                                             color="primary"
                                                         />
-                                                    </TableCell>
-                                                    <TableCell>
-                                                        <Stack spacing={1}>
-                                                            <TextField
-                                                                size="small"
-                                                                multiline
-                                                                rows={3}
-                                                                placeholder={`Nhập ${productDetail.quantity} barcode (mỗi dòng một barcode)`}
-                                                                value={productDetail.barcodes?.join('\n') || ''}
-                                                                error={!!barcodeErrors[globalIndex]}
-                                                                helperText={barcodeErrors[globalIndex] || `${(productDetail.barcodes?.filter(b => b.trim()) || []).length}/${productDetail.quantity} barcode`}
-                                                                disabled={productDetail.quantity === 0}
-                                                                onChange={(e) => updateBarcodes(index, e.target.value, true)}
-                                                                sx={{
-                                                                    "& .MuiOutlinedInput-root": { borderRadius: 2 },
-                                                                    minWidth: 180,
-                                                                }}
-                                                            />
-                                                        </Stack>
                                                     </TableCell>
                                                     <TableCell>
                                                         <Stack
