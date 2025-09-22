@@ -1,4 +1,4 @@
-﻿using ResiBuy.Server.Application.Commands.ProductCommands.DTOs.Create;
+using ResiBuy.Server.Application.Commands.ProductCommands.DTOs.Create;
 
 namespace ResiBuy.Server.Application.Commands.ProductCommands.DTOs.Update
 {

@@ -49,7 +49,6 @@ import {
   ExpandMore,
   ExpandLess,
   Warning as WarningIcon,
-  Image as ImageIcon,
 } from "@mui/icons-material";
 import axios from "../../api/base.api";
 import { useNavigate, useParams } from "react-router-dom";
@@ -273,10 +272,6 @@ const ProductPage: React.FC = () => {
     navigate(`/store/${storeId}/product-create`);
   };
 
-  const handleViewImages = () => {
-    navigate(`/store/${storeId}/image-management`);
-  };
-
   const getActiveFiltersCount = () => {
     let count = 0;
     if (searchInput) count++;
@@ -418,46 +413,26 @@ const ProductPage: React.FC = () => {
               Quản lý toàn bộ sản phẩm trong cửa hàng của bạn
             </Typography>
           </Box>
-          <Box display="flex" gap={2}>
-            <Button
-              variant="contained"
-              startIcon={<ImageIcon />}
-              onClick={handleViewImages}
-              sx={{
-                backgroundColor: "rgba(255,255,255,0.2)",
-                backdropFilter: "blur(10px)",
-                border: "1px solid rgba(255,255,255,0.3)",
-                color: "white",
-                fontWeight: 600,
-                px: 3,
-                py: 1.5,
-                borderRadius: 2,
-                "&:hover": {
-                  backgroundColor: "rgba(255,255,255,0.3)",
-                },
-              }}>
-              Xem ảnh sản phẩm
-            </Button>
-            <Button
-              variant="contained"
-              startIcon={<AddIcon />}
-              onClick={handleCreate}
-              sx={{
-                backgroundColor: "rgba(255,255,255,0.2)",
-                backdropFilter: "blur(10px)",
-                border: "1px solid rgba(255,255,255,0.3)",
-                color: "white",
-                fontWeight: 600,
-                px: 3,
-                py: 1.5,
-                borderRadius: 2,
-                "&:hover": {
-                  backgroundColor: "rgba(255,255,255,0.3)",
-                },
-              }}>
-              Thêm sản phẩm
-            </Button>
-          </Box>
+
+          <Button
+            variant="contained"
+            startIcon={<AddIcon />}
+            onClick={handleCreate}
+            sx={{
+              backgroundColor: "rgba(255,255,255,0.2)",
+              backdropFilter: "blur(10px)",
+              border: "1px solid rgba(255,255,255,0.3)",
+              color: "white",
+              fontWeight: 600,
+              px: 3,
+              py: 1.5,
+              borderRadius: 2,
+              "&:hover": {
+                backgroundColor: "rgba(255,255,255,0.3)",
+              },
+            }}>
+            Thêm sản phẩm
+          </Button>
         </Box>
       </Paper>
 
@@ -812,6 +787,8 @@ const ProductPage: React.FC = () => {
               <TableBody>
                 {products.map((product) => {
                   const detail = product.productDetails?.[0];
+                  const quantities = product.productDetails.
+                  reduce((sum,item) => sum += item.quantity,0)
                   const category = categories.find((c) => c.id === product.categoryId);
 
                   return (
@@ -893,9 +870,9 @@ const ProductPage: React.FC = () => {
                           variant="body2"
                           sx={{
                             fontWeight: 600,
-                            color: (detail?.quantity || 0) > 0 ? "success.main" : "error.main",
+                            color: (quantities || 0) > 0 ? "success.main" : "error.main",
                           }}>
-                          {detail?.quantity || 0} sản phẩm
+                          {quantities || 0} sản phẩm
                         </Typography>
                       </TableCell>
 

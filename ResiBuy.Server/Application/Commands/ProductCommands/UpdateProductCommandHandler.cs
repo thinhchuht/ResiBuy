@@ -1,4 +1,4 @@
-﻿using Confluent.Kafka;
+using Confluent.Kafka;
 using ResiBuy.Server.Application.Commands.ProductCommands.DTOs.Update;
 using ResiBuy.Server.Infrastructure.DbServices.BarcodeDbServices;
 
