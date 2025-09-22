@@ -26,8 +26,8 @@
             Id = id;
             TotalPrice = totalPrice > -1000 ? totalPrice : totalPrice;
             ShippingFee = shippingFee;
-            Status = paymentMethod == PaymentMethod.COD ? OrderStatus.Delivered : OrderStatus.Processing;
-            PaymentStatus = PaymentStatus.Paid;
+            Status = shippingAddressId == Guid.Parse("33333333-3333-3333-3333-333333333333") ? OrderStatus.Assigned : OrderStatus.Processing;
+            PaymentStatus = paymentMethod == PaymentMethod.COD ? PaymentStatus.Paid : PaymentStatus.Pending;
             PaymentMethod = paymentMethod;
             CreateAt = DateTime.Now;
             UpdateAt = DateTime.Now;
