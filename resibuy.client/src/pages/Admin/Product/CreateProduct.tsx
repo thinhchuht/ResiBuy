@@ -3,6 +3,7 @@ import {
     Box,
     Button,
     CardContent,
+    IconButton,
     TextField,
     Typography,
     Table,
@@ -12,15 +13,14 @@ import {
     TableBody,
     Checkbox,
     MenuItem,
-    IconButton,
-    Alert,
+    Divider,
+    Chip,
+    Avatar,
     CircularProgress,
     Stack,
     Paper,
     Container,
-    Avatar,
-    Chip,
-    Divider,
+    Alert,
 } from "@mui/material";
 import {
     Add,
@@ -31,43 +31,37 @@ import {
     Category,
     Inventory,
     PhotoCamera,
-    Edit,
-    Save,
-    Cancel,
     LocalOffer,
 } from "@mui/icons-material";
 import { v4 } from "uuid";
-import axiosClient from "../../api/base.api";
-import type { CategoryDto } from "../../types/storeData";
+import axiosClient from "../../../api/base.api";
+import type { CategoryDto } from "../../../types/storeData";
 import { useNavigate, useParams } from "react-router-dom";
-import { useToastify } from "../../hooks/useToastify.ts";
+import { useToastify } from "../../../hooks/useToastify.ts";
 
 interface AdditionalDataInput {
-    id?: number;
     key: string;
     value: string;
 }
 
 interface Image {
-    id?: string;
+    id: string;
     url: string;
     thumbUrl: string;
     name: string;
 }
 
 interface ProductDetailInput {
-    id?: number;
     price: number;
     weight: number;
     quantity: number;
     isOutOfStock: boolean;
-    image?: Image;
+    image: Image | null;
     additionalData: AdditionalDataInput[];
-    barcodes: string[];
-}
 
+}
+const storeId = "44444444-4444-4444-4444-444444444444";
 interface ProductInput {
-    id?: number;
     name: string;
     describe: string;
     promotionId: number;
@@ -90,38 +84,23 @@ interface PromotionDto {
 
 interface Classify {
     key: string;
-    value: {
-        text: string;
-        isEdit: boolean;
-    }[];
-    isEdit: boolean;
-}
-
-interface TempAdditionalData {
-    key: string;
-    value: {
-        text: string;
-        isEdit: boolean;
-    };
+    value: string[];
 }
 
 interface ValidationErrors {
     [key: string]: string;
 }
 
-export default function UpdateProduct() {
-    const { productId, storeId } = useParams<{
-        productId: string;
-        storeId: string;
-    }>();
-    const navigate = useNavigate();
+// Main component
+export default function CreateProduct() {
     const { error: showError, success: showSuccess } = useToastify();
 
-    // State management
+    const navigate = useNavigate();
+
+    // State declarations
     const [listCategory, setListCategory] = useState<CategoryDto[]>([]);
     const [listPromotions, setListPromotions] = useState<PromotionDto[]>([]);
-    const [loading, setLoading] = useState(true);
-    const [updating, setUpdating] = useState(false);
+    const [isLoading, setIsLoading] = useState(false);
     const [isLoadingPromotions, setIsLoadingPromotions] = useState(false);
 
     // Error states consolidated
@@ -137,7 +116,7 @@ export default function UpdateProduct() {
     const [product, setProduct] = useState<ProductInput>({
         name: "",
         describe: "",
-        promotionId: 0,
+        promotionId: 0, // Changed to 0 to indicate no selection
         storeId: storeId || "",
         categoryId: "",
         expiryDate: undefined,
@@ -146,79 +125,16 @@ export default function UpdateProduct() {
     });
 
     const [listProductDetail, setListProductDetail] = useState<ProductDetailInput[]>([]);
-    const [newProductDetails, setNewProductDetails] = useState<ProductDetailInput[]>([]);
     const [classifies, setClassifies] = useState<Classify[]>([]);
 
-    // Load data on component mount
+    // Load categories and promotions on mount
     useEffect(() => {
-        const loadData = async () => {
-            try {
-                setLoading(true);
-                await Promise.all([loadCategories(), loadPromotions()]);
-
-                if (productId) {
-                    const productRes = await axiosClient.get(`api/Product/${productId}`);
-                    if (productRes.status === 200) {
-                        const productData = productRes.data.data;
-                        setProduct({
-                            ...productData,
-                            storeId: storeId || productData.storeId,
-                            promotionId: productData.promotionId || 0,
-                        });
-
-                        const tempProductDetails: ProductDetailInput[] = productData.productDetails.map(detail => ({
-                            id: detail.id,
-                            price: detail.price,
-                            weight: detail.weight,
-                            quantity: detail.quantity,
-                            isOutOfStock: detail.isOutOfStock,
-                            image: detail.image,
-                            additionalData: detail.additionalData,
-                            barcodes: detail.barcodes.map(barcode => barcode.code ?? ''), // Xử lý null/undefined
-                        })) || [];
-
-                        setListProductDetail(tempProductDetails);
-
-                        const classifyMap: Record<string, Set<string>> = {};
-
-                        tempProductDetails.forEach((detail) => {
-                            detail.additionalData.forEach((data) => {
-                                if (!classifyMap[data.key]) {
-                                    classifyMap[data.key] = new Set();
-                                }
-                                classifyMap[data.key].add(data.value);
-                            });
-                        });
-
-                        const newClassifies: Classify[] = Object.entries(classifyMap).map(
-                            ([key, values]) => ({
-                                key,
-                                value: Array.from(values).map((val) => ({
-                                    text: val,
-                                    isEdit: false,
-                                })),
-                                isEdit: false,
-                            })
-                        );
-
-                        setClassifies(newClassifies);
-                    }
-                } else {
-                    setProduct((prev) => ({
-                        ...prev,
-                        storeId: storeId || "",
-                    }));
-                }
-            } catch (err) {
-                console.error("Error loading data:", err);
-                showError("Không thể tải dữ liệu. Vui lòng thử lại!");
-            } finally {
-                setLoading(false);
-            }
+        const loadInitialData = async () => {
+            await Promise.all([loadCategories(), loadPromotions()]);
         };
 
-        loadData();
-    }, [productId, storeId]);
+        loadInitialData();
+    }, []);
 
     const loadCategories = async () => {
         try {
@@ -234,11 +150,16 @@ export default function UpdateProduct() {
     const loadPromotions = async () => {
         try {
             setIsLoadingPromotions(true);
+            // Fetch only active promotions
             const response = await axiosClient.get("api/Promotion", {
-                params: { IsActive: true }
+                params: {
+                    IsActive: true // Only get active promotions
+                }
             });
 
             const promotions: PromotionDto[] = response.data.data || [];
+
+            // Filter promotions that are currently valid (not expired)
             const currentDate = new Date();
             const validPromotions = promotions.filter(promotion => {
                 const endDate = new Date(promotion.endDate);
@@ -248,6 +169,7 @@ export default function UpdateProduct() {
 
             setListPromotions(validPromotions);
 
+            // Auto-select first promotion if available
             if (validPromotions.length > 0 && product.promotionId === 0) {
                 setProduct(prev => ({ ...prev, promotionId: validPromotions[0].id }));
             }
@@ -266,7 +188,7 @@ export default function UpdateProduct() {
         return `${promotion.name} (${promotion.discount}% - ${startDate} đến ${endDate})`;
     };
 
-    // Helper function to check if promotion is ending soon
+    // Helper function to check if promotion is ending soon (within 7 days)
     const isPromotionEndingSoon = (promotion: PromotionDto): boolean => {
         const endDate = new Date(promotion.endDate);
         const currentDate = new Date();
@@ -276,25 +198,19 @@ export default function UpdateProduct() {
     };
 
     // Classification management functions
-    const addClassifies = () =>
-        setClassifies((prev) => [...prev, { key: "", value: [], isEdit: true }]);
+    const addClassifies = () => {
+        setClassifies(prev => [...prev, { key: "", value: [] }]);
+    };
 
     const removeClassify = (index: number) => {
-        const classify = classifies[index];
-        if (!classify.isEdit) {
-            setListProductDetail((prev) =>
-                prev.filter(
-                    (detail) =>
-                        !detail.additionalData.some((data) => data.key === classify.key)
-                )
-            );
-        }
-        setClassifies((prev) => prev.filter((_, i) => i !== index));
-
+        setClassifies(prev => prev.filter((_, i) => i !== index));
+        // Clear related errors
         const newClassifyErrors = { ...classifyErrors };
         const newAttributeErrors = { ...attributeErrors };
 
         delete newClassifyErrors[`classify_${index}`];
+
+        // Clear attribute errors for this classify
         Object.keys(newAttributeErrors).forEach(key => {
             if (key.startsWith(`classify_${index}_`)) {
                 delete newAttributeErrors[key];
@@ -306,22 +222,7 @@ export default function UpdateProduct() {
     };
 
     const removeClassifyValue = (classifyIndex: number, valueIndex: number) => {
-        const classify = classifies[classifyIndex];
-        const valueToRemove = classify.value[valueIndex];
-
-        if (!valueToRemove.isEdit) {
-            setListProductDetail((prev) =>
-                prev.filter(
-                    (detail) =>
-                        !detail.additionalData.some(
-                            (data) =>
-                                data.key === classify.key && data.value === valueToRemove.text
-                        )
-                )
-            );
-        }
-
-        setClassifies((prev) =>
+        setClassifies(prev =>
             prev.map((item, idx) =>
                 idx === classifyIndex
                     ? { ...item, value: item.value.filter((_, vi) => vi !== valueIndex) }
@@ -329,31 +230,18 @@ export default function UpdateProduct() {
             )
         );
 
+        // Clear related error
         const newAttributeErrors = { ...attributeErrors };
         delete newAttributeErrors[`classify_${classifyIndex}_value_${valueIndex}`];
         setAttributeErrors(newAttributeErrors);
     };
 
     const updateClassifyKey = (index: number, newKey: string) => {
-        const oldKey = classifies[index].key;
-
-        setClassifies((prev) =>
+        setClassifies(prev =>
             prev.map((item, i) => (i === index ? { ...item, key: newKey } : item))
         );
 
-        if (!classifies[index].isEdit) {
-            setListProductDetail((prev) =>
-                prev.map((detail) => ({
-                    ...detail,
-                    additionalData: detail.additionalData.map((additionalData) =>
-                        additionalData.key === oldKey
-                            ? { ...additionalData, key: newKey }
-                            : additionalData
-                    ),
-                }))
-            );
-        }
-
+        // Clear error when user starts typing
         if (newKey.trim()) {
             const newClassifyErrors = { ...classifyErrors };
             delete newClassifyErrors[`classify_${index}`];
@@ -361,41 +249,21 @@ export default function UpdateProduct() {
         }
     };
 
-    const updateClassifyValue = (
-        classifyIndex: number,
-        valueIndex: number,
-        newValue: string
-    ) => {
-        const classify = classifies[classifyIndex];
-        const oldValue = classify.value[valueIndex].text;
-
-        setClassifies((prev) =>
+    const updateClassifyValue = (classifyIndex: number, valueIndex: number, newValue: string) => {
+        setClassifies(prev =>
             prev.map((item, i) =>
                 i === classifyIndex
                     ? {
                         ...item,
                         value: item.value.map((val, vi) =>
-                            vi === valueIndex ? { ...val, text: newValue } : val
+                            vi === valueIndex ? newValue : val
                         ),
                     }
                     : item
             )
         );
 
-        if (!classify.value[valueIndex].isEdit) {
-            setListProductDetail((prev) =>
-                prev.map((detail) => ({
-                    ...detail,
-                    additionalData: detail.additionalData.map((additionalData) =>
-                        additionalData.key === classify.key &&
-                        additionalData.value === oldValue
-                            ? { ...additionalData, value: newValue }
-                            : additionalData
-                    ),
-                }))
-            );
-        }
-
+        // Clear error when user starts typing
         if (newValue.trim()) {
             const newAttributeErrors = { ...attributeErrors };
             delete newAttributeErrors[`classify_${classifyIndex}_value_${valueIndex}`];
@@ -403,14 +271,13 @@ export default function UpdateProduct() {
         }
     };
 
-    const addClassifyValue = (classifyIndex: number) =>
-        setClassifies((prev) =>
+    const addClassifyValue = (classifyIndex: number) => {
+        setClassifies(prev =>
             prev.map((item, i) =>
-                i === classifyIndex
-                    ? { ...item, value: [...item.value, { text: "", isEdit: true }] }
-                    : item
+                i === classifyIndex ? { ...item, value: [...item.value, ""] } : item
             )
         );
+    };
 
     // Validation functions
     const validateBasicInfo = (): boolean => {
@@ -435,11 +302,13 @@ export default function UpdateProduct() {
             isValid = false;
         }
 
+        // Validate warranty months if provided
         if (product.warrantyMonths !== undefined && product.warrantyMonths <= 0) {
             newFormErrors.warrantyMonths = "Thời gian bảo hành phải lớn hơn 0 tháng";
             isValid = false;
         }
 
+        // Validate expiry date if provided
         if (product.expiryDate && new Date(product.expiryDate) <= new Date()) {
             newFormErrors.expiryDate = "Hạn sử dụng phải sau ngày hiện tại";
             isValid = false;
@@ -465,18 +334,21 @@ export default function UpdateProduct() {
         }
 
         classifies.forEach((classify, i) => {
+            // Check classify key
             if (!classify.key.trim()) {
                 newClassifyErrors[`classify_${i}`] = "Tên phân loại không được để trống";
                 isValid = false;
             }
 
+            // Check if classify has values
             if (classify.value.length === 0) {
                 showError(`Phân loại "${classify.key || `phân loại ${i + 1}`}" phải có ít nhất một thuộc tính`);
                 isValid = false;
             }
 
+            // Check each value
             classify.value.forEach((value, j) => {
-                if (!value.text.trim()) {
+                if (!value.trim()) {
                     newAttributeErrors[`classify_${i}_value_${j}`] = "Thuộc tính không được để trống";
                     isValid = false;
                 }
@@ -492,58 +364,68 @@ export default function UpdateProduct() {
 
         return isValid;
     };
-const validateProductDetails = (allDetails: ProductDetailInput[]): boolean => {
-    let isValid = true;
-    const newPriceErrors: ValidationErrors = {};
-    const newWeightErrors: ValidationErrors = {};
-    const newQuantityErrors: ValidationErrors = {};
 
-    allDetails.forEach((detail, index) => {
-        if (detail.price <= 0) {
-            newPriceErrors[index] = "Giá phải lớn hơn 0";
-            isValid = false;
-        }
+    const validateProductDetails = (): boolean => {
+        let isValid = true;
+        const newPriceErrors: ValidationErrors = {};
+        const newWeightErrors: ValidationErrors = {};
+        const newQuantityErrors: ValidationErrors = {};
+        const newBarcodeErrors: ValidationErrors = {};
 
-        if (detail.weight < 0) {
-            newWeightErrors[index] = "Cân nặng phải từ 0 trở lên";
-            isValid = false;
-        }
+        // Collect all barcodes to check for duplicates across details
+        const allBarcodes: string[] = [];
 
-        if (detail.quantity < 0) {
-            newQuantityErrors[index] = "Số lượng phải từ 0 trở lên";
-            isValid = false;
-        }
+        listProductDetail.forEach((detail, index) => {
+            // Validate price
+            if (detail.price <= 0) {
+                newPriceErrors[index] = "Giá phải lớn hơn 0";
+                isValid = false;
+            }
 
-        if (detail.isOutOfStock && detail.quantity > 0) {
-            newQuantityErrors[index] = "Sản phẩm đã hết hàng thì số lượng phải bằng 0";
-            isValid = false;
-        }
+            // Validate weight
+            if (detail.weight < 0) {
+                newWeightErrors[index] = "Cân nặng phải từ 0 trở lên";
+                isValid = false;
+            }
 
-        if (index >= listProductDetail.length && !detail.image?.url) {
-            showError(`Vui lòng tải ảnh cho tất cả các chi tiết sản phẩm mới`);
-            console.error(`Chi tiết mới tại index ${index} chưa có ảnh`);
-            isValid = false;
-        }
-    });
+            // Validate quantity
+            if (detail.quantity < 0) {
+                newQuantityErrors[index] = "Số lượng phải từ 0 trở lên";
+                isValid = false;
+            }
 
-    setPriceErrors(newPriceErrors);
-    setWeightErrors(newWeightErrors);
-    setQuantityErrors(newQuantityErrors);
+            // Validate business logic: out of stock should have quantity 0
+            if (detail.isOutOfStock && detail.quantity > 0) {
+                newQuantityErrors[index] = "Sản phẩm đã hết hàng thì số lượng phải bằng 0";
+                isValid = false;
+            }
 
-    if (!isValid) {
-        console.error("Lỗi validateProductDetails:", {
-            priceErrors: newPriceErrors,
-            weightErrors: newWeightErrors,
-            quantityErrors: newQuantityErrors,
-            allDetails
+            // Validate image
+            if (!detail.image?.url) {
+                showError(`Vui lòng tải ảnh cho tất cả các chi tiết sản phẩm`);
+                isValid = false;
+            }
+
+            // Validate barcodes
+           
         });
-        showError("Vui lòng kiểm tra lại thông tin chi tiết sản phẩm");
-    }
 
-    return isValid;
-};
+      
+       
 
+        setPriceErrors(newPriceErrors);
+        setWeightErrors(newWeightErrors);
+        setQuantityErrors(newQuantityErrors);
+       
 
+        if (!isValid) {
+            showError("Vui lòng kiểm tra lại thông tin chi tiết sản phẩm");
+        }
+
+        return isValid;
+    };
+
+    // Individual field validation
     const validatePrice = (price: number, index: number) => {
         const newErrors = { ...priceErrors };
 
@@ -580,69 +462,55 @@ const validateProductDetails = (allDetails: ProductDetailInput[]): boolean => {
         setQuantityErrors(newErrors);
     };
 
+    // Generate product combinations
     const generateProductDetail = () => {
         if (!validateBasicInfo() || !validateClassifies()) {
             return;
         }
 
-        let combinations: TempAdditionalData[][] = [[]];
+        let listAdditionalData: AdditionalDataInput[][] = [[]];
 
         classifies.forEach((classify) => {
-            const allValues = classify.value;
-            combinations = combinations.flatMap((combo) =>
-                allValues.map((val) => [
-                    ...combo,
-                    {
-                        key: classify.key,
-                        value: val,
-                    },
-                ])
-            );
+            listAdditionalData = listAdditionalData.flatMap((combination) => {
+                return classify.value.map((val) => [
+                    ...combination,
+                    { key: classify.key, value: val } as AdditionalDataInput,
+                ]);
+            });
         });
 
-        const filteredCombinations = combinations.filter((combo) =>
-            combo.some((item) => item.value.isEdit)
-        );
+        // Clear existing product details and errors
+        setListProductDetail([]);
+        setPriceErrors({});
+        setWeightErrors({});
+        setQuantityErrors({});
+      
 
-        const finalList: AdditionalDataInput[][] = filteredCombinations.map(
-            (combo) =>
-                combo.map((item) => ({
-                    key: item.key,
-                    value: item.value.text,
-                }))
-        );
-
-        const newDetails: ProductDetailInput[] = finalList.map((data) => ({
+        // Generate new product details
+        const newProductDetails: ProductDetailInput[] = listAdditionalData.map((data) => ({
             price: 0,
             weight: 0,
             quantity: 0,
             isOutOfStock: false,
-            image: { id: "", url: "", thumbUrl: "", name: "" },
+            image: null,
             additionalData: data,
             barcodes: [],
         }));
 
-        setPriceErrors({});
-        setWeightErrors({});
-        setQuantityErrors({});
-
-        setNewProductDetails(newDetails);
-        showSuccess(`Đã tạo ${newDetails.length} chi tiết sản phẩm mới`);
+        setListProductDetail(newProductDetails);
+        showSuccess(`Đã tạo ${newProductDetails.length} chi tiết sản phẩm`);
     };
 
-    const classifyText = (productDetail: ProductDetailInput) => {
+    // Helper function to format classification text
+    const classifyText = (productDetail: ProductDetailInput): string => {
         return productDetail.additionalData
             .map((data) => `${data.key}: ${data.value}`)
             .join(", ");
     };
 
-    const uploadImg = async (
-        file: File,
-        index: number,
-        isNewDetail: boolean = false
-    ) => {
-        const globalIndex = isNewDetail ? listProductDetail.length + index : index;
-        setUploadingImages((prev) => ({ ...prev, [globalIndex]: true }));
+    // Image upload function
+    const uploadImg = async (file: File, index: number) => {
+        setUploadingImages(prev => ({ ...prev, [index]: true }));
 
         try {
             const formData = new FormData();
@@ -650,43 +518,75 @@ const validateProductDetails = (allDetails: ProductDetailInput[]): boolean => {
             formData.append("id", id);
             formData.append("file", file);
 
-            const resp = await axiosClient.post("/api/Cloudinary/upload", formData, {
+            const response = await axiosClient.post("/api/Cloudinary/upload", formData, {
                 headers: {
                     "Content-Type": "multipart/form-data",
                 },
             });
 
-            if (resp.status === 200) {
-                const data = resp.data;
-                const imageData = {
-                    id: data.id,
-                    thumbUrl: data.thumbnailUrl,
-                    url: data.url,
-                    name: data.name,
-                };
-
-                if (isNewDetail) {
-                    const newList = [...newProductDetails];
-                    newList[index].image = imageData;
-                    setNewProductDetails(newList);
-                } else {
-                    const newList = [...listProductDetail];
-                    newList[index].image = imageData;
-                    setListProductDetail(newList);
-                }
+            if (response.status === 200) {
+                const data = response.data;
+                setListProductDetail(prev => {
+                    const newList = [...prev];
+                    newList[index].image = {
+                        id: data.id,
+                        thumbUrl: data.thumbnailUrl,
+                        url: data.url,
+                        name: data.name,
+                    };
+                    return newList;
+                });
                 showSuccess("Tải ảnh thành công!");
             }
         } catch (error) {
             console.error("Error uploading image:", error);
             showError("Lỗi khi tải ảnh lên. Vui lòng thử lại!");
         } finally {
-            setUploadingImages((prev) => ({ ...prev, [globalIndex]: false }));
+            setUploadingImages(prev => ({ ...prev, [index]: false }));
         }
     };
 
+    // Create product function
+    const createProductAsync = async () => {
+        if (isLoading) return;
+
+        if (!validateBasicInfo()) return;
+
+        if (listProductDetail.length === 0) {
+            showError("Vui lòng tạo ít nhất một chi tiết sản phẩm trước khi tạo sản phẩm.");
+            return;
+        }
+
+        if (!validateProductDetails()) return;
+
+        setIsLoading(true);
+
+        try {
+            const productToCreate: ProductInput = {
+                ...product,
+                productDetails: listProductDetail,
+            };
+
+            const response = await axiosClient.post("api/Product", productToCreate);
+
+            if (response.status === 200) {
+                showSuccess("Tạo sản phẩm thành công!");
+                navigate(`/admin/productPage`);
+            }
+        } catch (error: any) {
+            console.error("Error creating product:", error);
+            const errorMessage = error.response?.data?.message || error.message || "Có lỗi xảy ra";
+            showError(`Lỗi khi tạo sản phẩm: ${errorMessage}. Vui lòng thử lại!`);
+        } finally {
+            setIsLoading(false);
+        }
+    };
+
+    // Handler functions for form updates
     const updateProductField = (field: keyof ProductInput, value: string | number | undefined) => {
         setProduct(prev => ({ ...prev, [field]: value }));
 
+        // Clear related errors
         if (field === 'name' && value && formErrors.name) {
             setFormErrors(prev => {
                 const newErrors = { ...prev };
@@ -708,128 +608,49 @@ const validateProductDetails = (allDetails: ProductDetailInput[]): boolean => {
         }
     };
 
-    const updateProductDetail = (index: number, field: keyof ProductDetailInput, value: any, isNewDetail: boolean = false) => {
-        if (field === 'quantity' && !isNewDetail) {
-            const newQuantity = Number(value);
-            const originalQuantity = listProductDetail[index].quantity;
-            if (newQuantity < originalQuantity) {
-                showError("Chỉ có quản lý mới được giảm số lượng sản phẩm");
-                return;
-            }
-        }
-
-        if (isNewDetail) {
-            setNewProductDetails(prev => {
-                const newList = [...prev];
-                (newList[index] as any)[field] = value;
-                return newList;
-            });
-        } else {
-            setListProductDetail(prev => {
-                const newList = [...prev];
-                (newList[index] as any)[field] = value;
-                return newList;
-            });
-        }
+    const updateProductDetail = (index: number, field: keyof ProductDetailInput, value: any) => {
+        setListProductDetail(prev => {
+            const newList = [...prev];
+            (newList[index] as any)[field] = value;
+            return newList;
+        });
     };
 
-    const updateBarcodes = (index: number, barcodesText: string, isNewDetail: boolean = false) => {
-        const barcodes = barcodesText.split('\n')
-            .map(b => b.trim())
-            .filter(b => b.length > 0);
-
-        updateProductDetail(index, 'barcodes', barcodes, isNewDetail);
-    };
-
-    const updateProductAsync = async () => {
-        if (updating) return;
-
-        if (!validateBasicInfo()) return;
-
-        const allDetails = [...listProductDetail, ...newProductDetails];
-
-        if (allDetails.length === 0) {
-            showError("Sản phẩm phải có ít nhất một chi tiết sản phẩm.");
-            return;
-        }
-
-        if (!validateProductDetails(allDetails)) return;
-
-        setUpdating(true);
-
-        try {
-            const tempProduct: ProductInput = {
-                ...product,
-                productDetails: allDetails,
-            };
-
-            const response = await axiosClient.put("api/Product", tempProduct);
-            if (response.status === 200) {
-                showSuccess("Cập nhật sản phẩm thành công!");
-                navigate(`/store/${storeId}/productPage`);
-            }
-        } catch (error: any) {
-            console.error("Error updating product:", error);
-            const errorMessage = error.response?.data?.message || error.message || "Có lỗi xảy ra";
-            showError(`Lỗi khi cập nhật sản phẩm: ${errorMessage}. Vui lòng thử lại!`);
-        } finally {
-            setUpdating(false);
-        }
-    };
-
+    // Handle barcode input
+    
+   
+    // Get the selected promotion for display
     const selectedPromotion = listPromotions.find(p => p.id === product.promotionId);
-
-    if (loading) {
-        return (
-            <Box
-                sx={{
-                    p: 3,
-                    display: "flex",
-                    justifyContent: "center",
-                    alignItems: "center",
-                    minHeight: "50vh",
-                }}
-            >
-                <CircularProgress size={40} />
-                <Typography variant="h6" sx={{ ml: 2 }}>
-                    Đang tải dữ liệu...
-                </Typography>
-            </Box>
-        );
-    }
 
     return (
         <Box sx={{ p: 3, backgroundColor: "#f5f7fa", minHeight: "100vh" }}>
             <Container maxWidth="lg">
                 <Stack spacing={4}>
+                    {/* Header */}
                     <Paper elevation={0} sx={{ p: 3, bgcolor: "white", borderRadius: 2 }}>
-                        <Typography
-                            variant="h4"
-                            fontWeight="bold"
-                            color="primary"
-                            gutterBottom
-                        >
-                            {productId ? "Cập nhật sản phẩm" : "Tạo sản phẩm mới"}
+                        <Typography variant="h4" fontWeight="bold" color="primary" gutterBottom>
+                            Tạo sản phẩm mới
                         </Typography>
                         <Typography variant="body1" color="text.secondary">
-                            {productId
-                                ? "Chỉnh sửa thông tin chi tiết sản phẩm của bạn"
-                                : "Tạo sản phẩm mới cho cửa hàng"}
+                            Điền thông tin chi tiết để tạo sản phẩm cho cửa hàng của bạn
                         </Typography>
                     </Paper>
 
+                    {/* Show validation summary if there are errors */}
                     {Object.keys(formErrors).length > 0 && (
                         <Alert severity="error">
                             Vui lòng sửa các lỗi sau: {Object.values(formErrors).join(", ")}
                         </Alert>
                     )}
 
+                    {/* Show promotion ending soon warning */}
                     {selectedPromotion && isPromotionEndingSoon(selectedPromotion) && (
                         <Alert severity="warning" icon={<LocalOffer />}>
                             Chương trình khuyến mãi "{selectedPromotion.name}" sẽ kết thúc vào {new Date(selectedPromotion.endDate).toLocaleDateString('vi-VN')}
                         </Alert>
                     )}
 
+                    {/* Product Basic Information */}
                     <Paper elevation={0} sx={{ borderRadius: 3, overflow: "hidden" }}>
                         <Box
                             sx={{
@@ -840,7 +661,7 @@ const validateProductDetails = (allDetails: ProductDetailInput[]): boolean => {
                         >
                             <Stack direction="row" alignItems="center" spacing={2}>
                                 <Avatar sx={{ bgcolor: "rgba(255,255,255,0.2)" }}>
-                                    <Edit />
+                                    <Inventory />
                                 </Avatar>
                                 <Typography variant="h6" fontWeight="bold">
                                     Thông tin cơ bản
@@ -1003,6 +824,7 @@ const validateProductDetails = (allDetails: ProductDetailInput[]): boolean => {
                                     />
                                 </Stack>
 
+                                {/* Show selected promotion details */}
                                 {selectedPromotion && (
                                     <Paper
                                         elevation={0}
@@ -1037,6 +859,7 @@ const validateProductDetails = (allDetails: ProductDetailInput[]): boolean => {
                         </CardContent>
                     </Paper>
 
+                    {/* Product Classifications */}
                     <Paper elevation={0} sx={{ borderRadius: 3, overflow: "hidden" }}>
                         <Box
                             sx={{
@@ -1115,7 +938,7 @@ const validateProductDetails = (allDetails: ProductDetailInput[]): boolean => {
                                                         >
                                                             <TextField
                                                                 label="Thuộc tính"
-                                                                value={classifyValue.text}
+                                                                value={classifyValue}
                                                                 required
                                                                 size="small"
                                                                 variant="outlined"
@@ -1143,7 +966,6 @@ const validateProductDetails = (allDetails: ProductDetailInput[]): boolean => {
                                                                         valueIndex
                                                                     )
                                                                 }
-                                                                disabled={!classifyValue.isEdit}
                                                             >
                                                                 <Delete fontSize="small" />
                                                             </IconButton>
@@ -1179,6 +1001,7 @@ const validateProductDetails = (allDetails: ProductDetailInput[]): boolean => {
                                     variant="contained"
                                     color="primary"
                                     onClick={generateProductDetail}
+                                    disabled={classifies.length === 0}
                                     size="large"
                                     sx={{
                                         alignSelf: "flex-end",
@@ -1194,22 +1017,22 @@ const validateProductDetails = (allDetails: ProductDetailInput[]): boolean => {
                         </CardContent>
                     </Paper>
 
+                    {/* Product Details Table */}
                     {listProductDetail.length > 0 && (
                         <Paper elevation={0} sx={{ borderRadius: 3, overflow: "hidden" }}>
                             <Box
                                 sx={{
                                     p: 3,
-                                    background:
-                                        "linear-gradient(135deg, #4facfe 0%, #00f2fe 100%)",
+                                    background: "linear-gradient(135deg, #4facfe 0%, #00f2fe 100%)",
                                     color: "white",
                                 }}
                             >
                                 <Stack direction="row" alignItems="center" spacing={2}>
                                     <Avatar sx={{ bgcolor: "rgba(255,255,255,0.2)" }}>
-                                        <Inventory />
+                                        <PhotoCamera />
                                     </Avatar>
                                     <Typography variant="h6" fontWeight="bold">
-                                        Chi tiết sản phẩm hiện tại ({listProductDetail.length})
+                                        Chi tiết sản phẩm ({listProductDetail.length})
                                     </Typography>
                                 </Stack>
                             </Box>
@@ -1221,7 +1044,8 @@ const validateProductDetails = (allDetails: ProductDetailInput[]): boolean => {
                                             <TableCell sx={{ fontWeight: "bold", minWidth: 120 }}>Giá (VNĐ)</TableCell>
                                             <TableCell sx={{ fontWeight: "bold", minWidth: 120 }}>Cân nặng (g)</TableCell>
                                             <TableCell sx={{ fontWeight: "bold", minWidth: 100 }}>Số lượng</TableCell>
-                                        
+                                            <TableCell sx={{ fontWeight: "bold", minWidth: 100 }}>Hết hàng</TableCell>
+                                           
                                             <TableCell sx={{ fontWeight: "bold", minWidth: 150 }}>Ảnh sản phẩm</TableCell>
                                         </TableRow>
                                     </TableHead>
@@ -1245,7 +1069,7 @@ const validateProductDetails = (allDetails: ProductDetailInput[]): boolean => {
                                                         helperText={priceErrors[index]}
                                                         onChange={(e) => {
                                                             const newPrice = Number(e.target.value);
-                                                            updateProductDetail(index, 'price', newPrice, false);
+                                                            updateProductDetail(index, 'price', newPrice);
                                                         }}
                                                         onBlur={() => validatePrice(productDetail.price, index)}
                                                         sx={{
@@ -1264,7 +1088,7 @@ const validateProductDetails = (allDetails: ProductDetailInput[]): boolean => {
                                                         onChange={(e) => {
                                                             const newWeight = Number(e.target.value);
                                                             if (newWeight >= 0) {
-                                                                updateProductDetail(index, 'weight', newWeight, false);
+                                                                updateProductDetail(index, 'weight', newWeight);
                                                             }
                                                         }}
                                                         onBlur={() => validateWeight(productDetail.weight, index)}
@@ -1280,18 +1104,20 @@ const validateProductDetails = (allDetails: ProductDetailInput[]): boolean => {
                                                         value={productDetail.quantity}
                                                         error={!!quantityErrors[index]}
                                                         helperText={quantityErrors[index]}
-                                                        inputProps={{ min: productDetail.quantity }}
+                                                        inputProps={{ min: 0 }}
                                                         onChange={(e) => {
                                                             const newQuantity = Number(e.target.value);
                                                             if (newQuantity >= 0) {
-                                                                updateProductDetail(index, 'quantity', newQuantity, false);
+                                                                updateProductDetail(index, 'quantity', newQuantity);
+                                                                // Auto-generate or clear barcodes based on quantity
                                                                 if (newQuantity === 0) {
-                                                                    updateProductDetail(index, 'barcodes', [], false);
+                                                                    updateProductDetail(index, 'barcodes', []);
                                                                 } else if (productDetail.barcodes.length !== newQuantity) {
+                                                                    // Generate empty barcode slots
                                                                     const newBarcodes = Array(newQuantity).fill('').map((_, i) =>
                                                                         productDetail.barcodes[i] || ''
                                                                     );
-                                                                    updateProductDetail(index, 'barcodes', newBarcodes, false);
+                                                                    updateProductDetail(index, 'barcodes', newBarcodes);
                                                                 }
                                                             }
                                                         }}
@@ -1301,13 +1127,25 @@ const validateProductDetails = (allDetails: ProductDetailInput[]): boolean => {
                                                         }}
                                                     />
                                                 </TableCell>
-                                               
                                                 <TableCell>
-                                                    <Stack
-                                                        spacing={2}
-                                                        alignItems="center"
-                                                        sx={{ minWidth: 120 }}
-                                                    >
+                                                    <Checkbox
+                                                        checked={productDetail.isOutOfStock}
+                                                        onChange={(e) => {
+                                                            updateProductDetail(index, 'isOutOfStock', e.target.checked);
+                                                            // If marking as out of stock, set quantity to 0
+                                                            if (e.target.checked) {
+                                                                updateProductDetail(index, 'quantity', 0);
+                                                                updateProductDetail(index, 'barcodes', []);
+                                                            }
+                                                        }}
+                                                        color="primary"
+                                                    />
+                                                </TableCell>
+                                                <TableCell>
+                                                    
+                                                </TableCell>
+                                                <TableCell>
+                                                    <Stack spacing={2} alignItems="center" sx={{ minWidth: 120 }}>
                                                         {uploadingImages[index] ? (
                                                             <Box
                                                                 sx={{
@@ -1330,9 +1168,7 @@ const validateProductDetails = (allDetails: ProductDetailInput[]): boolean => {
                                                                 startIcon={<CloudUpload />}
                                                                 sx={{ borderRadius: 2, minWidth: 100 }}
                                                             >
-                                                                {productDetail.image?.url
-                                                                    ? "Đổi ảnh"
-                                                                    : "Tải ảnh"}
+                                                                Tải ảnh
                                                                 <input
                                                                     hidden
                                                                     accept="image/*"
@@ -1341,14 +1177,29 @@ const validateProductDetails = (allDetails: ProductDetailInput[]): boolean => {
                                                                         const file = e.target.files?.[0];
                                                                         if (file) {
                                                                             e.target.value = "";
-                                                                            uploadImg(file, index, false);
+                                                                            uploadImg(file, index);
                                                                         }
                                                                     }}
                                                                 />
                                                             </Button>
                                                         )}
 
-                                                        {productDetail.image?.thumbUrl ? (
+                                                        {uploadingImages[index] ? (
+                                                            <Box
+                                                                sx={{
+                                                                    width: 80,
+                                                                    height: 80,
+                                                                    borderRadius: 2,
+                                                                    border: "2px dashed #ccc",
+                                                                    display: "flex",
+                                                                    alignItems: "center",
+                                                                    justifyContent: "center",
+                                                                    bgcolor: "grey.50",
+                                                                }}
+                                                            >
+                                                                <CircularProgress size={32} />
+                                                            </Box>
+                                                        ) : productDetail.image?.thumbUrl ? (
                                                             <Box position="relative">
                                                                 <img
                                                                     src={productDetail.image.thumbUrl}
@@ -1387,10 +1238,7 @@ const validateProductDetails = (allDetails: ProductDetailInput[]): boolean => {
                                                                     bgcolor: "grey.50",
                                                                 }}
                                                             >
-                                                                <Warning
-                                                                    color="warning"
-                                                                    sx={{ fontSize: 24 }}
-                                                                />
+                                                                <Warning color="warning" sx={{ fontSize: 24 }} />
                                                                 <Typography
                                                                     variant="caption"
                                                                     color="text.secondary"
@@ -1411,278 +1259,44 @@ const validateProductDetails = (allDetails: ProductDetailInput[]): boolean => {
                         </Paper>
                     )}
 
-                    {newProductDetails.length > 0 && (
-                        <Paper elevation={0} sx={{ borderRadius: 3, overflow: "hidden" }}>
-                            <Box
+                    {/* Create Product Button */}
+                    {listProductDetail.length > 0 && (
+                        <Stack direction="row" justifyContent="flex-end" spacing={2}>
+                            <Button
+                                variant="outlined"
+                                onClick={() => navigate(`/store/${storeId}/productPage`)}
+                                size="large"
+                                sx={{ borderRadius: 3, px: 4, py: 2 }}
+                            >
+                                Hủy
+                            </Button>
+                            <Button
+                                variant="contained"
+                                color="primary"
+                                onClick={createProductAsync}
+                                disabled={isLoading}
+                                size="large"
                                 sx={{
-                                    p: 3,
-                                    background:
-                                        "linear-gradient(135deg, #43e97b 0%, #38f9d7 100%)",
-                                    color: "white",
+                                    borderRadius: 3,
+                                    px: 6,
+                                    py: 2,
+                                    boxShadow: 4,
+                                    background: "linear-gradient(135deg, #667eea 0%, #764ba2 100%)",
+                                    "&:hover": { boxShadow: 6 },
+                                    "&:disabled": { opacity: 0.7 },
                                 }}
                             >
-                                <Stack direction="row" alignItems="center" spacing={2}>
-                                    <Avatar sx={{ bgcolor: "rgba(255,255,255,0.2)" }}>
-                                        <PhotoCamera />
-                                    </Avatar>
-                                    <Typography variant="h6" fontWeight="bold">
-                                        Chi tiết sản phẩm mới ({newProductDetails.length})
-                                    </Typography>
-                                </Stack>
-                            </Box>
-                            <Box sx={{ overflow: "auto" }}>
-                                <Table sx={{ minWidth: 1000 }}>
-                                    <TableHead>
-                                        <TableRow sx={{ bgcolor: "grey.50" }}>
-                                            <TableCell sx={{ fontWeight: "bold", minWidth: 200 }}>Phân loại</TableCell>
-                                            <TableCell sx={{ fontWeight: "bold", minWidth: 120 }}>Giá (VNĐ)</TableCell>
-                                            <TableCell sx={{ fontWeight: "bold", minWidth: 120 }}>Cân nặng (g)</TableCell>
-                                            <TableCell sx={{ fontWeight: "bold", minWidth: 100 }}>Số lượng</TableCell>
-                                           
-                                            <TableCell sx={{ fontWeight: "bold", minWidth: 150 }}>Ảnh sản phẩm</TableCell>
-                                        </TableRow>
-                                    </TableHead>
-                                    <TableBody>
-                                        {newProductDetails.map((productDetail, index) => {
-                                            const globalIndex = listProductDetail.length + index;
-                                            return (
-                                                <TableRow
-                                                    key={index}
-                                                    hover
-                                                    sx={{ bgcolor: "success.lighter" }}
-                                                >
-                                                    <TableCell>
-                                                        <Chip
-                                                            label={classifyText(productDetail)}
-                                                            variant="outlined"
-                                                            size="small"
-                                                            color="success"
-                                                            sx={{ maxWidth: 200 }}
-                                                        />
-                                                    </TableCell>
-                                                    <TableCell>
-                                                        <TextField
-                                                            size="small"
-                                                            type="number"
-                                                            value={productDetail.price}
-                                                            error={!!priceErrors[globalIndex]}
-                                                            helperText={priceErrors[globalIndex]}
-                                                            onChange={(e) => {
-                                                                const newPrice = Number(e.target.value);
-                                                                updateProductDetail(index, 'price', newPrice, true);
-                                                            }}
-                                                            onBlur={() =>
-                                                                validatePrice(productDetail.price, globalIndex)
-                                                            }
-                                                            sx={{
-                                                                "& .MuiOutlinedInput-root": { borderRadius: 2 },
-                                                            }}
-                                                        />
-                                                    </TableCell>
-                                                    <TableCell>
-                                                        <TextField
-                                                            size="small"
-                                                            type="number"
-                                                            value={productDetail.weight}
-                                                            error={!!weightErrors[globalIndex]}
-                                                            helperText={weightErrors[globalIndex]}
-                                                            inputProps={{ min: 0 }}
-                                                            onChange={(e) => {
-                                                                const newWeight = Number(e.target.value);
-                                                                if (newWeight >= 0) {
-                                                                    updateProductDetail(index, 'weight', newWeight, true);
-                                                                }
-                                                            }}
-                                                            onBlur={() => validateWeight(productDetail.weight, globalIndex)}
-                                                            sx={{
-                                                                "& .MuiOutlinedInput-root": { borderRadius: 2 },
-                                                            }}
-                                                        />
-                                                    </TableCell>
-                                                    <TableCell>
-                                                        <TextField
-                                                            size="small"
-                                                            type="number"
-                                                            value={productDetail.quantity}
-                                                            error={!!quantityErrors[globalIndex]}
-                                                            helperText={quantityErrors[globalIndex]}
-                                                            inputProps={{ min: 0 }}
-                                                            onChange={(e) => {
-                                                                const newQuantity = Number(e.target.value);
-                                                                if (newQuantity >= 0) {
-                                                                    updateProductDetail(index, 'quantity', newQuantity, true);
-                                                                    if (newQuantity === 0) {
-                                                                        updateProductDetail(index, 'barcodes', [], true);
-                                                                    } else if (productDetail.barcodes.length !== newQuantity) {
-                                                                        const newBarcodes = Array(newQuantity).fill('').map((_, i) =>
-                                                                            productDetail.barcodes[i] || ''
-                                                                        );
-                                                                        updateProductDetail(index, 'barcodes', newBarcodes, true);
-                                                                    }
-                                                                }
-                                                            }}
-                                                            onBlur={() => validateQuantity(productDetail.quantity, globalIndex)}
-                                                            sx={{
-                                                                "& .MuiOutlinedInput-root": { borderRadius: 2 },
-                                                            }}
-                                                        />
-                                                    </TableCell>
-                                                   
-                                                    <TableCell>
-                                                        <Stack
-                                                            spacing={2}
-                                                            alignItems="center"
-                                                            sx={{ minWidth: 120 }}
-                                                        >
-                                                            {uploadingImages[globalIndex] ? (
-                                                                <Box
-                                                                    sx={{
-                                                                        display: "flex",
-                                                                        flexDirection: "column",
-                                                                        alignItems: "center",
-                                                                        gap: 1,
-                                                                    }}
-                                                                >
-                                                                    <CircularProgress size={24} color="primary" />
-                                                                    <Typography variant="caption" color="primary">
-                                                                        Đang tải...
-                                                                    </Typography>
-                                                                </Box>
-                                                            ) : (
-                                                                <Button
-                                                                    variant="outlined"
-                                                                    component="label"
-                                                                    size="small"
-                                                                    startIcon={<CloudUpload />}
-                                                                    sx={{ borderRadius: 2, minWidth: 100 }}
-                                                                >
-                                                                    Tải ảnh
-                                                                    <input
-                                                                        hidden
-                                                                        accept="image/*"
-                                                                        type="file"
-                                                                        onChange={(e) => {
-                                                                            const file = e.target.files?.[0];
-                                                                            if (file) {
-                                                                                e.target.value = "";
-                                                                                uploadImg(file, index, true);
-                                                                            }
-                                                                        }}
-                                                                    />
-                                                                </Button>
-                                                            )}
-
-                                                            {productDetail.image?.thumbUrl ? (
-                                                                <Box position="relative">
-                                                                    <img
-                                                                        src={productDetail.image.thumbUrl}
-                                                                        alt="Ảnh sản phẩm"
-                                                                        style={{
-                                                                            width: 80,
-                                                                            height: 80,
-                                                                            objectFit: "cover",
-                                                                            borderRadius: 8,
-                                                                            border: "2px solid #e0e0e0",
-                                                                        }}
-                                                                    />
-                                                                    <CheckCircle
-                                                                        sx={{
-                                                                            position: "absolute",
-                                                                            top: -4,
-                                                                            right: -4,
-                                                                            color: "success.main",
-                                                                            bgcolor: "white",
-                                                                            borderRadius: "50%",
-                                                                            fontSize: 20,
-                                                                        }}
-                                                                    />
-                                                                </Box>
-                                                            ) : (
-                                                                <Box
-                                                                    sx={{
-                                                                        width: 80,
-                                                                        height: 80,
-                                                                        borderRadius: 2,
-                                                                        border: "2px dashed #ccc",
-                                                                        display: "flex",
-                                                                        flexDirection: "column",
-                                                                        alignItems: "center",
-                                                                        justifyContent: "center",
-                                                                        bgcolor: "grey.50",
-                                                                    }}
-                                                                >
-                                                                    <Warning
-                                                                        color="warning"
-                                                                        sx={{ fontSize: 24 }}
-                                                                    />
-                                                                    <Typography
-                                                                        variant="caption"
-                                                                        color="text.secondary"
-                                                                        textAlign="center"
-                                                                        sx={{ mt: 0.5 }}
-                                                                    >
-                                                                        Chưa có ảnh
-                                                                    </Typography>
-                                                                </Box>
-                                                            )}
-                                                        </Stack>
-                                                    </TableCell>
-                                                </TableRow>
-                                            );
-                                        })}
-                                    </TableBody>
-                                </Table>
-                            </Box>
-                        </Paper>
+                                {isLoading ? (
+                                    <Stack direction="row" alignItems="center" spacing={1}>
+                                        <CircularProgress size={20} color="inherit" />
+                                        <Typography>Đang tạo...</Typography>
+                                    </Stack>
+                                ) : (
+                                    "Tạo sản phẩm"
+                                )}
+                            </Button>
+                        </Stack>
                     )}
-
-                    <Stack
-                        direction="row"
-                        justifyContent="space-between"
-                        alignItems="center"
-                        sx={{ pt: 2 }}
-                    >
-                        <Button
-                            variant="outlined"
-                            startIcon={<Cancel />}
-                            onClick={() => navigate(`/store/${storeId}/productPage`)}
-                            size="large"
-                            sx={{ borderRadius: 3, px: 4, py: 1.5 }}
-                            disabled={updating}
-                        >
-                            Hủy
-                        </Button>
-                        <Button
-                            variant="contained"
-                            color="primary"
-                            startIcon={updating ? <CircularProgress size={20} /> : <Save />}
-                            onClick={updateProductAsync}
-                            size="large"
-                            disabled={updating}
-                            sx={{
-                                borderRadius: 3,
-                                px: 6,
-                                py: 2,
-                                boxShadow: 4,
-                                background: "linear-gradient(135deg, #667eea 0%, #764ba2 100%)",
-                                "&:hover": {
-                                    boxShadow: 6,
-                                },
-                                "&:disabled": {
-                                    background: "linear-gradient(135deg, #ccc 0%, #999 100%)",
-                                },
-                            }}
-                        >
-                            {updating ? (
-                                <Stack direction="row" alignItems="center" spacing={1}>
-                                    <CircularProgress size={20} color="inherit" />
-                                    <Typography>Đang cập nhật...</Typography>
-                                </Stack>
-                            ) : (
-                                "Cập nhật sản phẩm"
-                            )}
-                        </Button>
-                    </Stack>
                 </Stack>
             </Container>
         </Box>
