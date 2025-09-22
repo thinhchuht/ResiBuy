@@ -1,4 +1,4 @@
-﻿using ResiBuy.Server.Application.Commands.ProductCommands.DTOs.Create;
+using ResiBuy.Server.Application.Commands.ProductCommands.DTOs.Create;
 
 namespace ResiBuy.Server.Application.Commands.ProductCommands.DTOs.Update
 {
@@ -7,7 +7,7 @@ namespace ResiBuy.Server.Application.Commands.ProductCommands.DTOs.Update
         public int Id { get; set; }
         public string Name { get; set; }
         public string Describe { get; set; }
-        public int promotionId { get; set; }
+        public int PromotionId { get; set; }
         public Guid CategoryId { get; set; }
         public Guid StoreId { get; set; }
         public bool IsOutOfStock { get; set; }
