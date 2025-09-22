@@ -24,7 +24,7 @@ namespace ResiBuy.Server.Application.Commands.ProductCommands
                 await ValidateBasicProductInfo(dto);
 
                 // Update basic product info
-                product.UpdateProduct(dto.Name, dto.Describe, dto.Discount, dto.CategoryId, dto.IsOutOfStock);
+                product.UpdateProduct(dto.Name, dto.Describe, dto.promotionId, dto.CategoryId, dto.IsOutOfStock);
 
                 // Validate and update product details
                 await ValidateAndUpdateProductDetails(dto, product);
@@ -36,10 +36,6 @@ namespace ResiBuy.Server.Application.Commands.ProductCommands
                         "Không thể cập nhật sản phẩm. Vui lòng kiểm tra lại dữ liệu.");
 
                 return ResponseModel.SuccessResponse(result);
-            }
-            catch (CustomException)
-            {
-                throw;
             }
             catch (Exception ex)
             {
@@ -65,11 +61,11 @@ namespace ResiBuy.Server.Application.Commands.ProductCommands
                 throw new CustomException(ExceptionErrorCode.ValidationFailed,
                     "CategoryId không hợp lệ.");
 
-            if (dto.Discount < 0)
+            if (dto.promotionId < 0)
                 throw new CustomException(ExceptionErrorCode.ValidationFailed,
                     "Giảm giá không được nhỏ hơn 0.");
 
-            if (dto.Discount > 100)
+            if (dto.promotionId > 100)
                 throw new CustomException(ExceptionErrorCode.ValidationFailed,
                     "Giảm giá không được vượt quá 100%.");
 
