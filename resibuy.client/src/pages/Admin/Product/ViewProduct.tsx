@@ -25,7 +25,7 @@ import {
 } from "@mui/material";
 import { ArrowBack, Inventory, LocalOffer, Edit, Visibility as VisibilityIcon, Print as PrintIcon } from "@mui/icons-material";
 import { useNavigate, useParams } from "react-router-dom";
-import axiosClient from "../../api/base.api";
+import axiosClient from "../../../api/base.api";
 import bwipjs from 'bwip-js';
 import jsPDF from 'jspdf';
 
@@ -79,9 +79,9 @@ interface PromotionDto {
   endDate: string;
   isActive: boolean;
 }
-
+const storeId = "44444444-4444-4444-4444-444444444444";
 export default function ViewProduct() {
-  const { productId, storeId } = useParams<{ productId: string; storeId: string }>();
+  const { productId } = useParams<{ productId: string}>();
   const navigate = useNavigate();
 
   const [loading, setLoading] = useState(true);

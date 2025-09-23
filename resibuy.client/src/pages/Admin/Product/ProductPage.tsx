@@ -49,10 +49,11 @@ import {
   ExpandMore,
   ExpandLess,
   Warning as WarningIcon,
+  Image as ImageIcon,
 } from "@mui/icons-material";
-import axios from "../../api/base.api";
+import axios from "../../../api/base.api";
 import { useNavigate, useParams } from "react-router-dom";
-import { useToastify } from "../../hooks/useToastify";
+import { useToastify } from "../../../hooks/useToastify";
 
 interface ProductDetail {
   id: number;
@@ -71,7 +72,7 @@ interface ProductDetail {
     value: string;
   }[];
 }
-
+const storeId = "44444444-4444-4444-4444-444444444444";
 interface Product {
   id: number;
   name: string;
@@ -113,7 +114,7 @@ const ProductPage: React.FC = () => {
   const [openConfirmDialog, setOpenConfirmDialog] = useState(false);
   const [currentProduct, setCurrentProduct] = useState<Product | null>(null);
 
-  const { storeId } = useParams<{ storeId: string }>();
+
   const navigate = useNavigate();
 
   const MAX_PRICE_LIMIT = 10000000000;
@@ -231,11 +232,11 @@ const ProductPage: React.FC = () => {
   };
 
   const handleEdit = (id: number) => {
-    navigate(`/store/${storeId}/product-update/${id}`);
+    navigate(`/admin/product-update/${id}`);
   };
 
   const handleDetail = (id: number) => {
-    navigate(`/store/${storeId}/product-detail/${id}`);
+    navigate(`/admin/product-detail/${id}`);
   };
 
   const handleOpenConfirmDialog = (product: Product) => {
@@ -269,7 +270,11 @@ const ProductPage: React.FC = () => {
   };
 
   const handleCreate = () => {
-    navigate(`/store/${storeId}/product-create`);
+    navigate(`/admin/product-create`);
+  };
+
+  const handleViewImages = () => {
+    navigate(`/admin/image-management`);
   };
 
   const getActiveFiltersCount = () => {
@@ -413,42 +418,58 @@ const ProductPage: React.FC = () => {
               Quản lý toàn bộ sản phẩm trong cửa hàng của bạn
             </Typography>
           </Box>
-
-          <Button
-            variant="contained"
-            startIcon={<AddIcon />}
-            onClick={handleCreate}
-            sx={{
-              backgroundColor: "rgba(255,255,255,0.2)",
-              backdropFilter: "blur(10px)",
-              border: "1px solid rgba(255,255,255,0.3)",
-              color: "white",
-              fontWeight: 600,
-              px: 3,
-              py: 1.5,
-              borderRadius: 2,
-              "&:hover": {
-                backgroundColor: "rgba(255,255,255,0.3)",
-              },
-            }}>
-            Thêm sản phẩm
-          </Button>
+          <Box display="flex" gap={2}>
+            <Button
+              variant="contained"
+              startIcon={<ImageIcon />}
+              onClick={handleViewImages}
+              sx={{
+                backgroundColor: "rgba(255,255,255,0.2)",
+                backdropFilter: "blur(10px)",
+                border: "1px solid rgba(255,255,255,0.3)",
+                color: "white",
+                fontWeight: 600,
+                px: 3,
+                py: 1.5,
+                borderRadius: 2,
+                "&:hover": {
+                  backgroundColor: "rgba(255,255,255,0.3)",
+                },
+              }}>
+              Xem ảnh sản phẩm
+            </Button>
+            <Button
+              variant="contained"
+              startIcon={<AddIcon />}
+              onClick={handleCreate}
+              sx={{
+                backgroundColor: "rgba(255,255,255,0.2)",
+                backdropFilter: "blur(10px)",
+                border: "1px solid rgba(255,255,255,0.3)",
+                color: "white",
+                fontWeight: 600,
+                px: 3,
+                py: 1.5,
+                borderRadius: 2,
+                "&:hover": {
+                  backgroundColor: "rgba(255,255,255,0.3)",
+                },
+              }}>
+              Thêm sản phẩm
+            </Button>
+          </Box>
         </Box>
       </Paper>
 
       <Box
         sx={{
           display: "flex",
-          gap: 3,
-          mb: 3,
-          flexWrap: "wrap",
-          "& > *": {
-            flex: {
-              xs: "1 1 100%",
-              sm: "1 1 calc(50% - 12px)",
-              md: "1 1 calc(33.333% - 16px)",
-            },
-            minWidth: { xs: "100%", sm: "300px" },
+    gap: 3,
+    mb: 3,
+    flexWrap: "nowrap", // hoặc bỏ hẳn để không xuống dòng
+    "& > *": {
+      flex: "1 1 0", // chia đều 3 cột
+      minWidth: 0,
           },
         }}>
         <Card sx={{ p: 2, borderRadius: 2, border: "1px solid #e2e8f0" }}>
@@ -500,7 +521,7 @@ const ProductPage: React.FC = () => {
         </Card>
 
         <Card sx={{ p: 2, borderRadius: 2, border: "1px solid #e2e8f0" }}>
-          <Box display="flex" alignItems="center" gap={2}>
+          <Box display="flex" alignItems="center" gap={1}>
             <Box
               sx={{
                 p: 2,
@@ -784,179 +805,179 @@ const ProductPage: React.FC = () => {
                   </TableCell>
                 </TableRow>
               </TableHead>
-              <TableBody>
-                {products.map((product) => {
-                  const detail = product.productDetails?.[0];
-                  const quantities = product.productDetails.
-                  reduce((sum,item) => sum += item.quantity,0)
-                  const category = categories.find((c) => c.id === product.categoryId);
-
-                  return (
-                    <TableRow
-                      key={product.id}
-                      sx={{
-                        "&:hover": {
-                          backgroundColor: "#f8fafc",
-                        },
-                        borderBottom: "1px solid #e2e8f0",
-                      }}>
-                      <TableCell>
-                        <Box display="flex" alignItems="center" gap={2}>
-                          <Avatar
-                            src={detail?.image?.thumbUrl || ""}
-                            variant="rounded"
-                            sx={{
-                              width: 64,
-                              height: 64,
-                              border: "2px solid #e2e8f0",
-                            }}
-                          />
-                          <Box>
-                            <Typography
-                              variant="subtitle2"
-                              sx={{
-                                fontWeight: 600,
-                                mb: 0.5,
-                                maxWidth: 200,
-                                overflow: "hidden",
-                                textOverflow: "ellipsis",
-                                whiteSpace: "nowrap",
-                                cursor: "pointer",
-                                "&:hover": {
-                                  color: "primary.main",
-                                  textDecoration: "underline",
-                                },
-                              }}
-                              onClick={() => handleDetail(product.id)}>
-                              {product.name}
-                            </Typography>
-                            <Typography
-                              variant="body2"
-                              color="text.secondary"
-                              sx={{
-                                maxWidth: 200,
-                                overflow: "hidden",
-                                textOverflow: "ellipsis",
-                                whiteSpace: "nowrap",
-                              }}>
-                              {product.describe}
-                            </Typography>
-                          </Box>
-                        </Box>
-                      </TableCell>
-
-                      <TableCell>
-                        {category ? (
-                          <Box display="flex" alignItems="center" gap={1}>
-                            <Avatar src={category.image?.thumbUrl} sx={{ width: 24, height: 24 }} />
-                            <Typography variant="body2">{category.name}</Typography>
-                          </Box>
-                        ) : (
-                          <Typography variant="body2" color="text.secondary">
-                            Chưa phân loại
-                          </Typography>
-                        )}
-                      </TableCell>
-
-                      <TableCell>
-                        <Typography variant="subtitle2" sx={{ fontWeight: 600 }}>
-                          {detail?.price ? formatPrice(detail.price) : "N/A"}
-                        </Typography>
-                        {product.discount > 0 && <Chip label={`-${product.discount}%`} size="small" color="error" sx={{ fontSize: "0.75rem", height: 20, mt: 0.5 }} />}
-                      </TableCell>
-
-                      <TableCell>
-                        <Typography
-                          variant="body2"
-                          sx={{
-                            fontWeight: 600,
-                            color: (quantities || 0) > 0 ? "success.main" : "error.main",
-                          }}>
-                          {quantities || 0} sản phẩm
-                        </Typography>
-                      </TableCell>
-
-                      <TableCell>
-                        <Chip
-                          label={!product.isOutOfStock ? "Đang bán" : "Tạm hết"}
-                          size="small"
-                          color={!product.isOutOfStock ? "success" : "default"}
-                          sx={{
-                            fontWeight: 600,
-                            borderRadius: 1,
-                            minWidth: 90,
-                            "&.MuiChip-colorSuccess": {
-                              backgroundColor: "#e6f7ee",
-                              color: "#10b981",
-                              "&:hover": {
-                                backgroundColor: "#d1f5e3",
-                              },
-                            },
-                            "&.MuiChip-colorDefault": {
-                              backgroundColor: "#fef3c7",
-                              color: "#d97706",
-                              "&:hover": {
-                                backgroundColor: "#fde68a",
-                              },
-                            },
-                          }}
-                        />
-                      </TableCell>
-
-                      <TableCell align="center">
-                        <Box display="flex" gap={1} justifyContent="center">
-                          <Tooltip title="Xem chi tiết">
-                            <IconButton
-                              onClick={() => handleDetail(product.id)}
-                              sx={{
-                                color: "#0288d1",
-                                backgroundColor: "rgba(2, 136, 209, 0.08)",
-                                transition: "all 0.2s",
-                                "&:hover": {
-                                  backgroundColor: "rgba(2, 136, 209, 0.15)",
-                                  transform: "scale(1.1)",
-                                },
-                              }}>
-                              <VisibilityIcon />
-                            </IconButton>
-                          </Tooltip>
-                          <Tooltip title="Chỉnh sửa">
-                            <IconButton
-                              onClick={() => handleEdit(product.id)}
-                              sx={{
-                                color: "primary.main",
-                                backgroundColor: "rgba(59, 130, 246, 0.08)",
-                                transition: "all 0.2s",
-                                "&:hover": {
-                                  backgroundColor: "rgba(59, 130, 246, 0.15)",
-                                  transform: "scale(1.1)",
-                                },
-                              }}>
-                              <EditIcon />
-                            </IconButton>
-                          </Tooltip>
-                          <Tooltip title={product.isOutOfStock ? "Mở bán" : "Dừng bán"}>
-                            <IconButton
-                              onClick={() => handleOpenConfirmDialog(product)}
-                              color={product.isOutOfStock ? "success" : "error"}
-                              size="small"
-                              sx={{
-                                backgroundColor: product.isOutOfStock ? "rgba(16, 185, 129, 0.08)" : "rgba(239, 68, 68, 0.08)",
-                                transition: "all 0.2s",
-                                "&:hover": {
-                                  backgroundColor: product.isOutOfStock ? "rgba(16, 185, 129, 0.15)" : "rgba(239, 68, 68, 0.15)",
-                                  transform: "scale(1.1)",
-                                },
-                              }}>
-                              {product.isOutOfStock ? <VisibilityIcon /> : <VisibilityOffIcon />}
-                            </IconButton>
-                          </Tooltip>
-                        </Box>
-                      </TableCell>
-                    </TableRow>
-                  );
-                })}
-              </TableBody>
+           <TableBody>
+                           {products.map((product) => {
+                             const detail = product.productDetails?.[0];
+                             const quantities = product.productDetails.
+                             reduce((sum,item) => sum += item.quantity,0)
+                             const category = categories.find((c) => c.id === product.categoryId);
+           
+                             return (
+                               <TableRow
+                                 key={product.id}
+                                 sx={{
+                                   "&:hover": {
+                                     backgroundColor: "#f8fafc",
+                                   },
+                                   borderBottom: "1px solid #e2e8f0",
+                                 }}>
+                                 <TableCell>
+                                   <Box display="flex" alignItems="center" gap={2}>
+                                     <Avatar
+                                       src={detail?.image?.thumbUrl || ""}
+                                       variant="rounded"
+                                       sx={{
+                                         width: 64,
+                                         height: 64,
+                                         border: "2px solid #e2e8f0",
+                                       }}
+                                     />
+                                     <Box>
+                                       <Typography
+                                         variant="subtitle2"
+                                         sx={{
+                                           fontWeight: 600,
+                                           mb: 0.5,
+                                           maxWidth: 200,
+                                           overflow: "hidden",
+                                           textOverflow: "ellipsis",
+                                           whiteSpace: "nowrap",
+                                           cursor: "pointer",
+                                           "&:hover": {
+                                             color: "primary.main",
+                                             textDecoration: "underline",
+                                           },
+                                         }}
+                                         onClick={() => handleDetail(product.id)}>
+                                         {product.name}
+                                       </Typography>
+                                       <Typography
+                                         variant="body2"
+                                         color="text.secondary"
+                                         sx={{
+                                           maxWidth: 200,
+                                           overflow: "hidden",
+                                           textOverflow: "ellipsis",
+                                           whiteSpace: "nowrap",
+                                         }}>
+                                         {product.describe}
+                                       </Typography>
+                                     </Box>
+                                   </Box>
+                                 </TableCell>
+           
+                                 <TableCell>
+                                   {category ? (
+                                     <Box display="flex" alignItems="center" gap={1}>
+                                       <Avatar src={category.image?.thumbUrl} sx={{ width: 24, height: 24 }} />
+                                       <Typography variant="body2">{category.name}</Typography>
+                                     </Box>
+                                   ) : (
+                                     <Typography variant="body2" color="text.secondary">
+                                       Chưa phân loại
+                                     </Typography>
+                                   )}
+                                 </TableCell>
+           
+                                 <TableCell>
+                                   <Typography variant="subtitle2" sx={{ fontWeight: 600 }}>
+                                     {detail?.price ? formatPrice(detail.price) : "N/A"}
+                                   </Typography>
+                                   {product.discount > 0 && <Chip label={`-${product.discount}%`} size="small" color="error" sx={{ fontSize: "0.75rem", height: 20, mt: 0.5 }} />}
+                                 </TableCell>
+           
+                                 <TableCell>
+                                   <Typography
+                                     variant="body2"
+                                     sx={{
+                                       fontWeight: 600,
+                                       color: (quantities || 0) > 0 ? "success.main" : "error.main",
+                                     }}>
+                                     {quantities || 0} sản phẩm
+                                   </Typography>
+                                 </TableCell>
+           
+                                 <TableCell>
+                                   <Chip
+                                     label={!product.isOutOfStock ? "Đang bán" : "Tạm hết"}
+                                     size="small"
+                                     color={!product.isOutOfStock ? "success" : "default"}
+                                     sx={{
+                                       fontWeight: 600,
+                                       borderRadius: 1,
+                                       minWidth: 90,
+                                       "&.MuiChip-colorSuccess": {
+                                         backgroundColor: "#e6f7ee",
+                                         color: "#10b981",
+                                         "&:hover": {
+                                           backgroundColor: "#d1f5e3",
+                                         },
+                                       },
+                                       "&.MuiChip-colorDefault": {
+                                         backgroundColor: "#fef3c7",
+                                         color: "#d97706",
+                                         "&:hover": {
+                                           backgroundColor: "#fde68a",
+                                         },
+                                       },
+                                     }}
+                                   />
+                                 </TableCell>
+           
+                                 <TableCell align="center">
+                                   <Box display="flex" gap={1} justifyContent="center">
+                                     <Tooltip title="Xem chi tiết">
+                                       <IconButton
+                                         onClick={() => handleDetail(product.id)}
+                                         sx={{
+                                           color: "#0288d1",
+                                           backgroundColor: "rgba(2, 136, 209, 0.08)",
+                                           transition: "all 0.2s",
+                                           "&:hover": {
+                                             backgroundColor: "rgba(2, 136, 209, 0.15)",
+                                             transform: "scale(1.1)",
+                                           },
+                                         }}>
+                                         <VisibilityIcon />
+                                       </IconButton>
+                                     </Tooltip>
+                                     <Tooltip title="Chỉnh sửa">
+                                       <IconButton
+                                         onClick={() => handleEdit(product.id)}
+                                         sx={{
+                                           color: "primary.main",
+                                           backgroundColor: "rgba(59, 130, 246, 0.08)",
+                                           transition: "all 0.2s",
+                                           "&:hover": {
+                                             backgroundColor: "rgba(59, 130, 246, 0.15)",
+                                             transform: "scale(1.1)",
+                                           },
+                                         }}>
+                                         <EditIcon />
+                                       </IconButton>
+                                     </Tooltip>
+                                     <Tooltip title={product.isOutOfStock ? "Mở bán" : "Dừng bán"}>
+                                       <IconButton
+                                         onClick={() => handleOpenConfirmDialog(product)}
+                                         color={product.isOutOfStock ? "success" : "error"}
+                                         size="small"
+                                         sx={{
+                                           backgroundColor: product.isOutOfStock ? "rgba(16, 185, 129, 0.08)" : "rgba(239, 68, 68, 0.08)",
+                                           transition: "all 0.2s",
+                                           "&:hover": {
+                                             backgroundColor: product.isOutOfStock ? "rgba(16, 185, 129, 0.15)" : "rgba(239, 68, 68, 0.15)",
+                                             transform: "scale(1.1)",
+                                           },
+                                         }}>
+                                         {product.isOutOfStock ? <VisibilityIcon /> : <VisibilityOffIcon />}
+                                       </IconButton>
+                                     </Tooltip>
+                                   </Box>
+                                 </TableCell>
+                               </TableRow>
+                             );
+                           })}
+                         </TableBody>
             </Table>
           </TableContainer>
         </Card>

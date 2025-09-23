@@ -19,6 +19,7 @@ import {
   CheckCircle as OpenIcon,
   Cancel as ClosedIcon,
   Campaign as PromotionIcon,
+  
 } from "@mui/icons-material";
 export const menuItems = [
   { title: "Trang chính", url: "/admin/dashboard", icon: Dashboard },
@@ -29,5 +30,6 @@ export const menuItems = [
   { title: "Chung cư", url: "/admin/resi", icon: Apartment },
   { title: "Voucher", url: "/admin/voucher", icon: VoucherIcon },
   { title: "Khuyến mại", url: "/admin/promotion", icon: PromotionIcon },
+    { title: "Sản phẩm", url: "/admin/productPage", icon: InventoryIcon },
   { title: "Trang bán hàng", url: "/store/44444444-4444-4444-4444-444444444444", icon: StoreIcon },
 ];

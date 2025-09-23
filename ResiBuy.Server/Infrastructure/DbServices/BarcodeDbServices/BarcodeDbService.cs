@@ -147,5 +147,33 @@ namespace ResiBuy.Server.Infrastructure.DbServices.BarcodeDbServices
             _context.SaveChanges();
             return Task.FromResult(ResponseModel.SuccessResponse(barcodes));
         }
+        public async Task<List<string>> GetBarcodesWithOrderItemAsync(List<string> barcodeCodes)
+        {
+            var barcodesWithOrderItem = await _context.Barcodes
+                .Where(b => barcodeCodes.Contains(b.Code) && b.OrderItemId != null)
+                .Select(b => b.Code)
+                .ToListAsync();
+
+            return barcodesWithOrderItem;
+        }
+
+        public async Task DeleteBarcodesAsync(List<string> barcodeCodes)
+        {
+            var barcodes = await _context.Barcodes
+                .Where(b => barcodeCodes.Contains(b.Code) && b.OrderItemId == null)
+                .ToListAsync();
+
+            if (barcodes.Count != barcodeCodes.Count)
+            {
+                var foundCodes = barcodes.Select(b => b.Code).ToList();
+                var invalidCodes = barcodeCodes.Except(foundCodes).ToList();
+                throw new CustomException(ExceptionErrorCode.ValidationFailed,
+                    $"Một số mã vạch không tồn tại hoặc đã được bán: {string.Join(", ", invalidCodes)}");
+            }
+
+            _context.Barcodes.RemoveRange(barcodes);
+            await _context.SaveChangesAsync();
+        }
+
     }
 }
