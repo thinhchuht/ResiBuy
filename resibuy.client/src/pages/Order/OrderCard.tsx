@@ -56,6 +56,7 @@ export interface OrderItemQueryResult {
     key: string;
     value: string;
   }[];
+  barcode: string;
 }
 export interface OrderApiResult {
   id: string;
@@ -731,6 +732,9 @@ const OrderCard = ({
                   <Typography variant="body2" sx={{ color: "#666", transition: "color 0.2s ease" }}>
                     Số lượng: {item.quantity}
                   </Typography>
+                    <Typography variant="body2" sx={{ color: "#666", transition: "color 0.2s ease" }}>
+                    Số lượng: {item.barcode}
+                  </Typography>
                 </Box>
                 <Typography
                   variant="subtitle1"
@@ -793,7 +797,21 @@ const OrderCard = ({
             {order.roomQueryResult.buildingName ? `, Tòa ${order.roomQueryResult.buildingName}` : ""}
             {order.roomQueryResult.areaName ? `, Khu vực ${order.roomQueryResult.areaName}` : ""}
           </Typography>
-        )}
+        )}<Typography variant="subtitle2" sx={{ color: "#666", mb: 0.5 }}>
+          Người nhận:
+        </Typography>
+        {order.user && (
+  <Typography variant="body2">
+    {order.user.fullName}
+    {order.user.fullName === "Khách vãng lai" && order.user.phoneNumber === "0123456789"
+      ? "" // không hiện SĐT
+      : order.user.phoneNumber
+        ? `, SĐT ${order.user.phoneNumber}`
+        : ""}
+  </Typography>
+)}
+
+        
 
         {/* Ẩn phần lời nhắn cho store */}
         {!isStore && (
