@@ -451,13 +451,8 @@ const OrderCard = ({
     }
   };
 
-  const handleOpenReport = () => {
-    setReportOpen(true);
-    setReportTitle("");
-    setReportReason("");
-    setReportOtherReason("");
-    // Set mặc định đối tượng báo cáo dựa trên loại người dùng
-    setReportTargetType(isStore ? "user" : "store");
+  const handleUpdateBarcode = () => {
+      navigate(`/store/${order.store.id}/order-update/${order.id}`);
   };
 
   const handleCloseReport = () => setReportOpen(false);
@@ -1041,9 +1036,16 @@ const OrderCard = ({
           )}
 
           {/* Nút báo cáo - ẩn nếu đã có report */}
-          {!order.report && !(isStore && order.status === OrderStatus.Delivered) && (
-            <Button variant="outlined" color="warning" startIcon={<ReportIcon />} onClick={handleOpenReport} sx={{ borderRadius: 2, textTransform: "none", px: 3 }}>
-              Báo cáo
+          {isStore && order.status === OrderStatus.Pending && (
+            <Button variant="outlined" startIcon={<EditIcon />} onClick={handleUpdateBarcode}
+                    sx={{ color: "primary.main",
+                backgroundColor: "rgba(59, 130, 246, 0.08)",
+                transition: "all 0.2s",
+                "&:hover": {
+                    backgroundColor: "rgba(59, 130, 246, 0.15)",
+                    transform: "scale(1.1)",
+                }, }}>
+              Cập nhật barcode
             </Button>
           )}
         </Box>
