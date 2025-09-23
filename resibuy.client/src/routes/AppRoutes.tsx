@@ -45,13 +45,16 @@ import StatisticalPage from "../pages/Shipper/StatisticalPage";
 import AttendancePage from "../pages/Shipper/AttendancePage";
 import OrderPage from "../pages/Admin/Order/page";
 import UserLockListener from "../components/UserLockListener";
-import ViewProduct from "../pages/Store/ViewProduct";
 import PromotionCreatePage from "../pages/Admin/Promotion/PromotionCreatePage";
 import PromotionListPage from "../pages/Admin/Promotion/PromotionListPage";
 import PromotionUpdatePage from "../pages/Admin/Promotion/PromotionUpdatePage";
 import VoucherPage from "../pages/Admin/Voucher/VoucherPage";
 import VoucherCreatePage from "../pages/Admin/Voucher/CreateVoucher";
 import UpdateVoucher from "../pages/Admin/Voucher/UpdateVoucher";
+import ProductPage from "../pages/Admin/Product/ProductPage";
+import UpdateProduct from "../pages/Admin/Product/UpdateProduct";
+import CreateProduct from "../pages/Admin/Product/CreateProduct";
+import ViewProduct from "../pages/Admin/Product/ViewProduct";
 const AppRoutes: React.FC = () => {
   const { user } = useAuth();
 
@@ -206,6 +209,11 @@ const AppRoutes: React.FC = () => {
           <Route path="orders" element={<OrderPage />} />
           <Route path="promotion-create" element={<PromotionCreatePage />} />
           <Route path="promotion" element={<PromotionListPage />} />
+            <Route path="productPage" element={<ProductPage />} />
+                    <Route path="product-create" element={<CreateProduct />} />
+                            <Route path="product-update/:productId" element={<UpdateProduct />} />
+                                    <Route path="product-detail/:productId" element={<ViewProduct />} />
+              <Route path="promotion" element={<PromotionListPage />} />
           <Route
             path="promotion-update/:promotionId"
             element={<PromotionUpdatePage />}

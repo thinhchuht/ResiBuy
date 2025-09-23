@@ -244,18 +244,21 @@ namespace ResiBuy.Server.Application.Commands.OrderCommands
                     throw new CustomException(ExceptionErrorCode.ValidationFailed,
                         $"Sản phẩm {pd.Product.Name} không đủ hàng");
 
-                pd.Quantity -= ci.Quantity;
-                pd.Sold += ci.Quantity;
+                    pd.Quantity -= ci.Quantity;
+                    pd.Sold += ci.Quantity;
 
-                if (pd.Quantity <= 0)
-                {
-                    pd.Quantity = 0;
-                    pd.IsOutOfStock = true;
+                    if (pd.Quantity <= 0)
+                    {
+                        pd.Quantity = 0;
+                        pd.IsOutOfStock = true;
+                    }
                 }
-            }
 
             // Xóa giỏ hàng
-            _context.Carts.Remove(cart);
+            if(request.PaymentMethod == PaymentMethod.COD)
+            {
+                _context.Carts.Remove(cart);
+            }
 
             await _context.SaveChangesAsync(cancellationToken);
 
@@ -263,7 +266,8 @@ namespace ResiBuy.Server.Application.Commands.OrderCommands
             string paymentUrl = null;
             if (request.PaymentMethod == PaymentMethod.BankTransfer)
             {
-                paymentUrl = await _vnPayService.CustomerPay(order.Id);
+                // Pass originating cart id so VNPay callback can remove the cart after successful payment
+                paymentUrl = await _vnPayService.CustomerPay(order.Id, cart.Id);
             }
 
             return new CreateOrderResponse(true, "Tạo đơn hàng thành công", order.Id, paymentUrl);

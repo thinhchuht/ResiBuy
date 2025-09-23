@@ -38,7 +38,7 @@ namespace ResiBuy.Server.Services.VNPayServices
         }
 
 
-        public async Task<string> CustomerPay(Guid orderId)
+        public async Task<string> CustomerPay(Guid orderId, Guid? cartId = null)
         {
             var order = await orderDbService.GetById(orderId);
             if (order == null)
@@ -107,7 +107,7 @@ namespace ResiBuy.Server.Services.VNPayServices
             return hash.ToString();
         }
 
-        public async Task<bool> ProcessOrderPaymentCallback(string responseData, Guid orderId)
+        public async Task<bool> ProcessOrderPaymentCallback(string responseData, Guid orderId, Guid? cartId = null)
         {
             try
             {
@@ -118,21 +118,60 @@ namespace ResiBuy.Server.Services.VNPayServices
                 Console.WriteLine($"Response code: {responseParams.GetValueOrDefault("vnp_ResponseCode", "NOT_FOUND")}");
                 Console.WriteLine($"Transaction status: {responseParams.GetValueOrDefault("vnp_TransactionStatus", "NOT_FOUND")}");
 
-                // Get the order and update payment status
-                var order = await orderDbService.GetById(orderId);
-                if (order == null)
+                // Wrap updating order/payment and optional cart removal in a transaction
+                await using var tx = await _dbContext.Database.BeginTransactionAsync();
+                try
                 {
-                    Console.WriteLine($"Order not found for orderId: {orderId}");
-                    return false;
+                    var order = await _dbContext.Orders.FirstOrDefaultAsync(o => o.Id == orderId);
+                    if (order == null)
+                    {
+                        Console.WriteLine($"Order not found for orderId: {orderId}");
+                        await tx.RollbackAsync();
+                        return false;
+                    }
+
+                    Console.WriteLine($"Found order: {order.Id}, current payment status: {order.PaymentStatus}");
+                    if (order.PaymentStatus != PaymentStatus.Paid)
+                    {
+                        order.PaymentStatus = PaymentStatus.Paid;
+                        _dbContext.Orders.Update(order);
+                    }
+
+                    // If cartId provided, attempt to remove cart (idempotent)
+                    Guid? cartToRemove = cartId;
+                    if (!cartToRemove.HasValue)
+                    {
+                        // Try to parse cartId from responseData orderInfo if embedded
+                        var resp = ParseResponseData(responseData);
+                        if (resp.TryGetValue("vnp_OrderInfo", out var orderInfo))
+                        {
+                            var parts = orderInfo.Split('|');
+                            if (parts.Length == 2 && Guid.TryParse(parts[1], out var parsedCart))
+                                cartToRemove = parsedCart;
+                        }
+                    }
+
+                    if (cartToRemove.HasValue)
+                    {
+                        var cart = await _dbContext.Carts.Include(c => c.CartItems).FirstOrDefaultAsync(c => c.Id == cartToRemove.Value);
+                        if (cart != null)
+                        {
+                            Console.WriteLine($"Removing cart {cart.Id} for paid order {order.Id}");
+                            _dbContext.Carts.Remove(cart);
+                        }
+                    }
+
+                    await _dbContext.SaveChangesAsync();
+                    await tx.CommitAsync();
+                    Console.WriteLine($"Successfully updated order payment status to Paid and removed cart if present");
+                    return true;
                 }
-
-                Console.WriteLine($"Found order: {order.Id}, current payment status: {order.PaymentStatus}");
-
-                order.PaymentStatus = PaymentStatus.Paid;
-                await orderDbService.UpdateAsync(order);
-
-                Console.WriteLine($"Successfully updated order payment status to Paid");
-                return true;
+                catch (Exception inner)
+                {
+                    await tx.RollbackAsync();
+                    Console.WriteLine($"Error in transaction when processing order payment callback: {inner.Message}");
+                    throw;
+                }
             }
             catch (Exception ex)
             {

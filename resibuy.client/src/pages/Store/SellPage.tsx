@@ -320,9 +320,9 @@ const SellPage: React.FC = () => {
             >
               Bán tại quầy
             </Typography>
-            <ProductSearchBox
+            {/* <ProductSearchBox
               onSelectProduct={(product) => setSelectedProduct(product)}
-            />
+            /> */}
             {tabs.length > 0 && (
               <Button
                 variant="contained"
@@ -615,7 +615,6 @@ const SellPage: React.FC = () => {
               localStorage.removeItem("scannedBarcodes");
               console.log("Đã xóa scannedBarcodes khỏi localStorage");
             }
-            toast.success("Đã thanh toán và đóng đơn hàng!");
           }}
         />
       </Box>
