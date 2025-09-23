@@ -320,9 +320,9 @@ const SellPage: React.FC = () => {
             >
               Bán tại quầy
             </Typography>
-            <ProductSearchBox
+            {/* <ProductSearchBox
               onSelectProduct={(product) => setSelectedProduct(product)}
-            />
+            /> */}
             {tabs.length > 0 && (
               <Button
                 variant="contained"

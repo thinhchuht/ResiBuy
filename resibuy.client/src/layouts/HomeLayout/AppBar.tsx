@@ -1371,6 +1371,31 @@ const AppBar: React.FC = () => {
               </Typography>
             </MenuItem>
           )}
+                        {user?.roles?.includes("ADMIN") && (
+  <MenuItem
+    onClick={() => handleNavigation("/store/44444444-4444-4444-4444-444444444444", handleProfileMenuClose)}
+    sx={{
+      py: 1.5,
+      px: 2,
+      gap: 1.5,
+      "&:hover": {
+        backgroundColor: "rgba(235, 92, 96, 0.08)",
+        "& .MuiSvgIcon-root": {
+          color: "#EB5C60",
+          transform: "scale(1.1)",
+        },
+        "& .MuiTypography-root": {
+          color: "#EB5C60",
+        },
+      },
+      transition: "all 0.2s ease-in-out",
+    }}>
+    <StoreIcon fontSize="small" sx={{ transition: "all 0.2s ease-in-out" }} />
+    <Typography variant="body2" sx={{ fontWeight: 500 }}>
+      Cửa hàng của bạn
+    </Typography>
+  </MenuItem>
+)}
           {user?.roles?.includes("SHIPPER") && (
             <MenuItem
               onClick={handleShipperMenuClick}
@@ -1447,7 +1472,7 @@ const AppBar: React.FC = () => {
               Hồ sơ
             </Typography>
           </MenuItem>
-          <MenuItem
+          {/* <MenuItem
             onClick={() => handleNavigation("/settings", handleProfileMenuClose)}
             sx={{
               py: 1.5,
@@ -1469,7 +1494,7 @@ const AppBar: React.FC = () => {
             <Typography variant="body2" sx={{ fontWeight: 500 }}>
               Cài đặt
             </Typography>
-          </MenuItem>
+          </MenuItem> */}
           <MenuItem
             onClick={handleLogout}
             sx={{

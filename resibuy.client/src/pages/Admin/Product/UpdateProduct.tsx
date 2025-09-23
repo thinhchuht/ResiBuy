@@ -1408,23 +1408,35 @@ const updateProductAsync = async () => {
                         </TableCell>
                        
                         <TableCell>
-                          <Stack direction="column" spacing={1}>
-                            {productDetail.barcodes.length > 0 ? (
-                              productDetail.barcodes.map((barcode, idx) => (
-                                <Stack key={idx} direction="row" alignItems="center" spacing={1}>
-                                  <Typography variant="body2">{barcode.code}</Typography>
-                                  {barcode.orderItemId && (
-                                    <Typography variant="caption" color="error" sx={{ fontWeight: 600 }}>
-                                      (Đã bán)
-                                    </Typography>
-                                  )}
-                                </Stack>
-                              ))
-                            ) : (
-                              <Typography variant="body2">Không có</Typography>
-                            )}
-                          </Stack>
-                        </TableCell>
+  {productDetail.barcodes.length > 0 ? (
+    <Box
+      sx={{
+        maxHeight: 200, 
+        overflowY: productDetail.barcodes.length > 5 ? "auto" : "visible",
+      }}
+    >
+      <Stack direction="column" spacing={1}>
+        {productDetail.barcodes.map((barcode, idx) => (
+          <Stack key={idx} direction="row" alignItems="center" spacing={1}>
+            <Typography variant="body2">{barcode.code}</Typography>
+            {barcode.orderItemId && (
+              <Typography
+                variant="caption"
+                color="error"
+                sx={{ fontWeight: 600 }}
+              >
+                (Đã bán)
+              </Typography>
+            )}
+          </Stack>
+        ))}
+      </Stack>
+    </Box>
+  ) : (
+    <Typography variant="body2">Không có</Typography>
+  )}
+</TableCell>
+
                         <TableCell>
                           <Stack
                             spacing={2}
