@@ -115,7 +115,7 @@ namespace ResiBuy.Server.Controllers
                             //}
                             var token = GenerateToken();
                             _paymentTokens[token] = DateTime.Now.AddMinutes(5);
-                            return Redirect($"http://localhost:5001/payment-success?token={token}");
+                            return Redirect($"http://localhost:5001/stores/payment-success?token={token}");
                         }
                         else
                         {
@@ -140,7 +140,7 @@ namespace ResiBuy.Server.Controllers
 
                             var token = GenerateToken();
                             _paymentTokens[token] = DateTime.Now.AddMinutes(5);
-                            return Redirect($"http://localhost:5001/paymentFail?token={token}");
+                            return Redirect($"http://localhost:5001/stores/paymentFail?token={token}");
                         }
                     }
                     else
@@ -148,7 +148,7 @@ namespace ResiBuy.Server.Controllers
                         logger.LogWarning($"Failed to parse orderId from TxnRef: {callback.vnp_TxnRef}");
                         var token = GenerateToken();
                         _paymentTokens[token] = DateTime.Now.AddMinutes(5);
-                        return Redirect($"http://localhost:5001/paymentFail?token={token}");
+                        return Redirect($"http://localhost:5001/stores/paymentFail?token={token}");
                     }
                 }
                 else
@@ -212,10 +212,12 @@ namespace ResiBuy.Server.Controllers
 
             var failedToken = GenerateToken();
             _paymentTokens[failedToken] = DateTime.Now.AddMinutes(5);
+            var token1 = GenerateToken();
             if (Guid.TryParse(callback.vnp_TxnRef, out var orderId))
             {
                 logger.LogInformation($"Parsed orderId: {orderId}");
                 var isOrderPaymentSuccess = await vnPayService.RollbackOrderPaymentAsync(orderId);
+                return Redirect($"http://localhost:5001/stores/paymentFail?token={token1}");
             }
             return Redirect($"http://localhost:5001/checkout-failed?token={failedToken}");
         }

@@ -56,6 +56,8 @@ import UpdateProduct from "../pages/Admin/Product/UpdateProduct";
 import CreateProduct from "../pages/Admin/Product/CreateProduct";
 import ViewProduct from "../pages/Admin/Product/ViewProduct";
 import ImageManagement from "../pages/Store/ImageManagement";
+import StorePaymentSuccess from "../pages/Store/PaymentSuccess";
+import StorePaymentFail from "../pages/Store/PaymentFail";
 const AppRoutes: React.FC = () => {
   const { user } = useAuth();
 
@@ -160,6 +162,13 @@ const AppRoutes: React.FC = () => {
             </HomeLayout>
           }
         />
+
+        {/* Store Payment Routes - Public access for external redirects */}
+        <Route
+          path="/stores/payment-success"
+          element={<StorePaymentSuccess />}
+        />
+        <Route path="/stores/paymentFail" element={<StorePaymentFail />} />
         <Route
           path="/cart"
           element={
@@ -210,11 +219,11 @@ const AppRoutes: React.FC = () => {
           <Route path="orders" element={<OrderPage />} />
           <Route path="promotion-create" element={<PromotionCreatePage />} />
           <Route path="promotion" element={<PromotionListPage />} />
-            <Route path="productPage" element={<ProductPage />} />
-                    <Route path="product-create" element={<CreateProduct />} />
-                            <Route path="product-update/:productId" element={<UpdateProduct />} />
-                                    <Route path="product-detail/:productId" element={<ViewProduct />} />
-              <Route path="promotion" element={<PromotionListPage />} />
+          <Route path="productPage" element={<ProductPage />} />
+          <Route path="product-create" element={<CreateProduct />} />
+          <Route path="product-update/:productId" element={<UpdateProduct />} />
+          <Route path="product-detail/:productId" element={<ViewProduct />} />
+          <Route path="promotion" element={<PromotionListPage />} />
           <Route
             path="promotion-update/:promotionId"
             element={<PromotionUpdatePage />}
