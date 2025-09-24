@@ -50,7 +50,6 @@ namespace ResiBuy.Server.Controllers
         [HttpPost("code")]
         public async Task<IActionResult> GenCodeAsync([FromBody] RegisterDto dto)
         {
-            var rs = UserChecker.CheckUserInExcel(dto.IdentityNumber, dto.FullName, dto.DateOfBirth);
             var result = await mediator.Send(new GenerateCreateUserCodeCommand(dto));
             return Ok(result);
         }

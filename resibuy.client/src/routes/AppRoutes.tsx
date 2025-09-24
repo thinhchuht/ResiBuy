@@ -55,6 +55,7 @@ import ProductPage from "../pages/Admin/Product/ProductPage";
 import UpdateProduct from "../pages/Admin/Product/UpdateProduct";
 import CreateProduct from "../pages/Admin/Product/CreateProduct";
 import ViewProduct from "../pages/Admin/Product/ViewProduct";
+import ImageManagement from "../pages/Store/ImageManagement";
 const AppRoutes: React.FC = () => {
   const { user } = useAuth();
 
@@ -221,6 +222,7 @@ const AppRoutes: React.FC = () => {
           <Route path="voucher" element={<VoucherPage />} />
           <Route path="voucher-create" element={<VoucherCreatePage />} />
           <Route path="voucher-update/:voucherId" element={<UpdateVoucher />} />
+          <Route path="image-management" element={<ImageManagement />} />
         </Route>
         <Route
           path="/seller/*"

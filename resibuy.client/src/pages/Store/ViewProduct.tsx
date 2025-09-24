@@ -514,7 +514,7 @@ export default function ViewProduct() {
                         Giá (VNĐ)
                       </TableCell>
                       <TableCell sx={{ fontWeight: "bold", minWidth: 120 }}>
-                        Cân nặng (g)
+                        Cân nặng (kg)
                       </TableCell>
                       <TableCell sx={{ fontWeight: "bold", minWidth: 100 }}>
                         Số lượng

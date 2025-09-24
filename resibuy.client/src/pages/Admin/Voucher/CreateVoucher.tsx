@@ -330,7 +330,7 @@ const VoucherCreatePage: React.FC = () => {
   };
 
   return (
-    <Box p={4}>
+   <Box p={4} sx={{ bgcolor: "white", minHeight: "100vh" }}>
       <Card>
         <CardHeader
           title={<Typography variant="h5">Tạo mới Voucher</Typography>}

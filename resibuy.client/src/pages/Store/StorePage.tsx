@@ -42,6 +42,7 @@ import PromotionUpdatePage from "./Promotion/PromotionUpdatePage.tsx";
 import SellPage from "./SellPage";
 import ViewProduct from "./ViewProduct.tsx";
 import ImageManagement from "./ImageManagement.tsx";
+import UpdateBarcodeOrderPage from "../Order/UpdateBarcodeOrderPage.tsx";
 // Interface cho route config
 interface RouteConfig {
   title: string;
@@ -320,6 +321,7 @@ const StorePage: React.FC = () => {
               <Route path="" element={<Dashboard />} />
               <Route path="productPage" element={<ProductPage />} />
               <Route path="orders" element={<Orders />} />
+                <Route path="order-update/:orderId" element={<UpdateBarcodeOrderPage />} />
               <Route path="product-create" element={<CreateProduct />} />
               <Route
                 path="product-update/:productId"

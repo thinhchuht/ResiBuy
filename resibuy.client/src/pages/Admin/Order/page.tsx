@@ -613,7 +613,7 @@ export default function OrderPage() {
                 />
               ))}
         </Box>
-        <Box sx={{ display: "grid", gridTemplateColumns: { xs: "1fr", sm: "1fr 1fr 1fr" }, gap: 2 }}>
+        <Box sx={{ display: "grid", gridTemplateColumns: { xs: "1fr", sm: "1fr 1fr " }, gap: 2 }}>
           {isLoadingStats
             ? Array.from({ length: 3 }).map((_, index) => (
                 <StatsCard
@@ -643,14 +643,7 @@ export default function OrderPage() {
     iconBgColor: "#ffebee",    
     valueColor: "#d32f2f",
   },
-  {
-    title: "Bị báo cáo",
-    value: stats.reported,
-    icon: Warning,
-    iconColor: "#fbc02d",      
-    iconBgColor: "#fffde7",    
-    valueColor: "#fbc02d",
-  },
+  
 ]
 .map((stat, index) => (
                 <StatsCard

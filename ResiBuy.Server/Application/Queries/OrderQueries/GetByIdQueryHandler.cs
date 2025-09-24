@@ -73,7 +73,8 @@ namespace ResiBuy.Server.Application.Queries.OrderQueries
                        oi.ProductDetail.Image.ThumbUrl,
                        oi.ProductDetail.Image.Name
                    }, 
-                   oi.ProductDetail.AdditionalData.Select(ad => new AddtionalDataQueryResult(ad.Id, ad.Key, ad.Value)).ToList()
+                   oi.ProductDetail.AdditionalData.Select(ad => new AddtionalDataQueryResult(ad.Id, ad.Key, ad.Value)).ToList(),
+                   oi.Barcodes.Select(b => b.Code).ToList()
                 )).ToList()
             );
             return ResponseModel.SuccessResponse(orderRs);
