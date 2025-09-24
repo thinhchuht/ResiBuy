@@ -13,6 +13,7 @@ import {
   Snackbar,
   Alert,
 } from "@mui/material";
+import { PersonOff } from "@mui/icons-material";
 import userApi from "../../api/user.api";
 import orderApi from "../../api/order.api";
 import voucherApi from "../../api/voucher.api";
@@ -228,13 +229,18 @@ const CheckoutSidebar: React.FC<CheckoutSidebarProps> = ({
 
   return (
     <Box flex={1} p={2} component={Paper} elevation={2}>
-      <Typography variant="h6">Khách hàng</Typography>
+      <Typography variant="h6">Thông tin đơn hàng</Typography>
       <Divider sx={{ my: 1 }} />
 
       {currentCart.customer ? (
         <Box>
+          <Typography variant="subtitle1" sx={{ fontWeight: 600, mb: 1 }}>
+            Khách hàng
+          </Typography>
           <Typography>Họ tên: {currentCart.customer.fullName}</Typography>
-          <Typography>SĐT: {currentCart.customer.phoneNumber}</Typography>
+          {currentCart.customer.phoneNumber !== "0123456789" && (
+            <Typography>SĐT: {currentCart.customer.phoneNumber}</Typography>
+          )}
           <Button
             variant="outlined"
             size="small"
@@ -245,8 +251,9 @@ const CheckoutSidebar: React.FC<CheckoutSidebarProps> = ({
           </Button>
         </Box>
       ) : (
-        <Box>
-          <Typography color="error">❌ Chưa có khách hàng</Typography>
+        <Box display="flex" alignItems="center" gap={1}>
+          <PersonOff color="error" />
+          <Typography color="error">Chưa có khách hàng</Typography>
           <Button
             variant="outlined"
             size="small"
@@ -260,7 +267,9 @@ const CheckoutSidebar: React.FC<CheckoutSidebarProps> = ({
 
       <Divider sx={{ my: 2 }} />
 
-      <Typography variant="subtitle1">Hình thức nhận hàng</Typography>
+      <Typography variant="subtitle1" sx={{ fontWeight: 600, mb: 1 }}>
+        Hình thức nhận hàng
+      </Typography>
       <Box display="flex" gap={1} my={1}>
         <Button
           variant={
@@ -337,7 +346,7 @@ const CheckoutSidebar: React.FC<CheckoutSidebarProps> = ({
       <Divider sx={{ my: 2 }} />
 
       <Box display="flex" alignItems="center" justifyContent="space-between">
-        <Typography>Voucher:</Typography>
+        <Typography sx={{ fontWeight: 600, mb: 1 }}>Voucher:</Typography>
         <Button
           variant="outlined"
           size="small"
@@ -371,7 +380,9 @@ const CheckoutSidebar: React.FC<CheckoutSidebarProps> = ({
 
       <Divider sx={{ my: 2 }} />
 
-      <Typography variant="subtitle1">Chọn phương thức thanh toán</Typography>
+      <Typography variant="subtitle1" sx={{ fontWeight: 600, mb: 1 }}>
+        Chọn phương thức thanh toán
+      </Typography>
       <Box display="flex" gap={1} my={1}>
         <Button
           variant={
@@ -485,10 +496,7 @@ const CheckoutSidebar: React.FC<CheckoutSidebarProps> = ({
         <DialogTitle>Thêm khách hàng</DialogTitle>
         <DialogContent>
           <Box display="flex" flexDirection="column" gap={2} mt={1}>
-            <Button
-              variant="outlined"
-              onClick={handleGuestCustomer}
-            >
+            <Button variant="outlined" onClick={handleGuestCustomer}>
               Khách vãng lai
             </Button>
 

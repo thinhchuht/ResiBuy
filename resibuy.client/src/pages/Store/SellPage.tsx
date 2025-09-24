@@ -563,53 +563,85 @@ const SellPage: React.FC = () => {
         </Box>
       </Box>
 
-      <Box
-        display="flex"
-        height="100vh"
-        minWidth={340}
-        bgcolor="#f8fafc"
-        boxShadow={2}
-      >
-        <CheckoutSidebar
-          cartId={tabs[currentTab]?.id}
-          total={total}
-          discount={totalDiscount}
-          storeId={products?.[0]?.storeId}
-          totalWeight={items.reduce(
-            (s, it) => s + (it.productDetail?.weight || 0) * it.quantity,
-            0
-          )}
-          cartItems={items}
-          scannedBarcodes={scannedBarcodes}
-          onOrderCreated={async (paidCartId: string) => {
-            const idx = tabs.findIndex((t) => t.id === paidCartId);
-            if (idx === -1) return;
-            const newTabs = [...tabs];
-            newTabs.splice(idx, 1);
-            setTabs(newTabs);
-            setScannedBarcodes((prev) => {
-              const newBarcodes = { ...prev };
-              delete newBarcodes[paidCartId];
-              console.log(
-                "Cập nhật scannedBarcodes sau khi thanh toán:",
-                newBarcodes
-              );
-              saveScannedBarcodesToLocalStorage(newBarcodes);
-              return newBarcodes;
-            });
-            if (newTabs.length > 0) {
-              const nextIndex = Math.max(0, Math.min(idx, newTabs.length - 1));
-              setCurrentTab(nextIndex);
-              await loadCart(newTabs[nextIndex].id);
-            } else {
-              setCurrentTab(0);
-              setItems([]);
-              localStorage.removeItem("scannedBarcodes");
-              console.log("Đã xóa scannedBarcodes khỏi localStorage");
-            }
-          }}
-        />
-      </Box>
+      {tabs.length > 0 && tabs[currentTab] ? (
+        <Box
+          display="flex"
+          height="100vh"
+          minWidth={340}
+          bgcolor="#f8fafc"
+          boxShadow={2}
+        >
+          <CheckoutSidebar
+            cartId={tabs[currentTab]?.id}
+            total={total}
+            discount={totalDiscount}
+            storeId={products?.[0]?.storeId}
+            totalWeight={items.reduce(
+              (s, it) => s + (it.productDetail?.weight || 0) * it.quantity,
+              0
+            )}
+            cartItems={items}
+            scannedBarcodes={scannedBarcodes}
+            onOrderCreated={async (paidCartId: string) => {
+              const idx = tabs.findIndex((t) => t.id === paidCartId);
+              if (idx === -1) return;
+              const newTabs = [...tabs];
+              newTabs.splice(idx, 1);
+              setTabs(newTabs);
+              setScannedBarcodes((prev) => {
+                const newBarcodes = { ...prev };
+                delete newBarcodes[paidCartId];
+                console.log(
+                  "Cập nhật scannedBarcodes sau khi thanh toán:",
+                  newBarcodes
+                );
+                saveScannedBarcodesToLocalStorage(newBarcodes);
+                return newBarcodes;
+              });
+              if (newTabs.length > 0) {
+                const nextIndex = Math.max(
+                  0,
+                  Math.min(idx, newTabs.length - 1)
+                );
+                setCurrentTab(nextIndex);
+                await loadCart(newTabs[nextIndex].id);
+              } else {
+                setCurrentTab(0);
+                setItems([]);
+                localStorage.removeItem("scannedBarcodes");
+                console.log("Đã xóa scannedBarcodes khỏi localStorage");
+              }
+            }}
+          />
+        </Box>
+      ) : (
+        <Box
+          display="flex"
+          height="100vh"
+          minWidth={340}
+          bgcolor="#f8fafc"
+          boxShadow={2}
+          alignItems="center"
+          justifyContent="center"
+        >
+          <Box textAlign="center" p={4}>
+            <Typography variant="h6" color="text.secondary" gutterBottom>
+              Chưa có đơn hàng nào
+            </Typography>
+            <Typography variant="body2" color="text.secondary" mb={2}>
+              Nhấn "Tạo đơn hàng mới" để bắt đầu
+            </Typography>
+            <Button
+              variant="contained"
+              color="primary"
+              onClick={handleAddTab}
+              startIcon={<Add />}
+            >
+              Tạo đơn hàng mới
+            </Button>
+          </Box>
+        </Box>
+      )}
 
       <ProductDetailDialog
         open={!!selectedProduct}
