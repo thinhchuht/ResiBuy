@@ -233,12 +233,14 @@ const CheckoutSidebar: React.FC<CheckoutSidebarProps> = ({
   const change = currentCart.customerPaid - totalPayable;
 
   // Kiểm tra điều kiện để enable button thanh toán
-  const isPaymentButtonDisabled = 
+  const isPaymentButtonDisabled =
     !currentCart.customer || // Chưa có khách hàng
     !currentCart.deliveryMethod || // Chưa chọn hình thức nhận hàng
-    (currentCart.deliveryMethod === "DELIVERY" && !currentCart.deliveryAddress) || // Chọn giao hàng nhưng chưa có địa chỉ
+    (currentCart.deliveryMethod === "DELIVERY" &&
+      !currentCart.deliveryAddress) || // Chọn giao hàng nhưng chưa có địa chỉ
     !currentCart.paymentMethod || // Chưa chọn phương thức thanh toán
-    (currentCart.paymentMethod === "CASH" && currentCart.customerPaid < totalPayable); // Tiền mặt nhưng số tiền chưa hợp lệ
+    (currentCart.paymentMethod === "CASH" &&
+      currentCart.customerPaid < totalPayable); // Tiền mặt nhưng số tiền chưa hợp lệ
 
   return (
     <Box flex={1} p={2} component={Paper} elevation={2}>
@@ -427,10 +429,12 @@ const CheckoutSidebar: React.FC<CheckoutSidebarProps> = ({
           variant={
             currentCart.paymentMethod === "CASH" ? "contained" : "outlined"
           }
-          onClick={() => setCartState({ 
-            paymentMethod: "CASH",
-            customerPaid: totalPayable
-          })}
+          onClick={() =>
+            setCartState({
+              paymentMethod: "CASH",
+              customerPaid: totalPayable,
+            })
+          }
         >
           Tiền mặt
         </Button>
@@ -458,16 +462,32 @@ const CheckoutSidebar: React.FC<CheckoutSidebarProps> = ({
       )}
 
       {isPaymentButtonDisabled && (
-        <Typography 
-          variant="caption" 
-          color="text.secondary" 
-          sx={{ display: 'block', textAlign: 'center', mb: 1 }}
+        <Typography
+          variant="caption"
+          color="text.secondary"
+          sx={{ display: "block", textAlign: "center", mb: 1 }}
         >
           {!currentCart.customer && "Vui lòng chọn khách hàng"}
-          {currentCart.customer && !currentCart.deliveryMethod && "Vui lòng chọn hình thức nhận hàng"}
-          {currentCart.customer && currentCart.deliveryMethod === "DELIVERY" && !currentCart.deliveryAddress && "Vui lòng chọn địa chỉ giao hàng"}
-          {currentCart.customer && currentCart.deliveryMethod && (currentCart.deliveryMethod !== "DELIVERY" || currentCart.deliveryAddress) && !currentCart.paymentMethod && "Vui lòng chọn phương thức thanh toán"}
-          {currentCart.customer && currentCart.deliveryMethod && (currentCart.deliveryMethod !== "DELIVERY" || currentCart.deliveryAddress) && currentCart.paymentMethod === "CASH" && currentCart.customerPaid < totalPayable && "Số tiền khách đưa chưa hợp lệ"}
+          {currentCart.customer &&
+            !currentCart.deliveryMethod &&
+            "Vui lòng chọn hình thức nhận hàng"}
+          {currentCart.customer &&
+            currentCart.deliveryMethod === "DELIVERY" &&
+            !currentCart.deliveryAddress &&
+            "Vui lòng chọn địa chỉ giao hàng"}
+          {currentCart.customer &&
+            currentCart.deliveryMethod &&
+            (currentCart.deliveryMethod !== "DELIVERY" ||
+              currentCart.deliveryAddress) &&
+            !currentCart.paymentMethod &&
+            "Vui lòng chọn phương thức thanh toán"}
+          {currentCart.customer &&
+            currentCart.deliveryMethod &&
+            (currentCart.deliveryMethod !== "DELIVERY" ||
+              currentCart.deliveryAddress) &&
+            currentCart.paymentMethod === "CASH" &&
+            currentCart.customerPaid < totalPayable &&
+            "Số tiền khách đưa chưa hợp lệ"}
         </Typography>
       )}
 
@@ -476,9 +496,9 @@ const CheckoutSidebar: React.FC<CheckoutSidebarProps> = ({
         color="success"
         fullWidth
         disabled={isPaymentButtonDisabled}
-        sx={{ 
+        sx={{
           mt: 3,
-          opacity: isPaymentButtonDisabled ? 0.6 : 1
+          opacity: isPaymentButtonDisabled ? 0.6 : 1,
         }}
         onClick={async () => {
           if (!currentCart.customer) {
