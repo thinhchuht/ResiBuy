@@ -31,7 +31,7 @@ namespace ResiBuy.Server.Application.Commands.OrderCommands
                             $"Số lượng mã vạch ({item.Barcodes.Count}) không khớp với số lượng sản phẩm ({item.Quantity}) của ProductDetailId {item.ProductDetailId}");
 
                     // Validate all barcodes in the item
-                    await checkListBarCode(item.Barcodes);
+                    await checkListBarCode(item.Barcodes, item.ProductDetailId);
                 }
 
                 // Update barcodes with OrderItemId
@@ -66,7 +66,7 @@ namespace ResiBuy.Server.Application.Commands.OrderCommands
             }
         }
 
-        private async Task checkListBarCode(List<string> barcodes)
+        private async Task checkListBarCode(List<string> barcodes, int productDetailId)
         {
             if (barcodes.Count == 0)
                 throw new CustomException(ExceptionErrorCode.ValidationFailed, $"Danh sách mã vạch rỗng");
@@ -79,7 +79,7 @@ namespace ResiBuy.Server.Application.Commands.OrderCommands
                     throw new CustomException(ExceptionErrorCode.ValidationFailed, $"Mã vạch rỗng");
                 else if (seen.Add(barcode)) // chỉ trả về true nếu chưa tồn tại
                 {
-                    await checkBarCode(barcode);
+                    await checkBarCode(barcode, productDetailId);
                 }
                 else
                 {
@@ -88,11 +88,13 @@ namespace ResiBuy.Server.Application.Commands.OrderCommands
             }
         }
 
-        private async Task checkBarCode(string barcode)
+        private async Task checkBarCode(string barcode, int productDetailId)
         {
             var bar = await barcodeDbService.GetBarcodeByBarcodeValueAsync(barcode);
             if (bar == null)
                 throw new CustomException(ExceptionErrorCode.ValidationFailed, $"Mã vạch {barcode} không tồn tại trong hệ thống");
+            else if(productDetailId != bar.ProductDetailId)
+                throw new CustomException(ExceptionErrorCode.ValidationFailed, $"Mã vạch {barcode} không thuộc về sản phẩm có ProductDetailId {productDetailId}");
         }
     }
 }

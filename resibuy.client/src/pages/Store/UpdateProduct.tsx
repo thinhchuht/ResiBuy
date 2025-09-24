@@ -78,7 +78,6 @@ interface ProductInput {
     productDetails: ProductDetailInput[];
 }
 
-// Promotion interface based on your API
 interface PromotionDto {
     id: number;
     name: string;
@@ -117,14 +116,12 @@ export default function UpdateProduct() {
     const navigate = useNavigate();
     const { error: showError, success: showSuccess } = useToastify();
 
-    // State management
     const [listCategory, setListCategory] = useState<CategoryDto[]>([]);
     const [listPromotions, setListPromotions] = useState<PromotionDto[]>([]);
     const [loading, setLoading] = useState(true);
     const [updating, setUpdating] = useState(false);
     const [isLoadingPromotions, setIsLoadingPromotions] = useState(false);
 
-    // Error states consolidated
     const [formErrors, setFormErrors] = useState<ValidationErrors>({});
     const [classifyErrors, setClassifyErrors] = useState<ValidationErrors>({});
     const [attributeErrors, setAttributeErrors] = useState<ValidationErrors>({});
@@ -149,7 +146,6 @@ export default function UpdateProduct() {
     const [newProductDetails, setNewProductDetails] = useState<ProductDetailInput[]>([]);
     const [classifies, setClassifies] = useState<Classify[]>([]);
 
-    // Load data on component mount
     useEffect(() => {
         const loadData = async () => {
             try {
@@ -174,7 +170,7 @@ export default function UpdateProduct() {
                             isOutOfStock: detail.isOutOfStock,
                             image: detail.image,
                             additionalData: detail.additionalData,
-                            barcodes: detail.barcodes.map(barcode => barcode.code ?? ''), // Xử lý null/undefined
+                            barcodes: detail.barcodes.map(barcode => barcode.code ?? ''),
                         })) || [];
 
                         setListProductDetail(tempProductDetails);
@@ -259,14 +255,12 @@ export default function UpdateProduct() {
         }
     };
 
-    // Helper function to format promotion display text
     const formatPromotionDisplay = (promotion: PromotionDto): string => {
         const startDate = new Date(promotion.startDate).toLocaleDateString('vi-VN');
         const endDate = new Date(promotion.endDate).toLocaleDateString('vi-VN');
         return `${promotion.name} (${promotion.discount}% - ${startDate} đến ${endDate})`;
     };
 
-    // Helper function to check if promotion is ending soon
     const isPromotionEndingSoon = (promotion: PromotionDto): boolean => {
         const endDate = new Date(promotion.endDate);
         const currentDate = new Date();
@@ -275,7 +269,6 @@ export default function UpdateProduct() {
         return diffDays <= 7 && diffDays > 0;
     };
 
-    // Classification management functions
     const addClassifies = () =>
         setClassifies((prev) => [...prev, { key: "", value: [], isEdit: true }]);
 
@@ -412,7 +405,6 @@ export default function UpdateProduct() {
             )
         );
 
-    // Validation functions
     const validateBasicInfo = (): boolean => {
         const newFormErrors: ValidationErrors = {};
         let isValid = true;
@@ -492,57 +484,62 @@ export default function UpdateProduct() {
 
         return isValid;
     };
-const validateProductDetails = (allDetails: ProductDetailInput[]): boolean => {
-    let isValid = true;
-    const newPriceErrors: ValidationErrors = {};
-    const newWeightErrors: ValidationErrors = {};
-    const newQuantityErrors: ValidationErrors = {};
 
-    allDetails.forEach((detail, index) => {
-        if (detail.price <= 0) {
-            newPriceErrors[index] = "Giá phải lớn hơn 0";
-            isValid = false;
-        }
+    const validateProductDetails = (allDetails: ProductDetailInput[]): boolean => {
+        let isValid = true;
+        const newPriceErrors: ValidationErrors = {};
+        const newWeightErrors: ValidationErrors = {};
+        const newQuantityErrors: ValidationErrors = {};
 
-        if (detail.weight < 0) {
-            newWeightErrors[index] = "Cân nặng phải từ 0 trở lên";
-            isValid = false;
-        }
+        allDetails.forEach((detail, index) => {
+            // Validate price
+            if (detail.price <= 0) {
+                newPriceErrors[index] = "Giá phải lớn hơn 0";
+                isValid = false;
+            }
 
-        if (detail.quantity < 0) {
-            newQuantityErrors[index] = "Số lượng phải từ 0 trở lên";
-            isValid = false;
-        }
+            // Validate weight
+            if (detail.weight <= 0) {
+                newWeightErrors[index] = "Cân nặng phải lớn hơn 0";
+                isValid = false;
+            }
 
-        if (detail.isOutOfStock && detail.quantity > 0) {
-            newQuantityErrors[index] = "Sản phẩm đã hết hàng thì số lượng phải bằng 0";
-            isValid = false;
-        }
+            // Validate quantity
+            if (detail.quantity < 0) {
+                newQuantityErrors[index] = "Số lượng phải từ 0 trở lên";
+                isValid = false;
+            }
 
-        if (index >= listProductDetail.length && !detail.image?.url) {
-            showError(`Vui lòng tải ảnh cho tất cả các chi tiết sản phẩm mới`);
-            console.error(`Chi tiết mới tại index ${index} chưa có ảnh`);
-            isValid = false;
-        }
-    });
+            // Validate business logic: out of stock should have quantity 0
+            if (detail.isOutOfStock && detail.quantity > 0) {
+                newQuantityErrors[index] = "Sản phẩm đã hết hàng thì số lượng phải bằng 0";
+                isValid = false;
+            }
 
-    setPriceErrors(newPriceErrors);
-    setWeightErrors(newWeightErrors);
-    setQuantityErrors(newQuantityErrors);
-
-    if (!isValid) {
-        console.error("Lỗi validateProductDetails:", {
-            priceErrors: newPriceErrors,
-            weightErrors: newWeightErrors,
-            quantityErrors: newQuantityErrors,
-            allDetails
+            // Validate image for new details
+            if (index >= listProductDetail.length && !detail.image?.url) {
+                showError(`Vui lòng tải ảnh cho tất cả các chi tiết sản phẩm mới`);
+                console.error(`Chi tiết mới tại index ${index} chưa có ảnh`);
+                isValid = false;
+            }
         });
-        showError("Vui lòng kiểm tra lại thông tin chi tiết sản phẩm");
-    }
 
-    return isValid;
-};
+        setPriceErrors(newPriceErrors);
+        setWeightErrors(newWeightErrors);
+        setQuantityErrors(newQuantityErrors);
 
+        if (!isValid) {
+            console.error("Lỗi validateProductDetails:", {
+                priceErrors: newPriceErrors,
+                weightErrors: newWeightErrors,
+                quantityErrors: newQuantityErrors,
+                allDetails
+            });
+            showError("Vui lòng kiểm tra lại thông tin chi tiết sản phẩm");
+        }
+
+        return isValid;
+    };
 
     const validatePrice = (price: number, index: number) => {
         const newErrors = { ...priceErrors };
@@ -559,8 +556,8 @@ const validateProductDetails = (allDetails: ProductDetailInput[]): boolean => {
     const validateWeight = (weight: number, index: number) => {
         const newErrors = { ...weightErrors };
 
-        if (weight < 0) {
-            newErrors[index] = "Cân nặng không được nhỏ hơn 0";
+        if (weight <= 0) {
+            newErrors[index] = "Cân nặng phải lớn hơn 0";
         } else {
             delete newErrors[index];
         }
@@ -1219,9 +1216,8 @@ const validateProductDetails = (allDetails: ProductDetailInput[]): boolean => {
                                         <TableRow sx={{ bgcolor: "grey.50" }}>
                                             <TableCell sx={{ fontWeight: "bold", minWidth: 200 }}>Phân loại</TableCell>
                                             <TableCell sx={{ fontWeight: "bold", minWidth: 120 }}>Giá (VNĐ)</TableCell>
-                                            <TableCell sx={{ fontWeight: "bold", minWidth: 120 }}>Cân nặng (g)</TableCell>
+                                            <TableCell sx={{ fontWeight: "bold", minWidth: 120 }}>Cân nặng (kg)</TableCell>
                                             <TableCell sx={{ fontWeight: "bold", minWidth: 100 }}>Số lượng</TableCell>
-                                        
                                             <TableCell sx={{ fontWeight: "bold", minWidth: 150 }}>Ảnh sản phẩm</TableCell>
                                         </TableRow>
                                     </TableHead>
@@ -1260,12 +1256,10 @@ const validateProductDetails = (allDetails: ProductDetailInput[]): boolean => {
                                                         value={productDetail.weight}
                                                         error={!!weightErrors[index]}
                                                         helperText={weightErrors[index]}
-                                                        inputProps={{ min: 0 }}
+                                                        inputProps={{ min: 0.01, step: 0.01 }}
                                                         onChange={(e) => {
                                                             const newWeight = Number(e.target.value);
-                                                            if (newWeight >= 0) {
-                                                                updateProductDetail(index, 'weight', newWeight, false);
-                                                            }
+                                                            updateProductDetail(index, 'weight', newWeight, false);
                                                         }}
                                                         onBlur={() => validateWeight(productDetail.weight, index)}
                                                         sx={{
@@ -1301,7 +1295,6 @@ const validateProductDetails = (allDetails: ProductDetailInput[]): boolean => {
                                                         }}
                                                     />
                                                 </TableCell>
-                                               
                                                 <TableCell>
                                                     <Stack
                                                         spacing={2}
@@ -1436,9 +1429,8 @@ const validateProductDetails = (allDetails: ProductDetailInput[]): boolean => {
                                         <TableRow sx={{ bgcolor: "grey.50" }}>
                                             <TableCell sx={{ fontWeight: "bold", minWidth: 200 }}>Phân loại</TableCell>
                                             <TableCell sx={{ fontWeight: "bold", minWidth: 120 }}>Giá (VNĐ)</TableCell>
-                                            <TableCell sx={{ fontWeight: "bold", minWidth: 120 }}>Cân nặng (g)</TableCell>
+                                            <TableCell sx={{ fontWeight: "bold", minWidth: 120 }}>Cân nặng (kg)</TableCell>
                                             <TableCell sx={{ fontWeight: "bold", minWidth: 100 }}>Số lượng</TableCell>
-                                           
                                             <TableCell sx={{ fontWeight: "bold", minWidth: 150 }}>Ảnh sản phẩm</TableCell>
                                         </TableRow>
                                     </TableHead>
@@ -1486,12 +1478,10 @@ const validateProductDetails = (allDetails: ProductDetailInput[]): boolean => {
                                                             value={productDetail.weight}
                                                             error={!!weightErrors[globalIndex]}
                                                             helperText={weightErrors[globalIndex]}
-                                                            inputProps={{ min: 0 }}
+                                                            inputProps={{ min: 0.01, step: 0.01 }}
                                                             onChange={(e) => {
                                                                 const newWeight = Number(e.target.value);
-                                                                if (newWeight >= 0) {
-                                                                    updateProductDetail(index, 'weight', newWeight, true);
-                                                                }
+                                                                updateProductDetail(index, 'weight', newWeight, true);
                                                             }}
                                                             onBlur={() => validateWeight(productDetail.weight, globalIndex)}
                                                             sx={{
@@ -1527,7 +1517,6 @@ const validateProductDetails = (allDetails: ProductDetailInput[]): boolean => {
                                                             }}
                                                         />
                                                     </TableCell>
-                                                   
                                                     <TableCell>
                                                         <Stack
                                                             spacing={2}
