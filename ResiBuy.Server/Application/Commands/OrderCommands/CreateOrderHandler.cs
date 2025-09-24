@@ -254,11 +254,7 @@ namespace ResiBuy.Server.Application.Commands.OrderCommands
                     }
                 }
 
-            // Xóa giỏ hàng
-            if(request.PaymentMethod == PaymentMethod.COD)
-            {
                 _context.Carts.Remove(cart);
-            }
 
             await _context.SaveChangesAsync(cancellationToken);
 
