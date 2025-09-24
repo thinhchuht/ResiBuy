@@ -364,142 +364,113 @@ export default function CreateProduct() {
 
         return isValid;
     };
+const validateProductDetails = (): boolean => {
+    let isValid = true;
+    const newPriceErrors: ValidationErrors = {};
+    const newWeightErrors: ValidationErrors = {};
+    const newQuantityErrors: ValidationErrors = {};
 
-    const validateProductDetails = (): boolean => {
-        let isValid = true;
-        const newPriceErrors: ValidationErrors = {};
-        const newWeightErrors: ValidationErrors = {};
-        const newQuantityErrors: ValidationErrors = {};
-        const newBarcodeErrors: ValidationErrors = {};
+    listProductDetail.forEach((detail, index) => {
+        // Validate price
+        if (detail.price <= 0) {
+            newPriceErrors[index] = "Giá phải lớn hơn 0";
+            isValid = false;
+        }
 
-        // Collect all barcodes to check for duplicates across details
-        const allBarcodes: string[] = [];
+        // Validate weight
+        if (detail.weight <= 0) {
+            newWeightErrors[index] = "Cân nặng phải lớn hơn 0";
+            isValid = false;
+        }
 
-        listProductDetail.forEach((detail, index) => {
-            // Validate price
-            if (detail.price <= 0) {
-                newPriceErrors[index] = "Giá phải lớn hơn 0";
-                isValid = false;
-            }
+        // Validate quantity
+        if (!detail.isOutOfStock && detail.quantity <= 0) {
+            newQuantityErrors[index] = "Số lượng phải lớn hơn 0 ";
+            isValid = false;
+        } else if (detail.isOutOfStock && detail.quantity !== 0) {
+            newQuantityErrors[index] = "Số lượng phải bằng 0 khi sản phẩm hết hàng";
+            isValid = false;
+        }
 
-            // Validate weight
-            if (detail.weight < 0) {
-                newWeightErrors[index] = "Cân nặng phải từ 0 trở lên";
-                isValid = false;
-            }
+        // Validate image
+        if (!detail.image?.url) {
+            showError(`Vui lòng tải ảnh cho tất cả các chi tiết sản phẩm`);
+            isValid = false;
+        }
+    });
 
-            // Validate quantity
-            if (detail.quantity < 0) {
-                newQuantityErrors[index] = "Số lượng phải từ 0 trở lên";
-                isValid = false;
-            }
+    setPriceErrors(newPriceErrors);
+    setWeightErrors(newWeightErrors);
+    setQuantityErrors(newQuantityErrors);
 
-            // Validate business logic: out of stock should have quantity 0
-            if (detail.isOutOfStock && detail.quantity > 0) {
-                newQuantityErrors[index] = "Sản phẩm đã hết hàng thì số lượng phải bằng 0";
-                isValid = false;
-            }
+    if (!isValid) {
+        showError("Vui lòng kiểm tra lại thông tin chi tiết sản phẩm");
+    }
 
-            // Validate image
-            if (!detail.image?.url) {
-                showError(`Vui lòng tải ảnh cho tất cả các chi tiết sản phẩm`);
-                isValid = false;
-            }
+    return isValid;
+};
 
-            // Validate barcodes
-           
+const validateQuantity = (quantity: number, index: number) => {
+    const newErrors = { ...quantityErrors };
+
+    if (quantity <= 0) {
+        newErrors[index] = "Số lượng phải lớn hơn 0";
+    } else {
+        delete newErrors[index];
+    }
+
+    setQuantityErrors(newErrors);
+};
+
+const validateWeight = (weight: number, index: number) => {
+    const newErrors = { ...weightErrors };
+
+    if (weight <= 0) {
+        newErrors[index] = "Cân nặng phải lớn hơn 0";
+    } else {
+        delete newErrors[index];
+    }
+
+    setWeightErrors(newErrors);
+};
+
+const generateProductDetail = () => {
+    if (!validateBasicInfo() || !validateClassifies()) {
+        return;
+    }
+
+    let listAdditionalData: AdditionalDataInput[][] = [[]];
+
+    classifies.forEach((classify) => {
+        listAdditionalData = listAdditionalData.flatMap((combination) => {
+            return classify.value.map((val) => [
+                ...combination,
+                { key: classify.key, value: val } as AdditionalDataInput,
+            ]);
         });
+    });
 
-      
-       
+    // Clear existing product details and errors
+    setListProductDetail([]);
+    setPriceErrors({});
+    setWeightErrors({});
+    setQuantityErrors({});
 
-        setPriceErrors(newPriceErrors);
-        setWeightErrors(newWeightErrors);
-        setQuantityErrors(newQuantityErrors);
-       
+    // Generate new product details
+    const newProductDetails: ProductDetailInput[] = listAdditionalData.map((data) => ({
+        price: 0,
+        weight: 0,
+        quantity: 0,
+        isOutOfStock: false,
+        image: null,
+        additionalData: data,
+        barcodes: [],
+    }));
 
-        if (!isValid) {
-            showError("Vui lòng kiểm tra lại thông tin chi tiết sản phẩm");
-        }
-
-        return isValid;
-    };
-
-    // Individual field validation
-    const validatePrice = (price: number, index: number) => {
-        const newErrors = { ...priceErrors };
-
-        if (price <= 0) {
-            newErrors[index] = "Giá phải lớn hơn 0";
-        } else {
-            delete newErrors[index];
-        }
-
-        setPriceErrors(newErrors);
-    };
-
-    const validateWeight = (weight: number, index: number) => {
-        const newErrors = { ...weightErrors };
-
-        if (weight < 0) {
-            newErrors[index] = "Cân nặng không được nhỏ hơn 0";
-        } else {
-            delete newErrors[index];
-        }
-
-        setWeightErrors(newErrors);
-    };
-
-    const validateQuantity = (quantity: number, index: number) => {
-        const newErrors = { ...quantityErrors };
-
-        if (quantity < 0) {
-            newErrors[index] = "Số lượng không được nhỏ hơn 0";
-        } else {
-            delete newErrors[index];
-        }
-
-        setQuantityErrors(newErrors);
-    };
-
-    // Generate product combinations
-    const generateProductDetail = () => {
-        if (!validateBasicInfo() || !validateClassifies()) {
-            return;
-        }
-
-        let listAdditionalData: AdditionalDataInput[][] = [[]];
-
-        classifies.forEach((classify) => {
-            listAdditionalData = listAdditionalData.flatMap((combination) => {
-                return classify.value.map((val) => [
-                    ...combination,
-                    { key: classify.key, value: val } as AdditionalDataInput,
-                ]);
-            });
-        });
-
-        // Clear existing product details and errors
-        setListProductDetail([]);
-        setPriceErrors({});
-        setWeightErrors({});
-        setQuantityErrors({});
-      
-
-        // Generate new product details
-        const newProductDetails: ProductDetailInput[] = listAdditionalData.map((data) => ({
-            price: 0,
-            weight: 0,
-            quantity: 0,
-            isOutOfStock: false,
-            image: null,
-            additionalData: data,
-            barcodes: [],
-        }));
-
-        setListProductDetail(newProductDetails);
-        showSuccess(`Đã tạo ${newProductDetails.length} chi tiết sản phẩm`);
-    };
+    setListProductDetail(newProductDetails);
+    validateProductDetails(newProductDetails);
+    showSuccess(`Đã tạo ${newProductDetails.length} chi tiết sản phẩm`);
+};
 
     // Helper function to format classification text
     const classifyText = (productDetail: ProductDetailInput): string => {
@@ -1042,9 +1013,9 @@ export default function CreateProduct() {
                                         <TableRow sx={{ bgcolor: "grey.50" }}>
                                             <TableCell sx={{ fontWeight: "bold", minWidth: 200 }}>Phân loại</TableCell>
                                             <TableCell sx={{ fontWeight: "bold", minWidth: 120 }}>Giá (VNĐ)</TableCell>
-                                            <TableCell sx={{ fontWeight: "bold", minWidth: 120 }}>Cân nặng (g)</TableCell>
+                                            <TableCell sx={{ fontWeight: "bold", minWidth: 120 }}>Cân nặng (kg)</TableCell>
                                             <TableCell sx={{ fontWeight: "bold", minWidth: 100 }}>Số lượng</TableCell>
-                                            <TableCell sx={{ fontWeight: "bold", minWidth: 100 }}>Hết hàng</TableCell>
+                                          
                                            
                                             <TableCell sx={{ fontWeight: "bold", minWidth: 150 }}>Ảnh sản phẩm</TableCell>
                                         </TableRow>
@@ -1127,23 +1098,7 @@ export default function CreateProduct() {
                                                         }}
                                                     />
                                                 </TableCell>
-                                                <TableCell>
-                                                    <Checkbox
-                                                        checked={productDetail.isOutOfStock}
-                                                        onChange={(e) => {
-                                                            updateProductDetail(index, 'isOutOfStock', e.target.checked);
-                                                            // If marking as out of stock, set quantity to 0
-                                                            if (e.target.checked) {
-                                                                updateProductDetail(index, 'quantity', 0);
-                                                                updateProductDetail(index, 'barcodes', []);
-                                                            }
-                                                        }}
-                                                        color="primary"
-                                                    />
-                                                </TableCell>
-                                                <TableCell>
-                                                    
-                                                </TableCell>
+                                              
                                                 <TableCell>
                                                     <Stack spacing={2} alignItems="center" sx={{ minWidth: 120 }}>
                                                         {uploadingImages[index] ? (

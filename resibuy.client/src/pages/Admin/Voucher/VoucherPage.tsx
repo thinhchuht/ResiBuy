@@ -249,7 +249,7 @@ const VoucherPage: React.FC = () => {
   };
 
   return (
-    <Box p={4}>
+   <Box p={4} sx={{ bgcolor: "white", minHeight: "100vh" }}>
       <Card elevation={3}>
         <CardHeader
           title={
