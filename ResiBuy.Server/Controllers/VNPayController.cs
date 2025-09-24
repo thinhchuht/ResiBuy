@@ -66,56 +66,56 @@ namespace ResiBuy.Server.Controllers
 
                         if (isOrderPaymentSuccess)
                         {
-                            logger.LogInformation("Order payment processed successfully");
+                            //logger.LogInformation("Order payment processed successfully");
                             // cần: using System.Net; using Microsoft.EntityFrameworkCore;
 
                             // decode (an toàn) và parse
-                            var decodedOrderInfo = WebUtility.UrlDecode(callback.vnp_OrderInfo ?? string.Empty);
-                            var parts = decodedOrderInfo.Split(',', StringSplitOptions.RemoveEmptyEntries);
+                            //var decodedOrderInfo = WebUtility.UrlDecode(callback.vnp_OrderInfo ?? string.Empty);
+                            //var parts = decodedOrderInfo.Split(',', StringSplitOptions.RemoveEmptyEntries);
 
                             // phần cartId mình đặt ở phần cuối (format: "...{orderId}|{cartId}")
-                            Guid parsedCartId;
-                            Guid? cartId = null;
-                            if (parts.Length >= 2 && Guid.TryParse(parts[parts.Length - 1].Trim(), out parsedCartId))
-                            {
-                                cartId = parsedCartId;
-                            }
+                            //Guid parsedCartId;
+                            //Guid? cartId = null;
+                            //if (parts.Length >= 2 && Guid.TryParse(parts[parts.Length - 1].Trim(), out parsedCartId))
+                            //{
+                            //    cartId = parsedCartId;
+                            //}
 
                             // nếu có cartId thì xóa cart (idempotent)
-                            if (cartId.HasValue)
-                            {
-                                try
-                                {
-                                    // dùng dbContext hoặc service của bạn để xóa cart. Ví dụ với dbContext:
-                                    var cart = await dbContext.Carts
-                                        .Include(c => c.CartItems)
-                                        .FirstOrDefaultAsync(c => c.Id == cartId.Value);
+                            //if (cartId.HasValue)
+                            //{
+                            //    try
+                            //    {
+                            //        // dùng dbContext hoặc service của bạn để xóa cart. Ví dụ với dbContext:
+                            //        var cart = await dbContext.Carts
+                            //            .Include(c => c.CartItems)
+                            //            .FirstOrDefaultAsync(c => c.Id == cartId.Value);
 
-                                    if (cart != null)
-                                    {
-                                        // thực hiện xóa trong 1 transaction nếu cần
-                                        dbContext.Carts.Remove(cart);
-                                        await dbContext.SaveChangesAsync();
-                                        logger.LogInformation($"Removed cart {cartId.Value} after successful VNPay payment.");
-                                    }
-                                    else
-                                    {
-                                        logger.LogInformation($"Cart {cartId.Value} not found (maybe already removed).");
-                                    }
-                                }
-                                catch (Exception ex)
-                                {
-                                    logger.LogError(ex, $"Error removing cart {cartId.Value} after VNPay callback.");
-                                    // Không ném ra nếu bạn vẫn muốn trả redirect; quyết định rollback tuỳ logic của bạn.
-                                }
-                            }
-                            else
-                            {
-                                logger.LogInformation("No cartId embedded in vnp_OrderInfo, nothing to remove.");
-                            }
+                            //        if (cart != null)
+                            //        {
+                            //            // thực hiện xóa trong 1 transaction nếu cần
+                            //            dbContext.Carts.Remove(cart);
+                            //            await dbContext.SaveChangesAsync();
+                            //            logger.LogInformation($"Removed cart {cartId.Value} after successful VNPay payment.");
+                            //        }
+                            //        else
+                            //        {
+                            //            logger.LogInformation($"Cart {cartId.Value} not found (maybe already removed).");
+                            //        }
+                            //    }
+                            //    catch (Exception ex)
+                            //    {
+                            //        logger.LogError(ex, $"Error removing cart {cartId.Value} after VNPay callback.");
+                            //        // Không ném ra nếu bạn vẫn muốn trả redirect; quyết định rollback tuỳ logic của bạn.
+                            //    }
+                            //}
+                            //else
+                            //{
+                            //    logger.LogInformation("No cartId embedded in vnp_OrderInfo, nothing to remove.");
+                            //}
                             var token = GenerateToken();
                             _paymentTokens[token] = DateTime.Now.AddMinutes(5);
-                            return Redirect($"http://localhost:5001/payment-success?token={token}");
+                            return Redirect($"http://localhost:5001/stores/payment-success?token={token}");
                         }
                         else
                         {
@@ -140,7 +140,7 @@ namespace ResiBuy.Server.Controllers
 
                             var token = GenerateToken();
                             _paymentTokens[token] = DateTime.Now.AddMinutes(5);
-                            return Redirect($"http://localhost:5001/paymentFail?token={token}");
+                            return Redirect($"http://localhost:5001/stores/paymentFail?token={token}");
                         }
                     }
                     else
@@ -148,7 +148,7 @@ namespace ResiBuy.Server.Controllers
                         logger.LogWarning($"Failed to parse orderId from TxnRef: {callback.vnp_TxnRef}");
                         var token = GenerateToken();
                         _paymentTokens[token] = DateTime.Now.AddMinutes(5);
-                        return Redirect($"http://localhost:5001/paymentFail?token={token}");
+                        return Redirect($"http://localhost:5001/stores/paymentFail?token={token}");
                     }
                 }
                 else
@@ -212,10 +212,12 @@ namespace ResiBuy.Server.Controllers
 
             var failedToken = GenerateToken();
             _paymentTokens[failedToken] = DateTime.Now.AddMinutes(5);
+            var token1 = GenerateToken();
             if (Guid.TryParse(callback.vnp_TxnRef, out var orderId))
             {
                 logger.LogInformation($"Parsed orderId: {orderId}");
                 var isOrderPaymentSuccess = await vnPayService.RollbackOrderPaymentAsync(orderId);
+                return Redirect($"http://localhost:5001/stores/paymentFail?token={token1}");
             }
             return Redirect($"http://localhost:5001/checkout-failed?token={failedToken}");
         }

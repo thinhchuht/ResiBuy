@@ -34,7 +34,6 @@ namespace ResiBuy.Server.Application.Commands.OrderCommands
                 dbContext.Barcodes.Remove(barcode);
             else
                 barcode.ProductDetail.Quantity += 1;
-
             try
             {
                 await dbContext.SaveChangesAsync();

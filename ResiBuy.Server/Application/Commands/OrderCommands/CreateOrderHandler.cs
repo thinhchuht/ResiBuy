@@ -164,9 +164,8 @@ namespace ResiBuy.Server.Application.Commands.OrderCommands
 
             // Tính phí ship
             decimal shippingFee;
-            if (request.PaymentMethod == PaymentMethod.COD ||
-                request.ShippingAddressId == store.RoomId ||
-                request.ShippingAddressId == store.Id)
+            if (
+                request.ShippingAddressId == store.RoomId)
             {
                 shippingFee = 0;
             }
@@ -254,11 +253,7 @@ namespace ResiBuy.Server.Application.Commands.OrderCommands
                     }
                 }
 
-            // Xóa giỏ hàng
-            if(request.PaymentMethod == PaymentMethod.COD)
-            {
                 _context.Carts.Remove(cart);
-            }
 
             await _context.SaveChangesAsync(cancellationToken);
 
