@@ -115,7 +115,7 @@ const CheckoutSidebar: React.FC<CheckoutSidebarProps> = ({
     customer: null,
     voucher: null,
     paymentMethod: null,
-    customerPaid: total,
+    customerPaid: 0,
     shippingFee: 0,
     deliveryMethod: undefined,
     deliveryAddress: null,
@@ -226,12 +226,19 @@ const CheckoutSidebar: React.FC<CheckoutSidebarProps> = ({
   const finalAmount = total - discount - voucherDiscount;
   const shippingFee = currentCart.shippingFee || 0;
   const actualShippingFee =
-    currentCart.deliveryMethod === "PICKUP" ||
-    (currentCart.deliveryMethod === "DELIVERY" && currentCart.deliveryAddress)
+    currentCart.deliveryMethod === "DELIVERY" && currentCart.deliveryAddress
       ? shippingFee
       : 0;
   const totalPayable = finalAmount + actualShippingFee;
   const change = currentCart.customerPaid - totalPayable;
+
+  // Kiểm tra điều kiện để enable button thanh toán
+  const isPaymentButtonDisabled = 
+    !currentCart.customer || // Chưa có khách hàng
+    !currentCart.deliveryMethod || // Chưa chọn hình thức nhận hàng
+    (currentCart.deliveryMethod === "DELIVERY" && !currentCart.deliveryAddress) || // Chọn giao hàng nhưng chưa có địa chỉ
+    !currentCart.paymentMethod || // Chưa chọn phương thức thanh toán
+    (currentCart.paymentMethod === "CASH" && currentCart.customerPaid < totalPayable); // Tiền mặt nhưng số tiền chưa hợp lệ
 
   return (
     <Box flex={1} p={2} component={Paper} elevation={2}>
@@ -384,14 +391,13 @@ const CheckoutSidebar: React.FC<CheckoutSidebarProps> = ({
       <Typography sx={{ mt: 1 }}>
         Tiền hàng: {total.toLocaleString()} đ
       </Typography>
-      {(currentCart.deliveryMethod === "PICKUP" ||
-        (currentCart.deliveryMethod === "DELIVERY" &&
-          currentCart.deliveryAddress)) && (
-        <Typography>
-          Phí ship:{" "}
-          {shippingFee > 0 ? `${shippingFee.toLocaleString()} đ` : "0 đ"}
-        </Typography>
-      )}
+      {currentCart.deliveryMethod === "DELIVERY" &&
+        currentCart.deliveryAddress && (
+          <Typography>
+            Phí giao hàng:{" "}
+            {shippingFee > 0 ? `${shippingFee.toLocaleString()} đ` : "0 đ"}
+          </Typography>
+        )}
       <Typography>
         Giảm tiền đơn hàng:{" "}
         {discount > 0 ? `-${discount.toLocaleString()} đ` : "0 đ"}
@@ -421,7 +427,10 @@ const CheckoutSidebar: React.FC<CheckoutSidebarProps> = ({
           variant={
             currentCart.paymentMethod === "CASH" ? "contained" : "outlined"
           }
-          onClick={() => setCartState({ paymentMethod: "CASH" })}
+          onClick={() => setCartState({ 
+            paymentMethod: "CASH",
+            customerPaid: totalPayable
+          })}
         >
           Tiền mặt
         </Button>
@@ -448,11 +457,29 @@ const CheckoutSidebar: React.FC<CheckoutSidebarProps> = ({
         </>
       )}
 
+      {isPaymentButtonDisabled && (
+        <Typography 
+          variant="caption" 
+          color="text.secondary" 
+          sx={{ display: 'block', textAlign: 'center', mb: 1 }}
+        >
+          {!currentCart.customer && "Vui lòng chọn khách hàng"}
+          {currentCart.customer && !currentCart.deliveryMethod && "Vui lòng chọn hình thức nhận hàng"}
+          {currentCart.customer && currentCart.deliveryMethod === "DELIVERY" && !currentCart.deliveryAddress && "Vui lòng chọn địa chỉ giao hàng"}
+          {currentCart.customer && currentCart.deliveryMethod && (currentCart.deliveryMethod !== "DELIVERY" || currentCart.deliveryAddress) && !currentCart.paymentMethod && "Vui lòng chọn phương thức thanh toán"}
+          {currentCart.customer && currentCart.deliveryMethod && (currentCart.deliveryMethod !== "DELIVERY" || currentCart.deliveryAddress) && currentCart.paymentMethod === "CASH" && currentCart.customerPaid < totalPayable && "Số tiền khách đưa chưa hợp lệ"}
+        </Typography>
+      )}
+
       <Button
         variant="contained"
         color="success"
         fullWidth
-        sx={{ mt: 3 }}
+        disabled={isPaymentButtonDisabled}
+        sx={{ 
+          mt: 3,
+          opacity: isPaymentButtonDisabled ? 0.6 : 1
+        }}
         onClick={async () => {
           if (!currentCart.customer) {
             showMessage("Vui lòng chọn khách hàng", "warning");
