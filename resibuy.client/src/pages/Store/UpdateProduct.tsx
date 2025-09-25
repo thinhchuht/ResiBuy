@@ -686,7 +686,9 @@ export default function UpdateProduct() {
     const validateQuantity = (quantity: number, index: number) => {
         const newErrors = { ...quantityErrors };
 
-        if (quantity < 0) {
+        if (!Number.isInteger(quantity)) {
+            newErrors[index] = "Số lượng phải là số nguyên";
+        } else if (quantity < 0) {
             newErrors[index] = "Số lượng không được nhỏ hơn 0";
         } else {
             delete newErrors[index];

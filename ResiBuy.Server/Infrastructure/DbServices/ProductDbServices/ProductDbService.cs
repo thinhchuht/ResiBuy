@@ -142,8 +142,7 @@ namespace ResiBuy.Server.Infrastructure.DbServices.ProductDbServices
                     var promotion = _context.Promotions.Find(promotionId);
                     if (promotion == null)
                         throw new CustomException(ExceptionErrorCode.ValidationFailed, "Không có mã khuyễn mãi này");
-                    if (!promotion.IsActive || promotion.StartDate > DateTime.UtcNow || promotion.EndDate < DateTime.UtcNow)
-
+                    if (!promotion.IsActive || promotion.StartDate > DateTime.Now || promotion.EndDate < DateTime.Now)
                         throw new CustomException(ExceptionErrorCode.ValidationFailed, "Khuyến mãi không hoạt động");
 
                     var category = _context.Categories.Find(categoryId);
@@ -186,6 +185,12 @@ namespace ResiBuy.Server.Infrastructure.DbServices.ProductDbServices
             {
                 string productName = group.Key;
                 var rows = group.Value;
+
+                if (!rows.Any())
+                {
+                    result.Errors.Add($"Sản phẩm {productName} không có dữ liệu hợp lệ");
+                    continue;
+                }
 
                 // Kiểm tra Product đã có chưa
                 var product = await _context.Products
