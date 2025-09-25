@@ -1321,7 +1321,7 @@ export default function UpdateProduct() {
                                         <TableRow sx={{ bgcolor: "grey.50" }}>
                                             <TableCell sx={{ fontWeight: "bold", minWidth: 200 }}>Phân loại</TableCell>
                                             <TableCell sx={{ fontWeight: "bold", minWidth: 120 }}>Giá (VNĐ)</TableCell>
-                                            <TableCell sx={{ fontWeight: "bold", minWidth: 120 }}>Cân nặng (g)</TableCell>
+                                            <TableCell sx={{ fontWeight: "bold", minWidth: 120 }}>Cân nặng (kg)</TableCell>
                                             <TableCell sx={{ fontWeight: "bold", minWidth: 100 }}>Số lượng</TableCell>
                                             <TableCell sx={{ fontWeight: "bold", minWidth: 100 }}>Đã bán</TableCell>
                                             <TableCell sx={{ fontWeight: "bold", minWidth: 150 }}>Ảnh sản phẩm</TableCell>
