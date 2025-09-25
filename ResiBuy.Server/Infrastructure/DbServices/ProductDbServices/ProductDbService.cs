@@ -1,6 +1,4 @@
-﻿
-using System.Linq;
-using OfficeOpenXml;
+﻿using OfficeOpenXml;
 using ResiBuy.Server.Application.Commands.ProductCommands.DTOs.Create;
 using ResiBuy.Server.Infrastructure.DbServices.BarcodeDbServices;
 
@@ -43,10 +41,15 @@ namespace ResiBuy.Server.Infrastructure.DbServices.ProductDbServices
             try
             {
                 var product = await _context.Products
+                    .Include(p => p.Store)
+                    .Include(p => p.Promotion)
+                    .Include(p => p.Category)
                     .Include(p => p.ProductDetails)
                         .ThenInclude(pd => pd.Image)
                     .Include(p => p.ProductDetails)
                         .ThenInclude(pd => pd.AdditionalData)
+                    .Include(p => p.ProductDetails)
+                        .ThenInclude(pd => pd.Reviews)
                     .Include(p => p.ProductDetails)
                         .ThenInclude(pd => pd.Barcodes) // Thêm Include cho Barcodes
                     .Include(p => p.Category)

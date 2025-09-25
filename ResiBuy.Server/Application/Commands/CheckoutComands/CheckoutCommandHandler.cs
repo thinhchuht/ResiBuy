@@ -36,8 +36,9 @@ namespace ResiBuy.Server.Application.Commands.CheckoutComands
             foreach (var pd in productDetails)
             {
                 if (pd.Product.IsOutOfStock || pd.IsOutOfStock || pd.Quantity <= 0) throw new CustomException(ExceptionErrorCode.ValidationFailed, $"Mặt hàng {pd.Product.Name} đã hết hàng.");
+                if (pd.Product.ExpiryDate.HasValue && pd.Product.ExpiryDate <= DateTime.Now) throw new CustomException(ExceptionErrorCode.ValidationFailed, $"Sản phẩm {pd.Product.Name} đã hết hạn sử dụng.");
                 var orderPds = checkoutData.Orders
-                    .SelectMany(o => o.ProductDetails)
+                .SelectMany(o => o.ProductDetails)
                     .Where(opd => opd.Id == pd.Id);
                 if (orderPds.Any(opd => opd.Quantity > pd.Quantity))
                     throw new CustomException(ExceptionErrorCode.ValidationFailed, $"Mặt hàng {pd.Product.Name} chỉ còn {pd.Quantity} sản phẩm.");
