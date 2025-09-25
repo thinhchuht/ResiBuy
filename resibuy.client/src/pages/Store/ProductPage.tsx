@@ -129,7 +129,7 @@ const ProductPage: React.FC = () => {
           MaxPrice: maxPrice || undefined,
           CategoryId: categoryId || undefined,
           PageNumber: 1,
-          PageSize: 20,
+          PageSize: 200,
         },
       });
       setProducts(response.data.items || []);
