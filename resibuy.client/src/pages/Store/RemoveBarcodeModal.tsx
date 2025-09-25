@@ -191,8 +191,9 @@ const RemoveBarcodeModal: React.FC<RemoveBarcodeModalProps> = ({
           : "Đã hoàn hàng vào kho thành công"
       );
       setBarcode("");
+      setProductDetail(null); // Reset thông tin sản phẩm
       setIsRemoveFromStore(false);
-      onClose();
+      handleClose();
     } catch (err) {
       console.error("Lỗi xóa barcode:", err);
     } finally {
@@ -209,16 +210,37 @@ const RemoveBarcodeModal: React.FC<RemoveBarcodeModalProps> = ({
     }
   };
 
+  // Reset form khi modal đóng/mở
+  const resetForm = () => {
+    setBarcode("");
+    setProductDetail(null);
+    setIsRemoveFromStore(false);
+    stopScanning();
+  };
+
+  // Handle close modal
+  const handleClose = () => {
+    resetForm();
+    onClose();
+  };
+
   useEffect(() => {
+    if (isOpen) {
+      // Reset form khi modal mở
+      setBarcode("");
+      setProductDetail(null);
+      setIsRemoveFromStore(false);
+      stopScanning();
+    }
     return () => {
       stopScanning();
     };
-  }, []);
+  }, [isOpen]);
 
   return (
     <Dialog
       open={isOpen}
-      onClose={onClose}
+      onClose={handleClose}
       maxWidth="sm"
       fullWidth
       sx={{ "& .MuiDialog-paper": { maxWidth: "600px", borderRadius: 2 } }}
@@ -231,7 +253,7 @@ const RemoveBarcodeModal: React.FC<RemoveBarcodeModalProps> = ({
         }}
       >
         Hoàn hàng
-        <IconButton onClick={onClose} disabled={isLoading}>
+        <IconButton onClick={handleClose} disabled={isLoading}>
           <CloseIcon />
         </IconButton>
       </DialogTitle>
@@ -416,7 +438,7 @@ const RemoveBarcodeModal: React.FC<RemoveBarcodeModalProps> = ({
         </Box>
       </DialogContent>
       <DialogActions sx={{ p: 2 }}>
-        <Button onClick={onClose} disabled={isLoading}>
+        <Button onClick={handleClose} disabled={isLoading}>
           Hủy
         </Button>
         <Button
