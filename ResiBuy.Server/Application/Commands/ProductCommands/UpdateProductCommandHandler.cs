@@ -87,7 +87,23 @@ namespace ResiBuy.Server.Application.Commands.ProductCommands
         {
             var existingDetails = product.ProductDetails.ToDictionary(d => d.Id);
             var allDataSets = new List<HashSet<string>>();
-
+            bool isInOrder = false;
+            foreach (var detail in product.ProductDetails)
+            {
+                foreach (var barcode in detail.Barcodes)
+                {
+                    if (barcode.OrderItemId != null)
+                    {
+                        isInOrder = true;
+                        break;
+                    }
+                }
+            }
+            if (dto.Name != product.Name && isInOrder)
+            {
+                throw new CustomException(ExceptionErrorCode.ValidationFailed,
+                    "Không thể đổi tên sản phẩm khi có chi tiết sản phẩm đã được bán.");
+            }
             // Process each product detail from DTO
             foreach (var detailDto in dto.ProductDetails)
             {
