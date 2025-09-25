@@ -125,6 +125,7 @@ namespace ResiBuy.Server.Infrastructure
                 Discount = 0,
                 StartDate = DateTime.Now,
                 EndDate = DateTime.Now.AddYears(200),
+                IsActive = true
             };
 
 

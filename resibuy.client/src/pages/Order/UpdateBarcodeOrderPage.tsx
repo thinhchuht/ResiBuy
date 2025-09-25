@@ -13,13 +13,18 @@ import {
     Divider,
     Paper,
     Alert,
+    Dialog,
+    DialogTitle,
+    DialogContent,
+    DialogActions,
 } from "@mui/material";
-import { Add as AddIcon, Delete as DeleteIcon } from "@mui/icons-material";
-import React, { useState, useEffect } from "react";
+import { Add as AddIcon, Delete as DeleteIcon, CameraAlt as CameraIcon, UploadFile as UploadFileIcon } from "@mui/icons-material";
+import React, { useState, useEffect, useRef } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import axios from "../../api/base.api";
 import { useToastify } from "../../hooks/useToastify.ts";
-
+import { BrowserMultiFormatReader } from '@zxing/library';
+import CloseIcon from "@mui/icons-material/Close";
 interface OrderItem {
     id: string;
     productId: number;
@@ -38,7 +43,7 @@ interface OrderItem {
         key: string;
         value: string;
     }>;
-    barcode: string[]; // Changed from barcodes to barcode
+    barcode: string[];
 }
 
 interface Order {
@@ -90,12 +95,20 @@ interface UpdateBarcodePayload {
 const UpdateBarcodeOrderPage: React.FC = () => {
     const { orderId } = useParams<{ orderId: string }>();
     const navigate = useNavigate();
+    const videoRef = useRef<HTMLVideoElement>(null);
+    const reader = useRef(new BrowserMultiFormatReader());
 
     const [order, setOrder] = useState<Order | null>(null);
     const [loading, setLoading] = useState(false);
     const [submitting, setSubmitting] = useState(false);
     const [itemBarcodes, setItemBarcodes] = useState<{ [key: string]: string[] }>({});
     const [newBarcodeInputs, setNewBarcodeInputs] = useState<{ [key: string]: string }>({});
+    const [openModal, setOpenModal] = useState(false);
+    const [modalType, setModalType] = useState<'webcam' | 'image' | null>(null);
+    const [selectedProductDetailId, setSelectedProductDetailId] = useState<number | null>(null);
+    const [scanning, setScanning] = useState(false);
+    const [uploadedImage, setUploadedImage] = useState<string | null>(null);
+    const [cameraError, setCameraError] = useState<string | null>(null);
 
     const { error: showError, success: showSuccess } = useToastify();
 
@@ -103,6 +116,9 @@ const UpdateBarcodeOrderPage: React.FC = () => {
         if (orderId) {
             fetchOrder();
         }
+        return () => {
+            stopScanning();
+        };
     }, [orderId]);
 
     const fetchOrder = async () => {
@@ -114,13 +130,12 @@ const UpdateBarcodeOrderPage: React.FC = () => {
                 const orderData = response.data.data as Order;
                 setOrder(orderData);
 
-                // Initialize barcode state for each item
                 const initialBarcodes: { [key: string]: string[] } = {};
                 const initialInputs: { [key: string]: string } = {};
 
                 orderData.orderItems.forEach(item => {
                     const itemKey = `${item.productDetailId}`;
-                    initialBarcodes[itemKey] = item.barcode || []; // Changed from barcodes to barcode
+                    initialBarcodes[itemKey] = item.barcode || [];
                     initialInputs[itemKey] = "";
                 });
 
@@ -137,6 +152,126 @@ const UpdateBarcodeOrderPage: React.FC = () => {
         }
     };
 
+    const openScanModal = (productDetailId: number, type: 'webcam' | 'image') => {
+        setSelectedProductDetailId(productDetailId);
+        setModalType(type);
+        setOpenModal(true);
+        setCameraError(null);
+    };
+
+    const closeModal = () => {
+        setOpenModal(false);
+        setModalType(null);
+        setSelectedProductDetailId(null);
+        setScanning(false);
+        setUploadedImage(null);
+        setCameraError(null);
+        stopScanning();
+    };
+
+    const startScanning = async () => {
+        if (!videoRef.current) {
+            setCameraError("Không tìm thấy phần tử video để quét barcode");
+            showError("Không tìm thấy phần tử video để quét barcode");
+            return;
+        }
+
+        try {
+            setScanning(true);
+            const stream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: "environment" } });
+            videoRef.current.srcObject = stream;
+            await videoRef.current.play();
+
+            reader.current.decodeFromVideoDevice(null, videoRef.current, (result, err) => {
+                if (result && selectedProductDetailId) {
+                    handleBarcodeScan(selectedProductDetailId, result.getText());
+                    closeModal();
+                }
+                if (err && !(err instanceof Error)) {
+                    console.error("Lỗi khi quét barcode:", err);
+                    if (err.name === 'NotAllowedError') {
+                        setCameraError("Quyền truy cập webcam bị từ chối. Vui lòng cấp quyền trong cài đặt trình duyệt.");
+                    } else if (err.name === 'NotFoundError') {
+                        setCameraError("Không tìm thấy webcam trên thiết bị.");
+                    } else {
+                        setCameraError("Lỗi khi quét barcode. Vui lòng thử lại!");
+                    }
+                    closeModal();
+                }
+            });
+        } catch (err) {
+            console.error("Lỗi truy cập webcam:", err);
+            if (err instanceof Error) {
+                if (err.name === 'NotAllowedError') {
+                    setCameraError("Quyền truy cập webcam bị từ chối. Vui lòng cấp quyền trong cài đặt trình duyệt.");
+                } else if (err.name === 'NotFoundError') {
+                    setCameraError("Không tìm thấy webcam trên thiết bị.");
+                } else {
+                    setCameraError("Không thể khởi động webcam. Vui lòng kiểm tra thiết bị và thử lại!");
+                }
+            }
+            setScanning(false);
+        }
+    };
+
+    const stopScanning = () => {
+        setScanning(false);
+        if (videoRef.current && videoRef.current.srcObject) {
+            const stream = videoRef.current.srcObject as MediaStream;
+            stream.getTracks().forEach(track => track.stop());
+            videoRef.current.srcObject = null;
+        }
+        reader.current.reset();
+    };
+
+    const handleImageUpload = async (event: React.ChangeEvent<HTMLInputElement>) => {
+        const file = event.target.files?.[0];
+        if (!file || !selectedProductDetailId) return;
+
+        try {
+            const img = new Image();
+            img.src = URL.createObjectURL(file);
+            setUploadedImage(img.src);
+            img.onload = async () => {
+                try {
+                    const result = await reader.current.decodeFromImage(img);
+                    handleBarcodeScan(selectedProductDetailId, result.getText());
+                    closeModal();
+                } catch (err) {
+                    console.error("Lỗi khi quét barcode từ ảnh:", err);
+                    showError("Không thể quét barcode từ ảnh. Vui lòng thử lại!");
+                } finally {
+                    URL.revokeObjectURL(img.src);
+                }
+            };
+        } catch (err) {
+            console.error("Lỗi khi xử lý ảnh:", err);
+            showError("Lỗi khi xử lý ảnh. Vui lòng thử lại!");
+        }
+    };
+
+    const handleBarcodeScan = (productDetailId: number, barcode: string) => {
+        const itemKey = `${productDetailId}`;
+        const currentBarcodes = itemBarcodes[itemKey] || [];
+
+        if (currentBarcodes.includes(barcode)) {
+            showError("Mã vạch này đã tồn tại");
+            return;
+        }
+
+        const quantity = order?.orderItems.find(item => item.productDetailId === productDetailId)?.quantity || 0;
+        if (currentBarcodes.length >= quantity) {
+            showError(`Không thể thêm mã vạch. Số lượng mã vạch tối đa là ${quantity}`);
+            return;
+        }
+
+        setItemBarcodes(prev => ({
+            ...prev,
+            [itemKey]: [...currentBarcodes, barcode]
+        }));
+        showSuccess(`Đã quét mã vạch: ${barcode}`);
+    };
+
     const addBarcode = (productDetailId: number, quantity: number) => {
         const itemKey = `${productDetailId}`;
         const newBarcode = newBarcodeInputs[itemKey]?.trim();
@@ -146,23 +281,19 @@ const UpdateBarcodeOrderPage: React.FC = () => {
             return;
         }
 
-        const currentBarcodes = itemBarcodes[itemKey] || [];
-
-        // Check if barcode already exists
-        if (currentBarcodes.includes(newBarcode)) {
+        if (itemBarcodes[itemKey]?.includes(newBarcode)) {
             showError("Mã vạch này đã tồn tại");
             return;
         }
 
-        // Check if we've reached the quantity limit
-        if (currentBarcodes.length >= quantity) {
+        if ((itemBarcodes[itemKey]?.length || 0) >= quantity) {
             showError(`Không thể thêm mã vạch. Số lượng mã vạch tối đa là ${quantity}`);
             return;
         }
 
         setItemBarcodes(prev => ({
             ...prev,
-            [itemKey]: [...currentBarcodes, newBarcode]
+            [itemKey]: [...(prev[itemKey] || []), newBarcode]
         }));
 
         setNewBarcodeInputs(prev => ({
@@ -197,7 +328,6 @@ const UpdateBarcodeOrderPage: React.FC = () => {
     const handleUpdate = async () => {
         if (!order) return;
 
-        // Validate that all items have the required number of barcodes
         const incompleteItems = order.orderItems.filter(item => {
             const itemKey = `${item.productDetailId}`;
             const currentBarcodes = itemBarcodes[itemKey] || [];
@@ -213,12 +343,11 @@ const UpdateBarcodeOrderPage: React.FC = () => {
         try {
             setSubmitting(true);
 
-            // Prepare payload
             const payload: UpdateBarcodePayload = {
                 id: order.id,
                 storeId: order.store.id,
-                voucherId: undefined, // Add voucher logic if needed
-                note: undefined, // Add note logic if needed
+                voucherId: undefined,
+                note: undefined,
                 totalPrice: order.totalPrice,
                 shippingFee: order.shippingFee,
                 items: order.orderItems.map(item => ({
@@ -231,7 +360,7 @@ const UpdateBarcodeOrderPage: React.FC = () => {
 
             await axios.post("/api/Order/UpdateBarCodeToOrder", payload);
             showSuccess("Cập nhật mã vạch thành công");
-            navigate(-1); // Go back to previous page
+            navigate(-1);
         } catch (error: any) {
             console.error("Lỗi khi cập nhật mã vạch:", error);
             showError(
@@ -297,7 +426,6 @@ const UpdateBarcodeOrderPage: React.FC = () => {
                 />
                 <CardContent>
                     <Stack spacing={3}>
-                        {/* Order Information */}
                         <Paper elevation={1} sx={{ p: 2 }}>
                             <Typography variant="h6" gutterBottom>
                                 Thông tin đơn hàng
@@ -318,7 +446,6 @@ const UpdateBarcodeOrderPage: React.FC = () => {
 
                         <Divider />
 
-                        {/* Order Items */}
                         <Typography variant="h6">Sản phẩm và mã vạch</Typography>
 
                         <Alert severity="info">
@@ -360,7 +487,6 @@ const UpdateBarcodeOrderPage: React.FC = () => {
                                                     />
                                                 </Box>
 
-                                                {/* Current Barcodes */}
                                                 <Box mb={2}>
                                                     {currentBarcodes.map((barcode, barcodeIndex) => (
                                                         <Chip
@@ -375,24 +501,47 @@ const UpdateBarcodeOrderPage: React.FC = () => {
                                                     ))}
                                                 </Box>
 
-                                                {/* Add New Barcode */}
                                                 {currentBarcodes.length < item.quantity && (
-                                                    <Stack direction="row" spacing={1} alignItems="center">
-                                                        <TextField
-                                                            size="small"
-                                                            placeholder={`Nhập mã vạch (còn thiếu ${item.quantity - currentBarcodes.length})`}
-                                                            value={newBarcodeInputs[itemKey] || ""}
-                                                            onChange={(e) => handleBarcodeInputChange(item.productDetailId, e.target.value)}
-                                                            onKeyPress={(e) => handleBarcodeInputKeyPress(item.productDetailId, item.quantity, e)}
-                                                            fullWidth
-                                                        />
-                                                        <IconButton
-                                                            color="primary"
-                                                            onClick={() => addBarcode(item.productDetailId, item.quantity)}
-                                                            disabled={!canAddBarcode(item.productDetailId, item.quantity)}
-                                                        >
-                                                            <AddIcon />
-                                                        </IconButton>
+                                                    <Stack spacing={2}>
+                                                        <Stack direction="row" spacing={1} alignItems="center">
+                                                            <TextField
+                                                                size="small"
+                                                                placeholder={`Nhập mã vạch (còn thiếu ${item.quantity - currentBarcodes.length})`}
+                                                                value={newBarcodeInputs[itemKey] || ""}
+                                                                onChange={(e) => handleBarcodeInputChange(item.productDetailId, e.target.value)}
+                                                                onKeyPress={(e) => handleBarcodeInputKeyPress(item.productDetailId, item.quantity, e)}
+                                                                fullWidth
+                                                                disabled={openModal}
+                                                            />
+                                                            <IconButton
+                                                                color="primary"
+                                                                onClick={() => addBarcode(item.productDetailId, item.quantity)}
+                                                                disabled={!canAddBarcode(item.productDetailId, item.quantity) || openModal}
+                                                            >
+                                                                <AddIcon />
+                                                            </IconButton>
+                                                        </Stack>
+
+                                                        <Stack direction="row" spacing={1}>
+                                                            <Button
+                                                                variant="outlined"
+                                                                startIcon={<CameraIcon />}
+                                                                onClick={() => openScanModal(item.productDetailId, 'webcam')}
+                                                                disabled={openModal}
+                                                                size="small"
+                                                            >
+                                                                Quét Barcode
+                                                            </Button>
+                                                            <Button
+                                                                variant="outlined"
+                                                                startIcon={<UploadFileIcon />}
+                                                                onClick={() => openScanModal(item.productDetailId, 'image')}
+                                                                disabled={openModal}
+                                                                size="small"
+                                                            >
+                                                                Tải ảnh
+                                                            </Button>
+                                                        </Stack>
                                                     </Stack>
                                                 )}
 
@@ -408,7 +557,84 @@ const UpdateBarcodeOrderPage: React.FC = () => {
                             );
                         })}
 
-                        {/* Action Buttons */}
+                        <Dialog open={openModal} onClose={closeModal} maxWidth="sm" fullWidth>
+                            <DialogTitle sx={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+                                {modalType === 'webcam' ? 'Quét Barcode bằng Webcam' : 'Quét Barcode từ Ảnh'}
+                                <IconButton onClick={closeModal}>
+                                    <CloseIcon />
+                                </IconButton>
+                            </DialogTitle>
+                            <DialogContent>
+                                {cameraError && (
+                                    <Alert severity="error" sx={{ mb: 2 }}>
+                                        {cameraError}
+                                    </Alert>
+                                )}
+                                {modalType === 'webcam' && !cameraError && (
+                                    <Box>
+                                        <Box
+                                            sx={{
+                                                width: "100%",
+                                                height: 200,
+                                                bgcolor: "#000",
+                                                borderRadius: 2,
+                                                overflow: "hidden",
+                                                mb: 2,
+                                            }}
+                                        >
+                                            <video
+                                                ref={videoRef}
+                                                style={{ width: "100%", height: "100%" }}
+                                            />
+                                        </Box>
+                                        <Button
+                                            variant="contained"
+                                            onClick={scanning ? stopScanning : startScanning}
+                                            disabled={cameraError !== null}
+                                            sx={{ width: "100%" }}
+                                        >
+                                            {scanning ? "Dừng Quét" : "Bắt Đầu Quét"}
+                                        </Button>
+                                        {scanning && (
+                                            <Typography variant="body2" color="text.secondary" sx={{ mt: 2 }}>
+                                                Đang quét... Đưa mã vạch vào khung hình.
+                                            </Typography>
+                                        )}
+                                    </Box>
+                                )}
+                                {modalType === 'image' && (
+                                    <Stack spacing={2}>
+                                        {uploadedImage ? (
+                                            <Box>
+                                                <img
+                                                    src={uploadedImage}
+                                                    alt="Uploaded Barcode"
+                                                    style={{ width: "100%", maxWidth: "400px", borderRadius: "8px" }}
+                                                />
+                                            </Box>
+                                        ) : (
+                                            <Button
+                                                variant="outlined"
+                                                startIcon={<UploadFileIcon />}
+                                                component="label"
+                                            >
+                                                Chọn ảnh barcode
+                                                <input
+                                                    hidden
+                                                    accept="image/*"
+                                                    type="file"
+                                                    onChange={handleImageUpload}
+                                                />
+                                            </Button>
+                                        )}
+                                    </Stack>
+                                )}
+                            </DialogContent>
+                            <DialogActions>
+                                <Button onClick={closeModal}>Hủy</Button>
+                            </DialogActions>
+                        </Dialog>
+
                         <Stack direction="row" spacing={2} justifyContent="flex-end">
                             <Button variant="outlined" onClick={() => navigate(-1)}>
                                 Hủy

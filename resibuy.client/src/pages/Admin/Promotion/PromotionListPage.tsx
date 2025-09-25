@@ -129,11 +129,11 @@ const PromotionListPage: React.FC = () => {
         } finally {
             setLoading(false);
         }
-    }, []);
+    }, [showError]);
 
     useEffect(() => {
         loadPromotions(filters);
-    }, [loadPromotions, filters]);
+    }, [ ]);
 
     const handleSearch = () => {
         const newFilters = {
@@ -230,7 +230,7 @@ const PromotionListPage: React.FC = () => {
     };
 
     return (
-      <Box p={4} sx={{ bgcolor: "white", minHeight: "100vh" }}>
+        <Box p={4} sx={{ bgcolor: "white", minHeight: "100vh" }}>
             <Stack spacing={3}>
                 {/* Header */}
                 <Box display="flex" justifyContent="space-between" alignItems="center">
@@ -380,23 +380,35 @@ const PromotionListPage: React.FC = () => {
                                                                 />
                                                             </TableCell>
                                                             <TableCell align="center">
-                                                                <Switch
-                                                                    checked={promotion.isActive}
-                                                                    onChange={() =>
-                                                                        handleStatusToggle(promotion.id, promotion.isActive)
-                                                                    }
-                                                                    size="small"
-                                                                />
+                                                                {promotion.id !== 1 ? (
+                                                                    <Switch
+                                                                        checked={promotion.isActive}
+                                                                        onChange={() =>
+                                                                            handleStatusToggle(promotion.id, promotion.isActive)
+                                                                        }
+                                                                        size="small"
+                                                                    />
+                                                                ) : (
+                                                                    <Typography variant="body2" color="text.secondary">
+                                                                        Không khả dụng
+                                                                    </Typography>
+                                                                )}
                                                             </TableCell>
                                                             <TableCell align="center">
-                                                                <Tooltip title="Chỉnh sửa">
-                                                                    <IconButton
-                                                                        size="small"
-                                                                        onClick={() => handleEditPromotion(promotion.id)}
-                                                                    >
-                                                                        <EditIcon />
-                                                                    </IconButton>
-                                                                </Tooltip>
+                                                                {promotion.id !== 1 ? (
+                                                                    <Tooltip title="Chỉnh sửa">
+                                                                        <IconButton
+                                                                            size="small"
+                                                                            onClick={() => handleEditPromotion(promotion.id)}
+                                                                        >
+                                                                            <EditIcon />
+                                                                        </IconButton>
+                                                                    </Tooltip>
+                                                                ) : (
+                                                                    <Typography variant="body2" color="text.secondary">
+                                                                        Không khả dụng
+                                                                    </Typography>
+                                                                )}
                                                             </TableCell>
                                                         </TableRow>
                                                     );

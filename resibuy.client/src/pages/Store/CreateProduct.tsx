@@ -364,66 +364,51 @@ export default function CreateProduct() {
 
         return isValid;
     };
+const validateProductDetails = (): boolean => {
+    let isValid = true;
+    const newPriceErrors: ValidationErrors = {};
+    const newWeightErrors: ValidationErrors = {};
+    const newQuantityErrors: ValidationErrors = {};
 
-    const validateProductDetails = (): boolean => {
-        let isValid = true;
-        const newPriceErrors: ValidationErrors = {};
-        const newWeightErrors: ValidationErrors = {};
-        const newQuantityErrors: ValidationErrors = {};
-        const newBarcodeErrors: ValidationErrors = {};
-
-        // Collect all barcodes to check for duplicates across details
-        const allBarcodes: string[] = [];
-
-        listProductDetail.forEach((detail, index) => {
-            // Validate price
-            if (detail.price <= 0) {
-                newPriceErrors[index] = "Giá phải lớn hơn 0";
-                isValid = false;
-            }
-
-            // Validate weight
-            if (detail.weight < 0) {
-                newWeightErrors[index] = "Cân nặng phải từ 0 trở lên";
-                isValid = false;
-            }
-
-            // Validate quantity
-            if (detail.quantity < 0) {
-                newQuantityErrors[index] = "Số lượng phải từ 0 trở lên";
-                isValid = false;
-            }
-
-            // Validate business logic: out of stock should have quantity 0
-            if (detail.isOutOfStock && detail.quantity > 0) {
-                newQuantityErrors[index] = "Sản phẩm đã hết hàng thì số lượng phải bằng 0";
-                isValid = false;
-            }
-
-            // Validate image
-            if (!detail.image?.url) {
-                showError(`Vui lòng tải ảnh cho tất cả các chi tiết sản phẩm`);
-                isValid = false;
-            }
-
-            // Validate barcodes
-           
-        });
-
-      
-       
-
-        setPriceErrors(newPriceErrors);
-        setWeightErrors(newWeightErrors);
-        setQuantityErrors(newQuantityErrors);
-       
-
-        if (!isValid) {
-            showError("Vui lòng kiểm tra lại thông tin chi tiết sản phẩm");
+    listProductDetail.forEach((detail, index) => {
+        // Validate price
+        if (detail.price <= 0) {
+            newPriceErrors[index] = "Giá phải lớn hơn 0";
+            isValid = false;
         }
 
-        return isValid;
-    };
+        // Validate weight
+        if (detail.weight <= 0) {
+            newWeightErrors[index] = "Cân nặng phải lớn hơn 0";
+            isValid = false;
+        }
+
+        // Validate quantity
+        if (!detail.isOutOfStock && detail.quantity <= 0) {
+            newQuantityErrors[index] = "Số lượng phải lớn hơn 0 ";
+            isValid = false;
+        } else if (detail.isOutOfStock && detail.quantity !== 0) {
+            newQuantityErrors[index] = "Số lượng phải bằng 0 khi sản phẩm hết hàng";
+            isValid = false;
+        }
+
+        // Validate image
+        if (!detail.image?.url) {
+            showError(`Vui lòng tải ảnh cho tất cả các chi tiết sản phẩm`);
+            isValid = false;
+        }
+    });
+
+    setPriceErrors(newPriceErrors);
+    setWeightErrors(newWeightErrors);
+    setQuantityErrors(newQuantityErrors);
+
+    if (!isValid) {
+        showError("Vui lòng kiểm tra lại thông tin chi tiết sản phẩm");
+    }
+
+    return isValid;
+};
 
     // Individual field validation
     const validatePrice = (price: number, index: number) => {
@@ -438,29 +423,32 @@ export default function CreateProduct() {
         setPriceErrors(newErrors);
     };
 
-    const validateWeight = (weight: number, index: number) => {
-        const newErrors = { ...weightErrors };
+  const validateWeight = (weight: number, index: number) => {
+    const newErrors = { ...weightErrors };
 
-        if (weight < 0) {
-            newErrors[index] = "Cân nặng không được nhỏ hơn 0";
-        } else {
-            delete newErrors[index];
-        }
+    if (weight <= 0) {
+        newErrors[index] = "Cân nặng phải lớn hơn 0";
+    } else {
+        delete newErrors[index];
+    }
 
-        setWeightErrors(newErrors);
-    };
+    setWeightErrors(newErrors);
+};
 
-    const validateQuantity = (quantity: number, index: number) => {
-        const newErrors = { ...quantityErrors };
+  const validateQuantity = (quantity: number, index: number) => {
+    const newErrors = { ...quantityErrors };
+    const isOutOfStock = listProductDetail[index].isOutOfStock;
 
-        if (quantity < 0) {
-            newErrors[index] = "Số lượng không được nhỏ hơn 0";
-        } else {
-            delete newErrors[index];
-        }
+    if (!isOutOfStock && quantity <= 0) {
+        newErrors[index] = "Số lượng phải lớn hơn 0 khi sản phẩm còn hàng";
+    } else if (isOutOfStock && quantity !== 0) {
+        newErrors[index] = "Số lượng phải bằng 0 khi sản phẩm hết hàng";
+    } else {
+        delete newErrors[index];
+    }
 
-        setQuantityErrors(newErrors);
-    };
+    setQuantityErrors(newErrors);
+};
 
     // Generate product combinations
     const generateProductDetail = () => {
@@ -1042,9 +1030,9 @@ export default function CreateProduct() {
                                         <TableRow sx={{ bgcolor: "grey.50" }}>
                                             <TableCell sx={{ fontWeight: "bold", minWidth: 200 }}>Phân loại</TableCell>
                                             <TableCell sx={{ fontWeight: "bold", minWidth: 120 }}>Giá (VNĐ)</TableCell>
-                                            <TableCell sx={{ fontWeight: "bold", minWidth: 120 }}>Cân nặng (g)</TableCell>
+                                            <TableCell sx={{ fontWeight: "bold", minWidth: 120 }}>Cân nặng (kg)</TableCell>
                                             <TableCell sx={{ fontWeight: "bold", minWidth: 100 }}>Số lượng</TableCell>
-                                            <TableCell sx={{ fontWeight: "bold", minWidth: 100 }}>Hết hàng</TableCell>
+                                          
                                            
                                             <TableCell sx={{ fontWeight: "bold", minWidth: 150 }}>Ảnh sản phẩm</TableCell>
                                         </TableRow>
@@ -1077,73 +1065,63 @@ export default function CreateProduct() {
                                                         }}
                                                     />
                                                 </TableCell>
-                                                <TableCell>
-                                                    <TextField
-                                                        size="small"
-                                                        type="number"
-                                                        value={productDetail.weight}
-                                                        error={!!weightErrors[index]}
-                                                        helperText={weightErrors[index]}
-                                                        inputProps={{ min: 0 }}
-                                                        onChange={(e) => {
-                                                            const newWeight = Number(e.target.value);
-                                                            if (newWeight >= 0) {
-                                                                updateProductDetail(index, 'weight', newWeight);
-                                                            }
-                                                        }}
-                                                        onBlur={() => validateWeight(productDetail.weight, index)}
-                                                        sx={{
-                                                            "& .MuiOutlinedInput-root": { borderRadius: 2 },
-                                                        }}
-                                                    />
-                                                </TableCell>
-                                                <TableCell>
-                                                    <TextField
-                                                        size="small"
-                                                        type="number"
-                                                        value={productDetail.quantity}
-                                                        error={!!quantityErrors[index]}
-                                                        helperText={quantityErrors[index]}
-                                                        inputProps={{ min: 0 }}
-                                                        onChange={(e) => {
-                                                            const newQuantity = Number(e.target.value);
-                                                            if (newQuantity >= 0) {
-                                                                updateProductDetail(index, 'quantity', newQuantity);
-                                                                // Auto-generate or clear barcodes based on quantity
-                                                                if (newQuantity === 0) {
-                                                                    updateProductDetail(index, 'barcodes', []);
-                                                                } else if (productDetail.barcodes.length !== newQuantity) {
-                                                                    // Generate empty barcode slots
-                                                                    const newBarcodes = Array(newQuantity).fill('').map((_, i) =>
-                                                                        productDetail.barcodes[i] || ''
-                                                                    );
-                                                                    updateProductDetail(index, 'barcodes', newBarcodes);
-                                                                }
-                                                            }
-                                                        }}
-                                                        onBlur={() => validateQuantity(productDetail.quantity, index)}
-                                                        sx={{
-                                                            "& .MuiOutlinedInput-root": { borderRadius: 2 },
-                                                        }}
-                                                    />
-                                                </TableCell>
-                                                <TableCell>
-                                                    <Checkbox
-                                                        checked={productDetail.isOutOfStock}
-                                                        onChange={(e) => {
-                                                            updateProductDetail(index, 'isOutOfStock', e.target.checked);
-                                                            // If marking as out of stock, set quantity to 0
-                                                            if (e.target.checked) {
-                                                                updateProductDetail(index, 'quantity', 0);
-                                                                updateProductDetail(index, 'barcodes', []);
-                                                            }
-                                                        }}
-                                                        color="primary"
-                                                    />
-                                                </TableCell>
-                                                <TableCell>
-                                                    
-                                                </TableCell>
+                                              <TableCell>
+    <TextField
+        size="small"
+        type="number"
+        value={productDetail.weight}
+        error={!!weightErrors[index]}
+        helperText={weightErrors[index]}
+        inputProps={{ min: 0, step: 0.01 }} // Cho phép số thập phân với 2 chữ số
+        onChange={(e) => {
+            const newWeight = Number(e.target.value);
+            updateProductDetail(index, 'weight', newWeight);
+        }}
+        onBlur={() => validateWeight(productDetail.weight, index)}
+        sx={{
+            "& .MuiOutlinedInput-root": { borderRadius: 2 },
+        }}
+    />
+</TableCell>
+                                               <TableCell>
+    <TextField
+        size="small"
+        type="number"
+        value={productDetail.quantity}
+        error={!!quantityErrors[index]}
+        helperText={quantityErrors[index]}
+        slotProps={{
+      input: {
+        min: productDetail.isOutOfStock ? 0 : 1, // min=1 nếu còn hàng, cho phép 0 nếu hết hàng
+        step: 1,
+        onInput: (e: React.ChangeEvent<HTMLInputElement>) => {
+          // Ép chỉ cho nhập số nguyên dương
+          const val = e.target.value.replace(/[^0-9]/g, ""); 
+          e.target.value = val === "" ? "" : String(parseInt(val, 10));
+        },
+      },
+    }}
+        onChange={(e) => {
+            const newQuantity = Number(e.target.value);
+            updateProductDetail(index, 'quantity', newQuantity);
+            // Auto-generate or clear barcodes based on quantity
+            if (newQuantity === 0) {
+                updateProductDetail(index, 'barcodes', []);
+            } else if (productDetail.barcodes.length !== newQuantity) {
+                // Generate empty barcode slots
+                const newBarcodes = Array(newQuantity).fill('').map((_, i) =>
+                    productDetail.barcodes[i] || ''
+                );
+                updateProductDetail(index, 'barcodes', newBarcodes);
+            }
+        }}
+        onBlur={() => validateQuantity(productDetail.quantity, index)}
+        sx={{
+            "& .MuiOutlinedInput-root": { borderRadius: 2 },
+        }}
+    />
+</TableCell>
+                                           
                                                 <TableCell>
                                                     <Stack spacing={2} alignItems="center" sx={{ minWidth: 120 }}>
                                                         {uploadingImages[index] ? (

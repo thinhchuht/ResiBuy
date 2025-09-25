@@ -223,9 +223,19 @@ namespace ResiBuy.Server.Services.VNPayServices
                     }
                 }
 
-                order.PaymentStatus = PaymentStatus.Failed;
-                order.Status = OrderStatus.Cancelled;
-                order.UpdateAt = DateTime.Now;
+                // reset barcode OrderItemId to null for this order
+                var barcodes = await _dbContext.Barcodes
+                    .Include(b => b.OrderItem)
+                    .Where(b => b.OrderItem != null && b.OrderItem.OrderId == orderId)
+                    .ToListAsync();
+
+                foreach (var barcode in barcodes)
+                {
+                    barcode.OrderItemId = null;
+                }
+
+                // delete the order completely
+                _dbContext.Orders.Remove(order);
 
                 await _dbContext.SaveChangesAsync();
                 await tx.CommitAsync();

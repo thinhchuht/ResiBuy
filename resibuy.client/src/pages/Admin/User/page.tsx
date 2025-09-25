@@ -86,14 +86,14 @@ function UserStatsCards({ refreshTrigger }: { refreshTrigger: number }) {
       iconBgColor: "#fee2e2",
       valueColor: "#ef4444",
     },
-    {
-      title: "Tổng Báo Cáo",
-      value: stats.totalReportCount.toString(),
-      icon: UserIcon,
-      iconColor: "#d81b60",
-      iconBgColor: "#fce4ec",
-      valueColor: "#d81b60",
-    },
+    // {
+    //   title: "Tổng Báo Cáo",
+    //   value: stats.totalReportCount.toString(),
+    //   icon: UserIcon,
+    //   iconColor: "#d81b60",
+    //   iconBgColor: "#fce4ec",
+    //   valueColor: "#d81b60",
+    // },
   ];
 
   return (

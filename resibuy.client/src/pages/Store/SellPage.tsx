@@ -18,7 +18,7 @@ import {
   Card,
   CardContent,
 } from "@mui/material";
-import { Add, Close, Delete, QrCodeScanner } from "@mui/icons-material";
+import { Add, Close, Delete, QrCodeScanner, DeleteOutline } from "@mui/icons-material";
 import productApi from "../../api/product.api";
 import cartApi from "../../api/cart.api";
 import type { ProductDto } from "../../types/product";
@@ -26,6 +26,7 @@ import ProductDetailDialog from "../Store/ProductDetailDialog";
 import ProductSearchBox from "../Store/ProductSearchBox";
 import CheckoutSidebar from "../Store/CheckoutSidebar";
 import BarcodeScanModal from "../Store/BarcodeScanModal";
+import RemoveBarcodeModal from "../Store/RemoveBarcodeModal";
 import {
   Dialog,
   DialogTitle,
@@ -35,7 +36,9 @@ import {
 import { useToastify } from "../../hooks/useToastify";
 
 // Hàm để lưu scannedBarcodes vào localStorage
-const saveScannedBarcodesToLocalStorage = (scannedBarcodes: Record<string, { itemId: string; barcode: string }[]>) => {
+const saveScannedBarcodesToLocalStorage = (
+  scannedBarcodes: Record<string, { itemId: string; barcode: string }[]>
+) => {
   try {
     localStorage.setItem("scannedBarcodes", JSON.stringify(scannedBarcodes));
   } catch (err) {
@@ -44,7 +47,10 @@ const saveScannedBarcodesToLocalStorage = (scannedBarcodes: Record<string, { ite
 };
 
 // Hàm để lấy scannedBarcodes từ localStorage
-const loadScannedBarcodesFromLocalStorage = (): Record<string, { itemId: string; barcode: string }[]> => {
+const loadScannedBarcodesFromLocalStorage = (): Record<
+  string,
+  { itemId: string; barcode: string }[]
+> => {
   try {
     const stored = localStorage.getItem("scannedBarcodes");
     return stored ? JSON.parse(stored) : {};
@@ -83,15 +89,17 @@ const SellPage: React.FC = () => {
   const [items, setItems] = useState<OrderItem[]>([]);
   const [products, setProducts] = useState<ProductDto[]>([]);
   const [loading, setLoading] = useState(false);
-  const [selectedProduct, setSelectedProduct] = useState<ProductDto | undefined>(undefined);
+  const [selectedProduct, setSelectedProduct] = useState<
+    ProductDto | undefined
+  >(undefined);
   const [openConfirm, setOpenConfirm] = useState(false);
   const [tabToDelete, setTabToDelete] = useState<number | null>(null);
   const [openBarcodeModal, setOpenBarcodeModal] = useState(false);
+  const [openRemoveBarcodeModal, setOpenRemoveBarcodeModal] = useState(false);
   const [scannedBarcodes, setScannedBarcodes] = useState<
     Record<string, { itemId: string; barcode: string }[]>
   >(() => loadScannedBarcodesFromLocalStorage());
 
-  // Đồng bộ scannedBarcodes với localStorage mỗi khi thay đổi
   useEffect(() => {
     console.log("Đồng bộ scannedBarcodes với localStorage:", scannedBarcodes);
     saveScannedBarcodesToLocalStorage(scannedBarcodes);
@@ -168,7 +176,10 @@ const SellPage: React.FC = () => {
             : undefined,
         })) || [];
       setItems(loadedItems);
-      console.log("Giữ nguyên scannedBarcodes từ localStorage:", scannedBarcodes);
+      console.log(
+        "Giữ nguyên scannedBarcodes từ localStorage:",
+        scannedBarcodes
+      );
     } catch (err) {
       console.error("Lỗi load giỏ hàng:", err);
       toast.error("Lỗi khi tải giỏ hàng!");
@@ -198,19 +209,6 @@ const SellPage: React.FC = () => {
     } catch (err) {
       console.error("Lỗi tạo giỏ hàng mới:", err);
       toast.error("Lỗi khi tạo đơn hàng mới!");
-    }
-  };
-
-  const handleChangeQuantity = async (item: OrderItem, isAdd: boolean) => {
-    try {
-      const cartId = tabs[currentTab]?.id;
-      if (!cartId) return;
-      await cartApi.addItemToCart(cartId, item.productDetailId, 1, isAdd);
-      await loadCart(cartId);
-      toast.success(isAdd ? "Tăng số lượng thành công!" : "Giảm số lượng thành công!");
-    } catch (err: any) {
-      const msg = err?.response?.data?.message || (isAdd ? "Tăng số lượng thất bại!" : "Giảm số lượng thất bại!");
-      toast.error(msg);
     }
   };
 
@@ -244,7 +242,10 @@ const SellPage: React.FC = () => {
         return newBarcodes;
       });
       if (renumbered.length > 0) {
-        const nextIndex = Math.max(0, Math.min(tabToDelete, renumbered.length - 1));
+        const nextIndex = Math.max(
+          0,
+          Math.min(tabToDelete, renumbered.length - 1)
+        );
         setCurrentTab(nextIndex);
         await loadCart(renumbered[nextIndex].id);
       } else {
@@ -280,6 +281,28 @@ const SellPage: React.FC = () => {
     }
   };
 
+  const handleBarcodeRemoved = async (barcode: string) => {
+    const cartId = tabs[currentTab]?.id;
+    if (!cartId) {
+      toast.error("Không tìm thấy giỏ hàng!");
+      return;
+    }
+    setScannedBarcodes((prev) => {
+      const newBarcodes = { ...prev };
+      newBarcodes[cartId] = (newBarcodes[cartId] || []).filter(
+        (entry) => entry.barcode !== barcode
+      );
+      if (newBarcodes[cartId]?.length === 0) {
+        delete newBarcodes[cartId];
+      }
+      console.log("Cập nhật scannedBarcodes sau khi xóa barcode:", newBarcodes);
+      saveScannedBarcodesToLocalStorage(newBarcodes);
+      return newBarcodes;
+    });
+    await loadCart(cartId);
+    toast.success("Xóa barcode thành công!");
+  };
+
   const total = items.reduce(
     (sum, i) => sum + i.price * i.quantity * (1 - i.discount / 100),
     0
@@ -288,8 +311,8 @@ const SellPage: React.FC = () => {
     const promotion =
       item.productDetail?.product?.promotion &&
       item.productDetail.product.promotion.isActive
-      ? item.productDetail.product.promotion
-      : undefined;
+        ? item.productDetail.product.promotion
+        : undefined;
     const discount = promotion ? promotion.discount : item.discount;
     const discountAmount = item.price * item.quantity * (discount / 100);
     return sum + discountAmount;
@@ -320,20 +343,29 @@ const SellPage: React.FC = () => {
             >
               Bán tại quầy
             </Typography>
-            {/* <ProductSearchBox
-              onSelectProduct={(product) => setSelectedProduct(product)}
-            /> */}
             {tabs.length > 0 && (
-              <Button
-                variant="contained"
-                color="primary"
-                onClick={() => setOpenBarcodeModal(true)}
-                startIcon={<QrCodeScanner />}
-                sx={{ ml: 2, fontWeight: 600, boxShadow: "none" }}
-              >
-                Quét Barcode
-              </Button>
+              <>
+                <Button
+                  variant="contained"
+                  color="primary"
+                  onClick={() => setOpenBarcodeModal(true)}
+                  startIcon={<QrCodeScanner />}
+                  sx={{ ml: 2, fontWeight: 600, boxShadow: "none" }}
+                >
+                  Quét Barcode
+                </Button>
+              
+              </>
             )}
+              <Button
+                  variant="contained"
+                  color="error"
+                  onClick={() => setOpenRemoveBarcodeModal(true)}
+                  startIcon={<DeleteOutline />}
+                  sx={{ ml: 2, fontWeight: 600, boxShadow: "none" }}
+                >
+                 Hoàn hàng
+                </Button>
             <Button
               variant="contained"
               color="primary"
@@ -343,6 +375,7 @@ const SellPage: React.FC = () => {
             >
               Tạo đơn hàng mới
             </Button>
+
           </Toolbar>
         </AppBar>
 
@@ -424,8 +457,8 @@ const SellPage: React.FC = () => {
                   const promotion =
                     item.productDetail?.product?.promotion &&
                     item.productDetail.product.promotion.isActive
-                    ? item.productDetail.product.promotion
-                    : undefined;
+                      ? item.productDetail.product.promotion
+                      : undefined;
                   const discount = promotion
                     ? promotion.discount
                     : item.discount;
@@ -434,10 +467,10 @@ const SellPage: React.FC = () => {
                   const detailInfo =
                     item.productDetail?.additionalData &&
                     item.productDetail.additionalData.length > 0
-                    ? item.productDetail.additionalData
-                        .map((ad: any) => `${ad.key}: ${ad.value}`)
-                        .join(", ")
-                    : "";
+                      ? item.productDetail.additionalData
+                          .map((ad: any) => `${ad.key}: ${ad.value}`)
+                          .join(", ")
+                      : "";
 
                   return (
                     <TableRow key={item.id} hover>
@@ -479,30 +512,9 @@ const SellPage: React.FC = () => {
                         </Typography>
                       </TableCell>
                       <TableCell align="center">
-                        <Box
-                          display="flex"
-                          alignItems="center"
-                          justifyContent="center"
-                        >
-                          <IconButton
-                            size="small"
-                            onClick={() => handleChangeQuantity(item, false)}
-                            disabled={item.quantity <= 1}
-                            sx={{ bgcolor: "#f5f6fa", borderRadius: 1 }}
-                          >
-                            -
-                          </IconButton>
-                          <Typography mx={1} fontWeight={600}>
-                            {item.quantity}
-                          </Typography>
-                          <IconButton
-                            size="small"
-                            onClick={() => handleChangeQuantity(item, true)}
-                            sx={{ bgcolor: "#f5f6fa", borderRadius: 1 }}
-                          >
-                            +
-                          </IconButton>
-                        </Box>
+                        <Typography fontWeight={600}>
+                          {item.quantity}
+                        </Typography>
                       </TableCell>
                       <TableCell align="right">
                         <Typography fontWeight={500}>
@@ -538,24 +550,36 @@ const SellPage: React.FC = () => {
                               return;
                             }
                             try {
-                              const response = await cartApi.deleteCartItems(cartId, [item.id]);
+                              const response = await cartApi.deleteCartItems(
+                                cartId,
+                                [item.id]
+                              );
                               const deletedItemId = response.data.data[0];
                               setScannedBarcodes((prev) => {
                                 const newBarcodes = { ...prev };
-                                newBarcodes[cartId] = (newBarcodes[cartId] || []).filter(
+                                newBarcodes[cartId] = (
+                                  newBarcodes[cartId] || []
+                                ).filter(
                                   (entry) => entry.itemId !== deletedItemId
                                 );
                                 if (newBarcodes[cartId]?.length === 0) {
                                   delete newBarcodes[cartId];
                                 }
-                                console.log("Cập nhật scannedBarcodes sau khi xóa:", newBarcodes);
+                                console.log(
+                                  "Cập nhật scannedBarcodes sau khi xóa:",
+                                  newBarcodes
+                                );
                                 saveScannedBarcodesToLocalStorage(newBarcodes);
                                 return newBarcodes;
                               });
                               await loadCart(cartId);
-                              toast.success("Xóa sản phẩm khỏi đơn hàng thành công!");
+                              toast.success(
+                                "Xóa sản phẩm khỏi đơn hàng thành công!"
+                              );
                             } catch (err: any) {
-                              const msg = err?.response?.data?.message || "Xóa sản phẩm khỏi đơn hàng thất bại!";
+                              const msg =
+                                err?.response?.data?.message ||
+                                "Xóa sản phẩm khỏi đơn hàng thất bại!";
                               toast.error(msg);
                             }
                           }}
@@ -570,54 +594,87 @@ const SellPage: React.FC = () => {
             </TableBody>
           </Table>
         </Box>
-
-       
       </Box>
 
-      <Box
-        display="flex"
-        height="100vh"
-        minWidth={340}
-        bgcolor="#f8fafc"
-        boxShadow={2}
-      >
-        <CheckoutSidebar
-          cartId={tabs[currentTab]?.id}
-          total={total}
-          discount={totalDiscount}
-          storeId={products?.[0]?.storeId}
-          totalWeight={items.reduce(
-            (s, it) => s + (it.productDetail?.weight || 0) * it.quantity,
-            0
-          )}
-          cartItems={items}
-          scannedBarcodes={scannedBarcodes}
-          onOrderCreated={async (paidCartId: string) => {
-            const idx = tabs.findIndex((t) => t.id === paidCartId);
-            if (idx === -1) return;
-            const newTabs = [...tabs];
-            newTabs.splice(idx, 1);
-            setTabs(newTabs);
-            setScannedBarcodes((prev) => {
-              const newBarcodes = { ...prev };
-              delete newBarcodes[paidCartId];
-              console.log("Cập nhật scannedBarcodes sau khi thanh toán:", newBarcodes);
-              saveScannedBarcodesToLocalStorage(newBarcodes);
-              return newBarcodes;
-            });
-            if (newTabs.length > 0) {
-              const nextIndex = Math.max(0, Math.min(idx, newTabs.length - 1));
-              setCurrentTab(nextIndex);
-              await loadCart(newTabs[nextIndex].id);
-            } else {
-              setCurrentTab(0);
-              setItems([]);
-              localStorage.removeItem("scannedBarcodes");
-              console.log("Đã xóa scannedBarcodes khỏi localStorage");
-            }
-          }}
-        />
-      </Box>
+      {tabs.length > 0 && tabs[currentTab] ? (
+        <Box
+          display="flex"
+          height="100vh"
+          minWidth={340}
+          bgcolor="#f8fafc"
+          boxShadow={2}
+        >
+          <CheckoutSidebar
+            cartId={tabs[currentTab]?.id}
+            total={total}
+            discount={totalDiscount}
+            storeId={products?.[0]?.storeId}
+            totalWeight={items.reduce(
+              (s, it) => s + (it.productDetail?.weight || 0) * it.quantity,
+              0
+            )}
+            cartItems={items}
+            scannedBarcodes={scannedBarcodes}
+            onOrderCreated={async (paidCartId: string) => {
+              const idx = tabs.findIndex((t) => t.id === paidCartId);
+              if (idx === -1) return;
+              const newTabs = [...tabs];
+              newTabs.splice(idx, 1);
+              setTabs(newTabs);
+              setScannedBarcodes((prev) => {
+                const newBarcodes = { ...prev };
+                delete newBarcodes[paidCartId];
+                console.log(
+                  "Cập nhật scannedBarcodes sau khi thanh toán:",
+                  newBarcodes
+                );
+                saveScannedBarcodesToLocalStorage(newBarcodes);
+                return newBarcodes;
+              });
+              if (newTabs.length > 0) {
+                const nextIndex = Math.max(
+                  0,
+                  Math.min(idx, newTabs.length - 1)
+                );
+                setCurrentTab(nextIndex);
+                await loadCart(newTabs[nextIndex].id);
+              } else {
+                setCurrentTab(0);
+                setItems([]);
+                localStorage.removeItem("scannedBarcodes");
+                console.log("Đã xóa scannedBarcodes khỏi localStorage");
+              }
+            }}
+          />
+        </Box>
+      ) : (
+        <Box
+          display="flex"
+          height="100vh"
+          minWidth={340}
+          bgcolor="#f8fafc"
+          boxShadow={2}
+          alignItems="center"
+          justifyContent="center"
+        >
+          <Box textAlign="center" p={4}>
+            <Typography variant="h6" color="text.secondary" gutterBottom>
+              Chưa có đơn hàng nào
+            </Typography>
+            <Typography variant="body2" color="text.secondary" mb={2}>
+              Nhấn "Tạo đơn hàng mới" để bắt đầu
+            </Typography>
+            <Button
+              variant="contained"
+              color="primary"
+              onClick={handleAddTab}
+              startIcon={<Add />}
+            >
+              Tạo đơn hàng mới
+            </Button>
+          </Box>
+        </Box>
+      )}
 
       <ProductDetailDialog
         open={!!selectedProduct}
@@ -634,7 +691,9 @@ const SellPage: React.FC = () => {
         onClose={() => setOpenBarcodeModal(false)}
         cartId={tabs[currentTab]?.id || ""}
         cartItems={items}
-        allScannedBarcodes={Object.values(scannedBarcodes).flatMap(entries => entries.map(entry => entry.barcode))}
+        allScannedBarcodes={Object.values(scannedBarcodes).flatMap((entries) =>
+          entries.map((entry) => entry.barcode)
+        )}
         onAddItem={async () => {
           const cartId = tabs[currentTab]?.id;
           if (cartId) await loadCart(cartId);
@@ -653,6 +712,13 @@ const SellPage: React.FC = () => {
             return updatedBarcodes;
           });
         }}
+      />
+
+      <RemoveBarcodeModal
+        isOpen={openRemoveBarcodeModal}
+        onClose={() => setOpenRemoveBarcodeModal(false)}
+        orderId={tabs[currentTab]?.id || ""}
+        onBarcodeRemoved={handleBarcodeRemoved}
       />
 
       <Dialog open={openConfirm} onClose={handleCancelDeleteTab}>
