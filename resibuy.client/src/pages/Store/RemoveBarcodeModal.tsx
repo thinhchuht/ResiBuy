@@ -334,13 +334,6 @@ const RemoveBarcodeModal: React.FC<RemoveBarcodeModalProps> = ({
                   >
                     {productDetail.barcode}
                   </Typography>
-
-                  <Typography variant="body2">
-                    <strong>Khối lượng:</strong>
-                  </Typography>
-                  <Typography variant="body2" sx={{ color: "#333" }}>
-                    {productDetail.weight} kg
-                  </Typography>
                 </Box>
 
                 {/* Hiển thị thông tin bổ sung */}
@@ -360,24 +353,6 @@ const RemoveBarcodeModal: React.FC<RemoveBarcodeModalProps> = ({
                       ))}
                     </Box>
                   )}
-
-                {/* Mô tả sản phẩm */}
-                {productDetail.product?.describe && (
-                  <Box sx={{ mt: 2, pt: 2, borderTop: "1px solid #e0e0e0" }}>
-                    <Typography
-                      variant="body2"
-                      sx={{ fontWeight: "bold", mb: 1 }}
-                    >
-                      Mô tả:
-                    </Typography>
-                    <Typography
-                      variant="body2"
-                      sx={{ color: "#666", fontStyle: "italic" }}
-                    >
-                      {productDetail.product.describe}
-                    </Typography>
-                  </Box>
-                )}
               </Box>
             </Fade>
           )}
