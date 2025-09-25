@@ -138,14 +138,30 @@ namespace ResiBuy.Server.Infrastructure
                 IdentityNumber = "000000000000",
                 DateOfBirth = new DateTime(2000, 1, 1),
                 IsLocked = false,
-                Roles = new List<string> { Constants.CustomerRole, Constants.SellerRole },
-                FullName = "Nhân viên của hàng",
+                Roles = new List<string> { Constants.CustomerRole },
+                FullName = "Khách vãng lai",
                 CreatedAt = DateTime.Now,
                 UpdatedAt = DateTime.Now,
                 ReportCount = 0
             };
 
-            modelBuilder.Entity<User>().HasData(user);
+            var user1 = new User
+            {
+                Id = "55555555-5555-5555-5555-555555555556",
+                Email = "user@resibuy.staff",
+                PasswordHash = CustomPasswordHasher.HashPassword(Constants.DefaulAccountPassword),
+                PhoneNumber = "0123456788",
+                IdentityNumber = "000000000001",
+                DateOfBirth = new DateTime(2000, 1, 1),
+                IsLocked = false,
+                Roles = new List<string> { Constants.SellerRole },
+                FullName = "Nhân viên cửa hàng",
+                CreatedAt = DateTime.Now,
+                UpdatedAt = DateTime.Now,
+                ReportCount = 0
+            };
+
+            modelBuilder.Entity<User>().HasData(user, user1);
 
             modelBuilder.Entity<Area>().HasData(area);
             modelBuilder.Entity<Building>().HasData(building);
