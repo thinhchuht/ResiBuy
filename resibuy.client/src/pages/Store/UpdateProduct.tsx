@@ -613,8 +613,8 @@ export default function UpdateProduct() {
         const newQuantityErrors: ValidationErrors = {};
 
         allDetails.forEach((detail, index) => {
-            if (detail.price <= 0) {
-                newPriceErrors[index] = "Giá phải lớn hơn 0";
+            if (detail.price <= 0 || !Number.isInteger(detail.price)) {
+                newPriceErrors[index] = "Giá phải lớn hơn 0 và là bội số 500";
                 isValid = false;
             }
 
@@ -623,8 +623,8 @@ export default function UpdateProduct() {
                 isValid = false;
             }
 
-            if (detail.quantity < 0) {
-                newQuantityErrors[index] = "Số lượng phải từ 0 trở lên";
+            if (detail.quantity < 0 || !Number.isInteger(detail.quantity)) {
+                newQuantityErrors[index] = "Số lượng phải từ 0 trở lên và là số nguyên";
                 isValid = false;
             }
 
