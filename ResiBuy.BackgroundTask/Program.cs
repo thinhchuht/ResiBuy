@@ -1,9 +1,20 @@
-var builder = Host.CreateApplicationBuilder(args);
+﻿var builder = Host.CreateApplicationBuilder(args);
 
 builder.Services.Configure<KafkaSettings>(builder.Configuration.GetSection("Kafka"));
 builder.Services.AddSingleton<IKafkaConsumerService, KafkaConsumerService>();
 builder.Services.AddHttpClient<ICheckoutService, CheckoutService>(c => c.BaseAddress = new Uri("http://localhost:5000/api/"));
-builder.Services.AddHttpClient<IProcessService, ProcessService>(c => c.BaseAddress = new Uri("http://localhost:5000/api/"));
+builder.Services.AddHttpClient<IProcessService, ProcessService>(c =>
+{
+    c.BaseAddress = new Uri("http://localhost:5000/api/");
+})
+.ConfigurePrimaryHttpMessageHandler(() =>
+{
+    return new HttpClientHandler
+    {
+        Proxy = null,       // không dùng proxy nào
+        UseProxy = false    // bypass proxy hệ thống (Squid,…)
+    };
+});
 builder.Services.AddSingleton<ICartService, CartService>();
 builder.Services.AddHostedService<ResetCartStatusBackgroundService>();
 builder.Services.AddHostedService<KafkaConsumerBackgroundService>();

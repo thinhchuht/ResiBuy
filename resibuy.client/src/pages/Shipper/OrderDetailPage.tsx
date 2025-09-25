@@ -586,17 +586,6 @@ function OrderDetail() {
                   Hủy đơn hàng
                 </Button>
               )}
-
-              {order.status !== "Reported" && (
-                <Button
-                  variant="contained"
-                  color="error"
-                  startIcon={<ReportProblemIcon />}
-                  onClick={handleOpenReport}
-                >
-                  Báo cáo đơn hàng
-                </Button>
-              )}
             </Stack>
           </Stack>
         </CardContent>

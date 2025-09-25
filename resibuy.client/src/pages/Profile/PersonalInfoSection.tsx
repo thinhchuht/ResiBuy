@@ -80,15 +80,6 @@ const PersonalInfoSection = ({ isAdmin, formatDate, maskMiddle }: PersonalInfoSe
         <Typography variant="h6" fontWeight={700} color="#e91e63" sx={{ textAlign: "left" }}>
           Thông tin cá nhân
         </Typography>
-        <Tooltip title="Số lần cảnh cáo 3 lần sẽ bị khóa tài khoản" arrow>
-          <Chip
-            icon={<ReportProblemOutlined sx={{ color: (user?.reportCount ?? 0) > 0 ? "inherit" : "#9e9e9e" }} />}
-            label={`Số lần bị tố cáo: ${user?.reportCount ?? 0}`}
-            variant="filled"
-            color={(user?.reportCount ?? 0) >= 3 ? "error" : (user?.reportCount ?? 0) > 0 ? "warning" : "default"}
-            sx={{ fontWeight: 700 }}
-          />
-        </Tooltip>
       </Box>
       <Box sx={{ display: { xs: "block", md: "flex" }, gap: 4 }}>
         <Box sx={{ flex: 1, minWidth: 0 }}>
