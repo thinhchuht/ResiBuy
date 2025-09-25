@@ -11,6 +11,8 @@ namespace ResiBuy.Server.Application.Commands.ProductCommands.DTOs.Update
         public Guid CategoryId { get; set; }
         public Guid StoreId { get; set; }
         public bool IsOutOfStock { get; set; }
+        public DateTime? ExpiryDate { get; set; }
+        public int? WarrantyMonths { get; set; }
         public List<UpdateProductDetailDto> ProductDetails { get; set; }
     }
 }

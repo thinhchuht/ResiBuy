@@ -9,6 +9,8 @@
         public Guid StoreId { get; set; }
         public Guid CategoryId { get; set; }
         public bool IsOutOfStock { get; set; }
+        public DateTime? ExpiryDate { get; set; }
+        public int WarrantyMonths { get; set; } = 0;
         public List<UpdateProductDetail2Dto> ProductDetails { get; set; }
     }
 
