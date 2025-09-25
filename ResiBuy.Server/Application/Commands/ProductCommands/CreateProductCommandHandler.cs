@@ -147,8 +147,25 @@ namespace ResiBuy.Server.Application.Commands.ProductCommands
 
             if (detailDto.AdditionalData != null && detailDto.AdditionalData.Any())
             {
-                // Check duplicates within the same detail
-                var duplicatesInSame = detailDto.AdditionalData
+                // Validate AdditionalData keys and values first (moved up)
+                foreach (var additionalData in detailDto.AdditionalData)
+                {
+                    if (string.IsNullOrWhiteSpace(additionalData.Key?.Trim()))
+                        throw new CustomException(ExceptionErrorCode.ValidationFailed,
+                            "Tên của phân loại không được để trống.");
+
+                    if (string.IsNullOrWhiteSpace(additionalData.Value?.Trim()))
+                        throw new CustomException(ExceptionErrorCode.ValidationFailed,
+                            "Thuộc tính của phân loại không được để trống.");
+                }
+
+                // Trim values before checking duplicates
+                var trimmedData = detailDto.AdditionalData
+                    .Select(a => new { Key = a.Key.Trim(), Value = a.Value.Trim() })
+                    .ToList();
+
+                // Check duplicates within the same detail (using trimmed values)
+                var duplicatesInSame = trimmedData
                     .GroupBy(a => new { a.Key, a.Value })
                     .Where(g => g.Count() > 1)
                     .Select(g => $"({g.Key.Key}, {g.Key.Value})")
@@ -161,7 +178,8 @@ namespace ResiBuy.Server.Application.Commands.ProductCommands
                         $"Phân loại bị trùng trong 1 chi tiết sản phẩm: {message}");
                 }
 
-                dataSet = detailDto.AdditionalData
+                // Create dataset with trimmed values
+                dataSet = trimmedData
                     .Select(a => $"{a.Key}|{a.Value}")
                     .ToHashSet();
 
@@ -173,19 +191,8 @@ namespace ResiBuy.Server.Application.Commands.ProductCommands
                         $"Các phân loại bị trùng hoàn toàn giữa các chi tiết sản phẩm: {formatted}");
                 }
 
-                // Validate AdditionalData keys and values
-                foreach (var additionalData in detailDto.AdditionalData)
-                {
-                    if (string.IsNullOrWhiteSpace(additionalData.Key))
-                        throw new CustomException(ExceptionErrorCode.ValidationFailed,
-                            "Tên của phân loại không được để trống.");
-
-                    if (string.IsNullOrWhiteSpace(additionalData.Value))
-                        throw new CustomException(ExceptionErrorCode.ValidationFailed,
-                            "thuộc tính của phân loại không được để trống.");
-                }
-
-                detail.AdditionalData = detailDto.AdditionalData
+                // Store trimmed values in detail
+                detail.AdditionalData = trimmedData
                     .Select(a => new AdditionalData(a.Key, a.Value))
                     .ToList();
             }
