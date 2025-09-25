@@ -1274,7 +1274,10 @@ export default function UpdateProduct() {
                                                         value={productDetail.quantity}
                                                         error={!!quantityErrors[index]}
                                                         helperText={quantityErrors[index]}
-                                                        inputProps={{ min: productDetail.quantity }}
+                                                        inputProps={{ min: productDetail.quantity, onInput: (e: React.ChangeEvent<HTMLInputElement>) => {
+          // Chỉ cho nhập số nguyên dương
+          e.target.value = e.target.value.replace(/[^0-9]/g, "");
+        }, }}
                                                         onChange={(e) => {
                                                             const newQuantity = Number(e.target.value);
                                                             if (newQuantity >= 0) {
@@ -1496,7 +1499,16 @@ export default function UpdateProduct() {
                                                             value={productDetail.quantity}
                                                             error={!!quantityErrors[globalIndex]}
                                                             helperText={quantityErrors[globalIndex]}
-                                                            inputProps={{ min: 0 }}
+                                                           slotProps={{
+      input: {
+        min: 1,
+        step: 1,
+        onInput: (e: React.ChangeEvent<HTMLInputElement>) => {
+          // Chỉ cho nhập số nguyên dương
+          e.target.value = e.target.value.replace(/[^0-9]/g, "");
+        },
+      },
+    }}
                                                             onChange={(e) => {
                                                                 const newQuantity = Number(e.target.value);
                                                                 if (newQuantity >= 0) {

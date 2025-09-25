@@ -149,7 +149,7 @@ const RemoveBarcodeModal: React.FC<RemoveBarcodeModalProps> = ({
       sx={{ "& .MuiDialog-paper": { maxWidth: "600px", borderRadius: 2 } }}
     >
       <DialogTitle sx={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
-        Xóa Barcode Khỏi Đơn Hàng
+        Hoàn hàng
         <IconButton onClick={onClose} disabled={isLoading}>
           <CloseIcon />
         </IconButton>

@@ -1090,7 +1090,17 @@ const validateProductDetails = (): boolean => {
         value={productDetail.quantity}
         error={!!quantityErrors[index]}
         helperText={quantityErrors[index]}
-        inputProps={{ min: productDetail.isOutOfStock ? 0 : 1 }} // Yêu cầu min=1 nếu không hết hàng
+        slotProps={{
+      input: {
+        min: productDetail.isOutOfStock ? 0 : 1, // min=1 nếu còn hàng, cho phép 0 nếu hết hàng
+        step: 1,
+        onInput: (e: React.ChangeEvent<HTMLInputElement>) => {
+          // Ép chỉ cho nhập số nguyên dương
+          const val = e.target.value.replace(/[^0-9]/g, ""); 
+          e.target.value = val === "" ? "" : String(parseInt(val, 10));
+        },
+      },
+    }}
         onChange={(e) => {
             const newQuantity = Number(e.target.value);
             updateProductDetail(index, 'quantity', newQuantity);

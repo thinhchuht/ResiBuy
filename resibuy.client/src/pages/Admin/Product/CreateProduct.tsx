@@ -1068,36 +1068,39 @@ const generateProductDetail = () => {
                                                         }}
                                                     />
                                                 </TableCell>
-                                                <TableCell>
-                                                    <TextField
-                                                        size="small"
-                                                        type="number"
-                                                        value={productDetail.quantity}
-                                                        error={!!quantityErrors[index]}
-                                                        helperText={quantityErrors[index]}
-                                                        inputProps={{ min: 0 }}
-                                                        onChange={(e) => {
-                                                            const newQuantity = Number(e.target.value);
-                                                            if (newQuantity >= 0) {
-                                                                updateProductDetail(index, 'quantity', newQuantity);
-                                                                // Auto-generate or clear barcodes based on quantity
-                                                                if (newQuantity === 0) {
-                                                                    updateProductDetail(index, 'barcodes', []);
-                                                                } else if (productDetail.barcodes.length !== newQuantity) {
-                                                                    // Generate empty barcode slots
-                                                                    const newBarcodes = Array(newQuantity).fill('').map((_, i) =>
-                                                                        productDetail.barcodes[i] || ''
-                                                                    );
-                                                                    updateProductDetail(index, 'barcodes', newBarcodes);
-                                                                }
-                                                            }
-                                                        }}
-                                                        onBlur={() => validateQuantity(productDetail.quantity, index)}
-                                                        sx={{
-                                                            "& .MuiOutlinedInput-root": { borderRadius: 2 },
-                                                        }}
-                                                    />
-                                                </TableCell>
+                                              <TableCell>
+    <TextField
+        size="small"
+        type="number"
+        value={productDetail.quantity}
+        error={!!quantityErrors[index]}
+        helperText={quantityErrors[index]}
+        inputProps={{ min: 1, step: 1 , onInput: (e: React.ChangeEvent<HTMLInputElement>) => {
+          // Chỉ cho nhập số nguyên dương
+          e.target.value = e.target.value.replace(/[^0-9]/g, "");
+        },}} // Chỉ cho phép số nguyên dương (lớn hơn 0)
+        onChange={(e) => {
+            const inputValue = e.target.value;
+            // Chỉ cho phép số nguyên dương
+            const newQuantity = Math.floor(Number(inputValue)) > 0 ? Math.floor(Number(inputValue)) : 1;
+            updateProductDetail(index, 'quantity', newQuantity);
+            // Auto-generate or clear barcodes based on quantity
+            if (newQuantity === 0) {
+                updateProductDetail(index, 'barcodes', []);
+            } else if (productDetail.barcodes.length !== newQuantity) {
+                // Generate empty barcode slots
+                const newBarcodes = Array(newQuantity).fill('').map((_, i) =>
+                    productDetail.barcodes[i] || ''
+                );
+                updateProductDetail(index, 'barcodes', newBarcodes);
+            }
+        }}
+        onBlur={() => validateQuantity(productDetail.quantity, index)}
+        sx={{
+            "& .MuiOutlinedInput-root": { borderRadius: 2 },
+        }}
+    />
+</TableCell>
                                               
                                                 <TableCell>
                                                     <Stack spacing={2} alignItems="center" sx={{ minWidth: 120 }}>

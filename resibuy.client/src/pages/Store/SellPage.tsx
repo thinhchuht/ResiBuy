@@ -354,7 +354,10 @@ const SellPage: React.FC = () => {
                 >
                   Quét Barcode
                 </Button>
-                <Button
+              
+              </>
+            )}
+              <Button
                   variant="contained"
                   color="error"
                   onClick={() => setOpenRemoveBarcodeModal(true)}
@@ -363,8 +366,6 @@ const SellPage: React.FC = () => {
                 >
                  Hoàn hàng
                 </Button>
-              </>
-            )}
             <Button
               variant="contained"
               color="primary"
@@ -374,6 +375,7 @@ const SellPage: React.FC = () => {
             >
               Tạo đơn hàng mới
             </Button>
+
           </Toolbar>
         </AppBar>
 
