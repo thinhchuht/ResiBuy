@@ -58,6 +58,7 @@ import ViewProduct from "../pages/Admin/Product/ViewProduct";
 import ImageManagement from "../pages/Store/ImageManagement";
 import StorePaymentSuccess from "../pages/Store/PaymentSuccess";
 import StorePaymentFail from "../pages/Store/PaymentFail";
+import PaymentSuccessPage from "../pages/Store/PaymentSuccessPage";
 const AppRoutes: React.FC = () => {
   const { user } = useAuth();
 
@@ -169,6 +170,16 @@ const AppRoutes: React.FC = () => {
           element={<StorePaymentSuccess />}
         />
         <Route path="/stores/paymentFail" element={<StorePaymentFail />} />
+
+        {/* Cash Payment Success Page */}
+        <Route
+          path="/payment-success-cash"
+          element={
+            <ProtectedRoute allowedRoles={["SELLER", "ADMIN"]}>
+              <PaymentSuccessPage />
+            </ProtectedRoute>
+          }
+        />
         <Route
           path="/cart"
           element={

@@ -14,6 +14,7 @@ import {
   Alert,
 } from "@mui/material";
 import { PersonOff } from "@mui/icons-material";
+import { useNavigate } from "react-router-dom";
 import userApi from "../../api/user.api";
 import orderApi from "../../api/order.api";
 import voucherApi from "../../api/voucher.api";
@@ -89,6 +90,7 @@ const CheckoutSidebar: React.FC<CheckoutSidebarProps> = ({
   cartItems,
   scannedBarcodes,
 }) => {
+  const navigate = useNavigate();
   const [cartStates, setCartStates] = useState<Record<string, CartState>>({});
   const [openDialog, setOpenDialog] = useState(false);
   const [phoneInput, setPhoneInput] = useState("");
@@ -553,7 +555,26 @@ const CheckoutSidebar: React.FC<CheckoutSidebarProps> = ({
             const res = await orderApi.createOrder(payload);
             if (res && res.success) {
               showMessage("Tạo hóa đơn thành công", "success");
-              if (res.paymentUrl) window.open(res.paymentUrl, "_blank");
+
+              // Nếu thanh toán bằng tiền mặt, chuyển hướng đến trang thông báo
+              if (currentCart.paymentMethod === "CASH") {
+                const orderInfo = {
+                  orderId: res.orderId,
+                  totalAmount: totalPayable,
+                  paymentMethod: "Tiền mặt",
+                  orderDate: new Date().toLocaleString("vi-VN"),
+                };
+
+                // Chuyển hướng với thông tin đơn hàng
+                navigate("/payment-success-cash", {
+                  state: { orderInfo },
+                  replace: true,
+                });
+              } else {
+                // Thanh toán qua ngân hàng - mở URL thanh toán
+                if (res.paymentUrl) window.open(res.paymentUrl, "_blank");
+              }
+
               if (typeof onOrderCreated === "function")
                 onOrderCreated(cartId, res.orderId);
             } else {
