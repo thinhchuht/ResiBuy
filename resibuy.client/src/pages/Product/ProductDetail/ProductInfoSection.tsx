@@ -10,6 +10,7 @@ import { formatPrice } from "../../../utils/priceUtils";
 import Tooltip from "@mui/material/Tooltip";
 import cartApi from "../../../api/cart.api";
 import checkoutApi from "../../../api/checkout.api";
+import { formatDate } from "../../../utils/dateUtils";
 
 interface ProductInfoSectionProps {
   product: Product;
@@ -347,14 +348,20 @@ const ProductInfoSection: React.FC<ProductInfoSectionProps> = ({ product, quanti
               </Typography>
             </AccordionSummary>
             <AccordionDetails>
-              <Typography variant="body1" color="text.secondary" paragraph>
+              <Typography variant="body2" color="text.secondary" paragraph>
                 Danh mục : {product.category.name}
-              </Typography>
-              <Typography variant="body1" color="text.secondary" paragraph>
-                {product.describe}
               </Typography>
               <Typography variant="body2" color="text.secondary">
                 Trọng lượng: {selectedDetail?.weight ?? "Không xác định"} kg
+              </Typography>
+              <Typography variant="body2" color="text.secondary">
+                Hạn sử dụng: {product.expiryDate ? formatDate(product.expiryDate) : "Không có"}
+              </Typography>
+              <Typography variant="body2" color="text.secondary">
+                Thời gian bảo hành: {product.warrantyMonths ? `${product.warrantyMonths} tháng` : "Không có"}
+              </Typography>
+              <Typography variant="body1" color="text.secondary" paragraph>
+                {product.describe}
               </Typography>
             </AccordionDetails>
           </Accordion>

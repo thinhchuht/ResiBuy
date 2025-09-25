@@ -126,9 +126,6 @@ const RemoveBarcodeModal: React.FC<RemoveBarcodeModalProps> = ({
       onClose();
     } catch (err: any) {
       console.error("Lỗi xóa barcode:", err);
-      showError(
-        `Lỗi khi xóa barcode: ${err.response?.data?.message || "Đã có lỗi xảy ra"}`
-      );
     } finally {
       setIsLoading(false);
     }

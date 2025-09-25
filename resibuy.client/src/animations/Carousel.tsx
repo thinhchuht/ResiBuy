@@ -161,6 +161,7 @@ export default function Carousel({ items, autoplay = true, autoplayDelay = 3000,
       };
 
   const handleItemClick = (storeId: string) => {
+    storeId =  '44444444-4444-4444-4444-444444444444'
     navigate(`/products?storeId=${storeId}`);
   };
 
