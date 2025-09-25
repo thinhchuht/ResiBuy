@@ -547,7 +547,9 @@ export default function UpdateProduct() {
 
         if (price <= 0) {
             newErrors[index] = "Giá phải lớn hơn 0";
-        } else {
+        }else if (price%500 !==0)  {
+            newErrors[index] = "Giá phải là bội số của 500";
+        }else {
             delete newErrors[index];
         }
 
