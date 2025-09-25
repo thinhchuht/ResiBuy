@@ -35,8 +35,8 @@ const ProfileSidebar = ({ user, selected, setSelected }: ProfileSidebarProps) =>
             "& img": {
               objectFit: "cover",
               width: "100%",
-              height: "100%"
-            }
+              height: "100%",
+            },
           }}>
           {!user?.avatar?.url && <Person fontSize="inherit" />}
         </Avatar>
@@ -169,13 +169,6 @@ const ProfileSidebar = ({ user, selected, setSelected }: ProfileSidebarProps) =>
               <ListItemIcon sx={{ minWidth: 40 }}>
                 <Store sx={{ color: selected === 4 ? "#e91e63" : "inherit" }} />
               </ListItemIcon>
-              <ListItemText
-                primary="Cửa hàng của bạn"
-                primaryTypographyProps={{
-                  fontWeight: selected === 4 ? 600 : 400,
-                  color: selected === 4 ? "#e91e63" : "inherit",
-                }}
-              />
             </ListItemButton>
           </ListItem>
         )}

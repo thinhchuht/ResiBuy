@@ -18,14 +18,13 @@ const FeaturedProductSection = () => {
     const fetchProducts = async () => {
       try {
         setLoading(true);
-        const response = await productApi.getAll({ pageNumber: 1, pageSize: 12, sortBy: "sold", sortDirection: "desc", isNotGetOutOfStock : true, IsGettingCategory: true });
+        const response = await productApi.getAll({ pageNumber: 1, pageSize: 12, sortBy: "sold", sortDirection: "desc", isNotGetOutOfStock: true, IsGettingCategory: true });
         console.log(response);
         if (response) {
           setProducts(response.items);
         }
       } catch (error) {
         console.error("Error fetching featured products:", error);
-        toast.error("Không thể tải sản phẩm nổi bật.");
       } finally {
         setLoading(false);
       }
@@ -157,16 +156,13 @@ const FeaturedProductSection = () => {
           ))}
         </Box>
       ) : (
-        <Box 
-          sx={{ 
-            textAlign: 'center', 
+        <Box
+          sx={{
+            textAlign: "center",
             py: 8,
-            color: 'text.secondary'
-          }}
-        >
-          <Typography variant="h6">
-            Hiện tại chưa có sản phẩm
-          </Typography>
+            color: "text.secondary",
+          }}>
+          <Typography variant="h6">Hiện tại chưa có sản phẩm</Typography>
         </Box>
       )}
     </Box>
