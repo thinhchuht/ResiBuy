@@ -15,5 +15,6 @@
         public List<ProductDetailQueriesDto> ProductDetails { get; set; }
         public DateTime? ExpiryDate { get; set; } = null;
         public int? WarrantyMonths { get; set; } = null;
+        public int? PromotionId { get; set; } = null;
     }
 }
