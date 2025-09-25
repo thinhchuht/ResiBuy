@@ -191,6 +191,12 @@ const SellPage: React.FC = () => {
   };
 
   const handleAddTab = async () => {
+    // Kiểm tra giới hạn tối đa 5 hóa đơn chờ
+    if (tabs.length >= 5) {
+      toast.warning("Chỉ được tạo tối đa 5 hóa đơn chờ!");
+      return;
+    }
+
     try {
       const res = await cartApi.createCart();
       console.log("Tạo giỏ hàng mới:", res.data);
@@ -371,9 +377,10 @@ const SellPage: React.FC = () => {
               color="primary"
               onClick={handleAddTab}
               startIcon={<Add />}
+              disabled={tabs.length >= 5}
               sx={{ ml: 2, fontWeight: 600, boxShadow: "none" }}
             >
-              Tạo đơn hàng mới
+              Tạo đơn hàng mới {tabs.length >= 5 ? `(${tabs.length}/5)` : `(${tabs.length}/5)`}
             </Button>
 
           </Toolbar>
