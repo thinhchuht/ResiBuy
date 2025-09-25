@@ -42,7 +42,7 @@ namespace ResiBuy.Server.Application.Commands.OrderCommands
             {
                 throw new CustomException(ExceptionErrorCode.UpdateFailed, ex.Message);
             }
-            return ResponseModel.SuccessResponse($"Đã xóa {barcode.Code} mã vạch khỏi order ");
+            return ResponseModel.SuccessResponse($"Đã xóa {barcode.Code} mã vạch khỏi order .Giá trị sản phẩm: {barcode.OrderItem.Price}");
         }
     }
 }
