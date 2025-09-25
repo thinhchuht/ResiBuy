@@ -28,13 +28,17 @@ namespace ResiBuy.Server.Application.Queries.ProductQueries
                         $"Không tìm thấy sản phẩm với barcode: {barcode}");
                 }
 
+                // Tìm barcode cụ thể để lấy giá từ OrderItem
+                var barcodeEntity = productDetail.Barcodes.FirstOrDefault(b => b.Code == barcode);
+                var price = barcodeEntity?.OrderItem?.Price ?? productDetail.Price; // Fallback to ProductDetail.Price nếu không có OrderItem
+
                 // Create response DTO
                 var response = new ProductDetailBarcodeResponseDto
                 {
                     Id = productDetail.Id,
                     ProductId = productDetail.ProductId,
                     ProductName = productDetail.Product?.Name,
-                    Price = productDetail.Price,
+                    Price = price,
                     Weight = productDetail.Weight,
                     Quantity = productDetail.Quantity,
                     IsOutOfStock = productDetail.IsOutOfStock,

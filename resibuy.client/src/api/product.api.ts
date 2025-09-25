@@ -23,6 +23,11 @@ const productApi = {
   create: (data: ProductDto) => {
     return axiosClient.post(`${productUrl}/create`, data);
   },
+  
+  getDetailByBarcode: async (barcode: string) => {
+    const response = await axiosClient.get(`${productUrl}/detail/barcode/${barcode}`);
+    return response.data;
+  },
 };
 
 export default productApi;

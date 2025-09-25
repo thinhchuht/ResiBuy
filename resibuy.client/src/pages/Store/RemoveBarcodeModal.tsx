@@ -14,11 +14,43 @@ import {
   Radio,
   RadioGroup,
   Alert,
+  Fade,
+  Chip,
 } from "@mui/material";
 import { Close as CloseIcon } from "@mui/icons-material";
 import { BrowserMultiFormatReader } from "@zxing/library";
 import orderApi from "../../api/order.api";
+import productApi from "../../api/product.api";
 import { useToastify } from "../../hooks/useToastify";
+
+interface ProductDetail {
+  id: number;
+  productId: number;
+  productName: string;
+  price: number;
+  weight: number;
+  quantity: number;
+  isOutOfStock: boolean;
+  barcode: string;
+  image: {
+    id: string;
+    url: string;
+    thumbUrl: string;
+    name: string;
+  };
+  additionalData: Array<{
+    key: string;
+    value: string;
+  }>;
+  product: {
+    id: number;
+    name: string;
+    describe: string;
+    categoryId: string;
+    storeId: string;
+    isActive: boolean;
+  };
+}
 
 interface RemoveBarcodeModalProps {
   isOpen: boolean;
@@ -30,7 +62,7 @@ interface RemoveBarcodeModalProps {
 const RemoveBarcodeModal: React.FC<RemoveBarcodeModalProps> = ({
   isOpen,
   onClose,
-  orderId,
+  orderId, // eslint-disable-line @typescript-eslint/no-unused-vars
   onBarcodeRemoved,
 }) => {
   const { error: showError, success: showSuccess } = useToastify();
@@ -38,23 +70,56 @@ const RemoveBarcodeModal: React.FC<RemoveBarcodeModalProps> = ({
   const [isRemoveFromStore, setIsRemoveFromStore] = useState<boolean>(false);
   const [isLoading, setIsLoading] = useState(false);
   const [isScanning, setIsScanning] = useState(false);
+  const [productDetail, setProductDetail] = useState<ProductDetail | null>(
+    null
+  );
+  const [isLoadingProduct, setIsLoadingProduct] = useState(false);
   const videoRef = useRef<HTMLVideoElement>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const codeReader = useRef(new BrowserMultiFormatReader());
 
+  // Hàm gọi API để lấy thông tin sản phẩm theo barcode
+  const fetchProductDetail = async (barcodeValue: string) => {
+    if (!barcodeValue.trim()) return;
+
+    setIsLoadingProduct(true);
+    try {
+      const response = await productApi.getDetailByBarcode(barcodeValue);
+      if (response.code === 0 && response.data) {
+        setProductDetail(response.data);
+        showSuccess("Đã tìm thấy sản phẩm!");
+      } else {
+        showError(
+          response.message || "Không tìm thấy sản phẩm với barcode này"
+        );
+        setProductDetail(null);
+      }
+    } catch (error) {
+      console.error("Lỗi khi lấy thông tin sản phẩm:", error);
+      showError("Không tìm thấy sản phẩm với barcode này");
+      setProductDetail(null);
+    } finally {
+      setIsLoadingProduct(false);
+    }
+  };
+
   const startScanning = async () => {
     try {
       setIsScanning(true);
-      const stream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: "environment" } });
+      const stream = await navigator.mediaDevices.getUserMedia({
+        video: { facingMode: "environment" },
+      });
       if (videoRef.current) {
         videoRef.current.srcObject = stream;
         videoRef.current.play();
         codeReader.current.decodeFromVideoDevice(
-          undefined,
+          null,
           videoRef.current,
           (result, err) => {
             if (result) {
-              setBarcode(result.getText());
+              const scannedBarcode = result.getText();
+              setBarcode(scannedBarcode);
+              fetchProductDetail(scannedBarcode);
               stopScanning();
             }
             if (err) {
@@ -80,7 +145,9 @@ const RemoveBarcodeModal: React.FC<RemoveBarcodeModalProps> = ({
     codeReader.current.reset();
   };
 
-  const handleImageUpload = async (event: React.ChangeEvent<HTMLInputElement>) => {
+  const handleImageUpload = async (
+    event: React.ChangeEvent<HTMLInputElement>
+  ) => {
     const file = event.target.files?.[0];
     if (!file) return;
     setIsLoading(true);
@@ -90,7 +157,9 @@ const RemoveBarcodeModal: React.FC<RemoveBarcodeModalProps> = ({
       img.onload = async () => {
         try {
           const result = await codeReader.current.decodeFromImage(img);
-          setBarcode(result.getText());
+          const decodedBarcode = result.getText();
+          setBarcode(decodedBarcode);
+          fetchProductDetail(decodedBarcode);
         } catch (err) {
           console.error("Lỗi giải mã hình ảnh:", err);
           showError("Không thể đọc barcode từ hình ảnh");
@@ -124,10 +193,19 @@ const RemoveBarcodeModal: React.FC<RemoveBarcodeModalProps> = ({
       setBarcode("");
       setIsRemoveFromStore(false);
       onClose();
-    } catch (err: any) {
+    } catch (err) {
       console.error("Lỗi xóa barcode:", err);
     } finally {
       setIsLoading(false);
+    }
+  };
+
+  // Xử lý khi nhấn Enter trong input barcode
+  const handleBarcodeInputKeyPress = (
+    event: React.KeyboardEvent<HTMLInputElement>
+  ) => {
+    if (event.key === "Enter" && barcode.trim()) {
+      fetchProductDetail(barcode.trim());
     }
   };
 
@@ -145,7 +223,13 @@ const RemoveBarcodeModal: React.FC<RemoveBarcodeModalProps> = ({
       fullWidth
       sx={{ "& .MuiDialog-paper": { maxWidth: "600px", borderRadius: 2 } }}
     >
-      <DialogTitle sx={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+      <DialogTitle
+        sx={{
+          display: "flex",
+          justifyContent: "space-between",
+          alignItems: "center",
+        }}
+      >
         Hoàn hàng
         <IconButton onClick={onClose} disabled={isLoading}>
           <CloseIcon />
@@ -160,10 +244,143 @@ const RemoveBarcodeModal: React.FC<RemoveBarcodeModalProps> = ({
             label="Nhập Barcode"
             value={barcode}
             onChange={(e) => setBarcode(e.target.value)}
+            onKeyPress={handleBarcodeInputKeyPress}
             fullWidth
-            disabled={isLoading}
+            disabled={isLoading || isLoadingProduct}
             sx={{ mb: 2 }}
           />
+
+          {/* Hiển thị trạng thái loading */}
+          {isLoadingProduct && (
+            <Box
+              display="flex"
+              justifyContent="center"
+              alignItems="center"
+              sx={{ mb: 2, p: 2, backgroundColor: "#f0f4ff", borderRadius: 1 }}
+            >
+              <CircularProgress size={20} color="primary" />
+              <Typography variant="body2" sx={{ ml: 1, color: "#2196f3" }}>
+                🔍 Đang tìm kiếm sản phẩm...
+              </Typography>
+            </Box>
+          )}
+
+          {productDetail && (
+            <Fade in={true}>
+              <Box
+                sx={{
+                  mb: 2,
+                  p: 2,
+                  border: "1px solid #e0e0e0",
+                  borderRadius: 2,
+                  backgroundColor: "#f8f9fa",
+                  boxShadow: "0 2px 8px rgba(0,0,0,0.1)",
+                }}
+              >
+                <Typography variant="h6" sx={{ mb: 2, color: "#2196f3" }}>
+                  📦 Thông tin sản phẩm
+                </Typography>
+
+                {/* Hình ảnh sản phẩm */}
+                {productDetail.image && (
+                  <Box
+                    sx={{ display: "flex", justifyContent: "center", mb: 2 }}
+                  >
+                    <img
+                      src={productDetail.image.thumbUrl}
+                      alt={productDetail.image.name}
+                      style={{
+                        maxWidth: "150px",
+                        maxHeight: "150px",
+                        objectFit: "cover",
+                        borderRadius: "8px",
+                        border: "1px solid #ddd",
+                      }}
+                    />
+                  </Box>
+                )}
+
+                <Box
+                  sx={{
+                    display: "grid",
+                    gridTemplateColumns: "1fr 1fr",
+                    gap: 1,
+                    mb: 1,
+                  }}
+                >
+                  <Typography variant="body2">
+                    <strong>Tên sản phẩm:</strong>
+                  </Typography>
+                  <Typography variant="body2" sx={{ color: "#333" }}>
+                    {productDetail.productName}
+                  </Typography>
+
+                  <Typography variant="body2">
+                    <strong>Giá bán:</strong>
+                  </Typography>
+                  <Typography
+                    variant="body2"
+                    sx={{ color: "#f44336", fontWeight: "bold" }}
+                  >
+                    {productDetail.price?.toLocaleString("vi-VN")} VND
+                  </Typography>
+
+                  <Typography variant="body2">
+                    <strong>Barcode:</strong>
+                  </Typography>
+                  <Typography
+                    variant="body2"
+                    sx={{ fontFamily: "monospace", color: "#666" }}
+                  >
+                    {productDetail.barcode}
+                  </Typography>
+
+                  <Typography variant="body2">
+                    <strong>Khối lượng:</strong>
+                  </Typography>
+                  <Typography variant="body2" sx={{ color: "#333" }}>
+                    {productDetail.weight} kg
+                  </Typography>
+                </Box>
+
+                {/* Hiển thị thông tin bổ sung */}
+                {productDetail.additionalData &&
+                  productDetail.additionalData.length > 0 && (
+                    <Box sx={{ mt: 2, pt: 2, borderTop: "1px solid #e0e0e0" }}>
+                      <Typography
+                        variant="body2"
+                        sx={{ fontWeight: "bold", mb: 1 }}
+                      >
+                        Thông tin bổ sung:
+                      </Typography>
+                      {productDetail.additionalData.map((data, index) => (
+                        <Typography key={index} variant="body2" sx={{ ml: 1 }}>
+                          • <strong>{data.key}:</strong> {data.value}
+                        </Typography>
+                      ))}
+                    </Box>
+                  )}
+
+                {/* Mô tả sản phẩm */}
+                {productDetail.product?.describe && (
+                  <Box sx={{ mt: 2, pt: 2, borderTop: "1px solid #e0e0e0" }}>
+                    <Typography
+                      variant="body2"
+                      sx={{ fontWeight: "bold", mb: 1 }}
+                    >
+                      Mô tả:
+                    </Typography>
+                    <Typography
+                      variant="body2"
+                      sx={{ color: "#666", fontStyle: "italic" }}
+                    >
+                      {productDetail.product.describe}
+                    </Typography>
+                  </Box>
+                )}
+              </Box>
+            </Fade>
+          )}
           <Button
             variant="outlined"
             component="label"

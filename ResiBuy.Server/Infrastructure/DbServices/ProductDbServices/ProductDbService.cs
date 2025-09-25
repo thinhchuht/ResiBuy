@@ -517,6 +517,7 @@ namespace ResiBuy.Server.Infrastructure.DbServices.ProductDbServices
                     .Include(pd => pd.Image)
                     .Include(pd => pd.AdditionalData)
                     .Include(pd => pd.Barcodes)
+                        .ThenInclude(b => b.OrderItem)
                     .FirstOrDefaultAsync(pd => pd.Barcodes.Any(b => b.Code == barcode));
 
                 return productDetail;
