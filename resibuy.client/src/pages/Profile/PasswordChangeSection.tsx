@@ -60,7 +60,7 @@ const PasswordChangeSection = ({ user, isAdmin }: PasswordChangeSectionProps) =>
     setIsSubmittingCode(true);
     try {
       const response = await userApi.changePassword(user.id, confirmCode.toUpperCase());
-      if (response.data) {
+      if (response.code == 0) {
         toast.success("Đổi mật khẩu thành công!");
         setOpenConfirmModal(false);
         setConfirmCode("");

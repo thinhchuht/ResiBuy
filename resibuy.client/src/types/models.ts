@@ -85,6 +85,8 @@ export interface Product {
   updatedAt: string;
   storeId: string;
   categoryId: string;
+  expiryDate: string;
+  warrantyMonths: number;
   store: Store;
   category: Category;
   productDetails: ProductDetail[];

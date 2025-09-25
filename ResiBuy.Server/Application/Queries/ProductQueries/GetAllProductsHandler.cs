@@ -45,7 +45,7 @@ namespace ResiBuy.Server.Application.Queries.ProductQueries
                 query = query.Where(p => p.ProductDetails.Any(d => d.Price <= filter.MaxPrice.Value));
 
             if (filter.IsNotGetOutOfStock == true)
-                query = query.Where(p => !p.IsOutOfStock);
+                query = query.Where(p => !p.IsOutOfStock && ((p.ExpiryDate.HasValue && p.ExpiryDate >= DateTime.Now) || !p.ExpiryDate.HasValue));
 
             if (filter.IsGetStoreOpen == true && filter.StoreId == Guid.Empty)
                 query = query.Where(p => p.Store.IsOpen);

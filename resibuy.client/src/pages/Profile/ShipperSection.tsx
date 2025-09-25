@@ -83,15 +83,6 @@ const ShipperSection = () => {
           <Typography variant="h6" fontWeight={700} color="#e91e63" sx={{ textAlign: "left" }}>
             Thông tin tài khoản giao hàng
           </Typography>
-          <Tooltip title="Số lần cảnh cáo 3 lần sẽ bị khóa tài khoản" arrow>
-            <Chip
-              icon={<ReportProblem sx={{ color: (shipper?.reportCount ?? 0) > 0 ? "inherit" : "#9e9e9e" }} />}
-              label={`Số lần bị tố cáo: ${shipper?.reportCount ?? 0}`}
-              variant="filled"
-              color={(shipper?.reportCount ?? 0) >= 3 ? "error" : (shipper?.reportCount ?? 0) > 0 ? "warning" : "default"}
-              sx={{ fontWeight: 700 }}
-            />
-          </Tooltip>
         </Box>
         {shipper.isLocked ? (
           <Box sx={{ width: "100%", display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", minHeight: 220, p: 4 }}>

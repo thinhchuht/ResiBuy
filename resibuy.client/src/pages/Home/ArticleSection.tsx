@@ -1,6 +1,8 @@
 import { Box, Typography, Button } from "@mui/material";
 import PlayCircleOutlineIcon from "@mui/icons-material/PlayCircleOutline";
+import { useNavigate } from "react-router-dom";
 const AricleSection = () => {
+  const navigate = useNavigate();
   return (
     <Box
       sx={{
@@ -46,14 +48,14 @@ const AricleSection = () => {
 
       <Box sx={{ maxWidth: "40%" }}>
         <Typography variant="overline" sx={{ color: "#007bff", fontWeight: "bold", letterSpacing: "1px" }}>
-          BOOST YOUR AUDIO EXPERIENCE
+          NÂNG TẦM TRẢI NGHIỆM ÂM THANH
         </Typography>
         <Typography variant="h3" sx={{ fontWeight: "bold", my: 2 }}>
-          Next Level Sound for Your Everyday Life.
+          Âm thanh đỉnh cao cho cuộc sống hằng ngày.
         </Typography>
         <Typography variant="body1" sx={{ color: "#666", mb: 3 }}>
-          Elevate your music, calls, and entertainment with our premium smart audio devices. Engineered with advanced acoustic technology and sleek modern design, each speaker
-          delivers crystal-clear sound and powerful bass. Whether at home or on the go, experience immersive audio like never before.
+          Nâng tầm âm nhạc, cuộc gọi và giải trí của bạn với các thiết bị âm thanh thông minh cao cấp. Ứng dụng công nghệ âm học tiên tiến cùng thiết kế hiện đại, mỗi chiếc loa
+          đều mang đến âm thanh trong trẻo và bass mạnh mẽ. Dù ở nhà hay di chuyển, hãy tận hưởng trải nghiệm âm thanh sống động chưa từng có.
         </Typography>
         <Box sx={{ display: "flex", alignItems: "center", gap: 2 }}>
           <Button
@@ -64,8 +66,12 @@ const AricleSection = () => {
               borderRadius: "25px", // Pill-shaped button
               padding: "10px 25px",
               fontWeight: "bold",
+            }}
+            onClick={() => {
+              const storeId = "44444444-4444-4444-4444-444444444444";
+              navigate(`/products?storeId=${storeId}`);
             }}>
-            SHOP NOW
+            MUA NGAY
           </Button>
           <Button
             sx={{
