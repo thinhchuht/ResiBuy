@@ -24,7 +24,7 @@ namespace ResiBuy.Server.Application.Commands.ProductCommands
                 await ValidateBasicProductInfo(dto);
 
                 // Update basic product info
-                product.UpdateProduct(dto.Name, dto.Describe, dto.PromotionId, dto.CategoryId, dto.IsOutOfStock);
+                product.UpdateProduct(dto.Name, dto.Describe, dto.PromotionId, dto.CategoryId, dto.IsOutOfStock, (DateTime)dto.ExpiryDate, (int)dto.WarrantyMonths);
 
                 // Validate and update product details
                 await ValidateAndUpdateProductDetails(dto, product);
