@@ -49,7 +49,10 @@
               string describe,
               int promotionId,
               Guid categoryId,
-              bool isOutOfStock)
+              bool isOutOfStock,
+              DateTime? expiryDate,
+
+              int warrantyMonths)
         {
             Name = name;
             Describe = describe;
@@ -57,7 +60,8 @@
             CategoryId = categoryId;
             IsOutOfStock = isOutOfStock;
             UpdatedAt = DateTime.UtcNow;
-
+            ExpiryDate = expiryDate;
+            WarrantyMonths = warrantyMonths;
         }
 
         public void UpdateStatusProduct(bool isOutOfStock)

@@ -384,7 +384,7 @@ public class OrderDbService : BaseDbService<Order>, IOrderDbService
             startTime = firstOrderDate;
         var orders = await _context.Orders
             .Include(o => o.Items)
-            .Where(o => (o.Status == OrderStatus.Delivered || o.Status == OrderStatus.Reported) &&
+            .Where(o => (o.Status == OrderStatus.Delivered ) &&
                         o.CreateAt.Date >= startTime.Date &&
                         o.CreateAt.Date <= endTime.Date)
             .ToListAsync();
@@ -406,7 +406,7 @@ public class OrderDbService : BaseDbService<Order>, IOrderDbService
 
         var prevOrders = await _context.Orders
             .Include(o => o.Items)
-            .Where(o => (o.Status == OrderStatus.Delivered || o.Status == OrderStatus.Reported) && o.CreateAt.Date >= prevStart.Date && o.CreateAt.Date <= prevEnd.Date)
+            .Where(o => (o.Status == OrderStatus.Delivered ) && o.CreateAt.Date >= prevStart.Date && o.CreateAt.Date <= prevEnd.Date)
             .ToListAsync();
         var currentTotals = new
         {
@@ -452,7 +452,7 @@ public class OrderDbService : BaseDbService<Order>, IOrderDbService
         try
         {
             var firstOrderDate = await _context.Orders
-                .Where(o => o.Status == OrderStatus.Delivered || o.Status == OrderStatus.Reported)
+                .Where(o => o.Status == OrderStatus.Delivered)
                 .OrderBy(o => o.CreateAt)
                 .Select(o => o.CreateAt)
                 .FirstOrDefaultAsync();
@@ -465,8 +465,13 @@ public class OrderDbService : BaseDbService<Order>, IOrderDbService
                 startTime = firstOrderDate;
 
             var ordersQuery = _context.Orders
-                .Where(o => (o.Status == OrderStatus.Delivered || o.Status == OrderStatus.Reported)
-                    && o.CreateAt >= startTime && o.CreateAt < endDate.AddDays(1));
+                .Where(o => o.Status == OrderStatus.Delivered &&
+                            o.CreateAt.Date >= startTime.Date &&
+                            o.CreateAt.Date <= endDate.Date);
+
+            var orders = await ordersQuery.ToListAsync();
+            Console.WriteLine($"GetTopStatisticsAsync: Processed orders: {string.Join(", ", orders.Select(o => o.Id))}");
+
             var topBuyersQuery = ordersQuery
                 .GroupBy(o => o.UserId)
                 .Select(g => new
@@ -484,7 +489,7 @@ public class OrderDbService : BaseDbService<Order>, IOrderDbService
 
             var users = await _context.Users
                 .Where(u => userIds.Contains(u.Id))
-                 .Include(u => u.Avatar)
+                .Include(u => u.Avatar)
                 .Include(u => u.UserRooms)
                     .ThenInclude(ur => ur.Room)
                         .ThenInclude(r => r.Building)
@@ -518,7 +523,6 @@ public class OrderDbService : BaseDbService<Order>, IOrderDbService
                     ProductName = x.oi.ProductDetail.Product.Name,
                     StoreName = x.o.Store.Name,
                     ProductImg = x.oi.ProductDetail.Image.ThumbUrl
-
                 })
                 .Select(g => new
                 {
@@ -543,7 +547,6 @@ public class OrderDbService : BaseDbService<Order>, IOrderDbService
                 SoldQuantity = p.SoldQuantity,
                 TotalRevenue = p.TotalRevenue
             }).ToList();
-
 
             var topStoresQuery = ordersQuery
                 .GroupBy(o => o.StoreId)
@@ -598,7 +601,6 @@ public class OrderDbService : BaseDbService<Order>, IOrderDbService
             throw new CustomException(ExceptionErrorCode.RepositoryError, ex.ToString());
         }
     }
-
     public async Task<OrderOverviewStats> GetOverviewStats(DateTime? startDate = null, DateTime? endDate = null)
     {
         try

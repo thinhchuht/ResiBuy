@@ -175,7 +175,7 @@ const CheckoutSidebar: React.FC<CheckoutSidebarProps> = ({
       const res = await userApi.getUserByPhone(phoneInput);
       setCartState({ customer: res.data });
       setOpenDialog(false);
-      showMessage("Đã chọn khách hàng thành công", "success");
+      // showMessage("Đã chọn khách hàng thành công", "success");
     } catch (err: unknown) {
       console.error(err);
       showMessage("Lỗi khi tìm khách hàng", "error");

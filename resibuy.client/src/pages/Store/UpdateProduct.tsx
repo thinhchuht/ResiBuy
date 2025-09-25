@@ -304,7 +304,81 @@ export default function UpdateProduct() {
         return diffDays <= 7 && diffDays > 0;
     };
 
-    // Classification management functions - now with sales restriction
+    // Enhanced validation for unique classifications
+    const validateUniqueClassifications = (): boolean => {
+        const newClassifyErrors: ValidationErrors = {};
+        const newAttributeErrors: ValidationErrors = {};
+        let isValid = true;
+
+        // Check for duplicate classification keys
+        const classifyKeys = classifies.map(c => c.key.trim().toLowerCase());
+        const duplicateKeys = classifyKeys.filter((key, index) =>
+            key && classifyKeys.indexOf(key) !== index
+        );
+
+        if (duplicateKeys.length > 0) {
+            classifies.forEach((classify, i) => {
+                if (duplicateKeys.includes(classify.key.trim().toLowerCase())) {
+                    newClassifyErrors[`classify_${i}`] = "Tên phân loại bị trùng lặp";
+                    isValid = false;
+                }
+            });
+        }
+
+        // Check for duplicate values within each classification
+        classifies.forEach((classify, classifyIndex) => {
+            const values = classify.value.map(v => v.text.trim().toLowerCase());
+            const duplicateValues = values.filter((value, index) =>
+                value && values.indexOf(value) !== index
+            );
+
+            if (duplicateValues.length > 0) {
+                classify.value.forEach((value, valueIndex) => {
+                    if (duplicateValues.includes(value.text.trim().toLowerCase())) {
+                        newAttributeErrors[`classify_${classifyIndex}_value_${valueIndex}`] =
+                            "Thuộc tính bị trùng lặp trong phân loại này";
+                        isValid = false;
+                    }
+                });
+            }
+        });
+
+        // Check for duplicate product combinations (same key-value pairs)
+        if (listProductDetail.length > 0) {
+            const combinations = new Set();
+            const duplicateCombinations = new Set();
+
+            listProductDetail.forEach((detail, index) => {
+                // Create a normalized string representation of the classification
+                const sortedData = detail.additionalData
+                    .map(data => `${data.key.trim().toLowerCase()}:${data.value.trim().toLowerCase()}`)
+                    .sort()
+                    .join('|');
+
+                if (combinations.has(sortedData)) {
+                    duplicateCombinations.add(sortedData);
+                } else {
+                    combinations.add(sortedData);
+                }
+            });
+
+            if (duplicateCombinations.size > 0) {
+                showError("Có các tổ hợp phân loại bị trùng lặp. Vui lòng kiểm tra lại các thuộc tính.");
+                isValid = false;
+            }
+        }
+
+        setClassifyErrors(prev => ({ ...prev, ...newClassifyErrors }));
+        setAttributeErrors(prev => ({ ...prev, ...newAttributeErrors }));
+
+        if (!isValid) {
+            showError("Có phân loại hoặc thuộc tính bị trùng lặp. Vui lòng kiểm tra lại.");
+        }
+
+        return isValid;
+    };
+
+    // Classification management functions - now with sales restriction and duplicate validation
     const addClassifies = () => {
         if (!canModifyClassifications) {
             showError("Không thể thêm phân loại vì đã có sản phẩm được bán!");
@@ -366,22 +440,41 @@ export default function UpdateProduct() {
         setAttributeErrors(newAttributeErrors);
     };
 
+    // Enhanced updateClassifyKey with duplicate checking
     const updateClassifyKey = (index: number, newKey: string) => {
         if (!canModifyClassifications) {
             showError("Không thể chỉnh sửa phân loại vì đã có sản phẩm được bán!");
             return;
         }
+
         setClassifies((prev) =>
             prev.map((item, i) => (i === index ? { ...item, key: newKey } : item))
         );
 
+        // Clear error for this field if it has content
         if (newKey.trim()) {
             const newClassifyErrors = { ...classifyErrors };
             delete newClassifyErrors[`classify_${index}`];
             setClassifyErrors(newClassifyErrors);
         }
+
+        // Check for duplicate keys in real-time
+        const trimmedKey = newKey.trim().toLowerCase();
+        if (trimmedKey) {
+            const duplicateIndex = classifies.findIndex((classify, i) =>
+                i !== index && classify.key.trim().toLowerCase() === trimmedKey
+            );
+
+            if (duplicateIndex !== -1) {
+                setClassifyErrors(prev => ({
+                    ...prev,
+                    [`classify_${index}`]: "Tên phân loại bị trùng lặp"
+                }));
+            }
+        }
     };
 
+    // Enhanced updateClassifyValue with duplicate checking
     const updateClassifyValue = (
         classifyIndex: number,
         valueIndex: number,
@@ -391,6 +484,7 @@ export default function UpdateProduct() {
             showError("Không thể chỉnh sửa thuộc tính vì đã có sản phẩm được bán!");
             return;
         }
+
         setClassifies((prev) =>
             prev.map((item, i) =>
                 i === classifyIndex
@@ -404,10 +498,27 @@ export default function UpdateProduct() {
             )
         );
 
+        // Clear error for this field if it has content
         if (newValue.trim()) {
             const newAttributeErrors = { ...attributeErrors };
             delete newAttributeErrors[`classify_${classifyIndex}_value_${valueIndex}`];
             setAttributeErrors(newAttributeErrors);
+        }
+
+        // Check for duplicate values within the same classification in real-time
+        const trimmedValue = newValue.trim().toLowerCase();
+        if (trimmedValue) {
+            const currentClassify = classifies[classifyIndex];
+            const duplicateValueIndex = currentClassify.value.findIndex((val, i) =>
+                i !== valueIndex && val.text.trim().toLowerCase() === trimmedValue
+            );
+
+            if (duplicateValueIndex !== -1) {
+                setAttributeErrors(prev => ({
+                    ...prev,
+                    [`classify_${classifyIndex}_value_${valueIndex}`]: "Thuộc tính bị trùng lặp trong phân loại này"
+                }));
+            }
         }
     };
 
@@ -452,6 +563,7 @@ export default function UpdateProduct() {
         return isValid;
     };
 
+    // Enhanced validateClassifies with duplicate checking
     const validateClassifies = (): boolean => {
         const newClassifyErrors: ValidationErrors = {};
         const newAttributeErrors: ValidationErrors = {};
@@ -462,6 +574,7 @@ export default function UpdateProduct() {
             return false;
         }
 
+        // Check for empty keys and values
         classifies.forEach((classify, i) => {
             if (!classify.key.trim()) {
                 newClassifyErrors[`classify_${i}`] = "Tên phân loại không được để trống";
@@ -486,9 +599,11 @@ export default function UpdateProduct() {
 
         if (!isValid) {
             showError("Vui lòng kiểm tra lại thông tin phân loại");
+            return false;
         }
 
-        return isValid;
+        // Check for duplicates
+        return validateUniqueClassifications();
     };
 
     const validateProductDetails = (allDetails: ProductDetailInput[]): boolean => {
@@ -547,7 +662,9 @@ export default function UpdateProduct() {
 
         if (price <= 0) {
             newErrors[index] = "Giá phải lớn hơn 0";
-        } else {
+        }else if (price%500 !==0)  {
+            newErrors[index] = "Giá phải là bội số của 500";
+        }else {
             delete newErrors[index];
         }
 
@@ -578,6 +695,7 @@ export default function UpdateProduct() {
         setQuantityErrors(newErrors);
     };
 
+    // Enhanced generateProductDetail with duplicate validation
     const generateProductDetail = () => {
         if (!canModifyClassifications) {
             showError("Không thể tạo chi tiết sản phẩm mới vì đã có sản phẩm được bán!");
@@ -622,6 +740,26 @@ export default function UpdateProduct() {
             isExisting: false, // Mark as new
             sold: 0, // Initialize sold as 0
         }));
+
+        // Final validation for duplicate combinations
+        const combinationStrings = new Set();
+        const hasDuplicates = newDetails.some(detail => {
+            const sortedData = detail.additionalData
+                .map(data => `${data.key.trim().toLowerCase()}:${data.value.trim().toLowerCase()}`)
+                .sort()
+                .join('|');
+
+            if (combinationStrings.has(sortedData)) {
+                return true;
+            }
+            combinationStrings.add(sortedData);
+            return false;
+        });
+
+        if (hasDuplicates) {
+            showError("Có tổ hợp phân loại bị trùng lặp. Vui lòng kiểm tra lại các thuộc tính.");
+            return;
+        }
 
         // Clear all errors when generating new product details
         setPriceErrors({});
@@ -979,7 +1117,7 @@ export default function UpdateProduct() {
                                         label="Hạn sử dụng"
                                         type="date"
                                         variant="outlined"
-                                        value={product.expiryDate || ""}
+                                        value={product.expiryDate ? new Date(product.expiryDate).toISOString().split('T')[0] : ""}
                                         error={!!formErrors.expiryDate}
                                         helperText={formErrors.expiryDate || "Tùy chọn"}
                                         InputLabelProps={{ shrink: true }}
@@ -1103,9 +1241,36 @@ export default function UpdateProduct() {
                             >
                                 {!canModifyClassifications
                                     ? "Không thể chỉnh sửa phân loại vì sản phẩm đã có đơn hàng được bán. Chỉ có thể xem và chỉnh sửa thông tin chi tiết của các phân loại hiện có."
-                                    : "Tạo và chỉnh sửa phân loại sản phẩm. Khi tạo chi tiết sản phẩm mới, tất cả các chi tiết cũ sẽ bị thay thế."
+                                    : "Tạo và chỉnh sửa phân loại sản phẩm. Khi tạo chi tiết sản phẩm mới, tất cả các chi tiết cũ sẽ bị thay thế. Lưu ý: Không được tạo phân loại hoặc thuộc tính trùng lặp."
                                 }
                             </Alert>
+
+                            {/* Display duplicate validation errors */}
+                            {Object.keys(classifyErrors).length > 0 && (
+                                <Alert severity="error" sx={{ mb: 2 }}>
+                                    <Typography variant="subtitle2" fontWeight="bold" gutterBottom>
+                                        Lỗi phân loại:
+                                    </Typography>
+                                    {Object.entries(classifyErrors).map(([key, error]) => (
+                                        <Typography key={key} variant="body2">
+                                            • {error}
+                                        </Typography>
+                                    ))}
+                                </Alert>
+                            )}
+
+                            {Object.keys(attributeErrors).length > 0 && (
+                                <Alert severity="error" sx={{ mb: 2 }}>
+                                    <Typography variant="subtitle2" fontWeight="bold" gutterBottom>
+                                        Lỗi thuộc tính:
+                                    </Typography>
+                                    {Object.entries(attributeErrors).map(([key, error]) => (
+                                        <Typography key={key} variant="body2">
+                                            • {error}
+                                        </Typography>
+                                    ))}
+                                </Alert>
+                            )}
 
                             <Stack spacing={3}>
                                 {classifies.map((data, classifiesIndex) => (
@@ -1115,8 +1280,10 @@ export default function UpdateProduct() {
                                         sx={{
                                             p: 3,
                                             borderRadius: 3,
-                                            border: "2px solid #e3f2fd",
-                                            bgcolor: !canModifyClassifications ? "#f5f5f5" : "#f8f9ff",
+                                            border: classifyErrors[`classify_${classifiesIndex}`] ? "2px solid" : "2px solid #e3f2fd",
+                                            borderColor: classifyErrors[`classify_${classifiesIndex}`] ? "error.main" : "#e3f2fd",
+                                            bgcolor: !canModifyClassifications ? "#f5f5f5" :
+                                                classifyErrors[`classify_${classifiesIndex}`] ? "#ffeaea" : "#f8f9ff",
                                             position: "relative"
                                         }}
                                     >
@@ -1195,6 +1362,7 @@ export default function UpdateProduct() {
                                                                 sx={{
                                                                     "& .MuiOutlinedInput-root": {
                                                                         borderRadius: 2,
+                                                                        bgcolor: attributeErrors[`classify_${classifiesIndex}_value_${valueIndex}`] ? "#ffeaea" : "transparent"
                                                                     },
                                                                 }}
                                                             />
@@ -1276,7 +1444,7 @@ export default function UpdateProduct() {
                                 <Button
                                     variant="contained"
                                     color="primary"
-                                    disabled={!canModifyClassifications}
+                                    disabled={!canModifyClassifications || Object.keys(classifyErrors).length > 0 || Object.keys(attributeErrors).length > 0}
                                     onClick={generateProductDetail}
                                     size="large"
                                     sx={{
@@ -1289,7 +1457,9 @@ export default function UpdateProduct() {
                                 >
                                     {!canModifyClassifications
                                         ? "Không thể tạo chi tiết mới"
-                                        : "Tạo chi tiết sản phẩm từ phân loại"
+                                        : (Object.keys(classifyErrors).length > 0 || Object.keys(attributeErrors).length > 0)
+                                            ? "Sửa lỗi trước khi tạo chi tiết"
+                                            : "Tạo chi tiết sản phẩm từ phân loại"
                                     }
                                 </Button>
                             </Stack>

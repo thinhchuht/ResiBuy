@@ -1,4 +1,5 @@
-﻿using OfficeOpenXml;
+﻿using System.Linq;
+using OfficeOpenXml;
 using ResiBuy.Server.Application.Commands.ProductCommands.DTOs.Create;
 using ResiBuy.Server.Infrastructure.DbServices.BarcodeDbServices;
 
@@ -137,6 +138,25 @@ namespace ResiBuy.Server.Infrastructure.DbServices.ProductDbServices
 
                     if (!groupedProducts.ContainsKey(productName))
                         groupedProducts[productName] = new List<ExcelRowData>();
+
+                    var promotion = _context.Promotions.Find(promotionId);
+                    if (promotion == null)
+                        throw new CustomException(ExceptionErrorCode.ValidationFailed, "Không có mã khuyễn mãi này");
+                    if (!promotion.IsActive || promotion.StartDate > DateTime.UtcNow || promotion.EndDate < DateTime.UtcNow)
+
+                        throw new CustomException(ExceptionErrorCode.ValidationFailed, "Khuyến mãi không hoạt động");
+
+                    var category = _context.Categories.Find(categoryId);
+                    if (category == null)
+                        throw new CustomException(ExceptionErrorCode.ValidationFailed, "Không có mã danh mục này");
+                    if (!category.Status)
+                        throw new CustomException(ExceptionErrorCode.ValidationFailed, "Danh mục không hoạt động");
+
+                    var img = _context.Images.Find(imageId);
+                    if (img == null)
+                        throw new CustomException(ExceptionErrorCode.ValidationFailed, "Không có mã ảnh này");
+                    if (img.ProductDetailId != null)
+                        throw new CustomException(ExceptionErrorCode.ValidationFailed, "Ảnh đã được sử dụng");
 
                     groupedProducts[productName].Add(new ExcelRowData
                     {
