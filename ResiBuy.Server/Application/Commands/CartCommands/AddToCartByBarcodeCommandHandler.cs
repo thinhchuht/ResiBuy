@@ -1,5 +1,6 @@
 ﻿using ResiBuy.Server.Infrastructure.DbServices.CartItemDbService;
 using ResiBuy.Server.Infrastructure.DbServices.ProductDetailDbServices;
+using Microsoft.EntityFrameworkCore;
 
 namespace ResiBuy.Server.Application.Commands.CartCommands
 {
@@ -50,11 +51,20 @@ namespace ResiBuy.Server.Application.Commands.CartCommands
                 if (productDetail == null)
                     throw new CustomException(ExceptionErrorCode.NotFound, "Không tìm thấy sản phẩm liên quan đến barcode");
 
-                // Kiểm tra ProductDetail
-                if (!productDetail.Product.Category.Status)
+                // Kiểm tra Product và ProductDetail
+                var product = productDetail.Product;
+                if (!product.Category.Status)
                     throw new CustomException(ExceptionErrorCode.ValidationFailed, "Danh mục sản phẩm đã tạm thời ngừng hoạt động");
+
+                // Kiểm tra trạng thái hết hàng của Product và ProductDetail
+                if (product.IsOutOfStock)
+                    throw new CustomException(ExceptionErrorCode.ValidationFailed, $"Sản phẩm {product.Name} đã hết hàng");
                 if (productDetail.IsOutOfStock || productDetail.Quantity <= 0)
-                    throw new CustomException(ExceptionErrorCode.ValidationFailed, $"Mặt hàng {productDetail.Product.Name} đã hết hàng");
+                    throw new CustomException(ExceptionErrorCode.ValidationFailed, $"Mặt hàng {product.Name} đã hết hàng");
+
+                // Kiểm tra hạn sử dụng của Product
+                if (product.ExpiryDate.HasValue && product.ExpiryDate.Value <= DateTime.UtcNow)
+                    throw new CustomException(ExceptionErrorCode.ValidationFailed, $"Sản phẩm {product.Name} đã hết hạn sử dụng");
 
                 // Lấy giỏ hàng
                 var cart = await _cartDbService.GetByIdAsync(command.CartId)
@@ -67,7 +77,6 @@ namespace ResiBuy.Server.Application.Commands.CartCommands
                 // Kiểm tra xem barcode cụ thể có trong giỏ khác với UserId = null hay không
                 var cartsWithNullUser = await _cartDbService.GetCartsInShoppingAsync();
                 var otherCartIds = cartsWithNullUser.Where(c => c.Id != command.CartId).Select(c => c.Id).ToList();
-              
 
                 // Kiểm tra xem barcode có trong đơn hàng hay không
                 if (barcode.OrderItemId.HasValue)
@@ -96,9 +105,8 @@ namespace ResiBuy.Server.Application.Commands.CartCommands
                         CartItemId = existingItem.Id,
                         existingItem.Quantity,
                         existingItem.CartId,
-                        existingItem.ProductDetail // nếu muốn giữ nguyên
+                        existingItem.ProductDetail
                     });
-
                 }
 
                 // Thêm CartItem mới nếu ProductDetail chưa có trong giỏ

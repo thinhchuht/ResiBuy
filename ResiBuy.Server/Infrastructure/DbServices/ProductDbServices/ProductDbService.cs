@@ -143,6 +143,7 @@ namespace ResiBuy.Server.Infrastructure.DbServices.ProductDbServices
                     if (promotion == null)
                         throw new CustomException(ExceptionErrorCode.ValidationFailed, "Không có mã khuyễn mãi này");
                     if (!promotion.IsActive || promotion.StartDate > DateTime.UtcNow || promotion.EndDate < DateTime.UtcNow)
+
                         throw new CustomException(ExceptionErrorCode.ValidationFailed, "Khuyến mãi không hoạt động");
 
                     var category = _context.Categories.Find(categoryId);
@@ -150,12 +151,6 @@ namespace ResiBuy.Server.Infrastructure.DbServices.ProductDbServices
                         throw new CustomException(ExceptionErrorCode.ValidationFailed, "Không có mã danh mục này");
                     if (!category.Status)
                         throw new CustomException(ExceptionErrorCode.ValidationFailed, "Danh mục không hoạt động");
-
-                    var img = _context.Images.Find(imageId);
-                    if (img == null)
-                        throw new CustomException(ExceptionErrorCode.ValidationFailed, "Không có mã ảnh này");
-                    else if(img.ProductDetailId != null)
-                        throw new CustomException(ExceptionErrorCode.ValidationFailed, "Ảnh này đã được sử dụng cho sản phẩm khác");
 
                     groupedProducts[productName].Add(new ExcelRowData
                     {
