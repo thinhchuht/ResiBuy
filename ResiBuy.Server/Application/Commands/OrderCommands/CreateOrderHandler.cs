@@ -254,17 +254,17 @@ namespace ResiBuy.Server.Application.Commands.OrderCommands
                     throw new CustomException(ExceptionErrorCode.ValidationFailed,
                         $"Sản phẩm {pd.Product.Name} không đủ hàng");
 
-                    pd.Quantity -= ci.Quantity;
-                    pd.Sold += ci.Quantity;
+                pd.Quantity -= ci.Quantity;
+                pd.Sold += ci.Quantity;
 
-                    if (pd.Quantity <= 0)
-                    {
-                        pd.Quantity = 0;
-                        pd.IsOutOfStock = true;
-                    }
+                if (pd.Quantity <= 0)
+                {
+                    pd.Quantity = 0;
+                    pd.IsOutOfStock = true;
                 }
+            }
 
-                _context.Carts.Remove(cart);
+            _context.Carts.Remove(cart);
 
             await _context.SaveChangesAsync(cancellationToken);
 
