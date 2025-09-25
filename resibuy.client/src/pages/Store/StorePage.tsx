@@ -43,6 +43,7 @@ import SellPage from "./SellPage";
 import ViewProduct from "./ViewProduct.tsx";
 import ImageManagement from "./ImageManagement.tsx";
 import UpdateBarcodeOrderPage from "../Order/UpdateBarcodeOrderPage.tsx";
+
 // Interface cho route config
 interface RouteConfig {
   title: string;
