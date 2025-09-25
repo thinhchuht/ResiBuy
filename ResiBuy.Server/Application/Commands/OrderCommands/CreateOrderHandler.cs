@@ -98,6 +98,7 @@ namespace ResiBuy.Server.Application.Commands.OrderCommands
 
             decimal totalPrice = 0;
             float totalWeight = 0;
+            var cartItemPrices = new Dictionary<int, decimal>();
 
             foreach (var item in cart.CartItems)
             {
@@ -111,6 +112,9 @@ namespace ResiBuy.Server.Application.Commands.OrderCommands
                 {
                     productPrice -= productPrice * (item.ProductDetail.Product.Promotion.Discount / 100m);
                 }
+
+                // Lưu giá đã áp dụng khuyến mãi cho từng CartItem
+                cartItemPrices[item.ProductDetailId] = productPrice;
 
                 if (item.ProductDetail.IsOutOfStock || item.ProductDetail.Quantity < item.Quantity)
                     throw new CustomException(ExceptionErrorCode.ValidationFailed,
@@ -194,7 +198,7 @@ namespace ResiBuy.Server.Application.Commands.OrderCommands
                 request.ShippingAddressId,
                 request.UserId,
                 cart.CartItems.Select(ci =>
-                    new OrderItem(ci.Quantity, ci.ProductDetail.Price, Guid.Empty, ci.ProductDetailId)
+                    new OrderItem(ci.Quantity, cartItemPrices[ci.ProductDetailId], Guid.Empty, ci.ProductDetailId)
                 ).ToList(),
                 request.VoucherId,
                 request.StoreId
