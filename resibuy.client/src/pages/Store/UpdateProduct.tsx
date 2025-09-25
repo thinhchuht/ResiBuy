@@ -138,7 +138,7 @@ export default function UpdateProduct() {
 
     const [uploadingImages, setUploadingImages] = useState<{ [key: number]: boolean }>({});
 
-
+    // Add state to track if classifications can be modified
     const [canModifyClassifications, setCanModifyClassifications] = useState<boolean>(true);
     const [hasSoldProducts, setHasSoldProducts] = useState<boolean>(false);
 
@@ -435,8 +435,7 @@ export default function UpdateProduct() {
         }
 
         if (product.warrantyMonths !== undefined && product.warrantyMonths <= 0) {
-            newFormErrors.warrantyMonths = "Thời gian bảo hành phải lớn hơn 0 tháng";
-            isValid = false;
+            product.warrantyMonths = 0;
         }
 
         if (product.expiryDate && new Date(product.expiryDate) <= new Date()) {
@@ -810,6 +809,19 @@ export default function UpdateProduct() {
                         </Alert>
                     )}
 
+                    {/* Show warning when products have been sold */}
+                    {hasSoldProducts && (
+                        <Alert severity="warning" icon={<Lock />}>
+                            <Typography variant="subtitle2" fontWeight="bold">
+                                Không thể chỉnh sửa phân loại
+                            </Typography>
+                            <Typography variant="body2">
+                                Sản phẩm này đã có đơn hàng được bán, do đó không thể thêm/sửa/xóa phân loại hoặc tạo chi tiết sản phẩm mới.
+                                Bạn chỉ có thể chỉnh sửa thông tin cơ bản và chi tiết của các phân loại hiện có.
+                            </Typography>
+                        </Alert>
+                    )}
+
                     <Paper elevation={0} sx={{ borderRadius: 3, overflow: "hidden" }}>
                         <Box
                             sx={{
@@ -1017,7 +1029,48 @@ export default function UpdateProduct() {
                         </CardContent>
                     </Paper>
 
-                    <Paper elevation={0} sx={{ borderRadius: 3, overflow: "hidden" }}>
+                    <Paper
+                        elevation={0}
+                        sx={{
+                            borderRadius: 3,
+                            overflow: "hidden",
+                            opacity: !canModifyClassifications ? 0.6 : 1,
+                            position: "relative"
+                        }}
+                    >
+                        {!canModifyClassifications && (
+                            <Box
+                                sx={{
+                                    position: "absolute",
+                                    top: 0,
+                                    left: 0,
+                                    right: 0,
+                                    bottom: 0,
+                                    bgcolor: "rgba(0,0,0,0.1)",
+                                    zIndex: 1,
+                                    display: "flex",
+                                    alignItems: "center",
+                                    justifyContent: "center",
+                                }}
+                            >
+                                <Paper
+                                    elevation={3}
+                                    sx={{
+                                        p: 2,
+                                        bgcolor: "warning.light",
+                                        color: "warning.contrastText",
+                                        borderRadius: 2
+                                    }}
+                                >
+                                    <Stack direction="row" alignItems="center" spacing={1}>
+                                        <Lock />
+                                        <Typography variant="body2" fontWeight="bold">
+                                            Không thể chỉnh sửa - Đã có sản phẩm được bán
+                                        </Typography>
+                                    </Stack>
+                                </Paper>
+                            </Box>
+                        )}
                         <Box
                             sx={{
                                 p: 3,
@@ -1032,11 +1085,26 @@ export default function UpdateProduct() {
                                 <Typography variant="h6" fontWeight="bold">
                                     Phân loại sản phẩm
                                 </Typography>
+                                {!canModifyClassifications && (
+                                    <Chip
+                                        icon={<Lock fontSize="small" />}
+                                        label="Đã khóa"
+                                        size="small"
+                                        color="warning"
+                                        variant="filled"
+                                    />
+                                )}
                             </Stack>
                         </Box>
                         <CardContent sx={{ p: 4 }}>
-                            <Alert severity="info" sx={{ mb: 3 }}>
-                                Tạo và chỉnh sửa phân loại sản phẩm. Khi tạo chi tiết sản phẩm mới, tất cả các chi tiết cũ sẽ bị thay thế.
+                            <Alert
+                                severity={!canModifyClassifications ? "warning" : "info"}
+                                sx={{ mb: 3 }}
+                            >
+                                {!canModifyClassifications
+                                    ? "Không thể chỉnh sửa phân loại vì sản phẩm đã có đơn hàng được bán. Chỉ có thể xem và chỉnh sửa thông tin chi tiết của các phân loại hiện có."
+                                    : "Tạo và chỉnh sửa phân loại sản phẩm. Khi tạo chi tiết sản phẩm mới, tất cả các chi tiết cũ sẽ bị thay thế."
+                                }
                             </Alert>
 
                             <Stack spacing={3}>
@@ -1048,7 +1116,8 @@ export default function UpdateProduct() {
                                             p: 3,
                                             borderRadius: 3,
                                             border: "2px solid #e3f2fd",
-                                            bgcolor: "#f8f9ff"
+                                            bgcolor: !canModifyClassifications ? "#f5f5f5" : "#f8f9ff",
+                                            position: "relative"
                                         }}
                                     >
                                         <Stack spacing={3}>
@@ -1059,6 +1128,7 @@ export default function UpdateProduct() {
                                                     required
                                                     variant="outlined"
                                                     size="medium"
+                                                    disabled={!canModifyClassifications}
                                                     error={!!classifyErrors[`classify_${classifiesIndex}`]}
                                                     helperText={classifyErrors[`classify_${classifiesIndex}`]}
                                                     onChange={(e) =>
@@ -1071,12 +1141,15 @@ export default function UpdateProduct() {
                                                 />
                                                 <IconButton
                                                     color="error"
+                                                    disabled={!canModifyClassifications}
                                                     onClick={() => removeClassify(classifiesIndex)}
                                                     sx={{
-                                                        bgcolor: "error.lighter",
-                                                        "&:hover": { bgcolor: "error.light" },
+                                                        bgcolor: !canModifyClassifications ? "grey.300" : "error.lighter",
+                                                        "&:hover": {
+                                                            bgcolor: !canModifyClassifications ? "grey.300" : "error.light"
+                                                        },
                                                     }}
-                                                    title="Xóa phân loại"
+                                                    title={!canModifyClassifications ? "Không thể xóa phân loại" : "Xóa phân loại"}
                                                 >
                                                     <Delete />
                                                 </IconButton>
@@ -1109,6 +1182,7 @@ export default function UpdateProduct() {
                                                                 required
                                                                 size="small"
                                                                 variant="outlined"
+                                                                disabled={!canModifyClassifications}
                                                                 error={!!attributeErrors[`classify_${classifiesIndex}_value_${valueIndex}`]}
                                                                 helperText={attributeErrors[`classify_${classifiesIndex}_value_${valueIndex}`]}
                                                                 onChange={(e) =>
@@ -1127,6 +1201,7 @@ export default function UpdateProduct() {
                                                             <IconButton
                                                                 color="error"
                                                                 size="small"
+                                                                disabled={!canModifyClassifications}
                                                                 onClick={() =>
                                                                     removeClassifyValue(
                                                                         classifiesIndex,
@@ -1134,10 +1209,12 @@ export default function UpdateProduct() {
                                                                     )
                                                                 }
                                                                 sx={{
-                                                                    bgcolor: "error.lighter",
-                                                                    "&:hover": { bgcolor: "error.light" },
+                                                                    bgcolor: !canModifyClassifications ? "grey.300" : "error.lighter",
+                                                                    "&:hover": {
+                                                                        bgcolor: !canModifyClassifications ? "grey.300" : "error.light"
+                                                                    },
                                                                 }}
-                                                                title="Xóa thuộc tính"
+                                                                title={!canModifyClassifications ? "Không thể xóa thuộc tính" : "Xóa thuộc tính"}
                                                             >
                                                                 <Delete fontSize="small" />
                                                             </IconButton>
@@ -1147,6 +1224,7 @@ export default function UpdateProduct() {
                                                         variant="outlined"
                                                         size="small"
                                                         startIcon={<Add />}
+                                                        disabled={!canModifyClassifications}
                                                         onClick={() => addClassifyValue(classifiesIndex)}
                                                         sx={{ borderRadius: 2 }}
                                                     >
@@ -1161,6 +1239,7 @@ export default function UpdateProduct() {
                                 <Button
                                     variant="outlined"
                                     startIcon={<Add />}
+                                    disabled={!canModifyClassifications}
                                     onClick={addClassifies}
                                     sx={{ alignSelf: "flex-start", borderRadius: 2, px: 3 }}
                                 >
@@ -1170,14 +1249,26 @@ export default function UpdateProduct() {
                                 <Divider />
 
                                 {classifies.length > 0 && (
-                                    <Box sx={{ p: 2, bgcolor: "warning.lighter", borderRadius: 2 }}>
-                                        <Typography variant="body2" color="warning.dark">
-                                            <strong>Lưu ý:</strong> Khi tạo chi tiết sản phẩm mới, tất cả các chi tiết sản phẩm hiện tại sẽ bị thay thế.
-                                            Số tổ hợp sẽ được tạo: {
-                                            classifies.reduce((total, classify) =>
-                                                total * Math.max(1, classify.value.length), 1
-                                            )
-                                        } chi tiết sản phẩm
+                                    <Box sx={{
+                                        p: 2,
+                                        bgcolor: !canModifyClassifications ? "grey.100" : "warning.lighter",
+                                        borderRadius: 2
+                                    }}>
+                                        <Typography variant="body2" color={!canModifyClassifications ? "text.secondary" : "warning.dark"}>
+                                            <strong>
+                                                {!canModifyClassifications ? "Thông tin:" : "Lưu ý:"}
+                                            </strong>
+                                            {!canModifyClassifications
+                                                ? " Phân loại hiện tại không thể thay đổi vì đã có sản phẩm được bán."
+                                                : " Khi tạo chi tiết sản phẩm mới, tất cả các chi tiết sản phẩm hiện tại sẽ bị thay thế."
+                                            }
+                                            {canModifyClassifications && (
+                                                <> Số tổ hợp sẽ được tạo: {
+                                                    classifies.reduce((total, classify) =>
+                                                        total * Math.max(1, classify.value.length), 1
+                                                    )
+                                                } chi tiết sản phẩm</>
+                                            )}
                                         </Typography>
                                     </Box>
                                 )}
@@ -1185,6 +1276,7 @@ export default function UpdateProduct() {
                                 <Button
                                     variant="contained"
                                     color="primary"
+                                    disabled={!canModifyClassifications}
                                     onClick={generateProductDetail}
                                     size="large"
                                     sx={{
@@ -1195,7 +1287,10 @@ export default function UpdateProduct() {
                                         boxShadow: 3,
                                     }}
                                 >
-                                    Tạo chi tiết sản phẩm từ phân loại
+                                    {!canModifyClassifications
+                                        ? "Không thể tạo chi tiết mới"
+                                        : "Tạo chi tiết sản phẩm từ phân loại"
+                                    }
                                 </Button>
                             </Stack>
                         </CardContent>
@@ -1226,8 +1321,9 @@ export default function UpdateProduct() {
                                         <TableRow sx={{ bgcolor: "grey.50" }}>
                                             <TableCell sx={{ fontWeight: "bold", minWidth: 200 }}>Phân loại</TableCell>
                                             <TableCell sx={{ fontWeight: "bold", minWidth: 120 }}>Giá (VNĐ)</TableCell>
-                                            <TableCell sx={{ fontWeight: "bold", minWidth: 120 }}>Cân nặng (g)</TableCell>
+                                            <TableCell sx={{ fontWeight: "bold", minWidth: 120 }}>Cân nặng (kg)</TableCell>
                                             <TableCell sx={{ fontWeight: "bold", minWidth: 100 }}>Số lượng</TableCell>
+                                            <TableCell sx={{ fontWeight: "bold", minWidth: 100 }}>Đã bán</TableCell>
                                             <TableCell sx={{ fontWeight: "bold", minWidth: 150 }}>Ảnh sản phẩm</TableCell>
                                         </TableRow>
                                     </TableHead>
@@ -1308,6 +1404,14 @@ export default function UpdateProduct() {
                                                                 borderRadius: 2,
                                                             },
                                                         }}
+                                                    />
+                                                </TableCell>
+                                                <TableCell>
+                                                    <Chip
+                                                        label={productDetail.sold || 0}
+                                                        size="small"
+                                                        color={(productDetail.sold || 0) > 0 ? "error" : "default"}
+                                                        variant="outlined"
                                                     />
                                                 </TableCell>
                                                 <TableCell>

@@ -15,8 +15,8 @@ namespace ResiBuy.Server.Application.Commands.OrderCommands
             var order = await orderDbService.GetById(dto.OrderId) ?? throw new CustomException(ExceptionErrorCode.ValidationFailed, "Không tìm thấy đơn hàng");
             var store = await storeDbService.GetByIdBaseAsync(order.StoreId) ?? throw new CustomException(ExceptionErrorCode.ValidationFailed, "Không tìm thấy cửa hàng");
             var oldStatus = order.Status;
-            if (order.UserId != order.UserId && order.UserId != store.OwnerId.ToString() && dto.UserId != order.ShipperId.ToString())
-                throw new CustomException(ExceptionErrorCode.ValidationFailed, "Người dùng không có quyền sửa đơn hàng này.");
+            //if (order.UserId != order.UserId && order.UserId != store.OwnerId.ToString() && dto.UserId != order.ShipperId.ToString())
+            //    throw new CustomException(ExceptionErrorCode.ValidationFailed, "Người dùng không có quyền sửa đơn hàng này.");
             if (dto.OrderStatus != OrderStatus.Pending && dto.OrderStatus != OrderStatus.Cancelled)
             {
                 foreach (var item in order.Items)
