@@ -46,9 +46,8 @@ namespace ResiBuy.Server.Services.VNPayServices
 
             var amount = order.TotalPrice;
 
-            // Embed cartId into orderInfo in a URL-safe way if provided.
-            // Format: "Thanh toan hoa don {orderId}|{cartId}" (cartId optional)
-            var orderInfo = cartId.HasValue ? $"Thanh toan hoa don {orderId}|{cartId.Value}" : $"Thanh toan hoa don {orderId}";
+
+            var orderInfo = cartId.HasValue ? $"Thanh toan hoa don {orderId},{cartId.Value}" : $"Thanh toan hoa don {orderId}";
             return CreatePaymentUrl(amount, orderId.ToString(), orderInfo);
         }
 

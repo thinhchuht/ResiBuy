@@ -36,29 +36,29 @@ namespace ResiBuy.Server.Application.Commands.OrderCommands
                 if (dto.OrderStatus.HasValue)
                 {
                     if (dto.OrderStatus == OrderStatus.None)
-                        throw new CustomException(ExceptionErrorCode.ValidationFailed, "Trạng thái đơn hàng không tồn tại.");
-                    if (dto.OrderStatus == OrderStatus.Reported)
-                        throw new CustomException(ExceptionErrorCode.ValidationFailed, "Trạng thái đơn hàng không hợp lệ.");
-                    if (order.Status == OrderStatus.Delivered)
-                        throw new CustomException(ExceptionErrorCode.ValidationFailed, "Trạng thái đơn hàng đã hoàn thành.");
-                    if (dto.OrderStatus == OrderStatus.Pending)
-                        throw new CustomException(ExceptionErrorCode.ValidationFailed, "Không được đưa đơn hàng về chờ xử lí.");
-                    if (dto.OrderStatus == OrderStatus.Assigned)
-                    {
-                        if (order.Status != OrderStatus.Processing)
-                            throw new CustomException(ExceptionErrorCode.ValidationFailed, "Chỉ được xác nhận giao khi đơn hàng đang ở trạng thái đang chờ giao.");
-                    }
-                    if (oldStatus == OrderStatus.None)
-                        throw new CustomException(ExceptionErrorCode.ValidationFailed, "Trạng thái đơn hàng không tồn tại.");
-                    if (oldStatus == OrderStatus.Cancelled)
-                        throw new CustomException(ExceptionErrorCode.ValidationFailed, "Đơn hàng đã bị hủy trước đó.");
-                    if (oldStatus != OrderStatus.Shipped && dto.OrderStatus == OrderStatus.CustomerNotAvailable)
-                        throw new CustomException(ExceptionErrorCode.ValidationFailed, "Đơn hàng chưa được vận chuyển");
-                    if (oldStatus != OrderStatus.Shipped && oldStatus != OrderStatus.CustomerNotAvailable && dto.OrderStatus == OrderStatus.Delivered)
-                        throw new CustomException(ExceptionErrorCode.ValidationFailed, "Đơn hàng chưa ở trong trạng thái giao hàng.");
-                    if (oldStatus == OrderStatus.Pending && dto.OrderStatus != OrderStatus.Cancelled && dto.OrderStatus != OrderStatus.Processing)
-                        throw new CustomException(ExceptionErrorCode.ValidationFailed, "Đơn hàng chưa xử lý chỉ được xử lý hoặc hủy.");
-                    if (dto.OrderStatus != order.Status + 1 && dto.OrderStatus != OrderStatus.Delivered && dto.OrderStatus != OrderStatus.Cancelled && dto.OrderStatus != OrderStatus.CustomerNotAvailable) throw new CustomException(ExceptionErrorCode.ValidationFailed, "Có vẻ bạn đã bỏ quả bước nào đó trong quá trình đổi trạng thái đơn hàng.");
+                    //    throw new CustomException(ExceptionErrorCode.ValidationFailed, "Trạng thái đơn hàng không tồn tại.");
+                    //if (dto.OrderStatus == OrderStatus.Reported)
+                    //    throw new CustomException(ExceptionErrorCode.ValidationFailed, "Trạng thái đơn hàng không hợp lệ.");
+                    //if (order.Status == OrderStatus.Delivered)
+                    //    throw new CustomException(ExceptionErrorCode.ValidationFailed, "Trạng thái đơn hàng đã hoàn thành.");
+                    //if (dto.OrderStatus == OrderStatus.Pending)
+                    //    throw new CustomException(ExceptionErrorCode.ValidationFailed, "Không được đưa đơn hàng về chờ xử lí.");
+                    //if (dto.OrderStatus == OrderStatus.Assigned)
+                    //{
+                    //    if (order.Status != OrderStatus.Processing)
+                    //        throw new CustomException(ExceptionErrorCode.ValidationFailed, "Chỉ được xác nhận giao khi đơn hàng đang ở trạng thái đang chờ giao.");
+                    //}
+                    //if (oldStatus == OrderStatus.None)
+                    //    throw new CustomException(ExceptionErrorCode.ValidationFailed, "Trạng thái đơn hàng không tồn tại.");
+                    //if (oldStatus == OrderStatus.Cancelled)
+                    //    throw new CustomException(ExceptionErrorCode.ValidationFailed, "Đơn hàng đã bị hủy trước đó.");
+                    //if (oldStatus != OrderStatus.Shipped && dto.OrderStatus == OrderStatus.CustomerNotAvailable)
+                    //    throw new CustomException(ExceptionErrorCode.ValidationFailed, "Đơn hàng chưa được vận chuyển");
+                    //if (oldStatus != OrderStatus.Shipped && oldStatus != OrderStatus.CustomerNotAvailable && dto.OrderStatus == OrderStatus.Delivered)
+                    //    throw new CustomException(ExceptionErrorCode.ValidationFailed, "Đơn hàng chưa ở trong trạng thái giao hàng.");
+                    //if (oldStatus == OrderStatus.Pending && dto.OrderStatus != OrderStatus.Cancelled && dto.OrderStatus != OrderStatus.Processing)
+                    //    throw new CustomException(ExceptionErrorCode.ValidationFailed, "Đơn hàng chưa xử lý chỉ được xử lý hoặc hủy.");
+                    //if (dto.OrderStatus != order.Status + 1 && dto.OrderStatus != OrderStatus.Delivered && dto.OrderStatus != OrderStatus.Cancelled && dto.OrderStatus != OrderStatus.CustomerNotAvailable) throw new CustomException(ExceptionErrorCode.ValidationFailed, "Có vẻ bạn đã bỏ quả bước nào đó trong quá trình đổi trạng thái đơn hàng.");
                     if (dto.OrderStatus == OrderStatus.Processing)
                     {
                         var message = JsonSerializer.Serialize(dto);
@@ -105,6 +105,7 @@ namespace ResiBuy.Server.Application.Commands.OrderCommands
                             }
                         }
                     }
+                    await shipperDbService.UpdateTimeDelevery(order.ShipperId.Value);
                     order.PaymentStatus = PaymentStatus.Failed;
                     order.Status = dto.OrderStatus.Value;
                     await productDetailDbService.UpdateTransactionBatch(productDetails);
@@ -127,9 +128,10 @@ namespace ResiBuy.Server.Application.Commands.OrderCommands
 
                     var shipper = await shipperDbService.GetByIdBaseAsync(dto.ShipperId.Value)
                         ?? throw new CustomException(ExceptionErrorCode.ValidationFailed, "Không tìm thấy người giao hàng.");
-
+             
                     order.ShipperId = dto.ShipperId.Value;
                 }
+                order.Status = dto.OrderStatus.Value;
                 //await orderDbService.UpdateAsync(order);
                 await orderDbService.UpdateTransactionAsync(order);
                 await orderDbService.SaveChangesAsync();

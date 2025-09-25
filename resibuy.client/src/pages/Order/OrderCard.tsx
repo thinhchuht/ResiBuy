@@ -29,6 +29,7 @@ import type { BuildingDto, RoomDto } from "../../types/dtoModels";
 import reportApi from "../../api/report.api";
 import CheckCircleIcon from "@mui/icons-material/CheckCircle";
 import type { Report } from "../Admin/Reports/page";
+import { generateInvoicePDFFromOrder, type OrderApiResultForPDF } from "../../utils/pdfInvoiceGenerator";
 
 // Define types matching API result
 interface RoomQueryResult {
@@ -452,7 +453,7 @@ const OrderCard = ({
   };
 
   const handleUpdateBarcode = () => {
-      navigate(`/store/${order.store.id}/order-update/${order.id}`);
+    navigate(`/store/${order.store.id}/order-update/${order.id}`);
   };
 
   const handleCloseReport = () => setReportOpen(false);
@@ -495,7 +496,7 @@ const OrderCard = ({
       // Có thể gọi onUpdate để đồng bộ dữ liệu báo cáo chi tiết (nếu cần)
       if (onUpdate) onUpdate();
       toast.success("Đã gửi báo cáo thành công!");
-      
+
       // Đóng modal sau khi báo cáo thành công
       if (onCloseModal) onCloseModal();
     } catch {
@@ -525,6 +526,12 @@ const OrderCard = ({
     const assignedToUser = order.shipper?.id === user.id || order.shipperId === user.id;
     return Boolean(isShipperRole && assignedToUser);
   }, [user, order.shipper?.id, order.shipperId]);
+
+  // Xuất hóa đơn: truyền trực tiếp object order để PDF hiển thị y hệt UI
+  const handleExportInvoice = () => {
+    if (!order) return;
+    generateInvoicePDFFromOrder(order as unknown as OrderApiResultForPDF);
+  };
 
   return (
     <Paper
@@ -789,21 +796,20 @@ const OrderCard = ({
             {order.roomQueryResult.buildingName ? `, Tòa ${order.roomQueryResult.buildingName}` : ""}
             {order.roomQueryResult.areaName ? `, Khu vực ${order.roomQueryResult.areaName}` : ""}
           </Typography>
-        )}<Typography variant="subtitle2" sx={{ color: "#666", mb: 0.5 }}>
+        )}
+        <Typography variant="subtitle2" sx={{ color: "#666", mb: 0.5 }}>
           Người nhận:
         </Typography>
         {order.user && (
-  <Typography variant="body2">
-    {order.user.fullName}
-    {order.user.fullName === "Khách vãng lai" && order.user.phoneNumber === "0123456789"
-      ? "" // không hiện SĐT
-      : order.user.phoneNumber
-        ? `, SĐT ${order.user.phoneNumber}`
-        : ""}
-  </Typography>
-)}
-
-        
+          <Typography variant="body2">
+            {order.user.fullName}
+            {order.user.fullName === "Khách vãng lai" && order.user.phoneNumber === "0123456789"
+              ? "" // không hiện SĐT
+              : order.user.phoneNumber
+              ? `, SĐT ${order.user.phoneNumber}`
+              : ""}
+          </Typography>
+        )}
 
         {/* Ẩn phần lời nhắn cho store */}
         {!isStore && (
@@ -1034,15 +1040,25 @@ const OrderCard = ({
 
           {/* Nút báo cáo - ẩn nếu đã có report */}
           {isStore && order.status === OrderStatus.Pending && (
-            <Button variant="outlined" startIcon={<EditIcon />} onClick={handleUpdateBarcode}
-                    sx={{ color: "primary.main",
+            <Button
+              variant="outlined"
+              startIcon={<EditIcon />}
+              onClick={handleUpdateBarcode}
+              sx={{
+                color: "primary.main",
                 backgroundColor: "rgba(59, 130, 246, 0.08)",
                 transition: "all 0.2s",
                 "&:hover": {
-                    backgroundColor: "rgba(59, 130, 246, 0.15)",
-                    transform: "scale(1.1)",
-                }, }}>
+                  backgroundColor: "rgba(59, 130, 246, 0.15)",
+                  transform: "scale(1.1)",
+                },
+              }}>
               Cập nhật barcode
+            </Button>
+          )}
+          {order.status === OrderStatus.Delivered && !user?.roles?.includes("CUSTOMER") && (
+            <Button variant="outlined" color="primary" sx={{ borderRadius: 2, textTransform: "none", px: 3 }} onClick={handleExportInvoice}>
+              Xuất hóa đơn
             </Button>
           )}
         </Box>

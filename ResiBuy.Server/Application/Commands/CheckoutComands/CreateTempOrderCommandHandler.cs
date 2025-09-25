@@ -39,7 +39,7 @@ namespace ResiBuy.Server.Application.Commands.CheckoutComands
                         if (productDetail.Product.Promotion != null)
                         {
                             var promotion = productDetail.Product.Promotion;
-                            var now = DateTime.UtcNow;
+                            var now = DateTime.Now;
                             if (promotion.StartDate <= now && promotion.EndDate >= now && promotion.IsActive)
                             {
                                 discount = productDetail.Product.Promotion.Discount;

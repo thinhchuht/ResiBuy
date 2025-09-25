@@ -9,11 +9,18 @@ import { TransactionsTable } from "../../../components/admin/Dashboard/Transacti
 import statisticsApi from "../../../api/statistics.api";
 import { useToastify } from "../../../hooks/useToastify";
 import { format } from "date-fns";
-
+ 
 export default function Dashboard() {
-  const today = new Date();
-  const [startTime, setStartTime] = useState(today.toISOString().split("T")[0]);
-  const [endTime, setEndTime] = useState(today.toISOString().split("T")[0]);
+  const getLocalToday = () => {
+    const now = new Date();
+    const year = now.getFullYear();
+    const month = String(now.getMonth() + 1).padStart(2, '0');
+    const day = String(now.getDate()).padStart(2, '0');
+    return `${year}-${month}-${day}`;
+  };
+const today = getLocalToday();  // Sẽ là "2025-09-26" nếu ở VN
+  const [startTime, setStartTime] = useState(today);
+  const [endTime, setEndTime] = useState(today);
   const [apiData, setApiData] = useState<any>(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -52,18 +59,19 @@ export default function Dashboard() {
 
   // Xử lý chọn nhanh
   const handleQuickSelect = (days: number | "today") => {
-    const today = new Date();
-    let start: Date, end: Date;
+    let start: string, end: string;
     if (days === "today") {
-      start = today;
-      end = today;
+      start = getLocalToday();
+      end = start;
     } else {
-      end = today;
-      start = new Date(today);
-      start.setDate(today.getDate() - days);
+      const endDate = new Date();
+      const startDate = new Date(endDate);
+      startDate.setDate(endDate.getDate() - days);
+      end = getLocalToday();  // end luôn local today
+      start = `${startDate.getFullYear()}-${String(startDate.getMonth() + 1).padStart(2, '0')}-${String(startDate.getDate()).padStart(2, '0')}`;
     }
-    setStartTime(start.toISOString().split("T")[0]);
-    setEndTime(end.toISOString().split("T")[0]);
+    setStartTime(start);
+    setEndTime(end);
   };
 
   // Định dạng ngày hiển thị
@@ -72,7 +80,7 @@ export default function Dashboard() {
   };
 
   // Kiểm tra xem có phải hôm nay không
-  const isToday = startTime === endTime && startTime === today.toISOString().split("T")[0];
+   const isToday = startTime === endTime && startTime === today;
 
   return (
     <Paper
@@ -168,7 +176,7 @@ export default function Dashboard() {
                 elevation={1}
               >
                 <Button
-                  variant={startTime === today.toISOString().split("T")[0] && endTime === today.toISOString().split("T")[0] ? "contained" : "outlined"}
+                 variant={startTime === today && endTime === today ? "contained" : "outlined"}
                   size="small"
                   onClick={() => handleQuickSelect("today")}
                   sx={{
