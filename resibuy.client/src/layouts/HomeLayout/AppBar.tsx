@@ -1814,7 +1814,7 @@ const AppBar: React.FC = () => {
                   },
                 }}>
                 <Receipt sx={{ fontSize: 16, mr: 1 }} />
-                {user?.stores?.some((store) => store.id === selectedOrder?.store?.id) && user?.roles?.includes("SELLER") ? "Xem đơn hàng cửa hàng" : "Xem tất cả đơn hàng"}
+                {user?.stores?.some((store) => store.id === selectedOrder?.store?.id) && (user?.roles?.includes("SELLER") || user?.roles?.includes("ADMIN")) ? "Xem đơn hàng cửa hàng" : "Xem tất cả đơn hàng"}
               </Button>
               <MuiIconButton
                 onClick={handleCloseOrderModal}
@@ -1878,7 +1878,7 @@ const AppBar: React.FC = () => {
               <Box sx={{ p: 3 }}>
                 <OrderCard
                   order={selectedOrder}
-                  isStore={user?.roles?.includes("SELLER") && user?.stores?.some((store) => store.id === selectedOrder?.store?.id)}
+                  isStore={user?.roles?.includes("ADMIN") || user?.roles?.includes("SELLER") && user?.stores?.some((store) => store.id === selectedOrder?.store?.id)}
                   onCloseModal={handleCloseOrderModal}
                   onStatusChange={handleOrderStatusChange}
                 />

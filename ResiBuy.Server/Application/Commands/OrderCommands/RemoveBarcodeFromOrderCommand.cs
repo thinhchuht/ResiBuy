@@ -23,12 +23,15 @@ namespace ResiBuy.Server.Application.Commands.OrderCommands
             if (barcode == null)
                 throw new CustomException(ExceptionErrorCode.NotFound, $"Không tìm thấy mã vạch: {request.dto.BarcodeToRemove}");
             else if (barcode.OrderItemId == null)
-                throw new CustomException(ExceptionErrorCode.ValidationFailed, $"Mã vạch {request.dto.BarcodeToRemove} không có trong order nào");
+                throw new CustomException(ExceptionErrorCode.ValidationFailed, $"Mã vạch {request.dto.BarcodeToRemove} không có trong đơn hàng nào");
             else if (barcode.OrderItem.Order.Status != OrderStatus.Delivered)
                 throw new CustomException(ExceptionErrorCode.ValidationFailed, $"Mã vạch {request.dto.BarcodeToRemove} chỉ có thể xóa khỏi đơn hàng đã giao");
-
+            var price = barcode.OrderItem.Price;
             barcode.OrderItem.Quantity -= 1;
             barcode.OrderItem.Order.IsReport = true;
+            barcode.OrderItem.Order.TotalPrice -= barcode.OrderItem.Price;
+            barcode.OrderItem.Order.UpdateAt = DateTime.UtcNow;
+            barcode.ProductDetail.Sold -= 1;
             barcode.OrderItemId = null;
             if (request.dto.IsRemoveFromStore)
                 dbContext.Barcodes.Remove(barcode);
@@ -42,7 +45,7 @@ namespace ResiBuy.Server.Application.Commands.OrderCommands
             {
                 throw new CustomException(ExceptionErrorCode.UpdateFailed, ex.Message);
             }
-            return ResponseModel.SuccessResponse($"Đã xóa {barcode.Code} mã vạch khỏi order .Giá trị sản phẩm: {barcode.OrderItem.Price}");
+            return ResponseModel.SuccessResponse($"Đã xóa {barcode.Code} mã vạch khỏi order .Giá trị sản phẩm: {price}");
         }
     }
 }

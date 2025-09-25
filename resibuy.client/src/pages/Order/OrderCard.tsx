@@ -727,9 +727,6 @@ const OrderCard = ({
                   <Typography variant="body2" sx={{ color: "#666", transition: "color 0.2s ease" }}>
                     Số lượng: {item.quantity}
                   </Typography>
-                    <Typography variant="body2" sx={{ color: "#666", transition: "color 0.2s ease" }}>
-                    Số lượng: {item.barcode}
-                  </Typography>
                 </Box>
                 <Typography
                   variant="subtitle1"

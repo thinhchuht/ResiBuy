@@ -84,20 +84,6 @@ const StoreSection = () => {
         <Typography variant="h6" fontWeight={700} color="#e91e63" sx={{ textAlign: "left" }}>
           Cửa hàng của bạn
         </Typography>
-        <Tooltip title="Số lần cảnh cáo 3 lần sẽ bị khóa tài khoản" arrow>
-          {(() => {
-            const currentStore = stores[tabIndex] as (typeof stores)[number] & { reportCount?: number };
-            const rc = currentStore?.reportCount ?? 0;
-            return (
-              <Chip
-                icon={<ReportProblemOutlined sx={{ color: rc > 0 ? "#fb8c00" : "#9e9e9e" }} />}
-                label={`Số lần bị tố cáo: ${rc}`}
-                color={rc >= 3 ? "error" : rc > 0 ? "warning" : "default"}
-                sx={{ fontWeight: 700 }}
-              />
-            );
-          })()}
-        </Tooltip>
       </Box>
       <Tabs value={tabIndex} onChange={(_, idx) => setTabIndex(idx)} variant="scrollable" scrollButtons="auto" sx={{ mb: 3, borderBottom: 1, borderColor: "divider" }}>
         {stores.map((store) => (

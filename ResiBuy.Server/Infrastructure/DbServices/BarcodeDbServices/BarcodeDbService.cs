@@ -120,7 +120,7 @@ namespace ResiBuy.Server.Infrastructure.DbServices.BarcodeDbServices
             return string.Join("", digits) + checkDigit.ToString();
         }
 
-        public Task<ResponseModel> RemoveBarcode(List<string> barcodes)
+        public Task<List<string>> RemoveBarcode(List<string> barcodes)
         {
             foreach (var code in barcodes)
             {
@@ -145,7 +145,7 @@ namespace ResiBuy.Server.Infrastructure.DbServices.BarcodeDbServices
                 }
             }
             _context.SaveChanges();
-            return Task.FromResult(ResponseModel.SuccessResponse(barcodes));
+            return Task.FromResult(barcodes);
         }
         public async Task<List<string>> GetBarcodesWithOrderItemAsync(List<string> barcodeCodes)
         {

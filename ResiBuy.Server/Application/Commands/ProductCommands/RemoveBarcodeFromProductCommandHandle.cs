@@ -9,7 +9,8 @@ namespace ResiBuy.Server.Application.Commands.ProductCommands
         {
             if (command.request == null || command.request.Count == 0)
                 throw new CustomException(ExceptionErrorCode.ValidationFailed, "Danh sách barcode trống");
-            return await barcodeDbService.RemoveBarcode(command.request);
+            var removedBarcodes = await barcodeDbService.RemoveBarcode(command.request);
+            return ResponseModel.SuccessResponse(removedBarcodes);
         }
     }
 }

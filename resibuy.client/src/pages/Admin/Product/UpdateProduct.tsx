@@ -1393,7 +1393,10 @@ const updateProductAsync = async () => {
                             value={productDetail.quantity}
                             error={!!quantityErrors[index]}
                             helperText={quantityErrors[index]}
-                            inputProps={{ min: 0 }}
+                            inputProps={{ min: 0 , onInput: (e: React.ChangeEvent<HTMLInputElement>) => {
+          // Chỉ cho nhập số nguyên dương
+          e.target.value = e.target.value.replace(/[^0-9]/g, "");
+        },}}
                             onChange={(e) => {
                               const newQuantity = Number(e.target.value);
                               if (newQuantity >= 0) {
@@ -1638,7 +1641,10 @@ const updateProductAsync = async () => {
                               value={productDetail.quantity}
                               error={!!quantityErrors[globalIndex]}
                               helperText={quantityErrors[globalIndex]}
-                              inputProps={{ min: 0 }}
+                              inputProps={{ min: 0, onInput: (e: React.ChangeEvent<HTMLInputElement>) => {
+          // Chỉ cho nhập số nguyên dương
+          e.target.value = e.target.value.replace(/[^0-9]/g, "");
+        }, }}
                               onChange={(e) => {
                                 const newQuantity = Number(e.target.value);
                                 if (newQuantity >= 0) {

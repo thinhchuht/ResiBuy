@@ -69,7 +69,7 @@ namespace ResiBuy.Server.Infrastructure
                 IdentityNumber = Constants.DefaultAdminIdnetityNumber,
                 DateOfBirth = new DateTime(1990, 1, 1),
                 IsLocked = false,
-                Roles = [Constants.AdminRole],
+                Roles = [Constants.AdminRole, Constants.SellerRole],
                 FullName = Constants.DefaultAdminFullName,
                 CreatedAt = DateTime.Now,
                 UpdatedAt = DateTime.Now

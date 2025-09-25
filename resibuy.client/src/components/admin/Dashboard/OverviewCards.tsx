@@ -68,7 +68,7 @@ export function OverviewCards({ startTime, endTime, apiData, setSelectedMetric }
 
   const cards = [
     {
-      title: "Doanh Thu Các Cửa Hàng",
+      title: "Doanh Thu Cửa Hàng",
       value: formatCurrency(stats.totalOrderAmount),
       icon: AttachMoney,
       iconColor: "#1976d2",

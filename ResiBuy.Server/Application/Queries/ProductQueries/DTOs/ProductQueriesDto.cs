@@ -13,5 +13,7 @@
         public object Category { get; set; }
         public float AvarageRate { get; set; }
         public List<ProductDetailQueriesDto> ProductDetails { get; set; }
+        public DateTime? ExpiryDate { get; set; } = null;
+        public int? WarrantyMonths { get; set; } = null;
     }
 }

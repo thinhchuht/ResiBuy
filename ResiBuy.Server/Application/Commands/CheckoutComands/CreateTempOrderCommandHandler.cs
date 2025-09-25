@@ -47,6 +47,7 @@ namespace ResiBuy.Server.Application.Commands.CheckoutComands
                         }
                     }
                     if (productDetail.Product.IsOutOfStock || productDetail.IsOutOfStock || productDetail.Quantity <= 0) throw new CustomException(ExceptionErrorCode.ValidationFailed, $"Sản phẩm {productDetail.Product.Name} đã hết hàng");
+                    if (productDetail.Product.ExpiryDate.HasValue && productDetail.Product.ExpiryDate <= DateTime.Now) throw new CustomException(ExceptionErrorCode.ValidationFailed, $"Sản phẩm {productDetail.Product.Name} đã hết hạn sử dụng.");
                     if (!productDetail.Product.Category.Status) throw new CustomException(ExceptionErrorCode.ValidationFailed, $"Danh mục sản phẩm {productDetail.Product.Name} đã tạm thời ngừng hoạt động.");
                     if (productDetail.Quantity < ci.Quantity)
                         throw new CustomException(ExceptionErrorCode.ValidationFailed, $"Mặt hàng {productDetail.Product.Name} chỉ còn {productDetail.Quantity} sản phẩm có sẵn");
