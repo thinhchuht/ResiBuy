@@ -35,6 +35,8 @@ import {
     Save,
     Cancel,
     LocalOffer,
+    Lock,
+    AddBox,
 } from "@mui/icons-material";
 import { v4 } from "uuid";
 import axiosClient from "../../api/base.api";
@@ -64,6 +66,7 @@ interface ProductDetailInput {
     image?: Image;
     additionalData: AdditionalDataInput[];
     barcodes: string[];
+    isExisting?: boolean; // Flag to track existing product details
 }
 
 interface ProductInput {
@@ -109,6 +112,12 @@ interface ValidationErrors {
     [key: string]: string;
 }
 
+// New interface for independent classifications
+interface NewClassify {
+    key: string;
+    values: string[];
+}
+
 export default function UpdateProduct() {
     const { productId, storeId } = useParams<{
         productId: string;
@@ -132,6 +141,10 @@ export default function UpdateProduct() {
     const [weightErrors, setWeightErrors] = useState<ValidationErrors>({});
     const [quantityErrors, setQuantityErrors] = useState<ValidationErrors>({});
 
+    // New error states for independent classifications
+    const [newClassifyErrors, setNewClassifyErrors] = useState<ValidationErrors>({});
+    const [newAttributeErrors, setNewAttributeErrors] = useState<ValidationErrors>({});
+
     const [uploadingImages, setUploadingImages] = useState<{ [key: number]: boolean }>({});
 
     const [product, setProduct] = useState<ProductInput>({
@@ -148,6 +161,13 @@ export default function UpdateProduct() {
     const [listProductDetail, setListProductDetail] = useState<ProductDetailInput[]>([]);
     const [newProductDetails, setNewProductDetails] = useState<ProductDetailInput[]>([]);
     const [classifies, setClassifies] = useState<Classify[]>([]);
+    const [newClassifyPairs, setNewClassifyPairs] = useState<{ key: string; value: string }[]>([]);
+
+    // New state for independent classifications
+    const [newClassifies, setNewClassifies] = useState<NewClassify[]>([]);
+
+    // Store original quantities for validation
+    const [originalQuantities, setOriginalQuantities] = useState<{ [key: number]: number }>({});
 
     // Load data on component mount
     useEffect(() => {
@@ -174,10 +194,18 @@ export default function UpdateProduct() {
                             isOutOfStock: detail.isOutOfStock,
                             image: detail.image,
                             additionalData: detail.additionalData,
-                            barcodes: detail.barcodes.map(barcode => barcode.code ?? ''), // Xử lý null/undefined
+                            barcodes: detail.barcodes.map(barcode => barcode.code ?? ''),
+                            isExisting: true, // Mark as existing
                         })) || [];
 
                         setListProductDetail(tempProductDetails);
+
+                        // Store original quantities for validation
+                        const origQuantities: { [key: number]: number } = {};
+                        tempProductDetails.forEach((detail, index) => {
+                            origQuantities[index] = detail.quantity;
+                        });
+                        setOriginalQuantities(origQuantities);
 
                         const classifyMap: Record<string, Set<string>> = {};
 
@@ -195,9 +223,9 @@ export default function UpdateProduct() {
                                 key,
                                 value: Array.from(values).map((val) => ({
                                     text: val,
-                                    isEdit: false,
+                                    isEdit: false, // Existing attributes can't be edited
                                 })),
-                                isEdit: false,
+                                isEdit: false, // Existing classifications can't have key changed
                             })
                         );
 
@@ -275,20 +303,50 @@ export default function UpdateProduct() {
         return diffDays <= 7 && diffDays > 0;
     };
 
+    // Helper function to check if additional data combination already exists
+    const additionalDataExists = (newAdditionalData: AdditionalDataInput[]): boolean => {
+        return listProductDetail.some(existingDetail => {
+            if (existingDetail.additionalData.length !== newAdditionalData.length) {
+                return false;
+            }
+
+            return existingDetail.additionalData.every(existingData =>
+                newAdditionalData.some(newData =>
+                    newData.key === existingData.key && newData.value === existingData.value
+                )
+            );
+        });
+    };
+
     // Classification management functions
     const addClassifies = () =>
         setClassifies((prev) => [...prev, { key: "", value: [], isEdit: true }]);
 
+    const addClassifyValue = (classifyIndex: number) => {
+        setClassifies((prev) =>
+            prev.map((item, idx) =>
+                idx === classifyIndex
+                    ? { ...item, value: [...item.value, { text: "", isEdit: true }] }
+                    : item
+            )
+        );
+    };
+
     const removeClassify = (index: number) => {
         const classify = classifies[index];
+
+        // For existing classifications, check if they have associated product details
         if (!classify.isEdit) {
-            setListProductDetail((prev) =>
-                prev.filter(
-                    (detail) =>
-                        !detail.additionalData.some((data) => data.key === classify.key)
-                )
+            const hasAssociatedProducts = listProductDetail.some(detail =>
+                detail.additionalData.some(data => data.key === classify.key)
             );
+
+            if (hasAssociatedProducts) {
+                showError("Không thể xóa phân loại đã có sản phẩm tồn tại. Bạn có thể chỉnh sửa tên phân loại thay vì xóa.");
+                return;
+            }
         }
+
         setClassifies((prev) => prev.filter((_, i) => i !== index));
 
         const newClassifyErrors = { ...classifyErrors };
@@ -309,16 +367,18 @@ export default function UpdateProduct() {
         const classify = classifies[classifyIndex];
         const valueToRemove = classify.value[valueIndex];
 
+        // For existing values, check if they have associated product details
         if (!valueToRemove.isEdit) {
-            setListProductDetail((prev) =>
-                prev.filter(
-                    (detail) =>
-                        !detail.additionalData.some(
-                            (data) =>
-                                data.key === classify.key && data.value === valueToRemove.text
-                        )
+            const hasAssociatedProducts = listProductDetail.some(detail =>
+                detail.additionalData.some(data =>
+                    data.key === classify.key && data.value === valueToRemove.text
                 )
             );
+
+            if (hasAssociatedProducts) {
+                showError("Không thể xóa thuộc tính đã có sản phẩm tồn tại. Bạn có thể chỉnh sửa tên thuộc tính thay vì xóa.");
+                return;
+            }
         }
 
         setClassifies((prev) =>
@@ -336,12 +396,15 @@ export default function UpdateProduct() {
 
     const updateClassifyKey = (index: number, newKey: string) => {
         const oldKey = classifies[index].key;
+        const classify = classifies[index];
 
+        // Update classification key (now allowed for existing classifications)
         setClassifies((prev) =>
             prev.map((item, i) => (i === index ? { ...item, key: newKey } : item))
         );
 
-        if (!classifies[index].isEdit) {
+        // Update associated product details if classification is not new
+        if (!classify.isEdit) {
             setListProductDetail((prev) =>
                 prev.map((detail) => ({
                     ...detail,
@@ -367,7 +430,13 @@ export default function UpdateProduct() {
         newValue: string
     ) => {
         const classify = classifies[classifyIndex];
-        const oldValue = classify.value[valueIndex].text;
+        const valueToUpdate = classify.value[valueIndex];
+
+        // Don't allow editing existing values
+        if (!valueToUpdate.isEdit) {
+            showError("Không thể thay đổi thuộc tính đã tồn tại");
+            return;
+        }
 
         setClassifies((prev) =>
             prev.map((item, i) =>
@@ -382,20 +451,6 @@ export default function UpdateProduct() {
             )
         );
 
-        if (!classify.value[valueIndex].isEdit) {
-            setListProductDetail((prev) =>
-                prev.map((detail) => ({
-                    ...detail,
-                    additionalData: detail.additionalData.map((additionalData) =>
-                        additionalData.key === classify.key &&
-                        additionalData.value === oldValue
-                            ? { ...additionalData, value: newValue }
-                            : additionalData
-                    ),
-                }))
-            );
-        }
-
         if (newValue.trim()) {
             const newAttributeErrors = { ...attributeErrors };
             delete newAttributeErrors[`classify_${classifyIndex}_value_${valueIndex}`];
@@ -403,14 +458,280 @@ export default function UpdateProduct() {
         }
     };
 
-    const addClassifyValue = (classifyIndex: number) =>
-        setClassifies((prev) =>
-            prev.map((item, i) =>
-                i === classifyIndex
-                    ? { ...item, value: [...item.value, { text: "", isEdit: true }] }
-                    : item
+    // New independent classification functions
+    const addNewClassify = () => {
+        setNewClassifies(prev => [...prev, { key: "", values: [""] }]);
+    };
+
+    const removeNewClassify = (index: number) => {
+        setNewClassifies(prev => prev.filter((_, i) => i !== index));
+
+        // Clear related errors
+        const updatedClassifyErrors = { ...newClassifyErrors };
+        const updatedAttributeErrors = { ...newAttributeErrors };
+
+        delete updatedClassifyErrors[`newClassify_${index}`];
+        Object.keys(updatedAttributeErrors).forEach(key => {
+            if (key.startsWith(`newClassify_${index}_`)) {
+                delete updatedAttributeErrors[key];
+            }
+        });
+
+        setNewClassifyErrors(updatedClassifyErrors);
+        setNewAttributeErrors(updatedAttributeErrors);
+    };
+
+    const updateNewClassifyKey = (index: number, key: string) => {
+        setNewClassifies(prev =>
+            prev.map((classify, i) =>
+                i === index ? { ...classify, key } : classify
             )
         );
+
+        if (key.trim()) {
+            const updatedErrors = { ...newClassifyErrors };
+            delete updatedErrors[`newClassify_${index}`];
+            setNewClassifyErrors(updatedErrors);
+        }
+    };
+
+    const addNewClassifyValue = (classifyIndex: number) => {
+        setNewClassifies(prev =>
+            prev.map((classify, i) =>
+                i === classifyIndex
+                    ? { ...classify, values: [...classify.values, ""] }
+                    : classify
+            )
+        );
+    };
+
+    const removeNewClassifyValue = (classifyIndex: number, valueIndex: number) => {
+        setNewClassifies(prev =>
+            prev.map((classify, i) =>
+                i === classifyIndex
+                    ? { ...classify, values: classify.values.filter((_, vi) => vi !== valueIndex) }
+                    : classify
+            )
+        );
+
+        const updatedErrors = { ...newAttributeErrors };
+        delete updatedErrors[`newClassify_${classifyIndex}_value_${valueIndex}`];
+        setNewAttributeErrors(updatedErrors);
+    };
+
+    const updateNewClassifyValue = (classifyIndex: number, valueIndex: number, value: string) => {
+        setNewClassifies(prev =>
+            prev.map((classify, i) =>
+                i === classifyIndex
+                    ? {
+                        ...classify,
+                        values: classify.values.map((val, vi) =>
+                            vi === valueIndex ? value : val
+                        )
+                    }
+                    : classify
+            )
+        );
+
+        if (value.trim()) {
+            const updatedErrors = { ...newAttributeErrors };
+            delete updatedErrors[`newClassify_${classifyIndex}_value_${valueIndex}`];
+            setNewAttributeErrors(updatedErrors);
+        }
+    };
+
+    // Generate product details from new independent classifications
+    const generateFromNewClassifies = () => {
+        if (!validateBasicInfo()) {
+            return;
+        }
+
+        if (newClassifies.length === 0) {
+            showError("Vui lòng thêm ít nhất một phân loại mới");
+            return;
+        }
+
+        if (!validateNewClassifies()) {
+            return;
+        }
+
+        // Generate all combinations from new classifications
+        let combinations: AdditionalDataInput[][] = [[]];
+
+        newClassifies.forEach((classify) => {
+            combinations = combinations.flatMap((combo) =>
+                classify.values.map((value) => [
+                    ...combo,
+                    { key: classify.key, value }
+                ])
+            );
+        });
+
+        // Filter out combinations that already exist
+        const newCombinations = combinations.filter(additionalData =>
+            !additionalDataExists(additionalData)
+        );
+
+        if (newCombinations.length === 0) {
+            showError("Tất cả các tổ hợp từ phân loại mới đều đã tồn tại");
+            return;
+        }
+
+        // Create new product details
+        const newDetails: ProductDetailInput[] = newCombinations.map((data) => ({
+            price: 0,
+            weight: 0,
+            quantity: 0,
+            isOutOfStock: false,
+            image: { id: "", url: "", thumbUrl: "", name: "" },
+            additionalData: data,
+            barcodes: [],
+            isExisting: false,
+        }));
+
+        setNewProductDetails(prev => [...prev, ...newDetails]);
+
+        // Clear new classifications after generating
+        setNewClassifies([]);
+        setNewClassifyErrors({});
+        setNewAttributeErrors({});
+
+        showSuccess(`Đã tạo ${newDetails.length} chi tiết sản phẩm mới từ phân loại độc lập`);
+    };
+
+    const validateNewClassifies = (): boolean => {
+        const updatedClassifyErrors: ValidationErrors = {};
+        const updatedAttributeErrors: ValidationErrors = {};
+        let isValid = true;
+
+        newClassifies.forEach((classify, i) => {
+            if (!classify.key.trim()) {
+                updatedClassifyErrors[`newClassify_${i}`] = "Tên phân loại không được để trống";
+                isValid = false;
+            }
+
+            if (classify.values.length === 0 || classify.values.every(v => !v.trim())) {
+                showError(`Phân loại "${classify.key || `phân loại ${i + 1}`}" phải có ít nhất một thuộc tính`);
+                isValid = false;
+            }
+
+            classify.values.forEach((value, j) => {
+                if (!value.trim()) {
+                    updatedAttributeErrors[`newClassify_${i}_value_${j}`] = "Thuộc tính không được để trống";
+                    isValid = false;
+                }
+            });
+        });
+
+        setNewClassifyErrors(updatedClassifyErrors);
+        setNewAttributeErrors(updatedAttributeErrors);
+
+        if (!isValid) {
+            showError("Vui lòng kiểm tra lại thông tin phân loại mới");
+        }
+
+        return isValid;
+    };
+
+    // New classify pairs management functions
+    const addNewClassifyPair = () => {
+        setNewClassifyPairs(prev => [...prev, { key: "", value: "" }]);
+    };
+
+    const removeNewClassifyPair = (index: number) => {
+        setNewClassifyPairs(prev => prev.filter((_, i) => i !== index));
+    };
+
+    const updateNewClassifyPair = (index: number, field: 'key' | 'value', value: string) => {
+        setNewClassifyPairs(prev =>
+            prev.map((pair, i) =>
+                i === index ? { ...pair, [field]: value } : pair
+            )
+        );
+    };
+
+    const generateNewProductDetailsFromPairs = () => {
+        if (!validateBasicInfo()) {
+            return;
+        }
+
+        if (newClassifyPairs.length === 0) {
+            showError("Vui lòng thêm ít nhất một cặp phân loại mới");
+            return;
+        }
+
+        // Validate new classify pairs
+        const invalidPairs = newClassifyPairs.some(pair => !pair.key.trim() || !pair.value.trim());
+        if (invalidPairs) {
+            showError("Vui lòng điền đầy đủ tên phân loại và giá trị cho tất cả các cặp");
+            return;
+        }
+
+        // Check for duplicate pairs
+        const pairStrings = newClassifyPairs.map(pair => `${pair.key}:${pair.value}`);
+        const uniquePairs = new Set(pairStrings);
+        if (pairStrings.length !== uniquePairs.size) {
+            showError("Có cặp phân loại trùng lặp, vui lòng kiểm tra lại");
+            return;
+        }
+
+        // Create combinations from new classify pairs
+        let combinations: { key: string; value: string }[][] = [[]];
+
+        // Group pairs by key
+        const groupedPairs: Record<string, string[]> = {};
+        newClassifyPairs.forEach(pair => {
+            if (!groupedPairs[pair.key]) {
+                groupedPairs[pair.key] = [];
+            }
+            groupedPairs[pair.key].push(pair.value);
+        });
+
+        // Generate all combinations
+        Object.entries(groupedPairs).forEach(([key, values]) => {
+            combinations = combinations.flatMap(combo =>
+                values.map(value => [
+                    ...combo,
+                    { key, value }
+                ])
+            );
+        });
+
+        // Convert to AdditionalDataInput format
+        const finalList: AdditionalDataInput[][] = combinations.map(combo =>
+            combo.map(item => ({
+                key: item.key,
+                value: item.value,
+            }))
+        );
+
+        // Filter out combinations that already exist
+        const newCombinations = finalList.filter(additionalData =>
+            !additionalDataExists(additionalData)
+        );
+
+        if (newCombinations.length === 0) {
+            showError("Tất cả các tổ hợp từ cặp phân loại mới đều đã tồn tại");
+            return;
+        }
+
+        // Create new product details
+        const newDetails: ProductDetailInput[] = newCombinations.map((data) => ({
+            price: 0,
+            weight: 0,
+            quantity: 0,
+            isOutOfStock: false,
+            image: { id: "", url: "", thumbUrl: "", name: "" },
+            additionalData: data,
+            barcodes: [],
+            isExisting: false,
+        }));
+
+        setNewProductDetails(prev => [...prev, ...newDetails]);
+        setNewClassifyPairs([]); // Clear the pairs after generating
+
+        showSuccess(`Đã tạo ${newDetails.length} chi tiết sản phẩm mới từ cặp phân loại`);
+    };
 
     // Validation functions
     const validateBasicInfo = (): boolean => {
@@ -492,57 +813,65 @@ export default function UpdateProduct() {
 
         return isValid;
     };
-const validateProductDetails = (allDetails: ProductDetailInput[]): boolean => {
-    let isValid = true;
-    const newPriceErrors: ValidationErrors = {};
-    const newWeightErrors: ValidationErrors = {};
-    const newQuantityErrors: ValidationErrors = {};
 
-    allDetails.forEach((detail, index) => {
-        if (detail.price <= 0) {
-            newPriceErrors[index] = "Giá phải lớn hơn 0";
-            isValid = false;
-        }
+    const validateProductDetails = (allDetails: ProductDetailInput[]): boolean => {
+        let isValid = true;
+        const newPriceErrors: ValidationErrors = {};
+        const newWeightErrors: ValidationErrors = {};
+        const newQuantityErrors: ValidationErrors = {};
 
-        if (detail.weight < 0) {
-            newWeightErrors[index] = "Cân nặng phải từ 0 trở lên";
-            isValid = false;
-        }
+        allDetails.forEach((detail, index) => {
+            if (detail.price <= 0) {
+                newPriceErrors[index] = "Giá phải lớn hơn 0";
+                isValid = false;
+            }
 
-        if (detail.quantity < 0) {
-            newQuantityErrors[index] = "Số lượng phải từ 0 trở lên";
-            isValid = false;
-        }
+            if (detail.weight < 0) {
+                newWeightErrors[index] = "Cân nặng phải từ 0 trở lên";
+                isValid = false;
+            }
 
-        if (detail.isOutOfStock && detail.quantity > 0) {
-            newQuantityErrors[index] = "Sản phẩm đã hết hàng thì số lượng phải bằng 0";
-            isValid = false;
-        }
+            if (detail.quantity < 0) {
+                newQuantityErrors[index] = "Số lượng phải từ 0 trở lên";
+                isValid = false;
+            }
 
-        if (index >= listProductDetail.length && !detail.image?.url) {
-            showError(`Vui lòng tải ảnh cho tất cả các chi tiết sản phẩm mới`);
-            console.error(`Chi tiết mới tại index ${index} chưa có ảnh`);
-            isValid = false;
-        }
-    });
+            // For existing product details, validate quantity cannot be decreased
+            if (detail.isExisting && originalQuantities[index] !== undefined) {
+                if (detail.quantity < originalQuantities[index]) {
+                    newQuantityErrors[index] = "Không được giảm số lượng sản phẩm đã tồn tại";
+                    isValid = false;
+                }
+            }
 
-    setPriceErrors(newPriceErrors);
-    setWeightErrors(newWeightErrors);
-    setQuantityErrors(newQuantityErrors);
+            if (detail.isOutOfStock && detail.quantity > 0) {
+                newQuantityErrors[index] = "Sản phẩm đã hết hàng thì số lượng phải bằng 0";
+                isValid = false;
+            }
 
-    if (!isValid) {
-        console.error("Lỗi validateProductDetails:", {
-            priceErrors: newPriceErrors,
-            weightErrors: newWeightErrors,
-            quantityErrors: newQuantityErrors,
-            allDetails
+            if (!detail.isExisting && !detail.image?.url) {
+                showError(`Vui lòng tải ảnh cho tất cả các chi tiết sản phẩm mới`);
+                console.error(`Chi tiết mới tại index ${index} chưa có ảnh`);
+                isValid = false;
+            }
         });
-        showError("Vui lòng kiểm tra lại thông tin chi tiết sản phẩm");
-    }
 
-    return isValid;
-};
+        setPriceErrors(newPriceErrors);
+        setWeightErrors(newWeightErrors);
+        setQuantityErrors(newQuantityErrors);
 
+        if (!isValid) {
+            console.error("Lỗi validateProductDetails:", {
+                priceErrors: newPriceErrors,
+                weightErrors: newWeightErrors,
+                quantityErrors: newQuantityErrors,
+                allDetails
+            });
+            showError("Vui lòng kiểm tra lại thông tin chi tiết sản phẩm");
+        }
+
+        return isValid;
+    };
 
     const validatePrice = (price: number, index: number) => {
         const newErrors = { ...priceErrors };
@@ -568,11 +897,13 @@ const validateProductDetails = (allDetails: ProductDetailInput[]): boolean => {
         setWeightErrors(newErrors);
     };
 
-    const validateQuantity = (quantity: number, index: number) => {
+    const validateQuantity = (quantity: number, index: number, isExisting: boolean = false) => {
         const newErrors = { ...quantityErrors };
 
         if (quantity < 0) {
             newErrors[index] = "Số lượng không được nhỏ hơn 0";
+        } else if (isExisting && originalQuantities[index] !== undefined && quantity < originalQuantities[index]) {
+            newErrors[index] = "Không được giảm số lượng sản phẩm đã tồn tại";
         } else {
             delete newErrors[index];
         }
@@ -600,6 +931,7 @@ const validateProductDetails = (allDetails: ProductDetailInput[]): boolean => {
             );
         });
 
+        // Only create combinations that include at least one new (editable) value
         const filteredCombinations = combinations.filter((combo) =>
             combo.some((item) => item.value.isEdit)
         );
@@ -612,7 +944,17 @@ const validateProductDetails = (allDetails: ProductDetailInput[]): boolean => {
                 }))
         );
 
-        const newDetails: ProductDetailInput[] = finalList.map((data) => ({
+        // Filter out combinations that already exist in current product details
+        const newCombinations = finalList.filter(additionalData =>
+            !additionalDataExists(additionalData)
+        );
+
+        if (newCombinations.length === 0) {
+            showError("Không có tổ hợp phân loại mới nào để tạo");
+            return;
+        }
+
+        const newDetails: ProductDetailInput[] = newCombinations.map((data) => ({
             price: 0,
             weight: 0,
             quantity: 0,
@@ -620,6 +962,7 @@ const validateProductDetails = (allDetails: ProductDetailInput[]): boolean => {
             image: { id: "", url: "", thumbUrl: "", name: "" },
             additionalData: data,
             barcodes: [],
+            isExisting: false, // Mark as new
         }));
 
         setPriceErrors({});
@@ -709,11 +1052,12 @@ const validateProductDetails = (allDetails: ProductDetailInput[]): boolean => {
     };
 
     const updateProductDetail = (index: number, field: keyof ProductDetailInput, value: any, isNewDetail: boolean = false) => {
+        // For existing product details, validate quantity changes
         if (field === 'quantity' && !isNewDetail) {
             const newQuantity = Number(value);
-            const originalQuantity = listProductDetail[index].quantity;
-            if (newQuantity < originalQuantity) {
-                showError("Chỉ có quản lý mới được giảm số lượng sản phẩm");
+            const originalQuantity = originalQuantities[index];
+            if (originalQuantity !== undefined && newQuantity < originalQuantity) {
+                showError("Không được giảm số lượng sản phẩm đã tồn tại");
                 return;
             }
         }
@@ -758,9 +1102,12 @@ const validateProductDetails = (allDetails: ProductDetailInput[]): boolean => {
         setUpdating(true);
 
         try {
+            // Remove the isExisting flag before sending to API
+            const cleanDetails = allDetails.map(({ isExisting, ...detail }) => detail);
+
             const tempProduct: ProductInput = {
                 ...product,
-                productDetails: allDetails,
+                productDetails: cleanDetails,
             };
 
             const response = await axiosClient.put("api/Product", tempProduct);
@@ -1050,7 +1397,7 @@ const validateProductDetails = (allDetails: ProductDetailInput[]): boolean => {
                                     <Category />
                                 </Avatar>
                                 <Typography variant="h6" fontWeight="bold">
-                                    Phân loại sản phẩm
+                                    Phân loại sản phẩm hiện tại
                                 </Typography>
                             </Stack>
                         </Box>
@@ -1060,7 +1407,12 @@ const validateProductDetails = (allDetails: ProductDetailInput[]): boolean => {
                                     <Paper
                                         key={classifiesIndex}
                                         elevation={1}
-                                        sx={{ p: 3, borderRadius: 3, border: "2px solid #f0f0f0" }}
+                                        sx={{
+                                            p: 3,
+                                            borderRadius: 3,
+                                            border: data.isEdit ? "2px solid #f0f0f0" : "2px solid #e3f2fd",
+                                            bgcolor: data.isEdit ? "white" : "#f8f9ff"
+                                        }}
                                     >
                                         <Stack spacing={3}>
                                             <Stack direction="row" alignItems="center" spacing={2}>
@@ -1071,7 +1423,8 @@ const validateProductDetails = (allDetails: ProductDetailInput[]): boolean => {
                                                     variant="outlined"
                                                     size="medium"
                                                     error={!!classifyErrors[`classify_${classifiesIndex}`]}
-                                                    helperText={classifyErrors[`classify_${classifiesIndex}`]}
+                                                    helperText={classifyErrors[`classify_${classifiesIndex}`] ||
+                                                        (!data.isEdit ? "Phân loại từ sản phẩm hiện tại - có thể chỉnh sửa tên" : "")}
                                                     onChange={(e) =>
                                                         updateClassifyKey(classifiesIndex, e.target.value)
                                                     }
@@ -1087,6 +1440,7 @@ const validateProductDetails = (allDetails: ProductDetailInput[]): boolean => {
                                                         bgcolor: "error.lighter",
                                                         "&:hover": { bgcolor: "error.light" },
                                                     }}
+                                                    title={!data.isEdit ? "Không thể xóa phân loại đã có sản phẩm" : "Xóa phân loại"}
                                                 >
                                                     <Delete />
                                                 </IconButton>
@@ -1120,7 +1474,8 @@ const validateProductDetails = (allDetails: ProductDetailInput[]): boolean => {
                                                                 size="small"
                                                                 variant="outlined"
                                                                 error={!!attributeErrors[`classify_${classifiesIndex}_value_${valueIndex}`]}
-                                                                helperText={attributeErrors[`classify_${classifiesIndex}_value_${valueIndex}`]}
+                                                                helperText={attributeErrors[`classify_${classifiesIndex}_value_${valueIndex}`] ||
+                                                                    (!classifyValue.isEdit ? "Từ sản phẩm hiện tại - có thể chỉnh sửa tên" : "")}
                                                                 onChange={(e) =>
                                                                     updateClassifyValue(
                                                                         classifiesIndex,
@@ -1131,6 +1486,7 @@ const validateProductDetails = (allDetails: ProductDetailInput[]): boolean => {
                                                                 sx={{
                                                                     "& .MuiOutlinedInput-root": {
                                                                         borderRadius: 2,
+                                                                        bgcolor: !classifyValue.isEdit ? '#f8f9ff' : 'white'
                                                                     },
                                                                 }}
                                                             />
@@ -1143,7 +1499,11 @@ const validateProductDetails = (allDetails: ProductDetailInput[]): boolean => {
                                                                         valueIndex
                                                                     )
                                                                 }
-                                                                disabled={!classifyValue.isEdit}
+                                                                sx={{
+                                                                    bgcolor: "error.lighter",
+                                                                    "&:hover": { bgcolor: "error.light" },
+                                                                }}
+                                                                title={!classifyValue.isEdit ? "Không thể xóa thuộc tính đã có sản phẩm" : "Xóa thuộc tính"}
                                                             >
                                                                 <Delete fontSize="small" />
                                                             </IconButton>
@@ -1188,8 +1548,192 @@ const validateProductDetails = (allDetails: ProductDetailInput[]): boolean => {
                                         boxShadow: 3,
                                     }}
                                 >
-                                    Tạo chi tiết sản phẩm
+                                    Tạo chi tiết sản phẩm từ phân loại hiện tại
                                 </Button>
+                            </Stack>
+                        </CardContent>
+                    </Paper>
+
+                    {/* New Independent Classifications Section */}
+                    <Paper elevation={0} sx={{ borderRadius: 3, overflow: "hidden" }}>
+                        <Box
+                            sx={{
+                                p: 3,
+                                background: "linear-gradient(135deg, #43e97b 0%, #38f9d7 100%)",
+                                color: "white",
+                            }}
+                        >
+                            <Stack direction="row" alignItems="center" spacing={2}>
+                                <Avatar sx={{ bgcolor: "rgba(255,255,255,0.2)" }}>
+                                    <AddBox />
+                                </Avatar>
+                                <Typography variant="h6" fontWeight="bold">
+                                    Tạo phân loại mới độc lập
+                                </Typography>
+                            </Stack>
+                        </Box>
+                        <CardContent sx={{ p: 4 }}>
+                            <Alert severity="info" sx={{ mb: 3 }}>
+                                Tạo các phân loại hoàn toàn mới, không liên quan đến phân loại hiện tại.
+                                Hệ thống sẽ tự động tạo tất cả tổ hợp có thể từ các phân loại này.
+                            </Alert>
+
+                            <Stack spacing={3}>
+                                {newClassifies.map((classify, classifyIndex) => (
+                                    <Paper
+                                        key={classifyIndex}
+                                        elevation={1}
+                                        sx={{
+                                            p: 3,
+                                            borderRadius: 3,
+                                            border: "2px solid #e8f5e8",
+                                            bgcolor: "#f0fff0"
+                                        }}
+                                    >
+                                        <Stack spacing={3}>
+                                            <Stack direction="row" alignItems="center" spacing={2}>
+                                                <TextField
+                                                    label={`Phân loại mới ${classifyIndex + 1}`}
+                                                    value={classify.key}
+                                                    required
+                                                    variant="outlined"
+                                                    size="medium"
+                                                    error={!!newClassifyErrors[`newClassify_${classifyIndex}`]}
+                                                    helperText={newClassifyErrors[`newClassify_${classifyIndex}`] || "Tên phân loại mới"}
+                                                    onChange={(e) =>
+                                                        updateNewClassifyKey(classifyIndex, e.target.value)
+                                                    }
+                                                    sx={{
+                                                        flex: 1,
+                                                        "& .MuiOutlinedInput-root": { borderRadius: 2 },
+                                                    }}
+                                                />
+                                                <IconButton
+                                                    color="error"
+                                                    onClick={() => removeNewClassify(classifyIndex)}
+                                                    sx={{
+                                                        bgcolor: "error.lighter",
+                                                        "&:hover": { bgcolor: "error.light" },
+                                                    }}
+                                                    title="Xóa phân loại mới"
+                                                >
+                                                    <Delete />
+                                                </IconButton>
+                                            </Stack>
+
+                                            <Box>
+                                                <Typography
+                                                    variant="subtitle2"
+                                                    color="text.secondary"
+                                                    gutterBottom
+                                                >
+                                                    Các giá trị thuộc tính:
+                                                </Typography>
+                                                <Stack
+                                                    direction="row"
+                                                    flexWrap="wrap"
+                                                    gap={2}
+                                                    alignItems="center"
+                                                >
+                                                    {classify.values.map((value, valueIndex) => (
+                                                        <Stack
+                                                            key={valueIndex}
+                                                            direction="row"
+                                                            alignItems="center"
+                                                            spacing={1}
+                                                        >
+                                                            <TextField
+                                                                label="Giá trị"
+                                                                value={value}
+                                                                required
+                                                                size="small"
+                                                                variant="outlined"
+                                                                error={!!newAttributeErrors[`newClassify_${classifyIndex}_value_${valueIndex}`]}
+                                                                helperText={newAttributeErrors[`newClassify_${classifyIndex}_value_${valueIndex}`]}
+                                                                onChange={(e) =>
+                                                                    updateNewClassifyValue(
+                                                                        classifyIndex,
+                                                                        valueIndex,
+                                                                        e.target.value
+                                                                    )
+                                                                }
+                                                                sx={{
+                                                                    "& .MuiOutlinedInput-root": {
+                                                                        borderRadius: 2,
+                                                                    },
+                                                                }}
+                                                            />
+                                                            <IconButton
+                                                                color="error"
+                                                                size="small"
+                                                                onClick={() =>
+                                                                    removeNewClassifyValue(classifyIndex, valueIndex)
+                                                                }
+                                                                sx={{
+                                                                    bgcolor: "error.lighter",
+                                                                    "&:hover": { bgcolor: "error.light" },
+                                                                }}
+                                                                title="Xóa giá trị"
+                                                            >
+                                                                <Delete fontSize="small" />
+                                                            </IconButton>
+                                                        </Stack>
+                                                    ))}
+                                                    <Button
+                                                        variant="outlined"
+                                                        size="small"
+                                                        startIcon={<Add />}
+                                                        onClick={() => addNewClassifyValue(classifyIndex)}
+                                                        sx={{ borderRadius: 2 }}
+                                                    >
+                                                        Thêm giá trị
+                                                    </Button>
+                                                </Stack>
+                                            </Box>
+                                        </Stack>
+                                    </Paper>
+                                ))}
+
+                                <Button
+                                    variant="outlined"
+                                    startIcon={<Add />}
+                                    onClick={addNewClassify}
+                                    sx={{ alignSelf: "flex-start", borderRadius: 2, px: 3 }}
+                                >
+                                    Thêm phân loại mới
+                                </Button>
+
+                                {newClassifies.length > 0 && (
+                                    <>
+                                        <Divider />
+
+                                        <Box sx={{ p: 2, bgcolor: "info.lighter", borderRadius: 2 }}>
+                                            <Typography variant="body2" color="info.dark">
+                                                <strong>Số tổ hợp sẽ được tạo:</strong> {
+                                                newClassifies.reduce((total, classify) =>
+                                                    total * Math.max(1, classify.values.filter(v => v.trim()).length), 1
+                                                )
+                                            } chi tiết sản phẩm
+                                            </Typography>
+                                        </Box>
+
+                                        <Button
+                                            variant="contained"
+                                            color="success"
+                                            onClick={generateFromNewClassifies}
+                                            size="large"
+                                            sx={{
+                                                alignSelf: "flex-end",
+                                                borderRadius: 2,
+                                                px: 4,
+                                                py: 1.5,
+                                                boxShadow: 3,
+                                            }}
+                                        >
+                                            Tạo chi tiết sản phẩm từ phân loại mới
+                                        </Button>
+                                    </>
+                                )}
                             </Stack>
                         </CardContent>
                     </Paper>
@@ -1221,20 +1765,25 @@ const validateProductDetails = (allDetails: ProductDetailInput[]): boolean => {
                                             <TableCell sx={{ fontWeight: "bold", minWidth: 120 }}>Giá (VNĐ)</TableCell>
                                             <TableCell sx={{ fontWeight: "bold", minWidth: 120 }}>Cân nặng (g)</TableCell>
                                             <TableCell sx={{ fontWeight: "bold", minWidth: 100 }}>Số lượng</TableCell>
-                                        
                                             <TableCell sx={{ fontWeight: "bold", minWidth: 150 }}>Ảnh sản phẩm</TableCell>
                                         </TableRow>
                                     </TableHead>
                                     <TableBody>
                                         {listProductDetail.map((productDetail, index) => (
-                                            <TableRow key={index} hover>
+                                            <TableRow key={index} hover sx={{ bgcolor: productDetail.isExisting ? "#e8f5e8" : "white" }}>
                                                 <TableCell>
-                                                    <Chip
-                                                        label={classifyText(productDetail)}
-                                                        variant="outlined"
-                                                        size="small"
-                                                        sx={{ maxWidth: 200 }}
-                                                    />
+                                                    <Stack direction="row" alignItems="center" spacing={1}>
+                                                        {productDetail.isExisting && (
+                                                            <Lock sx={{ color: 'text.secondary', fontSize: 16 }} />
+                                                        )}
+                                                        <Chip
+                                                            label={classifyText(productDetail)}
+                                                            variant="outlined"
+                                                            size="small"
+                                                            color={productDetail.isExisting ? "success" : "default"}
+                                                            sx={{ maxWidth: 200 }}
+                                                        />
+                                                    </Stack>
                                                 </TableCell>
                                                 <TableCell>
                                                     <TextField
@@ -1279,8 +1828,11 @@ const validateProductDetails = (allDetails: ProductDetailInput[]): boolean => {
                                                         type="number"
                                                         value={productDetail.quantity}
                                                         error={!!quantityErrors[index]}
-                                                        helperText={quantityErrors[index]}
-                                                        inputProps={{ min: productDetail.quantity }}
+                                                        helperText={quantityErrors[index] ||
+                                                            (productDetail.isExisting ? `Tối thiểu: ${originalQuantities[index] || 0}` : "")}
+                                                        inputProps={{
+                                                            min: productDetail.isExisting ? originalQuantities[index] : 0
+                                                        }}
                                                         onChange={(e) => {
                                                             const newQuantity = Number(e.target.value);
                                                             if (newQuantity >= 0) {
@@ -1295,13 +1847,15 @@ const validateProductDetails = (allDetails: ProductDetailInput[]): boolean => {
                                                                 }
                                                             }
                                                         }}
-                                                        onBlur={() => validateQuantity(productDetail.quantity, index)}
+                                                        onBlur={() => validateQuantity(productDetail.quantity, index, productDetail.isExisting)}
                                                         sx={{
-                                                            "& .MuiOutlinedInput-root": { borderRadius: 2 },
+                                                            "& .MuiOutlinedInput-root": {
+                                                                borderRadius: 2,
+                                                                bgcolor: productDetail.isExisting ? '#f0f8f0' : 'white'
+                                                            },
                                                         }}
                                                     />
                                                 </TableCell>
-                                               
                                                 <TableCell>
                                                     <Stack
                                                         spacing={2}
@@ -1438,7 +1992,6 @@ const validateProductDetails = (allDetails: ProductDetailInput[]): boolean => {
                                             <TableCell sx={{ fontWeight: "bold", minWidth: 120 }}>Giá (VNĐ)</TableCell>
                                             <TableCell sx={{ fontWeight: "bold", minWidth: 120 }}>Cân nặng (g)</TableCell>
                                             <TableCell sx={{ fontWeight: "bold", minWidth: 100 }}>Số lượng</TableCell>
-                                           
                                             <TableCell sx={{ fontWeight: "bold", minWidth: 150 }}>Ảnh sản phẩm</TableCell>
                                         </TableRow>
                                     </TableHead>
@@ -1521,13 +2074,12 @@ const validateProductDetails = (allDetails: ProductDetailInput[]): boolean => {
                                                                     }
                                                                 }
                                                             }}
-                                                            onBlur={() => validateQuantity(productDetail.quantity, globalIndex)}
+                                                            onBlur={() => validateQuantity(productDetail.quantity, globalIndex, false)}
                                                             sx={{
                                                                 "& .MuiOutlinedInput-root": { borderRadius: 2 },
                                                             }}
                                                         />
                                                     </TableCell>
-                                                   
                                                     <TableCell>
                                                         <Stack
                                                             spacing={2}
