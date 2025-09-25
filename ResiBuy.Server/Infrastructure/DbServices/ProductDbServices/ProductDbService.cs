@@ -143,6 +143,7 @@ namespace ResiBuy.Server.Infrastructure.DbServices.ProductDbServices
                     if (promotion == null)
                         throw new CustomException(ExceptionErrorCode.ValidationFailed, "Không có mã khuyễn mãi này");
                     if (!promotion.IsActive || promotion.StartDate > DateTime.UtcNow || promotion.EndDate < DateTime.UtcNow)
+
                         throw new CustomException(ExceptionErrorCode.ValidationFailed, "Khuyến mãi không hoạt động");
 
                     var category = _context.Categories.Find(categoryId);

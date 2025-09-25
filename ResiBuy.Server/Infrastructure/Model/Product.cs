@@ -51,6 +51,7 @@
               Guid categoryId,
               bool isOutOfStock,
               DateTime? expiryDate,
+
               int warrantyMonths)
         {
             Name = name;
