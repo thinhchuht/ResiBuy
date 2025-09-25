@@ -49,6 +49,7 @@ import {
   ExpandMore,
   ExpandLess,
   Warning as WarningIcon,
+  Image as ImageIcon
 } from "@mui/icons-material";
 import axios from "../../api/base.api";
 import { useNavigate, useParams } from "react-router-dom";
@@ -271,6 +272,9 @@ const ProductPage: React.FC = () => {
   const handleCreate = () => {
     navigate(`/store/${storeId}/product-create`);
   };
+  const handleViewImages = () => {
+    navigate(`/store/${storeId}/image-management`);
+  };
 
   const getActiveFiltersCount = () => {
     let count = 0;
@@ -414,26 +418,48 @@ const ProductPage: React.FC = () => {
             </Typography>
           </Box>
 
-          <Button
-            variant="contained"
-            startIcon={<AddIcon />}
-            onClick={handleCreate}
-            sx={{
-              backgroundColor: "rgba(255,255,255,0.2)",
-              backdropFilter: "blur(10px)",
-              border: "1px solid rgba(255,255,255,0.3)",
-              color: "white",
-              fontWeight: 600,
-              px: 3,
-              py: 1.5,
-              borderRadius: 2,
-              "&:hover": {
-                backgroundColor: "rgba(255,255,255,0.3)",
-              },
-            }}>
-            Thêm sản phẩm
-          </Button>
+          <Box display="flex" gap={2}>
+            <Button
+              variant="contained"
+              startIcon={<ImageIcon />}
+              onClick={handleViewImages}
+              sx={{
+                backgroundColor: "rgba(255,255,255,0.2)",
+                backdropFilter: "blur(10px)",
+                border: "1px solid rgba(255,255,255,0.3)",
+                color: "white",
+                fontWeight: 600,
+                px: 3,
+                py: 1.5,
+                borderRadius: 2,
+                "&:hover": {
+                  backgroundColor: "rgba(255,255,255,0.3)",
+                },
+              }}>
+              Xem ảnh sản phẩm
+            </Button>
+            <Button
+              variant="contained"
+              startIcon={<AddIcon />}
+              onClick={handleCreate}
+              sx={{
+                backgroundColor: "rgba(255,255,255,0.2)",
+                backdropFilter: "blur(10px)",
+                border: "1px solid rgba(255,255,255,0.3)",
+                color: "white",
+                fontWeight: 600,
+                px: 3,
+                py: 1.5,
+                borderRadius: 2,
+                "&:hover": {
+                  backgroundColor: "rgba(255,255,255,0.3)",
+                },
+              }}>
+              Thêm sản phẩm
+            </Button>
+          </Box>
         </Box>
+      
       </Paper>
 
       <Box
