@@ -105,7 +105,10 @@ namespace ResiBuy.Server.Application.Commands.OrderCommands
                             }
                         }
                     }
-                    await shipperDbService.UpdateTimeDelevery(order.ShipperId.Value);
+                    if (order.ShipperId.HasValue)
+                    {
+                        await shipperDbService.UpdateTimeDelevery(order.ShipperId.Value);
+                    }
                     order.PaymentStatus = PaymentStatus.Failed;
                     order.Status = dto.OrderStatus.Value;
                     await productDetailDbService.UpdateTransactionBatch(productDetails);
