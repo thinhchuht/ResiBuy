@@ -29,6 +29,9 @@ namespace ResiBuy.Server.Application.Commands.OrderCommands
 
             barcode.OrderItem.Quantity -= 1;
             barcode.OrderItem.Order.IsReport = true;
+            barcode.OrderItem.Order.TotalPrice -= barcode.OrderItem.Price;
+            barcode.OrderItem.Order.UpdateAt = DateTime.UtcNow;
+            barcode.ProductDetail.Sold -= 1;
             barcode.OrderItemId = null;
             if (request.dto.IsRemoveFromStore)
                 dbContext.Barcodes.Remove(barcode);
