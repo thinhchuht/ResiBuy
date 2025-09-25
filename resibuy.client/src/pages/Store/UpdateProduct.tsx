@@ -138,7 +138,7 @@ export default function UpdateProduct() {
 
     const [uploadingImages, setUploadingImages] = useState<{ [key: number]: boolean }>({});
 
-
+    // Add state to track if classifications can be modified
     const [canModifyClassifications, setCanModifyClassifications] = useState<boolean>(true);
     const [hasSoldProducts, setHasSoldProducts] = useState<boolean>(false);
 
