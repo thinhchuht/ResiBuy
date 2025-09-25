@@ -75,7 +75,7 @@ interface ProductDetailInput {
   additionalData: AdditionalDataInput[];
   barcodes: Barcode[];
   listBarcode?: string[];
-  barcodesToRemove?: string[]; // Thêm trường này
+  barcodesToRemove?: string[];
 }
 
 interface ProductInput {
@@ -268,9 +268,11 @@ export default function UpdateProduct() {
       setIsLoadingPromotions(false);
     }
   };
-const isDuplicateClassifyKey = (key: string, currentIndex: number): boolean => {
-  return classifies.some((classify, index) => index !== currentIndex && classify.key.trim().toLowerCase() === key.trim().toLowerCase());
-};
+
+  const isDuplicateClassifyKey = (key: string, currentIndex: number): boolean => {
+    return classifies.some((classify, index) => index !== currentIndex && classify.key.trim().toLowerCase() === key.trim().toLowerCase());
+  };
+
   const formatPromotionDisplay = (promotion: PromotionDto): string => {
     const startDate = new Date(promotion.startDate).toLocaleDateString('vi-VN');
     const endDate = new Date(promotion.endDate).toLocaleDateString('vi-VN');
@@ -285,13 +287,13 @@ const isDuplicateClassifyKey = (key: string, currentIndex: number): boolean => {
     return diffDays <= 7 && diffDays > 0;
   };
 
- const addClassifies = () => {
-  if (hasOrderItemId()) {
-    showError("Không thể thêm phân loại mới vì sản phẩm đã có đơn hàng liên quan.");
-    return;
-  }
-  setClassifies((prev) => [...prev, { key: "", value: [], isEdit: true }]);
-};
+  const addClassifies = () => {
+    if (hasOrderItemId()) {
+      showError("Không thể thêm phân loại mới vì sản phẩm đã có đơn hàng liên quan.");
+      return;
+    }
+    setClassifies((prev) => [...prev, { key: "", value: [], isEdit: true }]);
+  };
 
   const removeClassify = (index: number) => {
     const classify = classifies[index];
@@ -348,44 +350,44 @@ const isDuplicateClassifyKey = (key: string, currentIndex: number): boolean => {
   };
 
   const updateClassifyKey = (index: number, newKey: string) => {
-  const oldKey = classifies[index].key;
+    const oldKey = classifies[index].key;
 
-  if (hasOrderItemId() && !classifies[index].isEdit) {
-    showError("Không thể đổi tên phân loại vì sản phẩm đã có đơn hàng liên quan.");
-    return;
-  }
+    if (hasOrderItemId() && !classifies[index].isEdit) {
+      showError("Không thể đổi tên phân loại vì sản phẩm đã có đơn hàng liên quan.");
+      return;
+    }
 
-  if (isDuplicateClassifyKey(newKey, index)) {
-    setClassifyErrors(prev => ({
-      ...prev,
-      [`classify_${index}`]: "Tên phân loại không được trùng",
-    }));
-    return;
-  }
+    if (isDuplicateClassifyKey(newKey, index)) {
+      setClassifyErrors(prev => ({
+        ...prev,
+        [`classify_${index}`]: "Tên phân loại không được trùng",
+      }));
+      return;
+    }
 
-  setClassifies((prev) =>
-    prev.map((item, i) => (i === index ? { ...item, key: newKey } : item))
-  );
-
-  if (!classifies[index].isEdit) {
-    setListProductDetail((prev) =>
-      prev.map((detail) => ({
-        ...detail,
-        additionalData: detail.additionalData.map((additionalData) =>
-          additionalData.key === oldKey
-            ? { ...additionalData, key: newKey }
-            : additionalData
-        ),
-      }))
+    setClassifies((prev) =>
+      prev.map((item, i) => (i === index ? { ...item, key: newKey } : item))
     );
-  }
 
-  if (newKey.trim()) {
-    const newClassifyErrors = { ...classifyErrors };
-    delete newClassifyErrors[`classify_${index}`];
-    setClassifyErrors(newClassifyErrors);
-  }
-};
+    if (!classifies[index].isEdit) {
+      setListProductDetail((prev) =>
+        prev.map((detail) => ({
+          ...detail,
+          additionalData: detail.additionalData.map((additionalData) =>
+            additionalData.key === oldKey
+              ? { ...additionalData, key: newKey }
+              : additionalData
+          ),
+        }))
+      );
+    }
+
+    if (newKey.trim()) {
+      const newClassifyErrors = { ...classifyErrors };
+      delete newClassifyErrors[`classify_${index}`];
+      setClassifyErrors(newClassifyErrors);
+    }
+  };
 
   const updateClassifyValue = (
     classifyIndex: number,
@@ -480,92 +482,95 @@ const isDuplicateClassifyKey = (key: string, currentIndex: number): boolean => {
   };
 
   const validateClassifies = (): boolean => {
-  const newClassifyErrors: ValidationErrors = {};
-  const newAttributeErrors: ValidationErrors = {};
-  let isValid = true;
+    const newClassifyErrors: ValidationErrors = {};
+    const newAttributeErrors: ValidationErrors = {};
+    let isValid = true;
 
-  if (classifies.length === 0) {
-    showError("Vui lòng thêm ít nhất một phân loại sản phẩm");
-    return false;
-  }
-
-  classifies.forEach((classify, i) => {
-    if (!classify.key.trim()) {
-      newClassifyErrors[`classify_${i}`] = "Tên phân loại không được để trống";
-      isValid = false;
-    } else if (isDuplicateClassifyKey(classify.key, i)) {
-      newClassifyErrors[`classify_${i}`] = "Tên phân loại không được trùng";
-      isValid = false;
+    if (classifies.length === 0) {
+      showError("Vui lòng thêm ít nhất một phân loại sản phẩm");
+      return false;
     }
 
-    if (classify.value.length === 0) {
-      showError(`Phân loại "${classify.key || `phân loại ${i + 1}`}" phải có ít nhất một thuộc tính`);
-      isValid = false;
+    classifies.forEach((classify, i) => {
+      if (!classify.key.trim()) {
+        newClassifyErrors[`classify_${i}`] = "Tên phân loại không được để trống";
+        isValid = false;
+      } else if (isDuplicateClassifyKey(classify.key, i)) {
+        newClassifyErrors[`classify_${i}`] = "Tên phân loại không được trùng";
+        isValid = false;
+      }
+
+      if (classify.value.length === 0) {
+        showError(`Phân loại "${classify.key || `phân loại ${i + 1}`}" phải có ít nhất một thuộc tính`);
+        isValid = false;
+      }
+
+      classify.value.forEach((value, j) => {
+        if (!value.text.trim()) {
+          newAttributeErrors[`classify_${i}_value_${j}`] = "Thuộc tính không được để trống";
+          isValid = false;
+        }
+      });
+    });
+
+    setClassifyErrors(newClassifyErrors);
+    setAttributeErrors(newAttributeErrors);
+
+    if (!isValid) {
+      showError("Vui lòng kiểm tra lại thông tin phân loại");
     }
 
-    classify.value.forEach((value, j) => {
-      if (!value.text.trim()) {
-        newAttributeErrors[`classify_${i}_value_${j}`] = "Thuộc tính không được để trống";
+    return isValid;
+  };
+
+  const hasOrderItemId = (): boolean => {
+    const allDetails = [...listProductDetail, ...newProductDetails];
+    return allDetails.some(detail =>
+      detail.barcodes.some(barcode => barcode.orderItemId)
+    );
+  };
+
+  const validateProductDetails = (allDetails: ProductDetailInput[], showToast: boolean = true): boolean => {
+    let isValid = true;
+    const newPriceErrors: ValidationErrors = {};
+    const newWeightErrors: ValidationErrors = {};
+    const newQuantityErrors: ValidationErrors = {};
+
+    allDetails.forEach((detail, index) => {
+      if (detail.price <= 0) {
+        newPriceErrors[index] = "Giá phải lớn hơn 0";
+        isValid = false;
+      }
+
+      if (detail.weight <= 0) {
+        newWeightErrors[index] = "Cân nặng phải lớn hơn 0";
+        isValid = false;
+      }
+
+      if (detail.quantity < 0) {
+        newQuantityErrors[index] = "Số lượng không được nhỏ hơn 0";
+        isValid = false;
+      }
+
+      if (index >= listProductDetail.length && !detail.image?.url) {
+        if (showToast) {
+          showError(`Vui lòng tải ảnh cho tất cả các chi tiết sản phẩm mới`);
+        }
         isValid = false;
       }
     });
-  });
 
-  setClassifyErrors(newClassifyErrors);
-  setAttributeErrors(newAttributeErrors);
+    setPriceErrors(newPriceErrors);
+    setWeightErrors(newWeightErrors);
+    setQuantityErrors(newQuantityErrors);
 
-  if (!isValid) {
-    showError("Vui lòng kiểm tra lại thông tin phân loại");
-  }
-
-  return isValid;
-};
-const hasOrderItemId = (): boolean => {
-  const allDetails = [...listProductDetail, ...newProductDetails];
-  return allDetails.some(detail =>
-    detail.barcodes.some(barcode => barcode.orderItemId)
-  );
-};
-  const validateProductDetails = (allDetails: ProductDetailInput[], showToast: boolean = true): boolean => {
-  let isValid = true;
-  const newPriceErrors: ValidationErrors = {};
-  const newWeightErrors: ValidationErrors = {};
-  const newQuantityErrors: ValidationErrors = {};
-
-  allDetails.forEach((detail, index) => {
-    if (detail.price <= 0) {
-      newPriceErrors[index] = "Giá phải lớn hơn 0";
-      isValid = false;
+    if (!isValid && showToast) {
+      showError("Vui lòng kiểm tra lại thông tin chi tiết sản phẩm");
     }
 
-    if (detail.weight <= 0) {
-      newWeightErrors[index] = "Cân nặng phải lớn hơn 0";
-      isValid = false;
-    }
+    return isValid;
+  };
 
-    if (detail.quantity < 0) {
-      newQuantityErrors[index] = "Số lượng không được nhỏ hơn 0";
-      isValid = false;
-    }
-
-    if (index >= listProductDetail.length && !detail.image?.url) {
-      if (showToast) {
-        showError(`Vui lòng tải ảnh cho tất cả các chi tiết sản phẩm mới`);
-      }
-      isValid = false;
-    }
-  });
-
-  setPriceErrors(newPriceErrors);
-  setWeightErrors(newWeightErrors);
-  setQuantityErrors(newQuantityErrors);
-
-  if (!isValid && showToast) {
-    showError("Vui lòng kiểm tra lại thông tin chi tiết sản phẩm");
-  }
-
-  return isValid;
-};
   const validatePrice = (price: number, index: number) => {
     const newErrors = { ...priceErrors };
     if (price <= 0) {
@@ -611,8 +616,8 @@ const hasOrderItemId = (): boolean => {
       setIsNewDetail(isNewDetail);
       setDeleteCount(removeQuantity);
       setBarcodesToDelete([]);
-      setOpenDeleteBarcodeModal(true);
-      showSuccess(`Vui lòng chọn ${removeQuantity} barcode để xóa.`);
+     
+    
     } else {
       // Xóa lỗi barcode nếu có
       const newBarcodeErrors = { ...barcodeErrors };
@@ -654,80 +659,80 @@ const hasOrderItemId = (): boolean => {
     }
   };
 
-const generateProductDetail = () => {
-  if (!validateBasicInfo() || !validateClassifies()) {
-    return;
-  }
+  const generateProductDetail = () => {
+    if (!validateBasicInfo() || !validateClassifies()) {
+      return;
+    }
 
-  if (hasOrderItemId()) {
-    showError("Không thể tạo chi tiết sản phẩm mới vì sản phẩm đã có đơn hàng liên quan.");
-    return;
-  }
+    if (hasOrderItemId()) {
+      showError("Không thể tạo chi tiết sản phẩm mới vì sản phẩm đã có đơn hàng liên quan.");
+      return;
+    }
 
-  let combinations: TempAdditionalData[][] = [[]];
+    let combinations: TempAdditionalData[][] = [[]];
 
-  classifies.forEach((classify) => {
-    const allValues = classify.value;
-    combinations = combinations.flatMap((combo) =>
-      allValues.map((val) => [
-        ...combo,
-        {
-          key: classify.key,
-          value: val,
-        },
-      ])
+    classifies.forEach((classify) => {
+      const allValues = classify.value;
+      combinations = combinations.flatMap((combo) =>
+        allValues.map((val) => [
+          ...combo,
+          {
+            key: classify.key,
+            value: val,
+          },
+        ])
+      );
+    });
+
+    const existingCombinations = listProductDetail.map(detail =>
+      detail.additionalData
+        .map(data => `${data.key}:${data.value}`)
+        .sort()
+        .join("|")
     );
-  });
 
-  const existingCombinations = listProductDetail.map(detail =>
-    detail.additionalData
-      .map(data => `${data.key}:${data.value}`)
-      .sort()
-      .join("|")
-  );
+    const filteredCombinations = combinations.filter(combo => {
+      const comboString = combo
+        .map(item => `${item.key}:${item.value.text}`)
+        .sort()
+        .join("|");
+      return !existingCombinations.includes(comboString) && combo.some(item => item.value.isEdit);
+    });
 
- const filteredCombinations = combinations.filter(combo => {
-    const comboString = combo
-      .map(item => `${item.key}:${item.value.text}`)
-      .sort()
-      .join("|");
-    return !existingCombinations.includes(comboString) && combo.some(item => item.value.isEdit);
-  });
+    const finalList: AdditionalDataInput[][] = filteredCombinations.map(
+      (combo) =>
+        combo.map((item) => ({
+          key: item.key,
+          value: item.value.text,
+        }))
+    );
 
-  const finalList: AdditionalDataInput[][] = filteredCombinations.map(
-    (combo) =>
-      combo.map((item) => ({
-        key: item.key,
-        value: item.value.text,
-      }))
-  );
+    const newDetails: ProductDetailInput[] = finalList.map((data) => ({
+      price: 0,
+      weight: 0,
+      quantity: 0,
+      isOutOfStock: false,
+      image: { id: "", url: "", thumbUrl: "", name: "" },
+      additionalData: data,
+      barcodes: [],
+      listBarcode: [],
+      barcodesToRemove: [],
+    }));
 
-  const newDetails: ProductDetailInput[] = finalList.map((data) => ({
-    price: 0,
-    weight: 0,
-    quantity: 0,
-    isOutOfStock: false,
-    image: { id: "", url: "", thumbUrl: "", name: "" },
-    additionalData: data,
-    barcodes: [],
-    listBarcode: [],
-    barcodesToRemove: [],
-  }));
+    if (newDetails.length === 0) {
+      showError("Không có tổ hợp phân loại mới để tạo chi tiết sản phẩm");
+      return;
+    }
 
-  if (newDetails.length === 0) {
-    showError("Không có tổ hợp phân loại mới để tạo chi tiết sản phẩm");
-    return;
-  }
+    setPriceErrors({});
+    setWeightErrors({});
+    setQuantityErrors({});
+    setBarcodeErrors({});
 
-  setPriceErrors({});
-  setWeightErrors({});
-  setQuantityErrors({});
-  setBarcodeErrors({});
-
-  setNewProductDetails(newDetails);
-  validateProductDetails([...listProductDetail, ...newDetails], false);
-  showSuccess(`Đã tạo ${newDetails.length} chi tiết sản phẩm mới`);
-};
+    setNewProductDetails(newDetails);
+    validateProductDetails([...listProductDetail, ...newDetails], false);
+    showSuccess(`Đã tạo ${newDetails.length} chi tiết sản phẩm mới`);
+  };
 
   const classifyText = (productDetail: ProductDetailInput) => {
     return productDetail.additionalData
@@ -787,33 +792,33 @@ const generateProductDetail = () => {
     }
   };
 
- const updateProductField = (field: keyof ProductInput, value: string | number | undefined) => {
-  if (field === 'name' && hasOrderItemId()) {
-    showError("Không thể đổi tên sản phẩm vì sản phẩm đã có đơn hàng liên quan.");
-    return;
-  }
-  setProduct(prev => ({ ...prev, [field]: value }));
+  const updateProductField = (field: keyof ProductInput, value: string | number | undefined) => {
+    if (field === 'name' && hasOrderItemId()) {
+      showError("Không thể đổi tên sản phẩm vì sản phẩm đã có đơn hàng liên quan.");
+      return;
+    }
+    setProduct(prev => ({ ...prev, [field]: value }));
 
-  if (field === 'name' && value && formErrors.name) {
-    setFormErrors(prev => {
-      const newErrors = { ...prev };
-      delete newErrors.name;
-      return newErrors;
-    });
-  } else if (field === 'categoryId' && value && formErrors.categoryId) {
-    setFormErrors(prev => {
-      const newErrors = { ...prev };
-      delete newErrors.categoryId;
-      return newErrors;
-    });
-  } else if (field === 'promotionId' && value && formErrors.promotionId) {
-    setFormErrors(prev => {
-      const newErrors = { ...prev };
-      delete newErrors.promotionId;
-      return newErrors;
-    });
-  }
-};
+    if (field === 'name' && value && formErrors.name) {
+      setFormErrors(prev => {
+        const newErrors = { ...prev };
+        delete newErrors.name;
+        return newErrors;
+      });
+    } else if (field === 'categoryId' && value && formErrors.categoryId) {
+      setFormErrors(prev => {
+        const newErrors = { ...prev };
+        delete newErrors.categoryId;
+        return newErrors;
+      });
+    } else if (field === 'promotionId' && value && formErrors.promotionId) {
+      setFormErrors(prev => {
+        const newErrors = { ...prev };
+        delete newErrors.promotionId;
+        return newErrors;
+      });
+    }
+  };
 
   const updateProductDetail = (
     index: number,
@@ -852,56 +857,56 @@ const generateProductDetail = () => {
     updateProductDetail(index, 'barcodes', barcodes, isNewDetail);
   };
 
- const handleDeleteBarcodesConfirm = () => {
-  if (selectedDetailIndex === null) return;
+  const handleDeleteBarcodesConfirm = () => {
+    if (selectedDetailIndex === null) return;
 
-  const isNewDetailLocal = isNewDetail;
-  const index = selectedDetailIndex;
-  const detail = isNewDetailLocal ? newProductDetails[index] : listProductDetail[index];
-  const desiredQuantity = detail.quantity; // Lưu số lượng người dùng đã nhập
+    const isNewDetailLocal = isNewDetail;
+    const index = selectedDetailIndex;
+    const detail = isNewDetailLocal ? newProductDetails[index] : listProductDetail[index];
+    const desiredQuantity = detail.quantity;
 
-  if (barcodesToDelete.length !== deleteCount) {
-    showError(`Vui lòng chọn đúng ${deleteCount} barcode để xóa`);
-    return;
-  }
+    if (barcodesToDelete.length !== deleteCount) {
+      showError(`Vui lòng chọn đúng ${deleteCount} barcode để xóa`);
+      return;
+    }
 
-  if (isNewDetailLocal) {
-    setNewProductDetails(prev => {
-      const newList = [...prev];
-      newList[index].barcodes = newList[index].barcodes.filter(
-        barcode => !barcodesToDelete.includes(barcode.code)
-      );
-      newList[index].barcodesToRemove = barcodesToDelete; // Gán vào barcodesToRemove
-      newList[index].quantity = desiredQuantity; // Sử dụng số lượng đã nhập
-      return newList;
-    });
-  } else {
-    setListProductDetail(prev => {
-      const newList = [...prev];
-      newList[index].barcodes = newList[index].barcodes.filter(
-        barcode => !barcodesToDelete.includes(barcode.code)
-      );
-      newList[index].barcodesToRemove = barcodesToDelete; // Gán vào barcodesToRemove
-      newList[index].quantity = desiredQuantity; // Sử dụng số lượng đã nhập
-      return newList;
-    });
-  }
+    if (isNewDetailLocal) {
+      setNewProductDetails(prev => {
+        const newList = [...prev];
+        newList[index].barcodes = newList[index].barcodes.filter(
+          barcode => !barcodesToDelete.includes(barcode.code)
+        );
+        newList[index].barcodesToRemove = barcodesToDelete;
+        newList[index].quantity = desiredQuantity;
+        return newList;
+      });
+    } else {
+      setListProductDetail(prev => {
+        const newList = [...prev];
+        newList[index].barcodes = newList[index].barcodes.filter(
+          barcode => !barcodesToDelete.includes(barcode.code)
+        );
+        newList[index].barcodesToRemove = barcodesToDelete;
+        newList[index].quantity = desiredQuantity;
+        return newList;
+      });
+    }
 
-  const newBarcodeErrors = { ...barcodeErrors };
-  const globalIndex = isNewDetailLocal ? listProductDetail.length + index : index;
-  delete newBarcodeErrors[globalIndex];
-  setBarcodeErrors(newBarcodeErrors);
+    const newBarcodeErrors = { ...barcodeErrors };
+    const globalIndex = isNewDetailLocal ? listProductDetail.length + index : index;
+    delete newBarcodeErrors[globalIndex];
+    setBarcodeErrors(newBarcodeErrors);
 
-  const newQuantityErrors = { ...quantityErrors };
-  delete newQuantityErrors[globalIndex];
-  setQuantityErrors(newQuantityErrors);
+    const newQuantityErrors = { ...quantityErrors };
+    delete newQuantityErrors[globalIndex];
+    setQuantityErrors(newQuantityErrors);
 
-  setOpenDeleteBarcodeModal(false);
-  setSelectedDetailIndex(null);
-  setBarcodesToDelete([]);
-  setDeleteCount(0);
-  showSuccess(`Đã chọn ${barcodesToDelete.length} barcode để xóa.`);
-};
+    setOpenDeleteBarcodeModal(false);
+    setSelectedDetailIndex(null);
+    setBarcodesToDelete([]);
+    setDeleteCount(0);
+    showSuccess(`Đã chọn ${barcodesToDelete.length} barcode để xóa.`);
+  };
 
   const handleDeleteBarcodesCancel = () => {
     if (selectedDetailIndex === null) return;
@@ -910,7 +915,6 @@ const generateProductDetail = () => {
     const index = selectedDetailIndex;
     const detail = isNewDetailLocal ? newProductDetails[index] : listProductDetail[index];
 
-    // Khôi phục số lượng về số lượng barcode khả dụng
     const availableBarcodes = detail.barcodes.filter(b => !b.orderItemId).length;
     updateProductDetail(index, 'quantity', availableBarcodes, isNewDetailLocal);
 
@@ -921,51 +925,51 @@ const generateProductDetail = () => {
   };
 
   const updateProductAsync = async () => {
-  if (updating) return;
+    if (updating) return;
 
-  if (!validateBasicInfo()) return;
+    if (!validateBasicInfo()) return;
 
-  const allDetails = [...listProductDetail, ...newProductDetails];
+    const allDetails = [...listProductDetail, ...newProductDetails];
 
-  if (allDetails.length === 0) {
-    showError("Sản phẩm phải có ít nhất một chi tiết sản phẩm.");
-    return;
-  }
-
-  if (!validateProductDetails(allDetails)) return;
-
-  if (openDeleteBarcodeModal) {
-    showError("Vui lòng hoàn tất việc chọn barcode để xóa trước khi cập nhật.");
-    return;
-  }
-
-  setUpdating(true);
-
-  try {
-    const tempProduct: ProductInput = {
-      ...product,
-      productDetails: allDetails.map(detail => ({
-        ...detail,
-        id: detail.id || 0,
-        barcodes: detail.barcodes.map(b => b.code),
-        barcodesToRemove: detail.barcodesToRemove || [], // Gửi danh sách barcode cần xóa
-        listBarcode: [], // Nếu backend không cần listBarcode, đặt rỗng
-      })),
-    };
-
-    const response = await axiosClient.put("api/Product", tempProduct);
-    if (response.status === 200) {
-      showSuccess("Cập nhật sản phẩm thành công!");
-      navigate(`/store/${storeId}/productPage`);
+    if (allDetails.length === 0) {
+      showError("Sản phẩm phải có ít nhất một chi tiết sản phẩm.");
+      return;
     }
-  } catch (error: any) {
-    console.error("Lỗi khi cập nhật sản phẩm:", error);
-    const errorMessage = error.response?.data?.message || error.message || "Có lỗi xảy ra";
-    showError(`Lỗi khi cập nhật sản phẩm: ${errorMessage}. Vui lòng thử lại!`);
-  } finally {
-    setUpdating(false);
-  }
-};
+
+    if (!validateProductDetails(allDetails)) return;
+
+    if (openDeleteBarcodeModal) {
+      showError("Vui lòng hoàn tất việc chọn barcode để xóa trước khi cập nhật.");
+      return;
+    }
+
+    setUpdating(true);
+
+    try {
+      const tempProduct: ProductInput = {
+        ...product,
+        productDetails: allDetails.map(detail => ({
+          ...detail,
+          id: detail.id || 0,
+          barcodes: detail.barcodes.map(b => b.code),
+          barcodesToRemove: detail.barcodesToRemove || [],
+          listBarcode: [],
+        })),
+      };
+
+      const response = await axiosClient.put("api/Product", tempProduct);
+      if (response.status === 200) {
+        showSuccess("Cập nhật sản phẩm thành công!");
+        navigate(`/store/${storeId}/productPage`);
+      }
+    } catch (error: any) {
+      console.error("Lỗi khi cập nhật sản phẩm:", error);
+      const errorMessage = error.response?.data?.message || error.message || "Có lỗi xảy ra";
+      showError(`Lỗi khi cập nhật sản phẩm: ${errorMessage}. Vui lòng thử lại!`);
+    } finally {
+      setUpdating(false);
+    }
+  };
 
   const selectedPromotion = listPromotions.find(p => p.id === product.promotionId);
 
@@ -1042,21 +1046,21 @@ const generateProductDetail = () => {
               <Stack spacing={3}>
                 <Stack direction="row" spacing={3}>
                   <TextField
-  label="Tên sản phẩm"
-  fullWidth
-  required
-  variant="outlined"
-  value={product.name}
-  error={!!formErrors.name}
-  helperText={formErrors.name}
-  onChange={(e) => updateProductField('name', e.target.value)}
-  disabled={hasOrderItemId()}
-  sx={{
-    "& .MuiOutlinedInput-root": {
-      borderRadius: 2,
-    },
-  }}
-/>
+                    label="Tên sản phẩm"
+                    fullWidth
+                    required
+                    variant="outlined"
+                    value={product.name}
+                    error={!!formErrors.name}
+                    helperText={formErrors.name}
+                    onChange={(e) => updateProductField('name', e.target.value)}
+                    disabled={hasOrderItemId()}
+                    sx={{
+                      "& .MuiOutlinedInput-root": {
+                        borderRadius: 2,
+                      },
+                    }}
+                  />
                   <TextField
                     select
                     label="Danh mục"
@@ -1164,10 +1168,13 @@ const generateProductDetail = () => {
                     value={product.warrantyMonths || ""}
                     error={!!formErrors.warrantyMonths}
                     helperText={formErrors.warrantyMonths || "Tùy chọn"}
-                    inputProps={{ min: 1 }}
+                    inputProps={{ min: 1, step: 1 }}
                     onChange={(e) => {
                       const value = e.target.value ? Number(e.target.value) : undefined;
                       updateProductField('warrantyMonths', value);
+                    }}
+                    onInput={(e: React.ChangeEvent<HTMLInputElement>) => {
+                      e.target.value = e.target.value.replace(/^0+([1-9])/, '$1');
                     }}
                     sx={{
                       "& .MuiOutlinedInput-root": {
@@ -1257,21 +1264,21 @@ const generateProductDetail = () => {
                   >
                     <Stack spacing={3}>
                       <Stack direction="row" alignItems="center" spacing={2}>
-                       <TextField
-  label={`Phân loại ${classifiesIndex + 1}`}
-  value={data.key}
-  required
-  variant="outlined"
-  size="medium"
-  error={!!classifyErrors[`classify_${classifiesIndex}`]}
-  helperText={classifyErrors[`classify_${classifiesIndex}`]}
-  onChange={(e) => updateClassifyKey(classifiesIndex, e.target.value)}
-  disabled={hasOrderItemId() && !data.isEdit}
-  sx={{
-    flex: 1,
-    "& .MuiOutlinedInput-root": { borderRadius: 2 },
-  }}
-/>
+                        <TextField
+                          label={`Phân loại ${classifiesIndex + 1}`}
+                          value={data.key}
+                          required
+                          variant="outlined"
+                          size="medium"
+                          error={!!classifyErrors[`classify_${classifiesIndex}`]}
+                          helperText={classifyErrors[`classify_${classifiesIndex}`]}
+                          onChange={(e) => updateClassifyKey(classifiesIndex, e.target.value)}
+                          disabled={hasOrderItemId() && !data.isEdit}
+                          sx={{
+                            flex: 1,
+                            "& .MuiOutlinedInput-root": { borderRadius: 2 },
+                          }}
+                        />
                         <IconButton
                           color="error"
                           onClick={() => removeClassify(classifiesIndex)}
@@ -1432,6 +1439,13 @@ const generateProductDetail = () => {
                             value={productDetail.price}
                             error={!!priceErrors[index]}
                             helperText={priceErrors[index]}
+                            inputProps={{
+                              min: 1,
+                              step: 1,
+                              onInput: (e: React.ChangeEvent<HTMLInputElement>) => {
+                                e.target.value = e.target.value.replace(/^0+([1-9])/, '$1');
+                              },
+                            }}
                             onChange={(e) => {
                               const newPrice = Number(e.target.value);
                               updateProductDetail(index, 'price', newPrice, false);
@@ -1469,8 +1483,9 @@ const generateProductDetail = () => {
                             helperText={quantityErrors[index]}
                             inputProps={{
                               min: 0,
+                              step: 1,
                               onInput: (e: React.ChangeEvent<HTMLInputElement>) => {
-                                e.target.value = e.target.value.replace(/[^0-9]/g, "");
+                                e.target.value = e.target.value.replace(/^0+([1-9])/, '$1');
                               },
                             }}
                             onChange={(e) => {
@@ -1670,6 +1685,13 @@ const generateProductDetail = () => {
                               value={productDetail.price}
                               error={!!priceErrors[globalIndex]}
                               helperText={priceErrors[globalIndex]}
+                              inputProps={{
+                                min: 1,
+                                step: 1,
+                                onInput: (e: React.ChangeEvent<HTMLInputElement>) => {
+                                  e.target.value = e.target.value.replace(/^0+([1-9])/, '$1');
+                                },
+                              }}
                               onChange={(e) => {
                                 const newPrice = Number(e.target.value);
                                 updateProductDetail(index, 'price', newPrice, true);
@@ -1707,8 +1729,9 @@ const generateProductDetail = () => {
                               helperText={quantityErrors[globalIndex]}
                               inputProps={{
                                 min: 0,
+                                step: 1,
                                 onInput: (e: React.ChangeEvent<HTMLInputElement>) => {
-                                  e.target.value = e.target.value.replace(/[^0-9]/g, "");
+                                  e.target.value = e.target.value.replace(/^0+([1-9])/, '$1');
                                 },
                               }}
                               onChange={(e) => {
