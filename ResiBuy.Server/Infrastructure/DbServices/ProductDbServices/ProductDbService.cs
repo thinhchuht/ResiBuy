@@ -152,6 +152,12 @@ namespace ResiBuy.Server.Infrastructure.DbServices.ProductDbServices
                     if (!category.Status)
                         throw new CustomException(ExceptionErrorCode.ValidationFailed, "Danh mục không hoạt động");
 
+                    var img = _context.Images.Find(categoryId);
+                    if (img == null)
+                        throw new CustomException(ExceptionErrorCode.ValidationFailed, "Không có mã ảnh này");
+                    if (img.ProductDetailId != null)
+                        throw new CustomException(ExceptionErrorCode.ValidationFailed, "Ảnh đã được sử dụng");
+
                     groupedProducts[productName].Add(new ExcelRowData
                     {
                         Describe = describe,
