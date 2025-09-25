@@ -613,7 +613,7 @@ export default function UpdateProduct() {
         const newQuantityErrors: ValidationErrors = {};
 
         allDetails.forEach((detail, index) => {
-            if (detail.price <= 0 || !Number.isInteger(detail.price)) {
+            if (detail.price <= 0 || detail.price % 500 !== 0) {
                 newPriceErrors[index] = "Giá phải lớn hơn 0 và là bội số 500";
                 isValid = false;
             }
@@ -662,8 +662,6 @@ export default function UpdateProduct() {
 
         if (price <= 0) {
             newErrors[index] = "Giá phải lớn hơn 0";
-        }else if (price%500 !==0)  {
-            newErrors[index] = "Giá phải là bội số của 500";
         }else {
             delete newErrors[index];
         }

@@ -1,4 +1,6 @@
 ﻿using System.Linq;
+using DocumentFormat.OpenXml.Bibliography;
+using DocumentFormat.OpenXml.Spreadsheet;
 using OfficeOpenXml;
 using ResiBuy.Server.Application.Commands.ProductCommands.DTOs.Create;
 using ResiBuy.Server.Infrastructure.DbServices.BarcodeDbServices;
@@ -151,12 +153,6 @@ namespace ResiBuy.Server.Infrastructure.DbServices.ProductDbServices
                     if (!category.Status)
                         throw new CustomException(ExceptionErrorCode.ValidationFailed, "Danh mục không hoạt động");
 
-                    var img = _context.Images.Find(imageId);
-                    if (img == null)
-                        throw new CustomException(ExceptionErrorCode.ValidationFailed, "Không có mã ảnh này");
-                    if (img.ProductDetailId != null)
-                        throw new CustomException(ExceptionErrorCode.ValidationFailed, "Ảnh đã được sử dụng");
-
                     groupedProducts[productName].Add(new ExcelRowData
                     {
                         Describe = describe,
@@ -170,7 +166,8 @@ namespace ResiBuy.Server.Infrastructure.DbServices.ProductDbServices
                         ImageId = imageId,
                         AdditionalData = additionalData,
                         ExpiryDate = expiryDate,
-                        WarrantyMonths = warrantyMonths
+                        WarrantyMonths = warrantyMonths,
+                        RowNumber = row // Thêm thuộc tính này vào ExcelRowData để track row number
                     });
 
                     result.Total++;
@@ -181,7 +178,8 @@ namespace ResiBuy.Server.Infrastructure.DbServices.ProductDbServices
                 }
             }
 
-            foreach (var group in groupedProducts)
+            // VALIDATION: Kiểm tra duplicate AdditionalData combinations trong từng product group
+            foreach (var group in groupedProducts.ToList()) // ToList() để tránh modification during iteration
             {
                 string productName = group.Key;
                 var rows = group.Value;
@@ -191,6 +189,17 @@ namespace ResiBuy.Server.Infrastructure.DbServices.ProductDbServices
                     result.Errors.Add($"Sản phẩm {productName} không có dữ liệu hợp lệ");
                     continue;
                 }
+
+                // Validate duplicate AdditionalData combinations
+                var duplicateValidation = ValidateAdditionalDataDuplicates(productName, rows);
+                if (!duplicateValidation.IsValid)
+                {
+                    result.Errors.AddRange(duplicateValidation.Errors);
+                    groupedProducts.Remove(productName); // Remove invalid product group
+                    continue;
+                }
+
+                // Continue with existing validation logic...
 
                 // Kiểm tra Product đã có chưa
                 var product = await _context.Products
@@ -205,12 +214,31 @@ namespace ResiBuy.Server.Infrastructure.DbServices.ProductDbServices
                 if (product == null)
                 {
                     var first = rows.First();
+
+                    var img = _context.Images.Find(first.ImageId);
+                    if (img == null)
+                        throw new CustomException(ExceptionErrorCode.ValidationFailed, "Không có mã ảnh này");
+                    if (img.ProductDetailId != null)
+                        throw new CustomException(ExceptionErrorCode.ValidationFailed, "Ảnh đã được sử dụng");
                     product = new Product(productName, first.Describe, first.PromotionId, first.StoreId, first.CategoryId);
                     _context.Products.Add(product);
                 }
 
                 // Gom tất cả AdditionalData để sinh tổ hợp
                 var allKeys = rows.SelectMany(r => r.AdditionalData.Select(ad => ad.Key)).Distinct();
+
+                // Kiểm tra từng row có đủ key không
+                foreach (var row in rows)
+                {
+                    var rowKeys = row.AdditionalData.Select(ad => ad.Key).Distinct().ToList();
+                    var missingKeys = allKeys.Except(rowKeys).ToList();
+                    if (missingKeys.Any())
+                    {
+                        result.Errors.Add($"Sản phẩm '{productName}' thiếu key(s) {string.Join(", ", missingKeys)} ở một ProductDetail.");
+                        continue;
+                    }
+                }
+
                 var adDict = new Dictionary<string, HashSet<string>>();
                 foreach (var key in allKeys)
                 {
@@ -349,5 +377,45 @@ namespace ResiBuy.Server.Infrastructure.DbServices.ProductDbServices
                     $"Lỗi khi tìm kiếm ProductDetail theo barcode: {ex.Message}");
             }
         }
+
+        // Helper method để validate duplicate AdditionalData combinations
+        private ValidationResult ValidateAdditionalDataDuplicates(string productName, List<ExcelRowData> rows)
+        {
+            var validationResult = new ValidationResult { IsValid = true };
+            var seenCombinations = new HashSet<string>();
+            var comparer = new AdditionalDataComparer();
+
+            foreach (var row in rows)
+            {
+                // Tạo một signature duy nhất cho combination của AdditionalData
+                var sortedAdditionalData = row.AdditionalData
+                    .OrderBy(ad => ad.Key)
+                    .ThenBy(ad => ad.Value)
+                    .ToList();
+
+                var combinationSignature = string.Join("|",
+                    sortedAdditionalData.Select(ad => $"{ad.Key}={ad.Value}"));
+
+                if (seenCombinations.Contains(combinationSignature))
+                {
+                    validationResult.IsValid = false;
+                    validationResult.Errors.Add(
+                        $"Sản phẩm '{productName}' tại row {row.RowNumber}: " +
+                        $"Tổ hợp AdditionalData [{combinationSignature.Replace("|", ", ")}] đã tồn tại trong Excel. " +
+                        $"Không được phép có các tổ hợp AdditionalData trùng lặp.");
+                }
+                else
+                {
+                    seenCombinations.Add(combinationSignature);
+                }
+            }
+
+            return validationResult;
+        }
+    }
+    public class ValidationResult
+    {
+        public bool IsValid { get; set; }
+        public List<string> Errors { get; set; } = new List<string>();
     }
 }
