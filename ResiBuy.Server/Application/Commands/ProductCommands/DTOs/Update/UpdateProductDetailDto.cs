@@ -12,5 +12,7 @@ namespace ResiBuy.Server.Application.Commands.ProductCommands.DTOs.Update
         public UpdateImageForProductDetail Image { get; set; } = new();
         public List<UpdateAdditionalDataDto> AdditionalData { get; set; } = new();
         public List<string> Barcodes { get; set; } = new();
+        public List<string> BarcodesToRemove { get; set; } // Thêm trường mới
     }
 }
+
