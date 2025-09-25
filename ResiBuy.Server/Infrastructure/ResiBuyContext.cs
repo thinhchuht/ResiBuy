@@ -138,8 +138,8 @@ namespace ResiBuy.Server.Infrastructure
                 IdentityNumber = "000000000000",
                 DateOfBirth = new DateTime(2000, 1, 1),
                 IsLocked = false,
-                Roles = new List<string> { Constants.CustomerRole },
-                FullName = "Khách vãng lai",
+                Roles = new List<string> { Constants.CustomerRole, Constants.SellerRole },
+                FullName = "Nhân viên của hàng",
                 CreatedAt = DateTime.Now,
                 UpdatedAt = DateTime.Now,
                 ReportCount = 0

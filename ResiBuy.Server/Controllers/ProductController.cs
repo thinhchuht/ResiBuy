@@ -90,5 +90,12 @@ namespace ResiBuy.Server.Controllers
             return Ok(new { result });
         }
 
+        [HttpGet("detail/barcode/{barcode}")]
+        public async Task<IActionResult> GetProductDetailByBarcode(string barcode)
+        {
+            var result = await mediator.Send(new GetProductDetailByBarcodeQuery(barcode));
+            return Ok(result);
+        }
+
     }
-    }
+}

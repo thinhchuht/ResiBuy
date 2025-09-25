@@ -1346,56 +1346,32 @@ const AppBar: React.FC = () => {
               </Typography>
             </MenuItem>
           )}
-          {user?.roles?.includes("SELLER") && (
-            <MenuItem
-              onClick={handleStoreMenuClick}
-              sx={{
-                py: 1.5,
-                px: 2,
-                gap: 1.5,
-                "&:hover": {
-                  backgroundColor: "rgba(235, 92, 96, 0.08)",
-                  "& .MuiSvgIcon-root": {
-                    color: "#EB5C60",
-                    transform: "scale(1.1)",
+          {user?.roles?.includes("ADMIN") ||
+            (user?.roles?.includes("SELLER") && (
+              <MenuItem
+                onClick={() => handleNavigation("/store/44444444-4444-4444-4444-444444444444", handleProfileMenuClose)}
+                sx={{
+                  py: 1.5,
+                  px: 2,
+                  gap: 1.5,
+                  "&:hover": {
+                    backgroundColor: "rgba(235, 92, 96, 0.08)",
+                    "& .MuiSvgIcon-root": {
+                      color: "#EB5C60",
+                      transform: "scale(1.1)",
+                    },
+                    "& .MuiTypography-root": {
+                      color: "#EB5C60",
+                    },
                   },
-                  "& .MuiTypography-root": {
-                    color: "#EB5C60",
-                  },
-                },
-                transition: "all 0.2s ease-in-out",
-              }}>
-              <StoreIcon fontSize="small" sx={{ transition: "all 0.2s ease-in-out" }} />
-              <Typography variant="body2" sx={{ fontWeight: 500 }}>
-                {Array.isArray(user?.stores) && user.stores.length === 1 ? user.stores[0]?.name : "Cửa hàng của bạn"}
-              </Typography>
-            </MenuItem>
-          )}
-                        {user?.roles?.includes("ADMIN") && (
-  <MenuItem
-    onClick={() => handleNavigation("/store/44444444-4444-4444-4444-444444444444", handleProfileMenuClose)}
-    sx={{
-      py: 1.5,
-      px: 2,
-      gap: 1.5,
-      "&:hover": {
-        backgroundColor: "rgba(235, 92, 96, 0.08)",
-        "& .MuiSvgIcon-root": {
-          color: "#EB5C60",
-          transform: "scale(1.1)",
-        },
-        "& .MuiTypography-root": {
-          color: "#EB5C60",
-        },
-      },
-      transition: "all 0.2s ease-in-out",
-    }}>
-    <StoreIcon fontSize="small" sx={{ transition: "all 0.2s ease-in-out" }} />
-    <Typography variant="body2" sx={{ fontWeight: 500 }}>
-      Cửa hàng của bạn
-    </Typography>
-  </MenuItem>
-)}
+                  transition: "all 0.2s ease-in-out",
+                }}>
+                <StoreIcon fontSize="small" sx={{ transition: "all 0.2s ease-in-out" }} />
+                <Typography variant="body2" sx={{ fontWeight: 500 }}>
+                  Cửa hàng của bạn
+                </Typography>
+              </MenuItem>
+            ))}
           {user?.roles?.includes("SHIPPER") && (
             <MenuItem
               onClick={handleShipperMenuClick}
@@ -1814,7 +1790,9 @@ const AppBar: React.FC = () => {
                   },
                 }}>
                 <Receipt sx={{ fontSize: 16, mr: 1 }} />
-                {user?.stores?.some((store) => store.id === selectedOrder?.store?.id) && (user?.roles?.includes("SELLER") || user?.roles?.includes("ADMIN")) ? "Xem đơn hàng cửa hàng" : "Xem tất cả đơn hàng"}
+                {user?.stores?.some((store) => store.id === selectedOrder?.store?.id) && (user?.roles?.includes("SELLER") || user?.roles?.includes("ADMIN"))
+                  ? "Xem đơn hàng cửa hàng"
+                  : "Xem tất cả đơn hàng"}
               </Button>
               <MuiIconButton
                 onClick={handleCloseOrderModal}
@@ -1878,7 +1856,7 @@ const AppBar: React.FC = () => {
               <Box sx={{ p: 3 }}>
                 <OrderCard
                   order={selectedOrder}
-                  isStore={user?.roles?.includes("ADMIN") || user?.roles?.includes("SELLER") && user?.stores?.some((store) => store.id === selectedOrder?.store?.id)}
+                  isStore={user?.roles?.includes("ADMIN") || (user?.roles?.includes("SELLER") && user?.stores?.some((store) => store.id === selectedOrder?.store?.id))}
                   onCloseModal={handleCloseOrderModal}
                   onStatusChange={handleOrderStatusChange}
                 />
