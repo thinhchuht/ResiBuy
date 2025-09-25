@@ -15,8 +15,8 @@ namespace ResiBuy.Server.Application.Commands.OrderCommands
             var order = await orderDbService.GetById(dto.OrderId) ?? throw new CustomException(ExceptionErrorCode.ValidationFailed, "Không tìm thấy đơn hàng");
             var store = await storeDbService.GetByIdBaseAsync(order.StoreId) ?? throw new CustomException(ExceptionErrorCode.ValidationFailed, "Không tìm thấy cửa hàng");
             var oldStatus = order.Status;
-            if (order.UserId != order.UserId && order.UserId != store.OwnerId.ToString() && dto.UserId != order.ShipperId.ToString())
-                throw new CustomException(ExceptionErrorCode.ValidationFailed, "Người dùng không có quyền sửa đơn hàng này.");
+            //if (order.UserId != order.UserId && order.UserId != store.OwnerId.ToString() && dto.UserId != order.ShipperId.ToString())
+            //    throw new CustomException(ExceptionErrorCode.ValidationFailed, "Người dùng không có quyền sửa đơn hàng này.");
             if (dto.OrderStatus != OrderStatus.Pending && dto.OrderStatus != OrderStatus.Cancelled)
             {
                 foreach (var item in order.Items)
@@ -81,8 +81,7 @@ namespace ResiBuy.Server.Application.Commands.OrderCommands
                         await productDetailDbService.UpdateTransactionBatch(productDetails);
 
                     }
-                    if (dto.OrderStatus == OrderStatus.Cancelled) order.PaymentStatus = PaymentStatus.Failed;
-                    order.Status = dto.OrderStatus.Value;
+                   
                 }
                 if (dto.OrderStatus == OrderStatus.Cancelled)
                 {
@@ -92,16 +91,22 @@ namespace ResiBuy.Server.Application.Commands.OrderCommands
                     var productDetailIds = items.Select(i => i.ProductDetailId).ToList();
                     var productDetails = await productDetailDbService.GetBatchAsync(productDetailIds);
                     order.CancelReason = dto.Reason;
-                    // remove Barcodes from order
-                    foreach (var item in items)
+                    if(dto.UserId != order.ShipperId.ToString())
                     {
-                        var productDetail = productDetails.First(pd => pd.Id == item.ProductDetailId);
-                        productDetail.Quantity += item.Quantity;
-                        foreach (var barcode in item.Barcodes)
+                        // remove Barcodes from order
+                        foreach (var item in items)
                         {
-                            barcode.OrderItemId = null;
+                            var productDetail = productDetails.First(pd => pd.Id == item.ProductDetailId);
+                            if(order.Status != OrderStatus.Pending)
+                                productDetail.Quantity += item.Quantity;
+                            foreach (var barcode in item.Barcodes)
+                            {
+                                barcode.OrderItemId = null;
+                            }
                         }
                     }
+                    order.PaymentStatus = PaymentStatus.Failed;
+                    order.Status = dto.OrderStatus.Value;
                     await productDetailDbService.UpdateTransactionBatch(productDetails);
 
                 }
