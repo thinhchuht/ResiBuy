@@ -89,6 +89,13 @@ namespace ResiBuy.Server.Application.Commands.OrderCommands
                         $"Số lượng barcode ({barcodeCount}) cho ProductDetail {cartItem.ProductDetailId} không khớp với số lượng trong giỏ ({cartItem.Quantity})");
             }
 
+            foreach (var cartItem in cart.CartItems)
+            {
+                if (cartItem.ProductDetail.Product.ExpiryDate < DateTime.Now)
+                    throw new CustomException(ExceptionErrorCode.ValidationFailed,
+                        $"Sản phẩm {cartItem.ProductDetail.Product.Name} đã hết hạn");
+            }
+
             decimal totalPrice = 0;
             float totalWeight = 0;
 
