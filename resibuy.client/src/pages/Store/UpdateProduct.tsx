@@ -38,7 +38,7 @@ import {
   Edit,
   Save,
   Cancel,
-  LocalOffer,
+  LocalOffer
 } from "@mui/icons-material";
 import { v4 } from "uuid";
 import axiosClient from "../../api/base.api";
@@ -268,7 +268,9 @@ export default function UpdateProduct() {
       setIsLoadingPromotions(false);
     }
   };
-
+const isDuplicateClassifyKey = (key: string, currentIndex: number): boolean => {
+  return classifies.some((classify, index) => index !== currentIndex && classify.key.trim().toLowerCase() === key.trim().toLowerCase());
+};
   const formatPromotionDisplay = (promotion: PromotionDto): string => {
     const startDate = new Date(promotion.startDate).toLocaleDateString('vi-VN');
     const endDate = new Date(promotion.endDate).toLocaleDateString('vi-VN');
@@ -346,31 +348,44 @@ export default function UpdateProduct() {
   };
 
   const updateClassifyKey = (index: number, newKey: string) => {
-    const oldKey = classifies[index].key;
+  const oldKey = classifies[index].key;
 
-    setClassifies((prev) =>
-      prev.map((item, i) => (i === index ? { ...item, key: newKey } : item))
+  if (hasOrderItemId() && !classifies[index].isEdit) {
+    showError("Không thể đổi tên phân loại vì sản phẩm đã có đơn hàng liên quan.");
+    return;
+  }
+
+  if (isDuplicateClassifyKey(newKey, index)) {
+    setClassifyErrors(prev => ({
+      ...prev,
+      [`classify_${index}`]: "Tên phân loại không được trùng",
+    }));
+    return;
+  }
+
+  setClassifies((prev) =>
+    prev.map((item, i) => (i === index ? { ...item, key: newKey } : item))
+  );
+
+  if (!classifies[index].isEdit) {
+    setListProductDetail((prev) =>
+      prev.map((detail) => ({
+        ...detail,
+        additionalData: detail.additionalData.map((additionalData) =>
+          additionalData.key === oldKey
+            ? { ...additionalData, key: newKey }
+            : additionalData
+        ),
+      }))
     );
+  }
 
-    if (!classifies[index].isEdit) {
-      setListProductDetail((prev) =>
-        prev.map((detail) => ({
-          ...detail,
-          additionalData: detail.additionalData.map((additionalData) =>
-            additionalData.key === oldKey
-              ? { ...additionalData, key: newKey }
-              : additionalData
-          ),
-        }))
-      );
-    }
-
-    if (newKey.trim()) {
-      const newClassifyErrors = { ...classifyErrors };
-      delete newClassifyErrors[`classify_${index}`];
-      setClassifyErrors(newClassifyErrors);
-    }
-  };
+  if (newKey.trim()) {
+    const newClassifyErrors = { ...classifyErrors };
+    delete newClassifyErrors[`classify_${index}`];
+    setClassifyErrors(newClassifyErrors);
+  }
+};
 
   const updateClassifyValue = (
     classifyIndex: number,
@@ -465,43 +480,46 @@ export default function UpdateProduct() {
   };
 
   const validateClassifies = (): boolean => {
-    const newClassifyErrors: ValidationErrors = {};
-    const newAttributeErrors: ValidationErrors = {};
-    let isValid = true;
+  const newClassifyErrors: ValidationErrors = {};
+  const newAttributeErrors: ValidationErrors = {};
+  let isValid = true;
 
-    if (classifies.length === 0) {
-      showError("Vui lòng thêm ít nhất một phân loại sản phẩm");
-      return false;
+  if (classifies.length === 0) {
+    showError("Vui lòng thêm ít nhất một phân loại sản phẩm");
+    return false;
+  }
+
+  classifies.forEach((classify, i) => {
+    if (!classify.key.trim()) {
+      newClassifyErrors[`classify_${i}`] = "Tên phân loại không được để trống";
+      isValid = false;
+    } else if (isDuplicateClassifyKey(classify.key, i)) {
+      newClassifyErrors[`classify_${i}`] = "Tên phân loại không được trùng";
+      isValid = false;
     }
 
-    classifies.forEach((classify, i) => {
-      if (!classify.key.trim()) {
-        newClassifyErrors[`classify_${i}`] = "Tên phân loại không được để trống";
+    if (classify.value.length === 0) {
+      showError(`Phân loại "${classify.key || `phân loại ${i + 1}`}" phải có ít nhất một thuộc tính`);
+      isValid = false;
+    }
+
+    classify.value.forEach((value, j) => {
+      if (!value.text.trim()) {
+        newAttributeErrors[`classify_${i}_value_${j}`] = "Thuộc tính không được để trống";
         isValid = false;
       }
-
-      if (classify.value.length === 0) {
-        showError(`Phân loại "${classify.key || `phân loại ${i + 1}`}" phải có ít nhất một thuộc tính`);
-        isValid = false;
-      }
-
-      classify.value.forEach((value, j) => {
-        if (!value.text.trim()) {
-          newAttributeErrors[`classify_${i}_value_${j}`] = "Thuộc tính không được để trống";
-          isValid = false;
-        }
-      });
     });
+  });
 
-    setClassifyErrors(newClassifyErrors);
-    setAttributeErrors(newAttributeErrors);
+  setClassifyErrors(newClassifyErrors);
+  setAttributeErrors(newAttributeErrors);
 
-    if (!isValid) {
-      showError("Vui lòng kiểm tra lại thông tin phân loại");
-    }
+  if (!isValid) {
+    showError("Vui lòng kiểm tra lại thông tin phân loại");
+  }
 
-    return isValid;
-  };
+  return isValid;
+};
 const hasOrderItemId = (): boolean => {
   const allDetails = [...listProductDetail, ...newProductDetails];
   return allDetails.some(detail =>
@@ -769,29 +787,33 @@ const generateProductDetail = () => {
     }
   };
 
-  const updateProductField = (field: keyof ProductInput, value: string | number | undefined) => {
-    setProduct(prev => ({ ...prev, [field]: value }));
+ const updateProductField = (field: keyof ProductInput, value: string | number | undefined) => {
+  if (field === 'name' && hasOrderItemId()) {
+    showError("Không thể đổi tên sản phẩm vì sản phẩm đã có đơn hàng liên quan.");
+    return;
+  }
+  setProduct(prev => ({ ...prev, [field]: value }));
 
-    if (field === 'name' && value && formErrors.name) {
-      setFormErrors(prev => {
-        const newErrors = { ...prev };
-        delete newErrors.name;
-        return newErrors;
-      });
-    } else if (field === 'categoryId' && value && formErrors.categoryId) {
-      setFormErrors(prev => {
-        const newErrors = { ...prev };
-        delete newErrors.categoryId;
-        return newErrors;
-      });
-    } else if (field === 'promotionId' && value && formErrors.promotionId) {
-      setFormErrors(prev => {
-        const newErrors = { ...prev };
-        delete newErrors.promotionId;
-        return newErrors;
-      });
-    }
-  };
+  if (field === 'name' && value && formErrors.name) {
+    setFormErrors(prev => {
+      const newErrors = { ...prev };
+      delete newErrors.name;
+      return newErrors;
+    });
+  } else if (field === 'categoryId' && value && formErrors.categoryId) {
+    setFormErrors(prev => {
+      const newErrors = { ...prev };
+      delete newErrors.categoryId;
+      return newErrors;
+    });
+  } else if (field === 'promotionId' && value && formErrors.promotionId) {
+    setFormErrors(prev => {
+      const newErrors = { ...prev };
+      delete newErrors.promotionId;
+      return newErrors;
+    });
+  }
+};
 
   const updateProductDetail = (
     index: number,
@@ -1020,20 +1042,21 @@ const generateProductDetail = () => {
               <Stack spacing={3}>
                 <Stack direction="row" spacing={3}>
                   <TextField
-                    label="Tên sản phẩm"
-                    fullWidth
-                    required
-                    variant="outlined"
-                    value={product.name}
-                    error={!!formErrors.name}
-                    helperText={formErrors.name}
-                    onChange={(e) => updateProductField('name', e.target.value)}
-                    sx={{
-                      "& .MuiOutlinedInput-root": {
-                        borderRadius: 2,
-                      },
-                    }}
-                  />
+  label="Tên sản phẩm"
+  fullWidth
+  required
+  variant="outlined"
+  value={product.name}
+  error={!!formErrors.name}
+  helperText={formErrors.name}
+  onChange={(e) => updateProductField('name', e.target.value)}
+  disabled={hasOrderItemId()}
+  sx={{
+    "& .MuiOutlinedInput-root": {
+      borderRadius: 2,
+    },
+  }}
+/>
                   <TextField
                     select
                     label="Danh mục"
@@ -1234,22 +1257,21 @@ const generateProductDetail = () => {
                   >
                     <Stack spacing={3}>
                       <Stack direction="row" alignItems="center" spacing={2}>
-                        <TextField
-                          label={`Phân loại ${classifiesIndex + 1}`}
-                          value={data.key}
-                          required
-                          variant="outlined"
-                          size="medium"
-                          error={!!classifyErrors[`classify_${classifiesIndex}`]}
-                          helperText={classifyErrors[`classify_${classifiesIndex}`]}
-                          onChange={(e) =>
-                            updateClassifyKey(classifiesIndex, e.target.value)
-                          }
-                          sx={{
-                            flex: 1,
-                            "& .MuiOutlinedInput-root": { borderRadius: 2 },
-                          }}
-                        />
+                       <TextField
+  label={`Phân loại ${classifiesIndex + 1}`}
+  value={data.key}
+  required
+  variant="outlined"
+  size="medium"
+  error={!!classifyErrors[`classify_${classifiesIndex}`]}
+  helperText={classifyErrors[`classify_${classifiesIndex}`]}
+  onChange={(e) => updateClassifyKey(classifiesIndex, e.target.value)}
+  disabled={hasOrderItemId() && !data.isEdit}
+  sx={{
+    flex: 1,
+    "& .MuiOutlinedInput-root": { borderRadius: 2 },
+  }}
+/>
                         <IconButton
                           color="error"
                           onClick={() => removeClassify(classifiesIndex)}
