@@ -29,7 +29,7 @@ import type { BuildingDto, RoomDto } from "../../types/dtoModels";
 import reportApi from "../../api/report.api";
 import CheckCircleIcon from "@mui/icons-material/CheckCircle";
 import type { Report } from "../Admin/Reports/page";
-import generateInvoicePDF from "../../utils/pdfInvoiceGenerator";
+import { generateInvoicePDFFromOrder, type OrderApiResultForPDF } from "../../utils/pdfInvoiceGenerator";
 
 // Define types matching API result
 interface RoomQueryResult {
@@ -527,53 +527,10 @@ const OrderCard = ({
     return Boolean(isShipperRole && assignedToUser);
   }, [user, order.shipper?.id, order.shipperId]);
 
-  // Thêm hàm chuyển đổi dữ liệu order sang OrderData
+  // Xuất hóa đơn: truyền trực tiếp object order để PDF hiển thị y hệt UI
   const handleExportInvoice = () => {
     if (!order) return;
-    const orderData = {
-      orderId: order.id,
-      items: order.orderItems.map((item) => ({
-        id: item.id,
-        productDetailId: item.productDetailId,
-        quantity: item.quantity,
-        price: item.price,
-        discount: 0,
-        product: {
-          id: item.productId,
-          name: item.productName, // Đảm bảo luôn là tên sản phẩm
-          stock: 0,
-          image: item.image?.url,
-        },
-        productDetail: {
-          additionalData: item.addtionalData?.map((ad) => ({ key: ad.key, value: ad.value })) || [],
-        },
-      })),
-      customer: {
-        id: order.user?.id || "",
-        fullName: order.user?.fullName || "",
-        email: "",
-        phoneNumber: order.user?.phoneNumber || "",
-      },
-      storeName: order.store?.name || "",
-      deliveryAddress: order.roomQueryResult
-        ? {
-            areaName: order.roomQueryResult.areaName,
-            buildingName: order.roomQueryResult.buildingName,
-            roomName: order.roomQueryResult.name,
-          }
-        : undefined,
-      deliveryMethod: "DELIVERY", // hoặc lấy từ order nếu có
-      paymentMethod: order.paymentMethod === 1 ? "COD" : "BankTransfer",
-      total: order.totalPrice,
-      discount: 0, // Nếu có discount thì lấy từ order
-      voucherDiscount: order.voucher?.discountAmount || 0,
-      shippingFee: order.shippingFee,
-      customerPaid: order.paymentStatus === 2 ? order.totalPrice : undefined,
-      change: 0,
-      orderDate: new Date(order.createAt),
-      note: order.note,
-    };
-    generateInvoicePDF(orderData);
+    generateInvoicePDFFromOrder(order as unknown as OrderApiResultForPDF);
   };
 
   return (
@@ -1099,7 +1056,7 @@ const OrderCard = ({
               Cập nhật barcode
             </Button>
           )}
-          {order.status === OrderStatus.Delivered && (
+          {order.status === OrderStatus.Delivered && !user?.roles?.includes("CUSTOMER") && (
             <Button variant="outlined" color="primary" sx={{ borderRadius: 2, textTransform: "none", px: 3 }} onClick={handleExportInvoice}>
               Xuất hóa đơn
             </Button>
