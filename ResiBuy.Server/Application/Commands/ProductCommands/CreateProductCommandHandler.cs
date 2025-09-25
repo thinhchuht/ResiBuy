@@ -147,47 +147,63 @@ namespace ResiBuy.Server.Application.Commands.ProductCommands
 
             if (detailDto.AdditionalData != null && detailDto.AdditionalData.Any())
             {
-                // Check duplicates within the same detail
-                var duplicatesInSame = detailDto.AdditionalData
-                    .GroupBy(a => new { a.Key, a.Value })
+                // Validate AdditionalData keys and values first
+                foreach (var additionalData in detailDto.AdditionalData)
+                {
+                    if (string.IsNullOrWhiteSpace(additionalData.Key?.Trim()))
+                        throw new CustomException(ExceptionErrorCode.ValidationFailed,
+                            "Tên của phân loại không được để trống.");
+
+                    if (string.IsNullOrWhiteSpace(additionalData.Value?.Trim()))
+                        throw new CustomException(ExceptionErrorCode.ValidationFailed,
+                            "Thuộc tính của phân loại không được để trống.");
+                }
+
+                // Trim và normalize dữ liệu (chuyển về lowercase để so sánh)
+                var normalizedData = detailDto.AdditionalData
+                    .Select(a => new
+                    {
+                        Key = a.Key.Trim(),
+                        Value = a.Value.Trim(),
+                        KeyLower = a.Key.Trim().ToLowerInvariant(),
+                        ValueLower = a.Value.Trim().ToLowerInvariant()
+                    })
+                    .ToList();
+
+                // Check duplicates within the same detail (case-insensitive)
+                var duplicatesInSame = normalizedData
+                    .GroupBy(a => new { a.KeyLower, a.ValueLower })
                     .Where(g => g.Count() > 1)
-                    .Select(g => $"({g.Key.Key}, {g.Key.Value})")
+                    .Select(g => $"({g.First().Key}, {g.First().Value})")
                     .ToList();
 
                 if (duplicatesInSame.Any())
                 {
                     var message = string.Join(", ", duplicatesInSame);
                     throw new CustomException(ExceptionErrorCode.ValidationFailed,
-                        $"Phân loại bị trùng trong 1 chi tiết sản phẩm: {message}");
+                        $"Phân loại bị trùng trong 1 chi tiết sản phẩm (không phân biệt hoa thường): {message}");
                 }
 
-                dataSet = detailDto.AdditionalData
-                    .Select(a => $"{a.Key}|{a.Value}")
+                // Create dataset với normalized values để so sánh
+                var normalizedDataSet = normalizedData
+                    .Select(a => $"{a.KeyLower}|{a.ValueLower}")
                     .ToHashSet();
 
-                // Check duplicates across different details
-                if (existingDataSets.Any(existing => existing.SetEquals(dataSet)))
+                // Check duplicates across different details (case-insensitive)
+                if (existingDataSets.Any(existing => existing.SetEquals(normalizedDataSet)))
                 {
-                    var formatted = string.Join(", ", dataSet.Select(s => s.Replace("|", ": ")));
+                    var formatted = string.Join(", ", normalizedData.Select(a => $"{a.Key}: {a.Value}"));
                     throw new CustomException(ExceptionErrorCode.ValidationFailed,
-                        $"Các phân loại bị trùng hoàn toàn giữa các chi tiết sản phẩm: {formatted}");
+                        $"Các phân loại bị trùng hoàn toàn giữa các chi tiết sản phẩm (không phân biệt hoa thường): {formatted}");
                 }
 
-                // Validate AdditionalData keys and values
-                foreach (var additionalData in detailDto.AdditionalData)
-                {
-                    if (string.IsNullOrWhiteSpace(additionalData.Key))
-                        throw new CustomException(ExceptionErrorCode.ValidationFailed,
-                            "Tên của phân loại không được để trống.");
-
-                    if (string.IsNullOrWhiteSpace(additionalData.Value))
-                        throw new CustomException(ExceptionErrorCode.ValidationFailed,
-                            "thuộc tính của phân loại không được để trống.");
-                }
-
-                detail.AdditionalData = detailDto.AdditionalData
+                // Store original trimmed values (giữ nguyên format gốc)
+                detail.AdditionalData = normalizedData
                     .Select(a => new AdditionalData(a.Key, a.Value))
                     .ToList();
+
+                // Return normalized dataset for comparison with other details
+                dataSet = normalizedDataSet;
             }
 
             return dataSet;
