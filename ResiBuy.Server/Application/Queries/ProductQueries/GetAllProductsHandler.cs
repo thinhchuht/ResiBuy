@@ -59,7 +59,7 @@ namespace ResiBuy.Server.Application.Queries.ProductQueries
                 IsOutOfStock = p.IsOutOfStock,
 
                 // n?u Product có Promotion -> l?y Discount t? Promotion, n?u không thì 0
-                Discount = p.Promotion != null ? p.Promotion.Discount : 0,
+                Discount = p.Promotion != null && p.Promotion.IsActive ? p.Promotion.Discount : 0,
 
                 StoreId = p.StoreId,
                 CategoryId = p.CategoryId,
