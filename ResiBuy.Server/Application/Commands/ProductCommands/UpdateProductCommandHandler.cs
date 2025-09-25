@@ -525,19 +525,30 @@ namespace ResiBuy.Server.Application.Commands.ProductCommands
             }
             else if (newQuantity < currentQuantity)
             {
-                // Nếu số lượng giảm, tự động chọn mã vạch để xóa
+                // Nếu số lượng giảm, tự động chọn mã vạch chưa có đơn hàng để xóa
                 var removeQuantity = currentQuantity - newQuantity;
                 logger.LogInformation("Giảm số lượng cho ProductDetailId: {DetailId}. Xóa {RemoveQuantity} barcode", existingDetail.Id, removeQuantity);
 
-                // Tự động chọn removeQuantity mã vạch từ danh sách hiện có
+                // Tự động chọn removeQuantity mã vạch chưa có OrderItemId
                 var barcodesToRemove = existingDetail.Barcodes
+                    .Where(b => b.OrderItemId == null) // Chỉ lấy các barcode không liên kết với OrderItem
                     .Take(removeQuantity)
                     .Select(b => b.Code)
                     .ToList();
 
+                // Kiểm tra nếu không đủ mã vạch chưa có đơn hàng để xóa
+                if (barcodesToRemove.Count < removeQuantity)
+                {
+                    logger.LogError("Không đủ barcode chưa có đơn hàng để xóa cho ProductDetailId: {DetailId}. Yêu cầu: {RemoveQuantity}, Tìm thấy: {FoundCount}",
+                        existingDetail.Id, removeQuantity, barcodesToRemove.Count);
+                    throw new CustomException(ExceptionErrorCode.ValidationFailed,
+                        $"Không đủ mã vạch chưa có đơn hàng để xóa. Yêu cầu xóa {removeQuantity} mã, nhưng chỉ tìm thấy {barcodesToRemove.Count} mã vạch chưa có đơn hàng.");
+                }
+
                 await RemoveBarcodes(existingDetail, removeQuantity, barcodesToRemove);
             }
         }
+    
         // Tạo thêm mã vạch cho chi tiết sản phẩm
         private async Task GenerateAdditionalBarcodes(ProductDetail detail, int additionalQuantity)
         {
