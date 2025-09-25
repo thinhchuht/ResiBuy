@@ -27,7 +27,7 @@ export const menuItems = [
   { title: "Đơn hàng", url: "/admin/orders", icon: ShoppingCart },
    { title: "Nhân viên giao hàng", url: "/admin/shipper", icon: DeliveryDiningSharp  },
   { title: "Người dùng", url: "/admin/user", icon: People },
-  { title: "Chung cư", url: "/admin/resi", icon: Apartment },
+  // { title: "Chung cư", url: "/admin/resi", icon: Apartment },
   { title: "Voucher", url: "/admin/voucher", icon: VoucherIcon },
   { title: "Khuyến mại", url: "/admin/promotion", icon: PromotionIcon },
     // { title: "Sản phẩm", url: "/admin/productPage", icon: InventoryIcon },
