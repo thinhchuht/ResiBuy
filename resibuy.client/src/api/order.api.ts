@@ -134,7 +134,18 @@ const orderApi = {
     const response = await axiosClient.post(`${orderUrl}/create`, data);
     return response.data; // { success, message, orderId, paymentUrl }
   },
-
+  removeBarcodeFromOrder: async (
+    barcodeToRemove: string,
+    isRemoveFromStore: boolean
+  ) => {
+    const response = await axiosClient.get(`${orderUrl}/removeBarcodeFromOrder`, {
+      params: {
+        BarcodeToRemove: barcodeToRemove,
+        IsRemoveFromStore: isRemoveFromStore,
+      },
+    });
+    return response.data;
+  },
 };
 
 export default orderApi;

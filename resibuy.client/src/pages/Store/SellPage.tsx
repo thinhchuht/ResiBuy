@@ -18,7 +18,7 @@ import {
   Card,
   CardContent,
 } from "@mui/material";
-import { Add, Close, Delete, QrCodeScanner } from "@mui/icons-material";
+import { Add, Close, Delete, QrCodeScanner, DeleteOutline } from "@mui/icons-material";
 import productApi from "../../api/product.api";
 import cartApi from "../../api/cart.api";
 import type { ProductDto } from "../../types/product";
@@ -26,6 +26,7 @@ import ProductDetailDialog from "../Store/ProductDetailDialog";
 import ProductSearchBox from "../Store/ProductSearchBox";
 import CheckoutSidebar from "../Store/CheckoutSidebar";
 import BarcodeScanModal from "../Store/BarcodeScanModal";
+import RemoveBarcodeModal from "../Store/RemoveBarcodeModal";
 import {
   Dialog,
   DialogTitle,
@@ -94,11 +95,11 @@ const SellPage: React.FC = () => {
   const [openConfirm, setOpenConfirm] = useState(false);
   const [tabToDelete, setTabToDelete] = useState<number | null>(null);
   const [openBarcodeModal, setOpenBarcodeModal] = useState(false);
+  const [openRemoveBarcodeModal, setOpenRemoveBarcodeModal] = useState(false);
   const [scannedBarcodes, setScannedBarcodes] = useState<
     Record<string, { itemId: string; barcode: string }[]>
   >(() => loadScannedBarcodesFromLocalStorage());
 
-  // Đồng bộ scannedBarcodes với localStorage mỗi khi thay đổi
   useEffect(() => {
     console.log("Đồng bộ scannedBarcodes với localStorage:", scannedBarcodes);
     saveScannedBarcodesToLocalStorage(scannedBarcodes);
@@ -280,6 +281,28 @@ const SellPage: React.FC = () => {
     }
   };
 
+  const handleBarcodeRemoved = async (barcode: string) => {
+    const cartId = tabs[currentTab]?.id;
+    if (!cartId) {
+      toast.error("Không tìm thấy giỏ hàng!");
+      return;
+    }
+    setScannedBarcodes((prev) => {
+      const newBarcodes = { ...prev };
+      newBarcodes[cartId] = (newBarcodes[cartId] || []).filter(
+        (entry) => entry.barcode !== barcode
+      );
+      if (newBarcodes[cartId]?.length === 0) {
+        delete newBarcodes[cartId];
+      }
+      console.log("Cập nhật scannedBarcodes sau khi xóa barcode:", newBarcodes);
+      saveScannedBarcodesToLocalStorage(newBarcodes);
+      return newBarcodes;
+    });
+    await loadCart(cartId);
+    toast.success("Xóa barcode thành công!");
+  };
+
   const total = items.reduce(
     (sum, i) => sum + i.price * i.quantity * (1 - i.discount / 100),
     0
@@ -320,19 +343,27 @@ const SellPage: React.FC = () => {
             >
               Bán tại quầy
             </Typography>
-            {/* <ProductSearchBox
-              onSelectProduct={(product) => setSelectedProduct(product)}
-            /> */}
             {tabs.length > 0 && (
-              <Button
-                variant="contained"
-                color="primary"
-                onClick={() => setOpenBarcodeModal(true)}
-                startIcon={<QrCodeScanner />}
-                sx={{ ml: 2, fontWeight: 600, boxShadow: "none" }}
-              >
-                Quét Barcode
-              </Button>
+              <>
+                <Button
+                  variant="contained"
+                  color="primary"
+                  onClick={() => setOpenBarcodeModal(true)}
+                  startIcon={<QrCodeScanner />}
+                  sx={{ ml: 2, fontWeight: 600, boxShadow: "none" }}
+                >
+                  Quét Barcode
+                </Button>
+                <Button
+                  variant="contained"
+                  color="error"
+                  onClick={() => setOpenRemoveBarcodeModal(true)}
+                  startIcon={<DeleteOutline />}
+                  sx={{ ml: 2, fontWeight: 600, boxShadow: "none" }}
+                >
+                 Hoàn hàng
+                </Button>
+              </>
             )}
             <Button
               variant="contained"
@@ -679,6 +710,13 @@ const SellPage: React.FC = () => {
             return updatedBarcodes;
           });
         }}
+      />
+
+      <RemoveBarcodeModal
+        isOpen={openRemoveBarcodeModal}
+        onClose={() => setOpenRemoveBarcodeModal(false)}
+        orderId={tabs[currentTab]?.id || ""}
+        onBarcodeRemoved={handleBarcodeRemoved}
       />
 
       <Dialog open={openConfirm} onClose={handleCancelDeleteTab}>
