@@ -68,7 +68,7 @@ interface ProductDetailInput {
   image?: Image;
   additionalData: AdditionalDataInput[];
   barcodes: { code: string; orderItemId?: string }[];
-  listBarcode?: string[]; // Danh sách barcode cần xóa
+  listBarcode?: string[];
 }
 
 const storeId = "44444444-4444-4444-4444-444444444444";
@@ -86,7 +86,6 @@ interface ProductInput {
   productDetails: ProductDetailInput[];
 }
 
-// Promotion interface based on your API
 interface PromotionDto {
   id: number;
   name: string;
@@ -98,19 +97,13 @@ interface PromotionDto {
 
 interface Classify {
   key: string;
-  value: {
-    text: string;
-    isEdit: boolean;
-  }[];
+  value: { text: string; isEdit: boolean }[];
   isEdit: boolean;
 }
 
 interface TempAdditionalData {
   key: string;
-  value: {
-    text: string;
-    isEdit: boolean;
-  };
+  value: { text: string; isEdit: boolean };
 }
 
 interface ValidationErrors {
@@ -122,7 +115,6 @@ export default function UpdateProduct() {
   const navigate = useNavigate();
   const { error: showError, success: showSuccess } = useToastify();
 
-  // State management
   const [listCategory, setListCategory] = useState<CategoryDto[]>([]);
   const [listPromotions, setListPromotions] = useState<PromotionDto[]>([]);
   const [loading, setLoading] = useState(true);
@@ -134,7 +126,6 @@ export default function UpdateProduct() {
   const [barcodesToDelete, setBarcodesToDelete] = useState<string[]>([]);
   const [deleteCount, setDeleteCount] = useState(0);
 
-  // Error states consolidated
   const [formErrors, setFormErrors] = useState<ValidationErrors>({});
   const [classifyErrors, setClassifyErrors] = useState<ValidationErrors>({});
   const [attributeErrors, setAttributeErrors] = useState<ValidationErrors>({});
@@ -160,7 +151,6 @@ export default function UpdateProduct() {
   const [newProductDetails, setNewProductDetails] = useState<ProductDetailInput[]>([]);
   const [classifies, setClassifies] = useState<Classify[]>([]);
 
-  // Load data on component mount
   useEffect(() => {
     const loadData = async () => {
       try {
@@ -190,7 +180,7 @@ export default function UpdateProduct() {
                 code: barcode.code ?? '',
                 orderItemId: barcode.orderItemId,
               })),
-              listBarcode: [], // Initialize empty listBarcode
+              listBarcode: [],
             })) || [];
 
             setListProductDetail(tempProductDetails);
@@ -276,14 +266,12 @@ export default function UpdateProduct() {
     }
   };
 
-  // Helper function to format promotion display text
   const formatPromotionDisplay = (promotion: PromotionDto): string => {
     const startDate = new Date(promotion.startDate).toLocaleDateString('vi-VN');
     const endDate = new Date(promotion.endDate).toLocaleDateString('vi-VN');
     return `${promotion.name} (${promotion.discount}% - ${startDate} đến ${endDate})`;
   };
 
-  // Helper function to check if promotion is ending soon
   const isPromotionEndingSoon = (promotion: PromotionDto): boolean => {
     const endDate = new Date(promotion.endDate);
     const currentDate = new Date();
@@ -292,7 +280,6 @@ export default function UpdateProduct() {
     return diffDays <= 7 && diffDays > 0;
   };
 
-  // Classification management functions
   const addClassifies = () =>
     setClassifies((prev) => [...prev, { key: "", value: [], isEdit: true }]);
 
@@ -428,7 +415,6 @@ export default function UpdateProduct() {
       )
     );
 
-  // Validation functions
   const validateBasicInfo = (): boolean => {
     const newFormErrors: ValidationErrors = {};
     let isValid = true;
@@ -508,87 +494,74 @@ export default function UpdateProduct() {
 
     return isValid;
   };
- const validateProductDetails = (allDetails: ProductDetailInput[]): boolean => {
-        let isValid = true;
-        const newPriceErrors: ValidationErrors = {};
-        const newWeightErrors: ValidationErrors = {};
-        const newQuantityErrors: ValidationErrors = {};
 
-        allDetails.forEach((detail, index) => {
-            // Validate price
-            if (detail.price <= 0) {
-                newPriceErrors[index] = "Giá phải lớn hơn 0";
-                isValid = false;
-            }
+  const validateProductDetails = (allDetails: ProductDetailInput[]): boolean => {
+    let isValid = true;
+    const newPriceErrors: ValidationErrors = {};
+    const newWeightErrors: ValidationErrors = {};
+    const newQuantityErrors: ValidationErrors = {};
 
-            // Validate weight
-            if (detail.weight <= 0) {
-                newWeightErrors[index] = "Cân nặng phải lớn hơn 0";
-                isValid = false;
-            }
+    allDetails.forEach((detail, index) => {
+      if (detail.price <= 0) {
+        newPriceErrors[index] = "Giá phải lớn hơn 0";
+        isValid = false;
+      }
 
-            // Validate quantity
-            if (detail.quantity < 0) {
-                newQuantityErrors[index] = "Số lượng phải từ 0 trở lên";
-                isValid = false;
-            }
+      if (detail.weight <= 0) {
+        newWeightErrors[index] = "Cân nặng phải lớn hơn 0";
+        isValid = false;
+      }
 
-            // Validate business logic: out of stock should have quantity 0
-            if (detail.isOutOfStock && detail.quantity > 0) {
-                newQuantityErrors[index] = "Sản phẩm đã hết hàng thì số lượng phải bằng 0";
-                isValid = false;
-            }
+      if (detail.isOutOfStock && detail.quantity > 0) {
+        newQuantityErrors[index] = "Sản phẩm đã hết hàng thì số lượng phải bằng 0";
+        isValid = false;
+      }
 
-            // Validate image for new details
-            if (index >= listProductDetail.length && !detail.image?.url) {
-                showError(`Vui lòng tải ảnh cho tất cả các chi tiết sản phẩm mới`);
-                console.error(`Chi tiết mới tại index ${index} chưa có ảnh`);
-                isValid = false;
-            }
-        });
+      if (index >= listProductDetail.length && !detail.image?.url) {
+        showError(`Vui lòng tải ảnh cho tất cả các chi tiết sản phẩm mới`);
+        console.error(`Chi tiết mới tại index ${index} chưa có ảnh`);
+        isValid = false;
+      }
+    });
 
-        setPriceErrors(newPriceErrors);
-        setWeightErrors(newWeightErrors);
-        setQuantityErrors(newQuantityErrors);
+    setPriceErrors(newPriceErrors);
+    setWeightErrors(newWeightErrors);
+    setQuantityErrors(newQuantityErrors);
 
-        if (!isValid) {
-            console.error("Lỗi validateProductDetails:", {
-                priceErrors: newPriceErrors,
-                weightErrors: newWeightErrors,
-                quantityErrors: newQuantityErrors,
-                allDetails
-            });
-            showError("Vui lòng kiểm tra lại thông tin chi tiết sản phẩm");
-        }
+    if (!isValid) {
+      console.error("Lỗi validateProductDetails:", {
+        priceErrors: newPriceErrors,
+        weightErrors: newWeightErrors,
+        quantityErrors: newQuantityErrors,
+        allDetails,
+      });
+      showError("Vui lòng kiểm tra lại thông tin chi tiết sản phẩm");
+    }
 
-        return isValid;
-    };
+    return isValid;
+  };
 
-  // Individual field validation
   const validatePrice = (price: number, index: number) => {
     const newErrors = { ...priceErrors };
-
     if (price <= 0) {
       newErrors[index] = "Giá phải lớn hơn 0";
     } else {
       delete newErrors[index];
     }
-
     setPriceErrors(newErrors);
   };
 
   const validateWeight = (weight: number, index: number) => {
-  const newErrors = { ...weightErrors };
+    const newErrors = { ...weightErrors };
+    if (weight <= 0) {
+      newErrors[index] = "Cân nặng phải lớn hơn 0";
+    } else {
+      delete newErrors[index];
+    }
+    setWeightErrors(newErrors);
+  };
 
-  if (weight <= 0) {
-    newErrors[index] = "Cân nặng phải lớn hơn 0";
-  } else {
-    delete newErrors[index];
-  }
-
-  setWeightErrors(newErrors);
-};
-const validateQuantity = (
+  const validateQuantity = (
     quantity: number,
     index: number,
     isNewDetail: boolean,
@@ -610,77 +583,89 @@ const validateQuantity = (
         setBarcodesToDelete([]);
         setOpenDeleteBarcodeModal(true);
       } else {
-        // Clear barcode errors if quantity is valid
         const newBarcodeErrors = { ...barcodeErrors };
         delete newBarcodeErrors[globalIndex];
         setBarcodeErrors(newBarcodeErrors);
+
+        // Update listBarcode to empty if quantity increases or equals nonSoldBarcodes
+        if (isNewDetail) {
+          setNewProductDetails(prev => {
+            const newList = [...prev];
+            newList[index].listBarcode = [];
+            return newList;
+          });
+        } else {
+          setListProductDetail(prev => {
+            const newList = [...prev];
+            newList[index].listBarcode = [];
+            return newList;
+          });
+        }
       }
     }
 
     setQuantityErrors(newErrors);
   };
 
-  // Generate product details from classifications
   const generateProductDetail = () => {
-  if (!validateBasicInfo() || !validateClassifies()) {
-    return;
-  }
+    if (!validateBasicInfo() || !validateClassifies()) {
+      return;
+    }
 
-  let combinations: TempAdditionalData[][] = [[]];
+    let combinations: TempAdditionalData[][] = [[]];
 
-  classifies.forEach((classify) => {
-    const allValues = classify.value;
-    combinations = combinations.flatMap((combo) =>
-      allValues.map((val) => [
-        ...combo,
-        {
-          key: classify.key,
-          value: val,
-        },
-      ])
+    classifies.forEach((classify) => {
+      const allValues = classify.value;
+      combinations = combinations.flatMap((combo) =>
+        allValues.map((val) => [
+          ...combo,
+          {
+            key: classify.key,
+            value: val,
+          },
+        ])
+      );
+    });
+
+    const filteredCombinations = combinations.filter((combo) =>
+      combo.some((item) => item.value.isEdit)
     );
-  });
 
-  const filteredCombinations = combinations.filter((combo) =>
-    combo.some((item) => item.value.isEdit)
-  );
+    const finalList: AdditionalDataInput[][] = filteredCombinations.map(
+      (combo) =>
+        combo.map((item) => ({
+          key: item.key,
+          value: item.value.text,
+        }))
+    );
 
-  const finalList: AdditionalDataInput[][] = filteredCombinations.map(
-    (combo) =>
-      combo.map((item) => ({
-        key: item.key,
-        value: item.value.text,
-      }))
-  );
+    const newDetails: ProductDetailInput[] = finalList.map((data) => ({
+      price: 0,
+      weight: 0,
+      quantity: 0,
+      isOutOfStock: false,
+      image: { id: "", url: "", thumbUrl: "", name: "" },
+      additionalData: data,
+      barcodes: [],
+      listBarcode: [],
+    }));
 
-  const newDetails: ProductDetailInput[] = finalList.map((data) => ({
-    price: 0,
-    weight: 0,
-    quantity: 0,
-    isOutOfStock: false,
-    image: { id: "", url: "", thumbUrl: "", name: "" },
-    additionalData: data,
-    barcodes: [],
-    listBarcode: [],
-  }));
+    setPriceErrors({});
+    setWeightErrors({});
+    setQuantityErrors({});
+    setBarcodeErrors({});
 
-  setPriceErrors({});
-  setWeightErrors({});
-  setQuantityErrors({});
-  setBarcodeErrors({});
+    setNewProductDetails(newDetails);
+    validateProductDetails([...listProductDetail, ...newDetails]);
+    showSuccess(`Đã tạo ${newDetails.length} chi tiết sản phẩm mới`);
+  };
 
-  setNewProductDetails(newDetails);
-  validateProductDetails([...listProductDetail, ...newDetails]); // Validate ngay sau khi tạo
-  showSuccess(`Đã tạo ${newDetails.length} chi tiết sản phẩm mới`);
-};
-  // Helper function to display classification text
   const classifyText = (productDetail: ProductDetailInput) => {
     return productDetail.additionalData
       .map((data) => `${data.key}: ${data.value}`)
       .join(", ");
   };
 
-  // Image upload functions
   const uploadImg = async (
     file: File,
     index: number,
@@ -711,13 +696,17 @@ const validateQuantity = (
         };
 
         if (isNewDetail) {
-          const newList = [...newProductDetails];
-          newList[index].image = imageData;
-          setNewProductDetails(newList);
+          setNewProductDetails((prev) => {
+            const newList = [...prev];
+            newList[index].image = imageData;
+            return newList;
+          });
         } else {
-          const newList = [...listProductDetail];
-          newList[index].image = imageData;
-          setListProductDetail(newList);
+          setListProductDetail((prev) => {
+            const newList = [...prev];
+            newList[index].image = imageData;
+            return newList;
+          });
         }
         showSuccess("Tải ảnh thành công!");
       }
@@ -729,7 +718,6 @@ const validateQuantity = (
     }
   };
 
-  // Handler functions for form updates
   const updateProductField = (field: keyof ProductInput, value: string | number | undefined | boolean) => {
     setProduct(prev => ({ ...prev, [field]: value }));
 
@@ -763,19 +751,37 @@ const validateQuantity = (
     if (isNewDetail) {
       setNewProductDetails(prev => {
         const newList = [...prev];
-        (newList[index] as any)[field] = value;
+        newList[index] = { ...newList[index], [field]: value };
+        if (field === 'isOutOfStock' && value === true) {
+          newList[index].quantity = 0;
+          newList[index].listBarcode = newList[index].barcodes.map(b => b.code);
+        }
         return newList;
       });
     } else {
       setListProductDetail(prev => {
         const newList = [...prev];
-        (newList[index] as any)[field] = value;
+        newList[index] = { ...newList[index], [field]: value };
+        if (field === 'isOutOfStock' && value === true) {
+          newList[index].quantity = 0;
+          newList[index].listBarcode = newList[index].barcodes
+            .filter(b => !b.orderItemId)
+            .map(b => b.code);
+        }
         return newList;
       });
     }
+
+    if (field === 'isOutOfStock') {
+      const globalIndex = isNewDetail ? listProductDetail.length + index : index;
+      const newQuantityErrors = { ...quantityErrors };
+      if (value === true) {
+        delete newQuantityErrors[globalIndex];
+      }
+      setQuantityErrors(newQuantityErrors);
+    }
   };
 
-  // Handle barcode deletion modal
   const handleDeleteBarcodesConfirm = () => {
     if (selectedDetailIndex === null) return;
 
@@ -793,7 +799,7 @@ const validateQuantity = (
         newList[index].barcodes = newList[index].barcodes.filter(
           barcode => !barcodesToDelete.includes(barcode.code)
         );
-        newList[index].listBarcode = barcodesToDelete; // Add barcodes to delete
+        newList[index].listBarcode = barcodesToDelete;
         return newList;
       });
     } else {
@@ -802,7 +808,7 @@ const validateQuantity = (
         newList[index].barcodes = newList[index].barcodes.filter(
           barcode => !barcodesToDelete.includes(barcode.code)
         );
-        newList[index].listBarcode = barcodesToDelete; // Add barcodes to delete
+        newList[index].listBarcode = barcodesToDelete;
         return newList;
       });
     }
@@ -820,71 +826,67 @@ const validateQuantity = (
     const index = selectedDetailIndex;
     const detail = isNewDetailLocal ? newProductDetails[index] : listProductDetail[index];
 
-    // Revert quantity to match barcode count
-    updateProductDetail(index, 'quantity', detail.barcodes.length, isNewDetailLocal);
+    updateProductDetail(index, 'quantity', detail.barcodes.filter(b => !b.orderItemId).length, isNewDetailLocal);
     setOpenDeleteBarcodeModal(false);
     setSelectedDetailIndex(null);
     setBarcodesToDelete([]);
     setDeleteCount(0);
   };
 
-  // Update product function
- // Thay thế hàm updateProductAsync
-const updateProductAsync = async () => {
-  if (updating) return;
+  const updateProductAsync = async () => {
+    if (updating) return;
 
-  if (!validateBasicInfo()) return;
+    if (!validateBasicInfo()) return;
 
-  const allDetails = [...listProductDetail, ...newProductDetails];
+    const allDetails = [...listProductDetail, ...newProductDetails];
 
-  if (allDetails.length === 0) {
-    showError("Sản phẩm phải có ít nhất một chi tiết sản phẩm.");
-    return;
-  }
-
-  if (!validateProductDetails(allDetails)) return;
-
-  setUpdating(true);
-
-  try {
-    const tempProduct: ProductInput = {
-      id: Number(productId), // Ensure id is included and is a number
-      name: product.name,
-      describe: product.describe,
-      promotionId: product.promotionId,
-      storeId: product.storeId,
-      categoryId: product.categoryId,
-      expiryDate: product.expiryDate,
-      warrantyMonths: product.warrantyMonths,
-      isOutOfStock: product.isOutOfStock,
-      productDetails: allDetails.map(detail => ({
-        id: detail.id || 0, // Ensure id is 0 for new details
-        price: detail.price,
-        weight: detail.weight,
-        quantity: detail.quantity,
-        isOutOfStock: detail.isOutOfStock,
-        image: detail.image,
-        additionalData: detail.additionalData,
-        barcodes: detail.barcodes,
-        listBarcode: detail.listBarcode || [],
-      })),
-    };
-
-    const response = await axiosClient.put("api/Product/update2", tempProduct);
-    if (response.status === 200) {
-      showSuccess("Cập nhật sản phẩm thành công!");
-      navigate(`/admin/productPage`);
+    if (allDetails.length === 0) {
+      showError("Sản phẩm phải có ít nhất một chi tiết sản phẩm.");
+      return;
     }
-  } catch (error: any) {
-    console.error("Error updating product:", error);
-    const errorMessage = error.response?.data?.message || error.message || "Có lỗi xảy ra";
-    showError(`Lỗi khi cập nhật sản phẩm: ${errorMessage}. Vui lòng thử lại!`);
-  } finally {
-    setUpdating(false);
-  }
-};
 
-  // Get the selected promotion for display
+    if (!validateProductDetails(allDetails)) return;
+
+    setUpdating(true);
+
+    try {
+      const tempProduct: ProductInput = {
+        id: Number(productId),
+        name: product.name,
+        describe: product.describe,
+        promotionId: product.promotionId,
+        storeId: product.storeId,
+        categoryId: product.categoryId,
+        expiryDate: product.expiryDate,
+        warrantyMonths: product.warrantyMonths,
+        isOutOfStock: product.isOutOfStock,
+        productDetails: allDetails.map(detail => ({
+          id: detail.id || 0,
+          price: detail.price,
+          weight: detail.weight,
+          quantity: detail.quantity,
+          isOutOfStock: detail.isOutOfStock,
+          image: detail.image,
+          additionalData: detail.additionalData,
+          barcodes: detail.barcodes,
+          listBarcode: detail.listBarcode || [],
+        })),
+      };
+
+      const response = await axiosClient.put("api/Product", tempProduct);
+      if (response.status === 200) {
+        showSuccess("Cập nhật sản phẩm thành công!");
+        navigate(`/admin/productPage`);
+      }
+    } catch (error: any) {
+      console.error("Error updating product:", error);
+      const errorMessage = error.response?.data?.message || error.message || "Có lỗi xảy ra";
+      showError(`Lỗi khi cập nhật sản phẩm: ${errorMessage}. Vui lòng thử lại!`);
+    } finally {
+      setUpdating(false);
+    }
+  };
+
   const selectedPromotion = listPromotions.find(p => p.id === product.promotionId);
 
   if (loading) {
@@ -910,7 +912,6 @@ const updateProductAsync = async () => {
     <Box sx={{ p: 3, backgroundColor: "#f5f7fa", minHeight: "100vh" }}>
       <Container maxWidth="lg">
         <Stack spacing={4}>
-          {/* Header */}
           <Paper elevation={0} sx={{ p: 3, bgcolor: "white", borderRadius: 2 }}>
             <Typography
               variant="h4"
@@ -927,14 +928,12 @@ const updateProductAsync = async () => {
             </Typography>
           </Paper>
 
-          {/* Show validation summary if there are errors */}
           {Object.keys(formErrors).length > 0 && (
             <Alert severity="error">
               Vui lòng sửa các lỗi sau: {Object.values(formErrors).join(", ")}
             </Alert>
           )}
 
-          {/* Show promotion ending soon warning */}
           {selectedPromotion && isPromotionEndingSoon(selectedPromotion) && (
             <Alert severity="warning" icon={<LocalOffer />}>
               Chương trình khuyến mãi "{selectedPromotion.name}" sẽ kết thúc vào{" "}
@@ -942,7 +941,6 @@ const updateProductAsync = async () => {
             </Alert>
           )}
 
-          {/* Product Basic Information */}
           <Paper elevation={0} sx={{ borderRadius: 3, overflow: "hidden" }}>
             <Box
               sx={{
@@ -1151,7 +1149,6 @@ const updateProductAsync = async () => {
             </CardContent>
           </Paper>
 
-          {/* Product Classifications */}
           <Paper elevation={0} sx={{ borderRadius: 3, overflow: "hidden" }}>
             <Box
               sx={{
@@ -1306,7 +1303,6 @@ const updateProductAsync = async () => {
             </CardContent>
           </Paper>
 
-          {/* Existing Product Details */}
           {listProductDetail.length > 0 && (
             <Paper elevation={0} sx={{ borderRadius: 3, overflow: "hidden" }}>
               <Box
@@ -1333,7 +1329,7 @@ const updateProductAsync = async () => {
                       <TableCell sx={{ fontWeight: "bold", minWidth: 120 }}>Giá (VNĐ)</TableCell>
                       <TableCell sx={{ fontWeight: "bold", minWidth: 120 }}>Cân nặng (kg)</TableCell>
                       <TableCell sx={{ fontWeight: "bold", minWidth: 100 }}>Số lượng</TableCell>
-                     
+                      <TableCell sx={{ fontWeight: "bold", minWidth: 100 }}>Hết hàng</TableCell>
                       <TableCell sx={{ fontWeight: "bold", minWidth: 200 }}>Barcode</TableCell>
                       <TableCell sx={{ fontWeight: "bold", minWidth: 150 }}>Ảnh sản phẩm</TableCell>
                     </TableRow>
@@ -1393,59 +1389,62 @@ const updateProductAsync = async () => {
                             value={productDetail.quantity}
                             error={!!quantityErrors[index]}
                             helperText={quantityErrors[index]}
-                            inputProps={{ min: 0 , onInput: (e: React.ChangeEvent<HTMLInputElement>) => {
-          // Chỉ cho nhập số nguyên dương
-          e.target.value = e.target.value.replace(/[^0-9]/g, "");
-        },}}
+                            inputProps={{
+                              min: 0,
+                              onInput: (e: React.ChangeEvent<HTMLInputElement>) => {
+                                e.target.value = e.target.value.replace(/[^0-9]/g, "");
+                              },
+                            }}
                             onChange={(e) => {
                               const newQuantity = Number(e.target.value);
-                              if (newQuantity >= 0) {
-                                updateProductDetail(index, 'quantity', newQuantity, false);
-                              }
+                              updateProductDetail(index, 'quantity', newQuantity, false);
                             }}
                             onBlur={() => validateQuantity(productDetail.quantity, index, false, productDetail.barcodes)}
                             sx={{
                               "& .MuiOutlinedInput-root": { borderRadius: 2 },
                             }}
+                            disabled={productDetail.isOutOfStock}
                           />
                         </TableCell>
-                       
                         <TableCell>
-  {productDetail.barcodes.length > 0 ? (
-    <Box
-      sx={{
-        maxHeight: 200, 
-        overflowY: productDetail.barcodes.length > 5 ? "auto" : "visible",
-      }}
-    >
-      <Stack direction="column" spacing={1}>
-        {productDetail.barcodes.map((barcode, idx) => (
-          <Stack key={idx} direction="row" alignItems="center" spacing={1}>
-            <Typography variant="body2">{barcode.code}</Typography>
-            {barcode.orderItemId && (
-              <Typography
-                variant="caption"
-                color="error"
-                sx={{ fontWeight: 600 }}
-              >
-                (Đã bán)
-              </Typography>
-            )}
-          </Stack>
-        ))}
-      </Stack>
-    </Box>
-  ) : (
-    <Typography variant="body2">Không có</Typography>
-  )}
-</TableCell>
-
+                          <Checkbox
+                            checked={productDetail.isOutOfStock}
+                            onChange={(e) => {
+                              updateProductDetail(index, 'isOutOfStock', e.target.checked, false);
+                            }}
+                          />
+                        </TableCell>
                         <TableCell>
-                          <Stack
-                            spacing={2}
-                            alignItems="center"
-                            sx={{ minWidth: 120 }}
-                          >
+                          {productDetail.barcodes.length > 0 ? (
+                            <Box
+                              sx={{
+                                maxHeight: 200,
+                                overflowY: productDetail.barcodes.length > 5 ? "auto" : "visible",
+                              }}
+                            >
+                              <Stack direction="column" spacing={1}>
+                                {productDetail.barcodes.map((barcode, idx) => (
+                                  <Stack key={idx} direction="row" alignItems="center" spacing={1}>
+                                    <Typography variant="body2">{barcode.code}</Typography>
+                                    {barcode.orderItemId && (
+                                      <Typography
+                                        variant="caption"
+                                        color="error"
+                                        sx={{ fontWeight: 600 }}
+                                      >
+                                        (Đã bán)
+                                      </Typography>
+                                    )}
+                                  </Stack>
+                                ))}
+                              </Stack>
+                            </Box>
+                          ) : (
+                            <Typography variant="body2">Không có</Typography>
+                          )}
+                        </TableCell>
+                        <TableCell>
+                          <Stack spacing={2} alignItems="center" sx={{ minWidth: 120 }}>
                             {uploadingImages[index] ? (
                               <Box
                                 sx={{
@@ -1483,7 +1482,6 @@ const updateProductAsync = async () => {
                                 />
                               </Button>
                             )}
-
                             {productDetail.image?.thumbUrl ? (
                               <Box position="relative">
                                 <img
@@ -1523,10 +1521,7 @@ const updateProductAsync = async () => {
                                   bgcolor: "grey.50",
                                 }}
                               >
-                                <Warning
-                                  color="warning"
-                                  sx={{ fontSize: 24 }}
-                                />
+                                <Warning color="warning" sx={{ fontSize: 24 }} />
                                 <Typography
                                   variant="caption"
                                   color="text.secondary"
@@ -1547,7 +1542,6 @@ const updateProductAsync = async () => {
             </Paper>
           )}
 
-          {/* New Product Details Table */}
           {newProductDetails.length > 0 && (
             <Paper elevation={0} sx={{ borderRadius: 3, overflow: "hidden" }}>
               <Box
@@ -1574,7 +1568,7 @@ const updateProductAsync = async () => {
                       <TableCell sx={{ fontWeight: "bold", minWidth: 120 }}>Giá (VNĐ)</TableCell>
                       <TableCell sx={{ fontWeight: "bold", minWidth: 120 }}>Cân nặng (kg)</TableCell>
                       <TableCell sx={{ fontWeight: "bold", minWidth: 100 }}>Số lượng</TableCell>
-                   
+                      <TableCell sx={{ fontWeight: "bold", minWidth: 100 }}>Hết hàng</TableCell>
                       <TableCell sx={{ fontWeight: "bold", minWidth: 200 }}>Barcode</TableCell>
                       <TableCell sx={{ fontWeight: "bold", minWidth: 150 }}>Ảnh sản phẩm</TableCell>
                     </TableRow>
@@ -1583,11 +1577,7 @@ const updateProductAsync = async () => {
                     {newProductDetails.map((productDetail, index) => {
                       const globalIndex = listProductDetail.length + index;
                       return (
-                        <TableRow
-                          key={index}
-                          hover
-                          sx={{ bgcolor: "success.lighter" }}
-                        >
+                        <TableRow key={index} hover sx={{ bgcolor: "success.lighter" }}>
                           <TableCell>
                             <Chip
                               label={classifyText(productDetail)}
@@ -1641,23 +1631,31 @@ const updateProductAsync = async () => {
                               value={productDetail.quantity}
                               error={!!quantityErrors[globalIndex]}
                               helperText={quantityErrors[globalIndex]}
-                              inputProps={{ min: 0, onInput: (e: React.ChangeEvent<HTMLInputElement>) => {
-          // Chỉ cho nhập số nguyên dương
-          e.target.value = e.target.value.replace(/[^0-9]/g, "");
-        }, }}
+                              inputProps={{
+                                min: 0,
+                                onInput: (e: React.ChangeEvent<HTMLInputElement>) => {
+                                  e.target.value = e.target.value.replace(/[^0-9]/g, "");
+                                },
+                              }}
                               onChange={(e) => {
                                 const newQuantity = Number(e.target.value);
-                                if (newQuantity >= 0) {
-                                  updateProductDetail(index, 'quantity', newQuantity, true);
-                                }
+                                updateProductDetail(index, 'quantity', newQuantity, true);
                               }}
                               onBlur={() => validateQuantity(productDetail.quantity, index, true, productDetail.barcodes)}
                               sx={{
                                 "& .MuiOutlinedInput-root": { borderRadius: 2 },
                               }}
+                              disabled={productDetail.isOutOfStock}
                             />
                           </TableCell>
-                         
+                          <TableCell>
+                            <Checkbox
+                              checked={productDetail.isOutOfStock}
+                              onChange={(e) => {
+                                updateProductDetail(index, 'isOutOfStock', e.target.checked, true);
+                              }}
+                            />
+                          </TableCell>
                           <TableCell>
                             <Stack direction="column" spacing={1}>
                               {productDetail.barcodes.length > 0 ? (
@@ -1677,11 +1675,7 @@ const updateProductAsync = async () => {
                             </Stack>
                           </TableCell>
                           <TableCell>
-                            <Stack
-                              spacing={2}
-                              alignItems="center"
-                              sx={{ minWidth: 120 }}
-                            >
+                            <Stack spacing={2} alignItems="center" sx={{ minWidth: 120 }}>
                               {uploadingImages[globalIndex] ? (
                                 <Box
                                   sx={{
@@ -1719,7 +1713,6 @@ const updateProductAsync = async () => {
                                   />
                                 </Button>
                               )}
-
                               {productDetail.image?.thumbUrl ? (
                                 <Box position="relative">
                                   <img
@@ -1759,10 +1752,7 @@ const updateProductAsync = async () => {
                                     bgcolor: "grey.50",
                                   }}
                                 >
-                                  <Warning
-                                    color="warning"
-                                    sx={{ fontSize: 24 }}
-                                  />
+                                  <Warning color="warning" sx={{ fontSize: 24 }} />
                                   <Typography
                                     variant="caption"
                                     color="text.secondary"
@@ -1784,7 +1774,6 @@ const updateProductAsync = async () => {
             </Paper>
           )}
 
-          {/* Delete Barcode Modal */}
           <Dialog
             open={openDeleteBarcodeModal}
             onClose={handleDeleteBarcodesCancel}
@@ -1877,7 +1866,6 @@ const updateProductAsync = async () => {
             </DialogActions>
           </Dialog>
 
-          {/* Action Buttons */}
           <Stack
             direction="row"
             justifyContent="space-between"
