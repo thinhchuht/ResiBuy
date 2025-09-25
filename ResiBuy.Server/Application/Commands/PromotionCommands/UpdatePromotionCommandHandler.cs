@@ -19,6 +19,7 @@ namespace ResiBuy.Server.Application.Commands.PromotionCommands
             if (dto.Id <= 0)
                 throw new CustomException(ExceptionErrorCode.ValidationFailed, "Id khuyến mãi không hợp lệ");
             var promotion = promotionDbService.GetPromotionByIdAsync(dto.Id).Result ?? throw new CustomException(ExceptionErrorCode.NotFound, "Khuyến mãi không tồn tại");
+            if(!promotion.IsActive) throw new CustomException(ExceptionErrorCode.ValidationFailed, "Không thể sửa nếu khuyến mãi đang hoạt động");
             promotion.UpdatePromotion(dto.Name, dto.Discount, dto.StartDate, dto.EndDate, dto.IsActive);
             await promotionDbService.UpdateAsync(promotion);
             return ResponseModel.SuccessResponse(promotion);
