@@ -367,7 +367,7 @@ export default function UserPage() {
           >
             <Edit sx={{ fontSize: 16 }} />
           </IconButton>
-          {/* <IconButton
+          <IconButton
             onClick={() => handleEditRole(user.id)}
             sx={{
               color: "purple.main",
@@ -382,7 +382,7 @@ export default function UserPage() {
             title="Chỉnh Sửa Vai Trò"
           >
             <AdminPanelSettings sx={{ fontSize: 16 }} />
-          </IconButton> */}
+          </IconButton>
           <IconButton
             onClick={() => handleOpenConfirmDialog(user.id, user.isLocked)}
             sx={{

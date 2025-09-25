@@ -13,6 +13,7 @@ import {
   Snackbar,
   Alert,
 } from "@mui/material";
+import { PersonOff } from "@mui/icons-material";
 import userApi from "../../api/user.api";
 import orderApi from "../../api/order.api";
 import voucherApi from "../../api/voucher.api";
@@ -114,7 +115,7 @@ const CheckoutSidebar: React.FC<CheckoutSidebarProps> = ({
     customer: null,
     voucher: null,
     paymentMethod: null,
-    customerPaid: total,
+    customerPaid: 0,
     shippingFee: 0,
     deliveryMethod: undefined,
     deliveryAddress: null,
@@ -224,17 +225,37 @@ const CheckoutSidebar: React.FC<CheckoutSidebarProps> = ({
 
   const finalAmount = total - discount - voucherDiscount;
   const shippingFee = currentCart.shippingFee || 0;
-  const change = currentCart.customerPaid - (finalAmount + shippingFee);
+  const actualShippingFee =
+    currentCart.deliveryMethod === "DELIVERY" && currentCart.deliveryAddress
+      ? shippingFee
+      : 0;
+  const totalPayable = finalAmount + actualShippingFee;
+  const change = currentCart.customerPaid - totalPayable;
+
+  // Kiểm tra điều kiện để enable button thanh toán
+  const isPaymentButtonDisabled =
+    !currentCart.customer || // Chưa có khách hàng
+    !currentCart.deliveryMethod || // Chưa chọn hình thức nhận hàng
+    (currentCart.deliveryMethod === "DELIVERY" &&
+      !currentCart.deliveryAddress) || // Chọn giao hàng nhưng chưa có địa chỉ
+    !currentCart.paymentMethod || // Chưa chọn phương thức thanh toán
+    (currentCart.paymentMethod === "CASH" &&
+      currentCart.customerPaid < totalPayable); // Tiền mặt nhưng số tiền chưa hợp lệ
 
   return (
     <Box flex={1} p={2} component={Paper} elevation={2}>
-      <Typography variant="h6">Khách hàng</Typography>
+      <Typography variant="h6">Thông tin đơn hàng</Typography>
       <Divider sx={{ my: 1 }} />
 
       {currentCart.customer ? (
         <Box>
+          <Typography variant="subtitle1" sx={{ fontWeight: 600, mb: 1 }}>
+            Khách hàng
+          </Typography>
           <Typography>Họ tên: {currentCart.customer.fullName}</Typography>
-          <Typography>SĐT: {currentCart.customer.phoneNumber}</Typography>
+          {currentCart.customer.phoneNumber !== "0123456789" && (
+            <Typography>SĐT: {currentCart.customer.phoneNumber}</Typography>
+          )}
           <Button
             variant="outlined"
             size="small"
@@ -245,8 +266,9 @@ const CheckoutSidebar: React.FC<CheckoutSidebarProps> = ({
           </Button>
         </Box>
       ) : (
-        <Box>
-          <Typography color="error">❌ Chưa có khách hàng</Typography>
+        <Box display="flex" alignItems="center" gap={1}>
+          <PersonOff color="error" />
+          <Typography color="error">Chưa có khách hàng</Typography>
           <Button
             variant="outlined"
             size="small"
@@ -260,7 +282,9 @@ const CheckoutSidebar: React.FC<CheckoutSidebarProps> = ({
 
       <Divider sx={{ my: 2 }} />
 
-      <Typography variant="subtitle1">Hình thức nhận hàng</Typography>
+      <Typography variant="subtitle1" sx={{ fontWeight: 600, mb: 1 }}>
+        Hình thức nhận hàng
+      </Typography>
       <Box display="flex" gap={1} my={1}>
         <Button
           variant={
@@ -290,7 +314,11 @@ const CheckoutSidebar: React.FC<CheckoutSidebarProps> = ({
             currentCart.deliveryMethod === "DELIVERY" ? "contained" : "outlined"
           }
           onClick={() => {
-            setCartState({ deliveryMethod: "DELIVERY" });
+            setCartState({
+              deliveryMethod: "DELIVERY",
+              deliveryAddress: null,
+              shippingFee: 0,
+            });
             setShowAddressDialog(true);
           }}
         >
@@ -303,11 +331,22 @@ const CheckoutSidebar: React.FC<CheckoutSidebarProps> = ({
           variant="body2"
           sx={{ mt: 1, fontStyle: "italic", color: "#555" }}
         >
-          Địa chỉ nhận hàng: {currentCart.deliveryAddress.areaName} -{" "}
-          {currentCart.deliveryAddress.buildingName} -{" "}
-          {currentCart.deliveryAddress.roomName}
+          Địa chỉ nhận hàng:{" "}
+          {currentCart.deliveryMethod === "PICKUP"
+            ? "Tại cửa hàng"
+            : `${currentCart.deliveryAddress.areaName} - ${currentCart.deliveryAddress.buildingName} - ${currentCart.deliveryAddress.roomName}`}
         </Typography>
       )}
+
+      {currentCart.deliveryMethod === "DELIVERY" &&
+        !currentCart.deliveryAddress && (
+          <Typography
+            variant="body2"
+            sx={{ mt: 1, fontStyle: "italic", color: "#f44336" }}
+          >
+            Vui lòng chọn địa chỉ giao hàng
+          </Typography>
+        )}
 
       <DeliveryAddressDialog
         open={showAddressDialog}
@@ -337,7 +376,7 @@ const CheckoutSidebar: React.FC<CheckoutSidebarProps> = ({
       <Divider sx={{ my: 2 }} />
 
       <Box display="flex" alignItems="center" justifyContent="space-between">
-        <Typography>Voucher:</Typography>
+        <Typography sx={{ fontWeight: 600, mb: 1 }}>Voucher:</Typography>
         <Button
           variant="outlined"
           size="small"
@@ -354,10 +393,13 @@ const CheckoutSidebar: React.FC<CheckoutSidebarProps> = ({
       <Typography sx={{ mt: 1 }}>
         Tiền hàng: {total.toLocaleString()} đ
       </Typography>
-      <Typography>
-        Phí ship:{" "}
-        {shippingFee > 0 ? `${shippingFee.toLocaleString()} đ` : "0 đ"}
-      </Typography>
+      {currentCart.deliveryMethod === "DELIVERY" &&
+        currentCart.deliveryAddress && (
+          <Typography>
+            Phí giao hàng:{" "}
+            {shippingFee > 0 ? `${shippingFee.toLocaleString()} đ` : "0 đ"}
+          </Typography>
+        )}
       <Typography>
         Giảm tiền đơn hàng:{" "}
         {discount > 0 ? `-${discount.toLocaleString()} đ` : "0 đ"}
@@ -366,12 +408,14 @@ const CheckoutSidebar: React.FC<CheckoutSidebarProps> = ({
         <Typography>Voucher: -{voucherDiscount.toLocaleString()} đ</Typography>
       )}
       <Typography variant="h6">
-        Tổng cộng: {(finalAmount + shippingFee).toLocaleString()} đ
+        Tổng cộng: {totalPayable.toLocaleString()} đ
       </Typography>
 
       <Divider sx={{ my: 2 }} />
 
-      <Typography variant="subtitle1">Chọn phương thức thanh toán</Typography>
+      <Typography variant="subtitle1" sx={{ fontWeight: 600, mb: 1 }}>
+        Chọn phương thức thanh toán
+      </Typography>
       <Box display="flex" gap={1} my={1}>
         <Button
           variant={
@@ -385,7 +429,12 @@ const CheckoutSidebar: React.FC<CheckoutSidebarProps> = ({
           variant={
             currentCart.paymentMethod === "CASH" ? "contained" : "outlined"
           }
-          onClick={() => setCartState({ paymentMethod: "CASH" })}
+          onClick={() =>
+            setCartState({
+              paymentMethod: "CASH",
+              customerPaid: totalPayable,
+            })
+          }
         >
           Tiền mặt
         </Button>
@@ -412,11 +461,45 @@ const CheckoutSidebar: React.FC<CheckoutSidebarProps> = ({
         </>
       )}
 
+      {isPaymentButtonDisabled && (
+        <Typography
+          variant="caption"
+          color="text.secondary"
+          sx={{ display: "block", textAlign: "center", mb: 1 }}
+        >
+          {!currentCart.customer && "Vui lòng chọn khách hàng"}
+          {currentCart.customer &&
+            !currentCart.deliveryMethod &&
+            "Vui lòng chọn hình thức nhận hàng"}
+          {currentCart.customer &&
+            currentCart.deliveryMethod === "DELIVERY" &&
+            !currentCart.deliveryAddress &&
+            "Vui lòng chọn địa chỉ giao hàng"}
+          {currentCart.customer &&
+            currentCart.deliveryMethod &&
+            (currentCart.deliveryMethod !== "DELIVERY" ||
+              currentCart.deliveryAddress) &&
+            !currentCart.paymentMethod &&
+            "Vui lòng chọn phương thức thanh toán"}
+          {currentCart.customer &&
+            currentCart.deliveryMethod &&
+            (currentCart.deliveryMethod !== "DELIVERY" ||
+              currentCart.deliveryAddress) &&
+            currentCart.paymentMethod === "CASH" &&
+            currentCart.customerPaid < totalPayable &&
+            "Số tiền khách đưa chưa hợp lệ"}
+        </Typography>
+      )}
+
       <Button
         variant="contained"
         color="success"
         fullWidth
-        sx={{ mt: 3 }}
+        disabled={isPaymentButtonDisabled}
+        sx={{
+          mt: 3,
+          opacity: isPaymentButtonDisabled ? 0.6 : 1,
+        }}
         onClick={async () => {
           if (!currentCart.customer) {
             showMessage("Vui lòng chọn khách hàng", "warning");
@@ -427,8 +510,15 @@ const CheckoutSidebar: React.FC<CheckoutSidebarProps> = ({
             return;
           }
           if (
+            currentCart.deliveryMethod === "DELIVERY" &&
+            !currentCart.deliveryAddress
+          ) {
+            showMessage("Vui lòng chọn địa chỉ giao hàng", "warning");
+            return;
+          }
+          if (
             currentCart.paymentMethod === "CASH" &&
-            currentCart.customerPaid < finalAmount + shippingFee
+            currentCart.customerPaid < totalPayable
           ) {
             showMessage("Số tiền khách đưa chưa hợp lệ", "error");
             return;
@@ -485,10 +575,7 @@ const CheckoutSidebar: React.FC<CheckoutSidebarProps> = ({
         <DialogTitle>Thêm khách hàng</DialogTitle>
         <DialogContent>
           <Box display="flex" flexDirection="column" gap={2} mt={1}>
-            <Button
-              variant="outlined"
-              onClick={handleGuestCustomer}
-            >
+            <Button variant="outlined" onClick={handleGuestCustomer}>
               Khách vãng lai
             </Button>
 
