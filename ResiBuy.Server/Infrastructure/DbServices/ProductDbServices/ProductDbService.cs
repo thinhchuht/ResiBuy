@@ -507,5 +507,25 @@ namespace ResiBuy.Server.Infrastructure.DbServices.ProductDbServices
                 .Select(b => b.Code)
                 .ToListAsync();
         }
+
+        public async Task<ProductDetail?> GetProductDetailByBarcodeAsync(string barcode)
+        {
+            try
+            {
+                var productDetail = await _context.ProductDetails
+                    .Include(pd => pd.Product)
+                    .Include(pd => pd.Image)
+                    .Include(pd => pd.AdditionalData)
+                    .Include(pd => pd.Barcodes)
+                    .FirstOrDefaultAsync(pd => pd.Barcodes.Any(b => b.Code == barcode));
+
+                return productDetail;
+            }
+            catch (Exception ex)
+            {
+                throw new CustomException(ExceptionErrorCode.RepositoryError,
+                    $"Lỗi khi tìm kiếm ProductDetail theo barcode: {ex.Message}");
+            }
+        }
     }
 }

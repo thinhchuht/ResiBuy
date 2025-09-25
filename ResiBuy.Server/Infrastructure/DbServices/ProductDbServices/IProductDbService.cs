@@ -8,5 +8,6 @@
         IQueryable<Product> GetAllProductsQuery();
         Task<List<string>> QueryBarcodesAsync(List<string> codes);
         Task<ImportResult> ImportProductsFromExcel(Stream fileStream);
+        Task<ProductDetail?> GetProductDetailByBarcodeAsync(string barcode);
     }
 }

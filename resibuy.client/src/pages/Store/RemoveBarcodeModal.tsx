@@ -118,7 +118,7 @@ const RemoveBarcodeModal: React.FC<RemoveBarcodeModalProps> = ({
       onBarcodeRemoved(barcode);
       showSuccess(
         isRemoveFromStore
-          ? "Đã xóa barcode khỏi đơn hàng"
+          ? "Đã xóa barcode khỏi cửa hàng"
           : "Đã hoàn hàng vào kho thành công"
       );
       setBarcode("");
