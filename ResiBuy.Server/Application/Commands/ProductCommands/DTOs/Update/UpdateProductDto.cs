@@ -12,7 +12,7 @@ namespace ResiBuy.Server.Application.Commands.ProductCommands.DTOs.Update
         public Guid StoreId { get; set; }
         public bool IsOutOfStock { get; set; }
         public DateTime? ExpiryDate { get; set; }
-        public int? WarrantyMonths { get; set; }
+        public int WarrantyMonths { get; set; } = 0;
         public List<UpdateProductDetailDto> ProductDetails { get; set; }
     }
 }

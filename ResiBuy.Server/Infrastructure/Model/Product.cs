@@ -50,7 +50,8 @@
               int promotionId,
               Guid categoryId,
               bool isOutOfStock,
-              DateTime expiryDate,
+              DateTime? expiryDate,
+
               int warrantyMonths)
         {
             Name = name;
