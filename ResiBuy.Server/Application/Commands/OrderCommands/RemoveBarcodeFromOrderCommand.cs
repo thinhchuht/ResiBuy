@@ -26,7 +26,7 @@ namespace ResiBuy.Server.Application.Commands.OrderCommands
                 throw new CustomException(ExceptionErrorCode.ValidationFailed, $"Mã vạch {request.dto.BarcodeToRemove} không có trong order nào");
             else if (barcode.OrderItem.Order.Status != OrderStatus.Delivered)
                 throw new CustomException(ExceptionErrorCode.ValidationFailed, $"Mã vạch {request.dto.BarcodeToRemove} chỉ có thể xóa khỏi đơn hàng đã giao");
-
+            var price = barcode.OrderItem.Price;
             barcode.OrderItem.Quantity -= 1;
             barcode.OrderItem.Order.IsReport = true;
             barcode.OrderItem.Order.TotalPrice -= barcode.OrderItem.Price;
@@ -45,7 +45,7 @@ namespace ResiBuy.Server.Application.Commands.OrderCommands
             {
                 throw new CustomException(ExceptionErrorCode.UpdateFailed, ex.Message);
             }
-            return ResponseModel.SuccessResponse($"Đã xóa {barcode.Code} mã vạch khỏi order .Giá trị sản phẩm: {barcode.OrderItem.Price}");
+            return ResponseModel.SuccessResponse($"Đã xóa {barcode.Code} mã vạch khỏi order .Giá trị sản phẩm: {price}");
         }
     }
 }
