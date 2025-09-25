@@ -14,5 +14,6 @@
         public List<AdditionalData> AdditionalData { get; set; }
         public DateTime ExpiryDate { get; set; }
         public int? WarrantyMonths { get; set; }
+        public int RowNumber { get; set; }
     }
 }
