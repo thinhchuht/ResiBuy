@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { Box, Typography, Button, Chip, Divider, IconButton, useTheme, Accordion, AccordionSummary, AccordionDetails, Slider, TextField } from "@mui/material";
 import ShoppingCartIcon from "@mui/icons-material/ShoppingCart";
 import ExpandMoreIcon from "@mui/icons-material/ExpandMore";
@@ -10,7 +10,6 @@ import { formatPrice } from "../../../utils/priceUtils";
 import Tooltip from "@mui/material/Tooltip";
 import cartApi from "../../../api/cart.api";
 import checkoutApi from "../../../api/checkout.api";
-import { formatDate } from "../../../utils/dateUtils";
 
 interface ProductInfoSectionProps {
   product: Product;
@@ -36,50 +35,66 @@ const ProductInfoSection: React.FC<ProductInfoSectionProps> = ({ product, quanti
     }
   });
 
-  const [selectedOptions, setSelectedOptions] = useState(() => {
-    const initial: Record<string, string> = {};
-    Object.entries(optionGroups).forEach(([key, values]) => {
-      initial[key] = values[0];
-    });
+  // Selections are progressive: later keys may be undefined until chosen
+  const [selectedOptions, setSelectedOptions] = useState<Partial<Record<string, string>>>(() => {
+    const keys = Object.keys(optionGroups);
+    const initial: Partial<Record<string, string>> = {};
+    if (keys.length > 0) {
+      const firstKey = keys[0];
+      initial[firstKey] = optionGroups[firstKey][0];
+    }
     return initial;
   });
 
+  // Compute all product details matching current partial selection
+  const matchingDetails = (product.productDetails ?? []).filter((detail) => {
+    if (!Array.isArray(detail.additionalData)) return false;
+    const definedEntries = Object.entries(selectedOptions).filter(([, v]) => v !== undefined) as [string, string][];
+    return definedEntries.every(([key, value]) => detail.additionalData!.some((ad: { key: string; value: string }) => ad.key === key && ad.value === value));
+  });
+
+  // Prefer the variant with the fewest additionalData when multiple match (subset rule)
   const selectedDetail =
-    (product.productDetails ?? []).find((detail) => {
-      if (!Array.isArray(detail.additionalData)) return false;
-      const keys = Object.keys(selectedOptions);
-      return keys.every(
-        (key) => Array.isArray(detail.additionalData) && detail.additionalData.some((ad: { key: string; value: string }) => ad.key === key && ad.value === selectedOptions[key])
-      );
-    }) || null;
+    matchingDetails.length === 0
+      ? null
+      : matchingDetails.reduce((best, current) => {
+          const bestLen = Array.isArray(best.additionalData) ? best.additionalData.length : 0;
+          const curLen = Array.isArray(current.additionalData) ? current.additionalData.length : 0;
+          if (curLen < bestLen) return current;
+          if (curLen > bestLen) return best;
+          // tie-breaker: lower price first to keep deterministic behavior
+          const bestPrice = best.price || 0;
+          const curPrice = current.price || 0;
+          return curPrice < bestPrice ? current : best;
+        }, matchingDetails[0]);
 
   const handleOptionChange = (key: string, value: string) => {
     const keys = Object.keys(optionGroups);
     const idx = keys.indexOf(key);
 
-    const newSelected: Record<string, string> = {};
+    const newSelected: Partial<Record<string, string>> = {};
     keys.forEach((k, i) => {
       if (i < idx) newSelected[k] = selectedOptions[k];
       else if (i === idx) newSelected[k] = value;
+      else newSelected[k] = undefined;
     });
-
-    for (let i = idx + 1; i < keys.length; i++) {
-      const k = keys[i];
-      const validValue = optionGroups[k].find((v) => {
-        const testOptions = { ...newSelected, [k]: v };
-        return (product.productDetails ?? []).some((detail) =>
-          Object.entries(testOptions).every(
-            ([kk, vv]) => Array.isArray(detail.additionalData) && detail.additionalData.some((ad: { key: string; value: string }) => ad.key === kk && ad.value === vv)
-          )
-        );
-      });
-      newSelected[k] = validValue || optionGroups[k][0];
-    }
 
     setSelectedOptions(newSelected);
   };
 
-  const basePrice = selectedDetail?.price || 0;
+  // Price follows the preferred selectedDetail (subset preference). Fallback to 0 if none.
+  const basePrice = selectedDetail?.price ?? 0;
+
+  // Debug log price changes according to current selection/matches
+  useEffect(() => {
+    const definedSelections = Object.fromEntries(Object.entries(selectedOptions).filter(([, v]) => v !== undefined));
+    console.log("[ProductInfo] Price updated", {
+      selections: definedSelections,
+      matchingCount: matchingDetails.length,
+      selectedDetailId: selectedDetail?.id ?? null,
+      price: basePrice,
+    });
+  }, [basePrice, selectedDetail, matchingDetails.length, selectedOptions]);
   const discountedPrice = basePrice * (1 - product.discount / 100);
 
   const handleAddToCart = () => {
@@ -181,16 +196,17 @@ const ProductInfoSection: React.FC<ProductInfoSectionProps> = ({ product, quanti
                 {values.map((value) => {
                   let isValid = true;
                   if (groupIdx > 0) {
-                    const testOptions: Record<string, string> = {};
+                    const testOptions: Partial<Record<string, string>> = {};
                     arr.slice(0, groupIdx).forEach(([prevKey]) => {
-                      testOptions[prevKey] = selectedOptions[prevKey];
+                      const prevVal = selectedOptions[prevKey];
+                      if (prevVal !== undefined) testOptions[prevKey] = prevVal;
                     });
                     testOptions[key] = value;
-                    isValid = (product.productDetails ?? []).some((detail) =>
-                      Object.entries(testOptions).every(
-                        ([k, v]) => Array.isArray(detail.additionalData) && detail.additionalData.some((ad: { key: string; value: string }) => ad.key === k && ad.value === v)
-                      )
-                    );
+                    isValid = (product.productDetails ?? []).some((detail) => {
+                      if (!Array.isArray(detail.additionalData)) return false;
+                      const entries = Object.entries(testOptions).filter(([, v]) => v !== undefined) as [string, string][];
+                      return entries.every(([k, v]) => detail.additionalData!.some((ad: { key: string; value: string }) => ad.key === k && ad.value === v));
+                    });
                   }
                   const button = (
                     <Button
@@ -348,20 +364,14 @@ const ProductInfoSection: React.FC<ProductInfoSectionProps> = ({ product, quanti
               </Typography>
             </AccordionSummary>
             <AccordionDetails>
-              <Typography variant="body2" color="text.secondary" paragraph>
+              <Typography variant="body1" color="text.secondary" paragraph>
                 Danh mục : {product.category.name}
-              </Typography>
-              <Typography variant="body2" color="text.secondary">
-                Trọng lượng: {selectedDetail?.weight ?? "Không xác định"} kg
-              </Typography>
-              <Typography variant="body2" color="text.secondary">
-                Hạn sử dụng: {product.expiryDate ? formatDate(product.expiryDate) : "Không có"}
-              </Typography>
-              <Typography variant="body2" color="text.secondary">
-                Thời gian bảo hành: {product.warrantyMonths ? `${product.warrantyMonths} tháng` : "Không có"}
               </Typography>
               <Typography variant="body1" color="text.secondary" paragraph>
                 {product.describe}
+              </Typography>
+              <Typography variant="body2" color="text.secondary">
+                Trọng lượng: {selectedDetail?.weight ?? "Không xác định"} kg
               </Typography>
             </AccordionDetails>
           </Accordion>
