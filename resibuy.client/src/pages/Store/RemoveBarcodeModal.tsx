@@ -431,7 +431,7 @@ const RemoveBarcodeModal: React.FC<RemoveBarcodeModalProps> = ({
             <FormControlLabel
               value="remove"
               control={<Radio />}
-              label="Xóa barcode khỏi đơn hàng"
+              label="Xóa barcode khỏi cửa hàng"
               disabled={isLoading}
             />
           </RadioGroup>
