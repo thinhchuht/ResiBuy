@@ -96,12 +96,7 @@ const menuItems = [
     icon: <PromotionIcon />,
     path: "promotions",
   },
-  {
-    id: "analytics",
-    label: "Thống kê",
-    icon: <AnalyticsIcon />,
-    path: "chart-view",
-  },
+  
 ];
 
 const Sidebar: React.FC<SidebarProps> = ({
