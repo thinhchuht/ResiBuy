@@ -23,7 +23,7 @@ namespace ResiBuy.Server.Application.Commands.OrderCommands
             if (barcode == null)
                 throw new CustomException(ExceptionErrorCode.NotFound, $"Không tìm thấy mã vạch: {request.dto.BarcodeToRemove}");
             else if (barcode.OrderItemId == null)
-                throw new CustomException(ExceptionErrorCode.ValidationFailed, $"Mã vạch {request.dto.BarcodeToRemove} không có trong order nào");
+                throw new CustomException(ExceptionErrorCode.ValidationFailed, $"Mã vạch {request.dto.BarcodeToRemove} không có trong đơn hàng nào");
             else if (barcode.OrderItem.Order.Status != OrderStatus.Delivered)
                 throw new CustomException(ExceptionErrorCode.ValidationFailed, $"Mã vạch {request.dto.BarcodeToRemove} chỉ có thể xóa khỏi đơn hàng đã giao");
 
