@@ -8,10 +8,12 @@ namespace ResiBuy.Server.Infrastructure.DbServices.ProductDbServices
     {
         private readonly ResiBuyContext _context;
         private readonly IBarcodeDbService _barcodeService;
-        public ProductDbService(ResiBuyContext context, BarcodeDbServices.IBarcodeDbService barcodeService) : base(context)
+        private readonly IImageDbService imageDbService;
+        public ProductDbService(ResiBuyContext context, BarcodeDbServices.IBarcodeDbService barcodeService, IImageDbService imageDbService) : base(context)
         {
             this._context = context;
             this._barcodeService = barcodeService;
+            this.imageDbService = imageDbService;
         }
 
         public IQueryable<Product> GetAllProductsQuery()
@@ -88,415 +90,209 @@ namespace ResiBuy.Server.Infrastructure.DbServices.ProductDbServices
 
         public async Task<ImportResult> ImportProductsFromExcel(Stream fileStream)
         {
+            var result = new ImportResult();
             ExcelPackage.License.SetNonCommercialPersonal("ResiBuy Developer");
 
             using var package = new ExcelPackage(fileStream);
-            var sheet = package.Workbook.Worksheets[0];
+            var worksheet = package.Workbook.Worksheets[0];
+            int rowCount = worksheet.Dimension.Rows;
 
-            var products = new Dictionary<string, CreateProductDto>();
-            var result = new ImportResult();
-            var detailDataSetsByProduct = new Dictionary<string, List<HashSet<string>>>();
-            var validRows = new List<int>();
-            var totalBarcodeNeeded = 0; // Tổng số barcode cần tạo
+            // Gom dữ liệu Excel theo ProductName
+            var groupedProducts = new Dictionary<string, List<ExcelRowData>>();
 
-            // Validate storeId
-            var storeIdsInFile = new HashSet<Guid>();
-            for (int row = 2; row <= sheet.Dimension.End.Row; row++)
+            for (int row = 2; row <= rowCount; row++)
             {
-                if (Guid.TryParse(sheet.Cells[row, 4].Text, out Guid storeId))
-                {
-                    storeIdsInFile.Add(storeId);
-                }
-            }
-
-            var existingStoreIds = await _context.Stores
-                .Where(s => storeIdsInFile.Contains(s.Id))
-                .Select(s => s.Id)
-                .ToListAsync();
-
-            var invalidStoreIds = storeIdsInFile.Except(existingStoreIds).ToHashSet();
-
-            // Validate categoryId
-            var categoryIdsInFile = new HashSet<Guid>();
-            for (int row = 2; row <= sheet.Dimension.End.Row; row++)
-            {
-                if (Guid.TryParse(sheet.Cells[row, 5].Text, out Guid categoryId))
-                {
-                    categoryIdsInFile.Add(categoryId);
-                }
-            }
-
-            var existingCategoryIds = await _context.Categories
-                .Where(c => categoryIdsInFile.Contains(c.Id))
-                .Select(c => c.Id)
-                .ToListAsync();
-
-            var invalidCategoryIds = categoryIdsInFile.Except(existingCategoryIds).ToHashSet();
-
-            // Validate promotionId
-            var promotionIdsInFile = new HashSet<int>();
-            for (int row = 2; row <= sheet.Dimension.End.Row; row++)
-            {
-                if (int.TryParse(sheet.Cells[row, 3].Text, out int promotionId))
-                {
-                    promotionIdsInFile.Add(promotionId);
-                }
-            }
-
-            var existingPromotionIds = await _context.Promotions
-                .Where(p => promotionIdsInFile.Contains(p.Id))
-                .Select(p => p.Id)
-                .ToListAsync();
-
-            var invalidPromotionIds = promotionIdsInFile.Except(existingPromotionIds).ToHashSet();
-
-            // Duyệt từng dòng trong file excel để validate và tính tổng số barcode cần
-            for (int row = 2; row <= sheet.Dimension.End.Row; row++)
-            {
-                result.Total++;
-                bool rowIsValid = true;
-
                 try
                 {
-                    string name = sheet.Cells[row, 1].Text?.Trim();
-                    if (string.IsNullOrEmpty(name))
-                    {
-                        result.Errors.Add($"Lỗi tại dòng {row}: Tên sản phẩm không được để trống");
-                        rowIsValid = false;
-                    }
+                    var productName = worksheet.Cells[row, 1].Text.Trim();
+                    var describe = worksheet.Cells[row, 2].Text.Trim();
+                    var promotionId = int.Parse(worksheet.Cells[row, 3].Text);
+                    var storeId = Guid.Parse(worksheet.Cells[row, 4].Text);
+                    var categoryId = Guid.Parse(worksheet.Cells[row, 5].Text);
+                    var price = decimal.Parse(worksheet.Cells[row, 6].Text);
+                    var weight = float.Parse(worksheet.Cells[row, 7].Text);
+                    var quantity = int.Parse(worksheet.Cells[row, 8].Text);
+                    var outOfStock = bool.Parse(worksheet.Cells[row, 9].Text);
+                    var imageId = worksheet.Cells[row, 10].Text.Trim();
+                    var additionalDataRaw = worksheet.Cells[row, 11].Text.Trim();
 
-                    string describe = sheet.Cells[row, 2].Text;
-
-                    if (!int.TryParse(sheet.Cells[row, 3].Text, out int promotionId))
+                    // Parse ExpiryDate an toàn
+                    DateTime expiryDate;
+                    if (!DateTime.TryParse(worksheet.Cells[row, 12].Text, out expiryDate))
                     {
-                        result.Errors.Add($"Lỗi tại dòng {row}: PromotionId không hợp lệ");
-                        rowIsValid = false;
-                    }
-                    else if (invalidPromotionIds.Contains(promotionId))
-                    {
-                        result.Errors.Add($"Lỗi tại dòng {row}: PromotionId không tồn tại trong hệ thống");
-                        rowIsValid = false;
-                    }
-
-                    if (!Guid.TryParse(sheet.Cells[row, 4].Text, out Guid storeId))
-                    {
-                        result.Errors.Add($"Lỗi tại dòng {row}: StoreId không hợp lệ");
-                        rowIsValid = false;
-                    }
-                    else if (invalidStoreIds.Contains(storeId))
-                    {
-                        result.Errors.Add($"Lỗi tại dòng {row}: StoreId không tồn tại trong hệ thống");
-                        rowIsValid = false;
-                    }
-
-                    if (!Guid.TryParse(sheet.Cells[row, 5].Text, out Guid categoryId))
-                    {
-                        result.Errors.Add($"Lỗi tại dòng {row}: CategoryId không hợp lệ");
-                        rowIsValid = false;
-                    }
-                    else if (invalidCategoryIds.Contains(categoryId))
-                    {
-                        result.Errors.Add($"Lỗi tại dòng {row}: CategoryId không tồn tại trong hệ thống");
-                        rowIsValid = false;
-                    }
-
-                    if (!decimal.TryParse(sheet.Cells[row, 6].Text, out decimal price) || price <= 0)
-                    {
-                        result.Errors.Add($"Lỗi tại dòng {row}: Price không hợp lệ");
-                        rowIsValid = false;
-                    }
-
-                    if (!float.TryParse(sheet.Cells[row, 7].Text, out float weight))
-                    {
-                        result.Errors.Add($"Lỗi tại dòng {row}: Weight không hợp lệ");
-                        rowIsValid = false;
-                    }
-
-                    if (!int.TryParse(sheet.Cells[row, 8].Text, out int quantity))
-                    {
-                        result.Errors.Add($"Lỗi tại dòng {row}: Quantity không hợp lệ");
-                        rowIsValid = false;
-                    }
-
-                    if (!bool.TryParse(sheet.Cells[row, 9].Text, out bool isOutOfStock))
-                    {
-                        result.Errors.Add($"Lỗi tại dòng {row}: IsOutOfStock không hợp lệ");
-                        rowIsValid = false;
-                    }
-
-                    // ExpiryDate
-                    DateTime? expiryDate = null;
-                    var expiryStr = sheet.Cells[row, 16].Text?.Trim();
-                    if (!string.IsNullOrEmpty(expiryStr))
-                    {
-                        if (DateTime.TryParse(expiryStr, out var exp))
-                        {
-                            if (exp <= DateTime.Now)
-                            {
-                                result.Errors.Add($"Lỗi tại dòng {row}: ExpiryDate phải sau ngày hiện tại");
-                                rowIsValid = false;
-                            }
-                            else
-                            {
-                                expiryDate = exp;
-                            }
-                        }
-                        else
-                        {
-                            result.Errors.Add($"Lỗi tại dòng {row}: ExpiryDate không hợp lệ");
-                            rowIsValid = false;
-                        }
+                        expiryDate = DateTime.MinValue; // hoặc null nếu bạn dùng DateTime?
                     }
 
                     // WarrantyMonths
-                    int? warrantyMonths = null;
-                    var warrantyStr = sheet.Cells[row, 17].Text?.Trim();
-                    if (!string.IsNullOrEmpty(warrantyStr))
-                    {
-                        if (int.TryParse(warrantyStr, out var wm) && wm > 0)
-                            warrantyMonths = wm;
-                        else
-                        {
-                            result.Errors.Add($"Lỗi tại dòng {row}: WarrantyMonths không hợp lệ (phải là số nguyên > 0)");
-                            rowIsValid = false;
-                        }
-                    }
+                    var warrantyMonths = string.IsNullOrEmpty(worksheet.Cells[row, 13].Text)
+                                            ? 0
+                                            : int.Parse(worksheet.Cells[row, 13].Text);
 
-                    // Đọc cột image từ excel
-                    var image = new CreateImageForProductDetailDto
-                    {
-                        Id = sheet.Cells[row, 10].Text,
-                        Url = sheet.Cells[row, 11].Text,
-                        ThumbUrl = sheet.Cells[row, 12].Text,
-                        Name = sheet.Cells[row, 13].Text
-                    };
-
-                    // Đọc và tách cột AdditionalData
-                    var additionalData = new List<AdditionalDataDto>();
-                    var additionalStr = sheet.Cells[row, 14].Text;
-                    if (!string.IsNullOrEmpty(additionalStr))
-                    {
-                        foreach (var pair in additionalStr.Split(';'))
+                    var additionalData = additionalDataRaw.Split(';', StringSplitOptions.RemoveEmptyEntries)
+                        .Select(ad =>
                         {
-                            var kv = pair.Split('=');
-                            if (kv.Length == 2)
+                            var kv = ad.Split('=');
+                            return new AdditionalData(kv[0].Trim(), kv[1].Trim());
+                        }).ToList();
+
+                    if (!groupedProducts.ContainsKey(productName))
+                        groupedProducts[productName] = new List<ExcelRowData>();
+
+                    groupedProducts[productName].Add(new ExcelRowData
+                    {
+                        Describe = describe,
+                        PromotionId = promotionId,
+                        StoreId = storeId,
+                        CategoryId = categoryId,
+                        Price = price,
+                        Weight = weight,
+                        Quantity = quantity,
+                        OutOfStock = outOfStock,
+                        ImageId = imageId,
+                        AdditionalData = additionalData,
+                        ExpiryDate = expiryDate,
+                        WarrantyMonths = warrantyMonths
+                    });
+
+                    result.Total++;
+                }
+                catch (Exception ex)
+                {
+                    result.Errors.Add($"Row {row}: {ex.Message}");
+                }
+            }
+
+            foreach (var group in groupedProducts)
+            {
+                string productName = group.Key;
+                var rows = group.Value;
+
+                // Kiểm tra Product đã có chưa
+                var product = await _context.Products
+                    .Include(p => p.ProductDetails)
+                        .ThenInclude(pd => pd.AdditionalData)
+                    .Include(p => p.ProductDetails)
+                        .ThenInclude(pd => pd.Image)
+                    .Include(p => p.ProductDetails)
+                        .ThenInclude(pd => pd.Barcodes)
+                    .FirstOrDefaultAsync(p => p.Name == productName);
+
+                if (product == null)
+                {
+                    var first = rows.First();
+                    product = new Product(productName, first.Describe, first.PromotionId, first.StoreId, first.CategoryId);
+                    _context.Products.Add(product);
+                }
+
+                // Gom tất cả AdditionalData để sinh tổ hợp
+                var allKeys = rows.SelectMany(r => r.AdditionalData.Select(ad => ad.Key)).Distinct();
+                var adDict = new Dictionary<string, HashSet<string>>();
+                foreach (var key in allKeys)
+                {
+                    adDict[key] = new HashSet<string>(rows.SelectMany(r => r.AdditionalData.Where(ad => ad.Key == key).Select(ad => ad.Value)));
+                }
+
+                var combinations = GetAllCombinations(adDict);
+
+                foreach (var row in rows)
+                {
+                    var detail = product.ProductDetails.FirstOrDefault(pd =>
+                        pd.AdditionalData.Count == row.AdditionalData.Count &&
+                        !pd.AdditionalData.Except(row.AdditionalData, new AdditionalDataComparer()).Any());
+
+                    if (detail != null)
+                    {
+                        // cập nhật
+                        detail.Price = row.Price;
+                        detail.Weight = row.Weight;
+                        detail.Quantity += row.Quantity;
+                        detail.IsOutOfStock = row.OutOfStock;
+                        product.ExpiryDate = row.ExpiryDate;
+                        product.WarrantyMonths = row.WarrantyMonths;
+
+                        // thêm barcode
+                        for (int i = 0; i < row.Quantity; i++)
+                        {
+                            detail.Barcodes.Add(new Barcode
                             {
-                                additionalData.Add(new AdditionalDataDto
-                                {
-                                    Key = kv[0].Trim(),
-                                    Value = kv[1].Trim()
-                                });
-                            }
-                        }
-                    }
-
-                    // Validate: không có cặp trùng trong 1 detail
-                    var duplicatesInSame = additionalData
-                        .GroupBy(a => $"{a.Key}|{a.Value}")
-                        .Where(g => g.Count() > 1)
-                        .Select(g => g.Key)
-                        .ToList();
-
-                    if (duplicatesInSame.Any())
-                    {
-                        result.Errors.Add($"Lỗi tại dòng {row}: Phân loại trùng trong cùng chi tiết sản phẩm ({string.Join(", ", duplicatesInSame)})");
-                        rowIsValid = false;
-                    }
-
-                    // Nếu dòng này hợp lệ, tiếp tục xử lý logic group và validate duplicate
-                    if (rowIsValid && !string.IsNullOrEmpty(name))
-                    {
-                        // Gom nhóm theo Product
-                        if (!products.ContainsKey(name))
-                        {
-                            products[name] = new CreateProductDto
-                            {
-                                Name = name,
-                                Describe = describe,
-                                PromotionId = promotionId,
-                                StoreId = storeId,
-                                CategoryId = categoryId,
-                                ExpiryDate = expiryDate,
-                                WarrantyMonths = warrantyMonths,
-                                ProductDetails = new List<CreateProductDetailDto>()
-                            };
-                            detailDataSetsByProduct[name] = new List<HashSet<string>>();
-                        }
-
-                        // Validate: không có 2 ProductDetail trùng bộ AdditionalData
-                        var dataSet = additionalData.Select(a => $"{a.Key}|{a.Value}").ToHashSet();
-                        if (detailDataSetsByProduct[name].Any(existing => existing.SetEquals(dataSet)))
-                        {
-                            result.Errors.Add($"Lỗi tại dòng {row}: Phân loại bị trùng với 1 chi tiết sản phẩm khác khác của {name}");
-                            rowIsValid = false;
-                        }
-                        else
-                        {
-                            detailDataSetsByProduct[name].Add(dataSet);
-
-                            products[name].ProductDetails.Add(new CreateProductDetailDto
-                            {
-                                Price = price,
-                                Weight = weight,
-                                Quantity = quantity,
-                                IsOutOfStock = isOutOfStock,
-                                Image = image,
-                                AdditionalData = additionalData
+                                Code = Guid.NewGuid().ToString(),
+                                ProductDetail = detail
                             });
-
-                            // Cộng dồn số lượng barcode cần tạo
-                            totalBarcodeNeeded += quantity;
                         }
-                    }
-
-                    if (rowIsValid)
-                    {
-                        validRows.Add(row);
-                    }
-                }
-                catch (Exception ex)
-                {
-                    result.Errors.Add($"Lỗi tại dòng {row}: {ex.Message}");
-                    rowIsValid = false;
-                }
-            }
-
-            // Kiểm tra nếu có lỗi thì trả về kết quả với Success = false
-            if (result.Errors.Any())
-            {
-                result.Success = false;
-                return result;
-            }
-
-            // Tạo tất cả barcode cần thiết trong một lần gọi duy nhất
-            List<string> allBarcodes = new List<string>();
-            if (totalBarcodeNeeded > 0)
-            {
-                try
-                {
-                    allBarcodes = await _barcodeService.GenerateUniqueBarcodesAsync(totalBarcodeNeeded);
-                }
-                catch (Exception ex)
-                {
-                    result.Success = false;
-                    result.Errors.Add($"Lỗi khi tạo barcode: {ex.Message}");
-                    return result;
-                }
-            }
-
-            // Nếu không có lỗi, tiến hành lưu xuống DB
-            try
-            {
-                int barcodeIndex = 0; // Chỉ số để lấy barcode từ list đã tạo
-
-                foreach (var product in products.Values)
-                {
-                    var existingProduct = await this.GetByNameAsync(product.StoreId, product.Name);
-                    if (existingProduct == null)
-                    {
-                        // Tạo mới product
-                        var newProduct = new Product(
-                            product.Name, product.Describe, product.PromotionId, product.StoreId, product.CategoryId
-                        )
-                        {
-                            ExpiryDate = product.ExpiryDate,
-                            WarrantyMonths = product.WarrantyMonths,
-                            ProductDetails = new List<ProductDetail>()
-                        };
-
-                        // Tạo ProductDetails với barcode
-                        foreach (var detailDto in product.ProductDetails)
-                        {
-                            var barcodes = new List<string>();
-                            for (int i = 0; i < detailDto.Quantity; i++)
-                            {
-                                barcodes.Add(allBarcodes[barcodeIndex++]);
-                            }
-
-                            var newDetail = new ProductDetail(detailDto.Price, detailDto.Weight, detailDto.Quantity, detailDto.IsOutOfStock)
-                            {
-                                Image = detailDto.Image != null ? new Image
-                                {
-                                    Id = detailDto.Image.Id,
-                                    Url = detailDto.Image.Url,
-                                    ThumbUrl = detailDto.Image.ThumbUrl,
-                                    Name = detailDto.Image.Name
-                                } : null,
-                                AdditionalData = detailDto.AdditionalData.Select(a => new AdditionalData(a.Key, a.Value)).ToList(),
-                                Barcodes = barcodes.Select(b => new Barcode { Code = b }).ToList()
-                            };
-
-                            newProduct.ProductDetails.Add(newDetail);
-                        }
-
-                        await this.CreateAsync(newProduct);
                     }
                     else
                     {
-                        // Thêm productDetail mới hoặc cập nhật số lượng
-                        foreach (var detailDto in product.ProductDetails)
+                        // tạo mới
+                        var newDetail = new ProductDetail(row.Price, row.Weight, row.Quantity)
                         {
-                            var newDataSet = detailDto.AdditionalData.Select(a => $"{a.Key}|{a.Value}").ToHashSet();
+                            Product = product,
+                            Image = await imageDbService.GetImageByIdAsync(row.ImageId),
+                            AdditionalData = row.AdditionalData,
+                            Barcodes = new List<Barcode>()
+                        };
 
-                            var existingDetail = existingProduct.ProductDetails
-                                .FirstOrDefault(ed => ed.AdditionalData
-                                    .Select(a => $"{a.Key}|{a.Value}")
-                                    .ToHashSet()
-                                    .SetEquals(newDataSet));
-
-                            if (existingDetail != null)
+                        for (int i = 0; i < row.Quantity; i++)
+                        {
+                            newDetail.Barcodes.Add(new Barcode
                             {
-                                // Nếu đã có detail này → cộng số lượng và thêm barcodes mới
-                                existingDetail.Quantity += detailDto.Quantity;
-                                existingDetail.IsOutOfStock = existingDetail.Quantity <= 0;
-
-                                // Tạo và thêm barcodes mới
-                                var newBarcodes = new List<string>();
-                                for (int i = 0; i < detailDto.Quantity; i++)
-                                {
-                                    newBarcodes.Add(allBarcodes[barcodeIndex++]);
-                                }
-                                var barcodeEntities = newBarcodes.Select(b => new Barcode { Code = b }).ToList();
-                                existingDetail.Barcodes.AddRange(barcodeEntities);
-                            }
-                            else
-                            {
-                                // Nếu chưa có → thêm detail mới
-                                var barcodes = new List<string>();
-                                for (int i = 0; i < detailDto.Quantity; i++)
-                                {
-                                    barcodes.Add(allBarcodes[barcodeIndex++]);
-                                }
-
-                                var newDetail = new ProductDetail(detailDto.Price, detailDto.Weight, detailDto.Quantity, detailDto.IsOutOfStock)
-                                {
-                                    Image = detailDto.Image != null ? new Image
-                                    {
-                                        Id = detailDto.Image.Id,
-                                        Url = detailDto.Image.Url,
-                                        ThumbUrl = detailDto.Image.ThumbUrl,
-                                        Name = detailDto.Image.Name
-                                    } : null,
-                                    AdditionalData = detailDto.AdditionalData.Select(a => new AdditionalData(a.Key, a.Value)).ToList(),
-                                    Barcodes = barcodes.Select(b => new Barcode { Code = b }).ToList()
-                                };
-                                existingProduct.ProductDetails.Add(newDetail);
-                            }
+                                Code = Guid.NewGuid().ToString(),
+                                ProductDetail = newDetail
+                            });
                         }
 
-                        await this.UpdateAsync(existingProduct);
+                        product.ProductDetails.Add(newDetail);
                     }
                 }
 
-                result.Success = true;
-                result.Successful = validRows.Count;
-            }
-            catch (Exception ex)
-            {
-                result.Success = false;
-                result.Errors.Add($"Lỗi khi lưu vào database: {ex.Message}");
+                // Tạo các combination thiếu (Quantity = 0, dùng ảnh sản phẩm)
+                foreach (var combo in combinations)
+                {
+                    if (!product.ProductDetails.Any(pd =>
+                        pd.AdditionalData.Count == combo.Count &&
+                        !pd.AdditionalData.Except(combo, new AdditionalDataComparer()).Any()))
+                    {
+                        var placeholder = new ProductDetail(0, 0, 0, true)
+                        {
+                            Product = product,
+                            Image = product.ProductDetails.FirstOrDefault()?.Image,
+                            AdditionalData = combo,
+                            Barcodes = new List<Barcode>()
+                        };
+                        product.ProductDetails.Add(placeholder);
+                    }
+                }
+
+                result.Successful++;
             }
 
+            await _context.SaveChangesAsync();
+            result.Success = result.Errors.Count == 0;
+            return result;
+        }
+
+
+        /// Sinh tất cả tổ hợp AdditionalData
+        private List<List<AdditionalData>> GetAllCombinations(Dictionary<string, HashSet<string>> adDict)
+        {
+            var keys = adDict.Keys.ToList();
+            var result = new List<List<AdditionalData>>();
+
+            void Recurse(int depth, List<AdditionalData> current)
+            {
+                if (depth == keys.Count)
+                {
+                    result.Add(new List<AdditionalData>(current));
+                    return;
+                }
+                foreach (var val in adDict[keys[depth]])
+                {
+                    current.Add(new AdditionalData(keys[depth], val));
+                    Recurse(depth + 1, current);
+                    current.RemoveAt(current.Count - 1);
+                }
+            }
+
+            Recurse(0, new List<AdditionalData>());
             return result;
         }
 
@@ -507,5 +303,6 @@ namespace ResiBuy.Server.Infrastructure.DbServices.ProductDbServices
                 .Select(b => b.Code)
                 .ToListAsync();
         }
+
     }
 }
