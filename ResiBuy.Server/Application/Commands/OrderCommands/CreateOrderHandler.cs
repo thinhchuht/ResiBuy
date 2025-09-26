@@ -96,6 +96,14 @@ namespace ResiBuy.Server.Application.Commands.OrderCommands
                         $"Sản phẩm {cartItem.ProductDetail.Product.Name} đã hết hạn");
             }
 
+            foreach (var cartItem in cart.CartItems)
+            {
+                if (cartItem.ProductDetail.Product.IsOutOfStock)
+                    throw new CustomException(ExceptionErrorCode.ValidationFailed,
+                        $"Sản phẩm {cartItem.ProductDetail.Product.Name} đã hết hàng");
+            }
+
+
             decimal totalPrice = 0;
             float totalWeight = 0;
             var cartItemPrices = new Dictionary<int, decimal>();

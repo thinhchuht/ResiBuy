@@ -91,7 +91,7 @@ namespace ResiBuy.Server.Application.Commands.OrderCommands
                     var productDetailIds = items.Select(i => i.ProductDetailId).ToList();
                     var productDetails = await productDetailDbService.GetBatchAsync(productDetailIds);
                     order.CancelReason = dto.Reason;
-                    if(dto.UserId != order.ShipperId.ToString())
+                        if(dto.UserId != order.ShipperId.ToString())
                     {
                         // remove Barcodes from order
                         foreach (var item in items)
